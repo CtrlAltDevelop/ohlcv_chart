@@ -2,7 +2,14 @@ import 'dart:math';
 
 import '../entity/k_line_entity.dart';
 
+/// Computes every indicator the chart can draw.
 class DataUtil {
+  /// Fills the indicator fields on each entry of [dataList], in place.
+  ///
+  /// Call this before handing candles to [KChartWidget], and again whenever
+  /// candles are appended. [maDayList] must match the widget's `maDayList`.
+  /// [n] and [k] are the Bollinger band period and standard-deviation
+  /// multiplier.
   static void calculate(
     List<KLineEntity> dataList, [
     List<int> maDayList = const [5, 10, 20],

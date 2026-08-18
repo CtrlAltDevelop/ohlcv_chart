@@ -1,0 +1,14 @@
+# The example's generated platform scaffolding is only needed to run it
+# locally; it would otherwise triple the size of the published archive.
+example/android/
+example/ios/
+example/macos/
+example/web/
+example/build/
+example/.dart_tool/
+example/*.iml
+example/analysis_options.yaml
+
+# Local build output.
+build/
+.dart_tool/

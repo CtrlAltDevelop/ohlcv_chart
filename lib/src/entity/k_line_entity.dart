@@ -1,6 +1,16 @@
 import '../entity/k_entity.dart';
 
+/// A single candle, plus the indicator values computed for it.
+///
+/// Create these from your market data, then hand the whole list to
+/// [DataUtil.calculate], which fills in the MA, BOLL, SAR, MACD, KDJ, RSI,
+/// WR and CCI fields in place before the chart is painted.
 class KLineEntity extends KEntity {
+  /// Builds a candle from a decoded JSON map.
+  ///
+  /// Reads `open`, `high`, `low`, `close`, `vol`, and optionally `amount`,
+  /// `ratio` and `change`. The timestamp comes from `time` in milliseconds,
+  /// falling back to `id` in seconds.
   factory KLineEntity.fromJson(Map<String, dynamic> json) {
     int timestampMillis = 0;
     final dynamic timeValue = json['time'];
@@ -28,6 +38,7 @@ class KLineEntity extends KEntity {
     );
   }
 
+  /// Builds a candle from already-parsed values.
   KLineEntity.fromCustom({
     required double open,
     required double high,
@@ -46,11 +57,19 @@ class KLineEntity extends KEntity {
     this.vol = vol;
   }
 
+  /// Traded turnover in quote currency, when the feed provides it.
   double? amount;
+
+  /// Absolute price change over the candle, when the feed provides it.
   double? change;
+
+  /// Percentage price change over the candle, when the feed provides it.
   double? ratio;
+
+  /// The candle's open time.
   DateTime? dateTime;
 
+  /// Serialises the candle's raw OHLCV values back to a JSON map.
   Map<String, dynamic> toJson() => {
     'dateTime': dateTime?.toIso8601String(),
     'open': open,

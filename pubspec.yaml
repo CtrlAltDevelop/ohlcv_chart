@@ -1,8 +1,8 @@
 name: ohlcv_chart
 description: >-
-  A candlestick (K-line) and market-depth chart for Flutter with MA/BOLL/SAR
-  overlays, MACD/KDJ/RSI/WR/CCI sub-charts, buy-sell signals and interactive
-  trend, horizontal and vertical drawing tools.
+  Candlestick and market-depth charts for Flutter, with MA, BOLL and SAR
+  overlays, MACD, KDJ, RSI, WR and CCI sub-charts, signal markers and
+  interactive drawing tools.
 version: 1.0.0
 homepage: https://github.com/CtrlAltDevelop
 repository: https://github.com/CtrlAltDevelop/ohlcv_chart

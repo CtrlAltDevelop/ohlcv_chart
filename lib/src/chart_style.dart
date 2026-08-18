@@ -10,7 +10,7 @@ import 'package:flutter/material.dart' show Color;
 /// Text
 ///
 class ChartColors {
-  /// constructor chart color
+  /// Creates a colour set, defaulting to a light theme.
   ChartColors({
     this.bgColor = const Color(0xffffffff),
     this.kLineColor = const Color(0xff4C86CD),
@@ -151,7 +151,10 @@ class ChartColors {
   }
 }
 
+/// Geometry of the candlestick chart: paddings, stroke widths, gaps and
+/// text sizes.
 class ChartStyle {
+  /// Creates a style, defaulting to the values the chart ships with.
   const ChartStyle({
     this.topPadding = 20.0,
     this.bottomPadding = 20.0,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart' show Color;
 
+/// Every colour the depth chart paints with.
 class DepthChartColors {
-  /// constructor chart color
+  /// Creates a colour set, defaulting to a light theme.
   const DepthChartColors({
     ///depth color
     this.upColor = const Color(0xFF14AD8F),
@@ -47,7 +48,9 @@ class DepthChartColors {
   final Color barrierColor;
 }
 
+/// Geometry of the depth chart: stroke widths, paddings and text sizes.
 class DepthChartStyle {
+  /// Creates a style, defaulting to the values the chart ships with.
   const DepthChartStyle({
     this.lineWidth = 1.0,
     this.radius = 4.0,

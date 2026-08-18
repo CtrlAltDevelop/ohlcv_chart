@@ -1,0 +1,22 @@
+name: ohlcv_chart_example
+description: Demonstrates the ohlcv_chart candlestick and depth charts.
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ohlcv_chart:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

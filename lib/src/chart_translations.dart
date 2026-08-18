@@ -1,4 +1,12 @@
+/// Every piece of text the candlestick chart shows.
+///
+/// Build one from your own localisations to translate the chart:
+///
+/// ```dart
+/// ChartTranslations(date: l10n.date, open: l10n.open /* … */);
+/// ```
 class ChartTranslations {
+  /// Creates a translation set, defaulting to English.
   const ChartTranslations({
     this.date = 'Date',
     this.open = 'Open',

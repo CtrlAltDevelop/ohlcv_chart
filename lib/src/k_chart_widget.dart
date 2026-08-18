@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,14 +20,62 @@ import 'renderer/chart_painter.dart';
 import 'renderer/main_renderer.dart';
 import 'utils/date_format_util.dart';
 
-enum MainState { MA, BOLL, SAR }
+/// An overlay drawn on top of the candles in the main chart area.
+enum MainState {
+  /// Moving averages, one line per period in `maDayList`.
+  MA,
 
-enum SecondaryState { MACD, KDJ, RSI, WR, CCI }
+  /// Bollinger bands.
+  BOLL,
 
-enum DrawingTool { none, horizontal, vertical, trend }
+  /// Parabolic SAR dots.
+  SAR,
+}
 
+/// An indicator rendered in its own pane below the main chart.
+///
+/// Every selected state gets its own stacked pane.
+enum SecondaryState {
+  /// Moving average convergence divergence, with histogram.
+  MACD,
+
+  /// Stochastic oscillator.
+  KDJ,
+
+  /// Relative strength index.
+  RSI,
+
+  /// Williams %R.
+  WR,
+
+  /// Commodity channel index.
+  CCI,
+}
+
+/// The drawing mode the chart is currently in.
+///
+/// Anything other than [none] makes the next tap place a line instead of
+/// moving the crosshair.
+enum DrawingTool {
+  /// Normal chart interaction; taps select existing lines.
+  none,
+
+  /// The next tap places a [HorizontalLine].
+  horizontal,
+
+  /// The next tap places a [VerticalLine].
+  vertical,
+
+  /// The next two taps place the ends of a [TrendLine].
+  trend,
+}
+
+/// Ready-made date patterns for [KChartWidget.timeFormat].
 class TimeFormat {
+  /// `yyyy-MM-dd`, for daily candles and longer.
   static const List<String> YEAR_MONTH_DAY = [yyyy, '-', mm, '-', dd];
+
+  /// `yyyy-MM-dd HH:mm`, for intraday candles.
   static const List<String> YEAR_MONTH_DAY_WITH_HOUR = [
     yyyy,
     '-',
@@ -42,7 +89,33 @@ class TimeFormat {
   ];
 }
 
+/// An interactive candlestick chart.
+///
+/// Pass the candles positionally along with a [ChartColors]. Run
+/// [DataUtil.calculate] over the list first so the indicator fields are
+/// populated, otherwise the overlays and sub-charts have nothing to draw.
+///
+/// The chart supports pinch-to-zoom, fling scrolling, a long-press crosshair
+/// with an info dialog, and — when [isTrendLine] is set and a
+/// [currentDrawingTool] is selected — placing trend, horizontal and vertical
+/// lines that the user can then select, drag, restyle and delete. The
+/// `onAdd*` and `onRemove*` callbacks let you persist those.
+///
+/// ```dart
+/// DataUtil.calculate(candles);
+///
+/// KChartWidget(
+///   candles,
+///   ChartColors(),
+///   isTrendLine: false,
+///   watermarkAssetPath: 'assets/logo.svg',
+///   timeFrame: const Duration(minutes: 15),
+///   mainStateLi: const {MainState.MA},
+///   secondaryStateLi: const {SecondaryState.MACD},
+/// );
+/// ```
 class KChartWidget extends StatefulWidget {
+  /// Creates a candlestick chart over [candles], coloured by [chartColors].
   const KChartWidget(
     this.candles,
     this.chartColors, {
@@ -87,46 +160,127 @@ class KChartWidget extends StatefulWidget {
     super.key,
   });
 
+  /// The candles to draw, oldest first. Null renders a loading indicator.
   final List<KLineEntity>? candles;
+
+  /// Price markers painted over the candles.
   final List<SignalEntity> signals;
+
+  /// Vertical lines to draw, typically restored from storage.
   final List<VerticalLine> verticalLines;
+
+  /// Horizontal lines to draw, typically restored from storage.
   final List<HorizontalLine> horizontalLines;
+
+  /// Trend lines to draw, typically restored from storage.
   final List<TrendLine> trendLines;
+
+  /// Overlays drawn on the main chart. Empty draws candles alone.
   final Set<MainState> mainStateLi;
+
+  /// Indicators to stack below the main chart, one pane each.
   final Set<SecondaryState> secondaryStateLi;
+
+  /// The active drawing mode; see [DrawingTool].
   final DrawingTool currentDrawingTool;
+
+  /// Called when the user finishes drawing or edits a trend line.
   final ValueChanged<TrendLine>? onAddTrendLine;
+
+  /// Called when the user places or edits a horizontal line.
   final ValueChanged<HorizontalLine>? onAddHorizontalLine;
+
+  /// Called when the user places or edits a vertical line.
   final ValueChanged<VerticalLine>? onAddVerticalLine;
+
+  /// Called when the user deletes a trend line.
   final ValueChanged<TrendLine>? onRemoveTrendLine;
+
+  /// Called when the user deletes a horizontal line.
   final ValueChanged<HorizontalLine>? onRemoveHorizontalLine;
+
+  /// Called when the user deletes a vertical line.
   final ValueChanged<VerticalLine>? onRemoveVerticalLine;
+
+  /// Duration of one candle, used to place lines and count down the close.
   final Duration timeFrame;
+
+  /// Draws a filled close-price line instead of candles.
   final bool isLine;
+
+  /// Opens the info dialog on tap as well as on long press.
   final bool isTapShowInfoDialog;
+
+  /// Hides the background grid.
   final bool hideGrid;
+
+  /// Draws the current price line and its countdown to the candle close.
   final bool showNowPrice;
+
+  /// Enables the long-press info dialog.
   final bool showInfoDialog;
+
+  /// Uses the Material info dialog rather than the Cupertino-styled one.
   final bool materialInfoDialog;
+
+  /// Labels used by the info dialog and on-chart text.
   final ChartTranslations chartTranslations;
+
+  /// Date pattern for axis labels; see [TimeFormat].
   final List<String> timeFormat;
+
+  /// Height of the main chart area, before sub-chart panes are added.
   final double mBaseHeight;
+
+  /// Replaces the built-in long-press info dialog.
+  ///
+  /// Receives the selected candle and the one before it.
   final Widget? Function(BuildContext, KLineEntity?, KLineEntity?)?
   infoDialogBuilder;
+
+  /// Overrides axis date formatting; the flag marks the long form.
   final String Function(KLineEntity, bool)? dateFormatter;
+
+  /// Fires when the user scrolls past an edge; the flag is true at the right.
   final ValueChanged<bool>? onLoadMore;
+
+  /// Decimal places used for every price shown.
   final int fixedLength;
+
+  /// Moving-average periods, matching what [DataUtil.calculate] was given.
   final List<int> maDayList;
+
+  /// Duration of the fling animation, in milliseconds.
   final int flingTime;
+
+  /// Multiplier applied to fling velocity.
   final double flingRatio;
+
+  /// Easing applied to the fling animation.
   final Curve flingCurve;
+
+  /// Reports whether the user is currently dragging the chart.
   final ValueChanged<bool>? isOnDrag;
+
+  /// Every colour the chart paints with.
   final ChartColors chartColors;
+
+  /// Geometry: paddings, stroke widths and text sizes.
   final ChartStyle chartStyle;
+
+  /// Which side the price axis labels sit on.
   final VerticalTextAlignment verticalTextAlignment;
+
+  /// Enables the drawing tools and their edit panel.
   final bool isTrendLine;
+
+  /// Hides the volume pane.
   final bool volHidden;
+
+  /// Empty space kept to the right of the newest candle.
   final double xFrontPadding;
+
+  /// Asset path of an SVG watermark; a missing asset is ignored.
   final String watermarkAssetPath;
 
   @override
@@ -592,7 +746,12 @@ class _KChartWidgetState extends State<KChartWidget>
                 ),
               ),
             ),
-            if (kIsWeb || !Platform.isIOS || !Platform.isAndroid)
+            // Touch platforms pinch to zoom; everything else gets the
+            // slider. (`!isIOS || !isAndroid` was always true, so the slider
+            // used to render on mobile too.)
+            if (kIsWeb ||
+                (defaultTargetPlatform != TargetPlatform.iOS &&
+                    defaultTargetPlatform != TargetPlatform.android))
               _buildScaleX(),
           ],
         );

@@ -14,3 +14,6 @@
   customisation; `DepthChartStyle`, `DepthChartColors` and
   `DepthChartTranslations` for the depth chart.
 - `DataUtil.calculate` computes every indicator in place over a candle list.
+- Runs on iOS, Android, web, Windows, macOS and Linux. The zoom slider now
+  appears only where there is no pinch gesture — web and desktop — where
+  before a always-true platform check rendered it on mobile as well.

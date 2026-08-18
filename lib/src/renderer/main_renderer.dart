@@ -4,7 +4,14 @@ import '../entity/candle_entity.dart';
 import '../k_chart_widget.dart' show MainState;
 import 'base_chart_renderer.dart';
 
-enum VerticalTextAlignment { left, right }
+/// Which side of the main chart the price axis labels sit on.
+enum VerticalTextAlignment {
+  /// Labels are drawn against the left edge.
+  left,
+
+  /// Labels are drawn against the right edge.
+  right,
+}
 
 //For TrendLine
 double? trendLineMax;
