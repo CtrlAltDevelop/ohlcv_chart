@@ -82,14 +82,14 @@ abstract class BaseChartPainter extends CustomPainter {
   int mGridColumns = 4;
   int mStartIndex = 0;
   int mStopIndex = 0;
-  double mMainMaxValue = double.minPositive;
+  double mMainMaxValue = -double.maxFinite;
   double mMainMinValue = double.maxFinite;
-  double mVolMaxValue = double.minPositive;
+  double mVolMaxValue = -double.maxFinite;
   double mVolMinValue = double.maxFinite;
   double mTranslateX = double.minPositive;
   int mMainMaxIndex = 0;
   int mMainMinIndex = 0;
-  double mMainHighMaxValue = double.minPositive;
+  double mMainHighMaxValue = -double.maxFinite;
   double mMainLowMinValue = double.maxFinite;
   int mItemCount = 0;
   double mDataLen = 0.0; // the data occupies the total length of the screen
@@ -259,6 +259,9 @@ abstract class BaseChartPainter extends CustomPainter {
         getSecondaryMaxMinValue(idx, item);
       }
     }
+    for (final rect in mSecondaryRectList) {
+      rect.normalize();
+    }
   }
 
   /// compute maximum and minimum value
@@ -298,7 +301,7 @@ abstract class BaseChartPainter extends CustomPainter {
 
   // find maximum of the MA
   double _findMaxMA(List<double> a) {
-    double result = double.minPositive;
+    double result = -double.maxFinite;
     for (final i in a) {
       result = max(result, i);
     }
@@ -459,6 +462,18 @@ class RenderRect {
   RenderRect(this.mRect);
 
   Rect mRect;
-  double mMaxValue = double.minPositive;
+  double mMaxValue = -double.maxFinite;
   double mMinValue = double.maxFinite;
+
+  /// True once at least one value has been folded in.
+  bool get hasValues => mMaxValue >= mMinValue;
+
+  /// Collapses an untouched rect to a flat 0..0 range so painters never see
+  /// the infinite seed values.
+  void normalize() {
+    if (!hasValues) {
+      mMaxValue = 0;
+      mMinValue = 0;
+    }
+  }
 }
