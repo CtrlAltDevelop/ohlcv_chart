@@ -1,7 +1,9 @@
-# k_chart_pro
+# ohlcv_chart
 
 A candlestick (K-line) and market-depth chart for Flutter, drawn entirely with
 `CustomPainter` — no WebView, no JavaScript bridge.
+
+Named for the open-high-low-close-volume bars it renders.
 
 ## Features
 
@@ -20,7 +22,7 @@ A candlestick (K-line) and market-depth chart for Flutter, drawn entirely with
 
 ```yaml
 dependencies:
-  k_chart_pro: ^1.0.0
+  ohlcv_chart: ^1.0.0
 ```
 
 ## Usage
@@ -31,7 +33,7 @@ Feed it a `List<KLineEntity>`. Indicator values are computed in place by
 `DataUtil.calculate` before the first paint, and again whenever new candles arrive:
 
 ```dart
-import 'package:k_chart_pro/k_chart_pro.dart';
+import 'package:ohlcv_chart/ohlcv_chart.dart';
 
 DataUtil.calculate(candles);
 

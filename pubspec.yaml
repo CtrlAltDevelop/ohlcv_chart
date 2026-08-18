@@ -1,12 +1,12 @@
-name: k_chart_pro
+name: ohlcv_chart
 description: >-
   A candlestick (K-line) and market-depth chart for Flutter with MA/BOLL/SAR
   overlays, MACD/KDJ/RSI/WR/CCI sub-charts, buy-sell signals and interactive
   trend, horizontal and vertical drawing tools.
 version: 1.0.0
 homepage: https://github.com/CtrlAltDevelop
-repository: https://github.com/CtrlAltDevelop/k_chart_pro
-issue_tracker: https://github.com/CtrlAltDevelop/k_chart_pro/issues
+repository: https://github.com/CtrlAltDevelop/ohlcv_chart
+issue_tracker: https://github.com/CtrlAltDevelop/ohlcv_chart/issues
 
 topics:
   - chart
