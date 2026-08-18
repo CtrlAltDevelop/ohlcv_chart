@@ -339,10 +339,18 @@ class _KChartWidgetState extends State<KChartWidget>
     super.initState();
     _editPanelOffset = const Offset(16, 40);
     _loadWatermark();
+    _syncCountdownTimer();
+  }
+
+  /// Runs the one-second repaint only while the now-price countdown is shown.
+  void _syncCountdownTimer() {
     if (widget.showNowPrice) {
-      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _countdownTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
       });
+    } else {
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
     }
   }
 
@@ -365,12 +373,14 @@ class _KChartWidgetState extends State<KChartWidget>
     if (oldWidget.watermarkAssetPath != widget.watermarkAssetPath) {
       _loadWatermark();
     }
+    if (oldWidget.showNowPrice != widget.showNowPrice) {
+      _syncCountdownTimer();
+    }
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
-    mInfoWindowStream.sink.close();
     mInfoWindowStream.close();
     _controller?.dispose();
     super.dispose();
