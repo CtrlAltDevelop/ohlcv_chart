@@ -1,0 +1,31 @@
+name: k_chart_pro
+description: >-
+  A candlestick (K-line) and market-depth chart for Flutter with MA/BOLL/SAR
+  overlays, MACD/KDJ/RSI/WR/CCI sub-charts, buy-sell signals and interactive
+  trend, horizontal and vertical drawing tools.
+version: 1.0.0
+homepage: https://github.com/CtrlAltDevelop
+repository: https://github.com/CtrlAltDevelop/k_chart_pro
+issue_tracker: https://github.com/CtrlAltDevelop/k_chart_pro/issues
+
+topics:
+  - chart
+  - candlestick
+  - trading
+  - finance
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  decimal: ^3.2.4
+  flutter_svg: ^2.2.3
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter

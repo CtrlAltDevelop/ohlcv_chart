@@ -1,0 +1,22 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - example/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+
+linter:
+  rules:
+    # The indicator and time-format identifiers (MA, BOLL, SAR, MACD, KDJ, RSI,
+    # WR, CCI, YEAR_MONTH_DAY, …) are the conventional upper-case names used
+    # across trading platforms and are part of this package's public API.
+    constant_identifier_names: false
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options

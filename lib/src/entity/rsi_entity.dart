@@ -1,0 +1,3 @@
+mixin RSIEntity {
+  double? rsi;
+}
