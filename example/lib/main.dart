@@ -128,8 +128,7 @@ class _ChartPageState extends State<ChartPage> {
                         : _secondaryStates.add(state);
                   }),
                   onToolChanged: (tool) => setState(() => _tool = tool),
-                  onLineModeChanged: (value) =>
-                      setState(() => _isLine = value),
+                  onLineModeChanged: (value) => setState(() => _isLine = value),
                 ),
               ],
             ),

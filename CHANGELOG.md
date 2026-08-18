@@ -17,3 +17,16 @@
 - Runs on iOS, Android, web, Windows, macOS and Linux. The zoom slider now
   appears only where there is no pinch gesture — web and desktop — where
   before a always-true platform check rendered it on mobile as well.
+
+Fixed while extracting the module:
+
+- `DataUtil.calculate` no longer throws on an empty candle list, so the chart
+  can be built before the first candles arrive.
+- Secondary charts scale to their true maximum when an indicator stays below
+  zero. `MACD` and `CCI` in a sustained decline previously scaled against zero,
+  because the running maximum was seeded with `double.minPositive` — a tiny
+  positive number rather than a lower bound.
+- `SAR` resets its acceleration factor identically on both trend reversals;
+  the up-to-down reversal previously restarted one step too fast.
+- The "now price" countdown timer starts and stops when `showNowPrice` changes,
+  instead of only being read once when the chart is first built.
