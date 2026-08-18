@@ -16,6 +16,8 @@ class DataUtil {
     int n = 20,
     int k = 2,
   ]) {
+    if (dataList.isEmpty) return;
+
     /// calculate main state
     calcMA(dataList, maDayList);
     calcBOLL(dataList, n, k);
@@ -82,8 +84,10 @@ class DataUtil {
         final lowMin = min(dataList[max(1, i) - 1].low, low);
         if (sar > dataList[i].low) {
           sar = ep;
-          // Reinitialize parameters
-          af = startAf;
+          // Reinitialize parameters. The AF is cleared rather than set to
+          // startAf because the first bar of the new trend re-seeds `ep` and
+          // bumps the AF by one `step`, which lands it back on startAf.
+          af = 0;
           ep = -100;
           isIncreasing = !isIncreasing;
         } else if (sar > lowMin) {
@@ -236,6 +240,7 @@ class DataUtil {
   }
 
   static void calcKDJ(List<KLineEntity> dataList) {
+    if (dataList.isEmpty) return;
     var preK = 50.0;
     var preD = 50.0;
     final tmp = dataList.first;
@@ -278,7 +283,7 @@ class DataUtil {
       if (startIndex < 0) {
         startIndex = 0;
       }
-      double max14 = double.minPositive;
+      double max14 = -double.maxFinite;
       double min14 = double.maxFinite;
       for (int index = startIndex; index <= i; index++) {
         max14 = max(max14, dataList[index].high);
