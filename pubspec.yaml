@@ -14,12 +14,13 @@ topics:
   - trading
   - finance
 
-# Shown on the pub.dev listing. Drop the images in screenshots/ and uncomment.
-# Up to 10 entries; png, jpg, gif or webp; 4 MiB each at most.
-# screenshots:
-#   - description: >-
-#       REPLACE ME
-#     path: screenshots/REPLACE_ME.png
+# Shown on the pub.dev listing. Up to 10 entries; png, jpg, gif or webp;
+# 4 MiB each at most. Regenerate them with example/tool/screenshots.dart.
+screenshots:
+  - description: >-
+      A candlestick chart with three moving averages, take-profit and
+      stop-loss markers, the volume pane and a MACD sub-chart.
+    path: screenshots/candles.png
 
 environment:
   sdk: ^3.13.0
