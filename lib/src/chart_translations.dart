@@ -1,3 +1,5 @@
+import 'drawing/drawing_translations.dart';
+
 /// Every piece of text the candlestick chart shows.
 ///
 /// Build one from your own localisations to translate the chart:
@@ -18,6 +20,7 @@ class ChartTranslations {
     this.changeLive = 'Change% Live',
     this.amount = 'Amount',
     this.vol = 'Volume',
+    this.drawing = const DrawingTranslations(),
   });
 
   final String date;
@@ -30,4 +33,7 @@ class ChartTranslations {
   final String changeLive;
   final String amount;
   final String vol;
+
+  /// Text shown by the drawing tools' editing toolbar.
+  final DrawingTranslations drawing;
 }

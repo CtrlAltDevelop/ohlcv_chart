@@ -13,6 +13,7 @@ class VerticalLine extends ChartLine {
     super.color = const Color(0xFFFFFF00),
     super.thickness = 2.0,
     super.locked = false,
+    super.style,
     super.isDashed = false,
     super.showLabel = false,
   });

@@ -59,6 +59,9 @@ class DepthChartStyle {
     this.padding = 6.0,
     this.dotRadius = 5.0,
     this.crossWidth = 0.5,
+    this.barWidthFactor = 0.7,
+    this.ladderRowHeight = 22,
+    this.ladderFontSize = 11,
   });
 
   final double lineWidth;
@@ -71,4 +74,13 @@ class DepthChartStyle {
   final double dotRadius;
 
   final double crossWidth;
+
+  /// How much of each level's slot a histogram bar fills, from 0 to 1.
+  final double barWidthFactor;
+
+  /// Height of one row of the ladder.
+  final double ladderRowHeight;
+
+  /// Text size used by the ladder.
+  final double ladderFontSize;
 }

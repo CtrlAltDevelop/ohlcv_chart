@@ -5,7 +5,7 @@ import 'package:flutter/material.dart'
 
 import '../chart_style.dart' show ChartStyle;
 import '../entity/k_line_entity.dart';
-import '../k_chart_widget.dart';
+import '../indicators/resolved_indicator.dart';
 import '../utils/date_format_util.dart';
 import 'base_dimension.dart';
 
@@ -26,10 +26,11 @@ abstract class BaseChartPainter extends CustomPainter {
     required this.baseDimension,
     this.candles,
     this.isOnTap = false,
-    this.mainStateLi = const <MainState>{},
+    this.suppressCrosshair = false,
+    this.overlays = const <ResolvedIndicator>[],
+    this.panes = const <ResolvedIndicator>[],
     this.volHidden = false,
     this.isTapShowInfoDialog = false,
-    this.secondaryStateLi = const <SecondaryState>{},
     this.isLine = false,
   }) {
     mItemCount = candles?.length ?? 0;
@@ -46,9 +47,11 @@ abstract class BaseChartPainter extends CustomPainter {
   static double maxScrollX = 0.0;
   List<KLineEntity>? candles; // data of chart
 
-  Set<MainState> mainStateLi; //MainState mainState;
+  /// Indicators drawn over the candles, with their values.
+  List<ResolvedIndicator> overlays;
 
-  Set<SecondaryState> secondaryStateLi;
+  /// Indicators drawn in their own panes, with their values.
+  List<ResolvedIndicator> panes;
 
   bool volHidden;
   bool isTapShowInfoDialog;
@@ -57,6 +60,14 @@ abstract class BaseChartPainter extends CustomPainter {
   double selectX;
   bool isLongPress = false;
   bool isOnTap;
+
+  /// Hides the crosshair and its readout while the user is placing or dragging
+  /// a line, so the two do not fight for the same gesture.
+  bool suppressCrosshair;
+
+  /// Whether the crosshair, its labels and the info window are showing.
+  bool get showCrosshair =>
+      !suppressCrosshair && (isLongPress || (isTapShowInfoDialog && isOnTap));
   bool isLine;
 
   late Rect mMainLabelRect;
@@ -159,7 +170,7 @@ abstract class BaseChartPainter extends CustomPainter {
       drawNowPrice(canvas);
       drawMaxAndMin(canvas);
       drawSignals(canvas);
-      if (isLongPress == true || (isTapShowInfoDialog && isOnTap)) {
+      if (showCrosshair) {
         drawCrossLineText(canvas, size);
       }
     }
@@ -203,16 +214,30 @@ abstract class BaseChartPainter extends CustomPainter {
 
   void drawWatermarkLogo(Canvas canvas, Size size);
 
-  void drawVerticalTimeLines(Canvas canvas, Size size);
+  /// Smallest the candle area may become before the panes below it give way.
+  static const double minMainHeight = 60.0;
 
   /// init the rectangle box to draw chart
   void initRect(Size size) {
-    final volHeight = baseDimension.mVolumeHeight;
-    final secondaryHeight = baseDimension.mSecondaryHeight;
+    var volHeight = baseDimension.mVolumeHeight;
+    var secondaryHeight = baseDimension.mSecondaryHeight;
+    var totalSecondaryHeight = baseDimension.totalSecondaryHeight;
 
-    double mainHeight = mDisplayHeight;
-    mainHeight -= volHeight;
-    mainHeight -= baseDimension.totalSecondaryHeight;
+    double mainHeight = mDisplayHeight - volHeight - totalSecondaryHeight;
+
+    // In a box shorter than the panes ask for, shrink the panes instead of
+    // letting the candle area collapse and the panes overlap it.
+    if (mainHeight < minMainHeight) {
+      final requested = volHeight + totalSecondaryHeight;
+      final room = max(mDisplayHeight - minMainHeight, 0.0);
+      final factor = requested <= 0
+          ? 0.0
+          : (room / requested).clamp(0.0, 1.0).toDouble();
+      volHeight *= factor;
+      secondaryHeight *= factor;
+      totalSecondaryHeight *= factor;
+      mainHeight = max(mDisplayHeight - room, 0.0);
+    }
 
     mMainRect = Rect.fromLTRB(0, mTopPadding, mWidth, mTopPadding + mainHeight);
 
@@ -226,7 +251,7 @@ abstract class BaseChartPainter extends CustomPainter {
     }
 
     mSecondaryRectList.clear();
-    for (int i = 0; i < secondaryStateLi.length; ++i) {
+    for (int i = 0; i < panes.length; ++i) {
       mSecondaryRectList.add(
         RenderRect(
           Rect.fromLTRB(
@@ -255,11 +280,36 @@ abstract class BaseChartPainter extends CustomPainter {
       final item = candles![i];
       getMainMaxMinValue(item, i);
       getVolMaxMinValue(item);
-      for (int idx = 0; idx < mSecondaryRectList.length; ++idx) {
-        getSecondaryMaxMinValue(idx, item);
-      }
     }
-    for (final rect in mSecondaryRectList) {
+    calculatePaneRanges();
+  }
+
+  /// Fits each pane's scale to the values it has to draw.
+  void calculatePaneRanges() {
+    for (int index = 0; index < mSecondaryRectList.length; ++index) {
+      if (index >= panes.length) break;
+      final rect = mSecondaryRectList[index];
+      final resolved = panes[index];
+
+      final fixed = resolved.indicator.fixedRange;
+      if (fixed != null) {
+        rect.mMinValue = fixed.$1;
+        rect.mMaxValue = fixed.$2;
+        continue;
+      }
+
+      if (resolved.indicator.includeZero) {
+        rect.mMaxValue = max(rect.mMaxValue, 0);
+        rect.mMinValue = min(rect.mMinValue, 0);
+      }
+      for (int line = 0; line < resolved.series.lines.length; ++line) {
+        for (int i = mStartIndex; i <= mStopIndex; i++) {
+          final value = resolved.valueAt(line, i);
+          if (value == null || !value.isFinite) continue;
+          rect.mMaxValue = max(rect.mMaxValue, value);
+          rect.mMinValue = min(rect.mMinValue, value);
+        }
+      }
       rect.normalize();
     }
   }
@@ -268,16 +318,15 @@ abstract class BaseChartPainter extends CustomPainter {
   void getMainMaxMinValue(KLineEntity item, int i) {
     double maxPrice = item.high;
     double minPrice = item.low;
-    for (int i = 0; i < mainStateLi.length; ++i) {
-      if (mainStateLi.elementAt(i) == MainState.MA) {
-        maxPrice = max(maxPrice, _findMaxMA(item.maValueList ?? [0]));
-        minPrice = min(minPrice, _findMinMA(item.maValueList ?? [0]));
-      } else if (mainStateLi.elementAt(i) == MainState.BOLL) {
-        maxPrice = max(maxPrice, item.up ?? 0);
-        minPrice = min(minPrice, item.dn ?? 0);
-      } else if (mainStateLi.elementAt(i) == MainState.SAR) {
-        maxPrice = max(maxPrice, item.sar ?? 0);
-        minPrice = min(minPrice, item.sar ?? 0);
+
+    // An overlay may sit outside the candles it is drawn over — a long average
+    // lags, a band steps outside — so the price scale has to hold it too.
+    for (final overlay in overlays) {
+      for (int line = 0; line < overlay.series.lines.length; ++line) {
+        final value = overlay.valueAt(line, i);
+        if (value == null || !value.isFinite) continue;
+        maxPrice = max(maxPrice, value);
+        minPrice = min(minPrice, value);
       }
     }
 
@@ -299,24 +348,6 @@ abstract class BaseChartPainter extends CustomPainter {
     }
   }
 
-  // find maximum of the MA
-  double _findMaxMA(List<double> a) {
-    double result = -double.maxFinite;
-    for (final i in a) {
-      result = max(result, i);
-    }
-    return result;
-  }
-
-  // find minimum of the MA
-  double _findMinMA(List<double> a) {
-    double result = double.maxFinite;
-    for (final i in a) {
-      result = min(result, i == 0 ? double.maxFinite : i);
-    }
-    return result;
-  }
-
   // get the maximum and minimum of the Vol value
   void getVolMaxMinValue(KLineEntity item) {
     mVolMaxValue = max(
@@ -327,59 +358,6 @@ abstract class BaseChartPainter extends CustomPainter {
       mVolMinValue,
       min(item.vol, min(item.ma5Volume ?? 0, item.ma10Volume ?? 0)),
     );
-  }
-
-  void getSecondaryMaxMinValue(int index, KLineEntity item) {
-    final secondaryState = secondaryStateLi.elementAt(index);
-    switch (secondaryState) {
-      case SecondaryState.MACD:
-        if (item.macd != null) {
-          mSecondaryRectList[index].mMaxValue = max(
-            mSecondaryRectList[index].mMaxValue,
-            max(item.macd!, max(item.dif!, item.dea!)),
-          );
-          mSecondaryRectList[index].mMinValue = min(
-            mSecondaryRectList[index].mMinValue,
-            min(item.macd!, min(item.dif!, item.dea!)),
-          );
-        }
-      case SecondaryState.KDJ:
-        if (item.d != null) {
-          mSecondaryRectList[index].mMaxValue = max(
-            mSecondaryRectList[index].mMaxValue,
-            max(item.k!, max(item.d!, item.j!)),
-          );
-          mSecondaryRectList[index].mMinValue = min(
-            mSecondaryRectList[index].mMinValue,
-            min(item.k!, min(item.d!, item.j!)),
-          );
-        }
-      case SecondaryState.RSI:
-        if (item.rsi != null) {
-          mSecondaryRectList[index].mMaxValue = max(
-            mSecondaryRectList[index].mMaxValue,
-            item.rsi!,
-          );
-          mSecondaryRectList[index].mMinValue = min(
-            mSecondaryRectList[index].mMinValue,
-            item.rsi!,
-          );
-        }
-      case SecondaryState.WR:
-        mSecondaryRectList[index].mMaxValue = 0;
-        mSecondaryRectList[index].mMinValue = -100;
-      case SecondaryState.CCI:
-        if (item.cci != null) {
-          mSecondaryRectList[index].mMaxValue = max(
-            mSecondaryRectList[index].mMaxValue,
-            item.cci!,
-          );
-          mSecondaryRectList[index].mMinValue = min(
-            mSecondaryRectList[index].mMinValue,
-            item.cci!,
-          );
-        }
-    }
   }
 
   // translate x

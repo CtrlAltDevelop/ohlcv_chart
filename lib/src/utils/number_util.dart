@@ -2,23 +2,27 @@ import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
 
 class NumberUtil {
+  /// Abbreviates [value] with a K, M or B suffix once it grows past 10,000.
+  ///
+  /// Handles negatives, which on-balance volume runs into.
   static String formatCompact(double value, [int precision = 2]) {
-    double n = value;
+    final sign = value.isNegative ? '-' : '';
+    double n = value.abs();
     try {
       if (n >= 1e9) {
         n /= 1e9;
-        return '${n.toStringAsFixed(precision)}B';
+        return '$sign${n.toStringAsFixed(precision)}B';
       } else if (n >= 1e6) {
         n /= 1e6;
-        return '${n.toStringAsFixed(precision)}M';
+        return '$sign${n.toStringAsFixed(precision)}M';
       } else if (n >= 1e4) {
         n /= 1e3;
-        return '${n.toStringAsFixed(precision)}K';
+        return '$sign${n.toStringAsFixed(precision)}K';
       } else {
-        return n.toStringAsFixed(precision);
+        return '$sign${n.toStringAsFixed(precision)}';
       }
     } catch (e) {
-      return n.toString();
+      return value.toString();
     }
   }
 

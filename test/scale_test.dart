@@ -20,7 +20,7 @@ class _ProbePainter extends BaseChartPainter {
     required super.isLongPress,
     required super.selectX,
     required super.xFrontPadding,
-    super.secondaryStateLi,
+    super.panes,
   });
 
   @override
@@ -49,15 +49,11 @@ class _ProbePainter extends BaseChartPainter {
   void drawSignals(Canvas canvas) {}
   @override
   void drawWatermarkLogo(Canvas canvas, Size size) {}
-  @override
-  void drawVerticalTimeLines(Canvas canvas, Size size) {}
 }
 
-/// Paints [data] with [secondary] enabled and returns the computed rects.
-List<RenderRect> boundsFor(
-  List<KLineEntity> data,
-  Set<SecondaryState> secondary,
-) {
+/// Paints [data] with [indicators] enabled and returns the computed rects.
+List<RenderRect> boundsFor(List<KLineEntity> data, List<Indicator> indicators) {
+  final resolved = resolveIndicators(indicators, data);
   final painter = _ProbePainter(
     const ChartStyle(),
     candles: data,
@@ -66,12 +62,12 @@ List<RenderRect> boundsFor(
     isLongPress: false,
     selectX: 0,
     xFrontPadding: 80,
-    secondaryStateLi: secondary,
+    panes: resolved.panes,
     baseDimension: BaseDimension(
       mBaseHeight: 360,
       volHidden: false,
-      secondaryStateLi: secondary,
-      mainStateLi: const {},
+      paneCount: resolved.panes.length,
+      legendRowCount: resolved.legendRowCount,
     ),
   );
 
@@ -85,6 +81,7 @@ List<RenderRect> boundsFor(
 /// EMA-seeded series is exactly zero, so tests that need an all-negative
 /// window must confirm it fell outside the visible range.
 List<KLineEntity> visibleSlice(List<KLineEntity> data) {
+  final resolved = resolveIndicators([MacdIndicator()], data);
   final painter = _ProbePainter(
     const ChartStyle(),
     candles: data,
@@ -93,12 +90,12 @@ List<KLineEntity> visibleSlice(List<KLineEntity> data) {
     isLongPress: false,
     selectX: 0,
     xFrontPadding: 80,
-    secondaryStateLi: const {SecondaryState.MACD},
+    panes: resolved.panes,
     baseDimension: BaseDimension(
       mBaseHeight: 360,
       volHidden: false,
-      secondaryStateLi: const {SecondaryState.MACD},
-      mainStateLi: const {},
+      paneCount: resolved.panes.length,
+      legendRowCount: resolved.legendRowCount,
     ),
   );
   final recorder = PictureRecorder();
@@ -109,7 +106,7 @@ List<KLineEntity> visibleSlice(List<KLineEntity> data) {
 
 void main() {
   group('sub-chart vertical range', () {
-    test('tracks the true maximum when MACD never rises above zero', () {
+    test('brackets an all-negative MACD against its zero baseline', () {
       // Long enough that the zero-valued first candle scrolls out of view.
       final data = candles([for (var i = 0; i < 400; i++) 900.0 - i * 2]);
       DataUtil.calculate(data);
@@ -119,21 +116,24 @@ void main() {
       final trueMax = visible
           .map((e) => math.max(e.macd!, math.max(e.dif!, e.dea!)))
           .reduce(math.max);
+      final trueMin = visible
+          .map((e) => math.min(e.macd!, math.min(e.dif!, e.dea!)))
+          .reduce(math.min);
       expect(trueMax, lessThan(0), reason: 'the whole series is negative');
 
-      final rect = boundsFor(data, {SecondaryState.MACD}).single;
+      final rect = boundsFor(data, [MacdIndicator()]).single;
 
-      // Before the fix the seed (double.minPositive, ~5e-324) survived as the
-      // maximum, so the range topped out at zero instead of the real peak.
-      expect(rect.mMaxValue, lessThan(0));
-      expect(rect.mMaxValue, closeTo(trueMax, 1e-9));
+      // The histogram grows from zero, so the pane keeps zero in range even
+      // when every value is below it — but the seed must not push it higher.
+      expect(rect.mMaxValue, 0);
+      expect(rect.mMinValue, closeTo(trueMin, 1e-9));
     });
 
     test('tracks the true maximum when CCI never rises above zero', () {
       final data = candles([for (var i = 0; i < 400; i++) 900.0 - i * 2]);
       DataUtil.calculate(data);
 
-      final rect = boundsFor(data, {SecondaryState.CCI}).single;
+      final rect = boundsFor(data, [CciIndicator()]).single;
       expect(rect.mMaxValue, lessThan(0));
       expect(rect.mMaxValue.isFinite, isTrue);
     });
@@ -142,7 +142,7 @@ void main() {
       final data = candles(rampThenFall(60));
       DataUtil.calculate(data);
 
-      final rect = boundsFor(data, {SecondaryState.MACD}).single;
+      final rect = boundsFor(data, [MacdIndicator()]).single;
       expect(rect.mMaxValue, greaterThan(rect.mMinValue));
       expect(rect.mMaxValue.isFinite, isTrue);
       expect(rect.mMinValue.isFinite, isTrue);
@@ -154,7 +154,7 @@ void main() {
       final data = candles([100]);
       DataUtil.calculate(data);
 
-      for (final rect in boundsFor(data, {SecondaryState.CCI})) {
+      for (final rect in boundsFor(data, [CciIndicator()])) {
         expect(rect.mMaxValue.isFinite, isTrue);
         expect(rect.mMinValue.isFinite, isTrue);
       }

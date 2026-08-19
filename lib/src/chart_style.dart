@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Color;
+import 'package:flutter/material.dart' show Alignment, Color;
 
 /// ChartColors
 ///
@@ -35,6 +35,28 @@ class ChartColors {
     this.dColor = const Color(0xff1FD1AC),
     this.jColor = const Color(0xffB48CE3),
     this.rsiColor = const Color(0xffE5B767),
+    this.vwapColor = const Color(0xFF7E57C2),
+    this.atrColor = const Color(0xff2f8fd5),
+    this.obvColor = const Color(0xff1FD1AC),
+    this.mfiColor = const Color(0xffE5B767),
+    this.pdiColor = const Color(0xFF14AD8F),
+    this.mdiColor = const Color(0xFFD5405D),
+    this.adxColor = const Color(0xffE5B767),
+    this.keltnerColor = const Color(0xff2f8fd5),
+    this.donchianColor = const Color(0xffB48CE3),
+    this.conversionColor = const Color(0xff2f8fd5),
+    this.baseColor = const Color(0xffD5405D),
+    this.spanAColor = const Color(0xff14AD8F),
+    this.spanBColor = const Color(0xffE5B767),
+    this.laggingColor = const Color(0xffB48CE3),
+    this.stochRsiColor = const Color(0xffE5B767),
+    this.rocColor = const Color(0xff2f8fd5),
+    this.trixColor = const Color(0xff1FD1AC),
+    this.volumeMaColor = const Color(0xffE5B767),
+    this.awesomeColor = const Color(0xff2f8fd5),
+    this.zigzagColor = const Color(0xffB48CE3),
+    this.fibonacciColor = const Color(0xffE5B767),
+    this.waveColor = const Color(0xff7E57C2),
     this.defaultTextColor = const Color(0xFF909196),
     this.nowPriceUpColor = const Color(0xFF14AD8F),
     this.nowPriceDnColor = const Color(0xFFD5405D),
@@ -66,6 +88,18 @@ class ChartColors {
     ///The color of the maximum and minimum values in the current display
     this.maxColor = const Color(0xFF222223),
     this.minColor = const Color(0xFF222223),
+
+    ///line between the main chart and each pane below it
+    this.separatorColor,
+
+    ///pill painted behind the price axis labels; null derives it from bgColor
+    this.axisLabelBgColor,
+
+    ///pill painted behind the indicator legends; null derives it from bgColor
+    this.legendBgColor,
+
+    ///tint of the watermark; null derives it from defaultTextColor
+    this.watermarkColor,
   });
 
   /// the background color of base chart
@@ -95,6 +129,72 @@ class ChartColors {
   Color dColor;
   Color jColor;
   Color rsiColor;
+
+  /// Volume-weighted average price line on the main chart.
+  Color vwapColor;
+
+  /// Average true range line.
+  Color atrColor;
+
+  /// On-balance volume line.
+  Color obvColor;
+
+  /// Money flow index line.
+  Color mfiColor;
+
+  /// Positive directional indicator line.
+  Color pdiColor;
+
+  /// Negative directional indicator line.
+  Color mdiColor;
+
+  /// Average directional index line.
+  Color adxColor;
+
+  /// Keltner channel bands; the midline uses the moving-average palette.
+  Color keltnerColor;
+
+  /// Donchian channel bands.
+  Color donchianColor;
+
+  /// Ichimoku conversion line (tenkan-sen).
+  Color conversionColor;
+
+  /// Ichimoku base line (kijun-sen).
+  Color baseColor;
+
+  /// Ichimoku leading span A.
+  Color spanAColor;
+
+  /// Ichimoku leading span B.
+  Color spanBColor;
+
+  /// Ichimoku lagging span (chikou).
+  Color laggingColor;
+
+  /// Stochastic RSI %K line; %D takes the [dColor] of the KDJ palette.
+  Color stochRsiColor;
+
+  /// Rate-of-change line.
+  Color rocColor;
+
+  /// TRIX line; its signal takes [deaColor].
+  Color trixColor;
+
+  /// Moving average of volume.
+  Color volumeMaColor;
+
+  /// Awesome oscillator bars, where they are not coloured by direction.
+  Color awesomeColor;
+
+  /// Zigzag swing line.
+  Color zigzagColor;
+
+  /// Fibonacci retracement levels.
+  Color fibonacciColor;
+
+  /// Elliott wave labels.
+  Color waveColor;
 
   Color sarColor;
   Color avgColor;
@@ -138,6 +238,48 @@ class ChartColors {
   Color maxColor;
   Color minColor;
 
+  /// Line drawn between the main chart and each pane below it.
+  ///
+  /// Defaults to [gridColor] when null.
+  Color? separatorColor;
+
+  /// Fill of the pill painted behind the price axis labels.
+  ///
+  /// Defaults to a translucent [bgColor] when null, which keeps the labels
+  /// readable where they cross candles. Fully transparent removes the pill.
+  Color? axisLabelBgColor;
+
+  /// Fill of the pill painted behind the indicator legends.
+  ///
+  /// Defaults to a translucent [bgColor] when null.
+  Color? legendBgColor;
+
+  /// Tint of the SVG watermark.
+  ///
+  /// Defaults to a very faint [defaultTextColor] when null.
+  Color? watermarkColor;
+
+  /// [separatorColor], or [gridColor] if it was left null.
+  Color get effectiveSeparatorColor => separatorColor ?? gridColor;
+
+  /// [axisLabelBgColor], or a translucent [bgColor] if it was left null.
+  Color get effectiveAxisLabelBgColor =>
+      axisLabelBgColor ?? bgColor.withValues(alpha: 0.72);
+
+  /// [legendBgColor], or a translucent [bgColor] if it was left null.
+  Color get effectiveLegendBgColor =>
+      legendBgColor ?? bgColor.withValues(alpha: 0.82);
+
+  /// [watermarkColor], or a very faint [defaultTextColor] if it was left null.
+  Color get effectiveWatermarkColor =>
+      watermarkColor ?? defaultTextColor.withValues(alpha: 0.07);
+
+  /// Colour of the exponential moving average at [index].
+  ///
+  /// Shares the moving-average palette, so an `MA` and an `EMA` of the same
+  /// period are drawn in the same colour.
+  Color getEMAColor(int index) => getMAColor(index);
+
   /// get MA color via index
   Color getMAColor(int index) {
     switch (index % 3) {
@@ -164,13 +306,27 @@ class ChartStyle {
     this.candleLineWidth = 1.0,
     this.volWidth = 6,
     this.macdWidth = 1.5,
-    this.vCrossWidth = 0.2,
-    this.hCrossWidth = 0.2,
+    this.indicatorLineWidth = 1.0,
+    this.vCrossWidth = 0.8,
+    this.hCrossWidth = 0.8,
+    this.crossDashLength = 5.0,
+    this.crossDashGap = 4.0,
     this.nowPriceLineLength = 4.5,
     this.nowPriceLineSpan = 3.5,
     this.nowPriceLineWidth = 1,
+    this.nowPriceDashed = true,
     this.gridRows = 8,
     this.gridColumns = 4,
+    this.gridStrokeWidth = 0.5,
+    this.separatorWidth = 1.0,
+    this.hollowUpCandles = false,
+    this.axisLabelBackground = true,
+    this.axisLabelPadding = 4.0,
+    this.labelCornerRadius = 3.0,
+    this.legendPadding = 4.0,
+    this.legendSpacing = 2.0,
+    this.watermarkAlignment = Alignment.center,
+    this.watermarkScale = 0.36,
     this.dateTimeFormat,
   });
 
@@ -191,17 +347,60 @@ class ChartStyle {
   ///macd column width
   final double macdWidth;
 
+  /// Stroke width of an indicator's lines, in a pane or over the candles.
+  final double indicatorLineWidth;
+
   ///vertical-horizontal cross line width
   final double vCrossWidth;
   final double hCrossWidth;
+
+  /// Length of one dash of the crosshair.
+  final double crossDashLength;
+
+  /// Gap between the crosshair's dashes; 0 draws it solid.
+  final double crossDashGap;
 
   ///(line length - space line - thickness) of the current price
   final double nowPriceLineLength;
   final double nowPriceLineSpan;
   final double nowPriceLineWidth;
 
+  /// Draws the "now price" line dashed rather than solid.
+  final bool nowPriceDashed;
+
   final int gridRows;
   final int gridColumns;
+
+  /// Stroke width of the grid's hairlines.
+  final double gridStrokeWidth;
+
+  /// Stroke width of the line closing off each pane.
+  final double separatorWidth;
+
+  /// Draws rising candles as outlines rather than filled bodies.
+  final bool hollowUpCandles;
+
+  /// Paints a pill behind the price axis labels so they stay readable where
+  /// they cross the candles.
+  final bool axisLabelBackground;
+
+  /// Space between the chart edge and the price axis labels.
+  final double axisLabelPadding;
+
+  /// Corner radius of the axis label and legend pills.
+  final double labelCornerRadius;
+
+  /// Space between an indicator legend's pill and its text.
+  final double legendPadding;
+
+  /// Vertical gap between stacked indicator legends.
+  final double legendSpacing;
+
+  /// Where the watermark sits inside the main chart area.
+  final Alignment watermarkAlignment;
+
+  /// Watermark width as a fraction of the main chart's shorter side.
+  final double watermarkScale;
 
   ///customize the time below
   final List<String>? dateTimeFormat;

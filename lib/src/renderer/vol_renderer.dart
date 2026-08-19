@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../entity/volume_entity.dart';
@@ -21,6 +23,12 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
         topPadding: topPadding,
         fixedLength: fixedLength,
         gridColor: chartColors.gridColor,
+        separatorColor: chartColors.effectiveSeparatorColor,
+        gridStrokeWidth: chartStyle.gridStrokeWidth,
+        separatorWidth: chartStyle.separatorWidth,
+        labelCornerRadius: chartStyle.labelCornerRadius,
+        legendPadding: chartStyle.legendPadding,
+        legendBgColor: chartColors.effectiveLegendBgColor,
       ) {
     mVolWidth = chartStyle.volWidth;
   }
@@ -39,8 +47,8 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     Canvas canvas,
   ) {
     final r = mVolWidth / 2;
-    final top = getVolY(curPoint.vol);
     final bottom = chartRect.bottom;
+    final top = math.min(getVolY(curPoint.vol), bottom - 1);
     if (curPoint.vol != 0) {
       canvas.drawRect(
         Rect.fromLTRB(curX - r, top, curX + r, bottom),
@@ -110,7 +118,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
       textDirection: TextDirection.ltr,
     );
     tp.layout();
-    tp.paint(canvas, Offset(x, chartRect.top - topPadding));
+    paintLegend(canvas, tp, Offset(x, chartRect.top - topPadding));
   }
 
   @override
@@ -126,7 +134,10 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     tp.layout();
     tp.paint(
       canvas,
-      Offset(chartRect.width - tp.width, chartRect.top - topPadding),
+      Offset(
+        chartRect.width - tp.width - chartStyle.axisLabelPadding,
+        chartRect.top - topPadding,
+      ),
     );
   }
 
@@ -144,7 +155,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
       gridPaint,
     );
     final double columnSpace = chartRect.width / gridColumns;
-    for (int i = 0; i <= columnSpace; i++) {
+    for (int i = 0; i <= gridColumns; i++) {
       //vol vertical line
       canvas.drawLine(
         Offset(columnSpace * i, chartRect.top - topPadding),

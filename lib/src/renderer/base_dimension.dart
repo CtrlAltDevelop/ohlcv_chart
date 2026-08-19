@@ -1,23 +1,20 @@
-import '../k_chart_widget.dart';
-
-/// Base Dimension
+/// How tall each part of the chart is.
 class BaseDimension {
-  /// constructor
+  /// Works out the total height from the candle area and what sits below it.
   ///
-  /// BaseDimension
-  /// set _mBaseHeight
-  /// compute value of _mVolumeHeight, _mSecondaryHeight, _mDisplayHeight
+  /// [paneCount] is the number of indicator panes and [legendRowCount] the
+  /// number of legend rows reserved above the candles.
   BaseDimension({
     required double mBaseHeight,
     required bool volHidden,
-    required Set<SecondaryState> secondaryStateLi,
-    required Set<MainState> mainStateLi,
+    required int paneCount,
+    required int legendRowCount,
   }) {
     _mBaseHeight = mBaseHeight;
-    _mVolumeHeight = volHidden ? 0 : 60; // _mBaseHeight * 0.2
-    _mSecondaryHeight = 100; // _mBaseHeight * 0.2;
-    _totalSecondaryHeight = _mSecondaryHeight * secondaryStateLi.length;
-    _totalLabelHeight = _mLabelHeight * mainStateLi.length;
+    _mVolumeHeight = volHidden ? 0 : volumeHeight;
+    _mSecondaryHeight = secondaryPaneHeight;
+    _totalSecondaryHeight = _mSecondaryHeight * paneCount;
+    _totalLabelHeight = legendRowHeight * legendRowCount;
 
     _mDisplayHeight =
         _mBaseHeight +
@@ -25,6 +22,27 @@ class BaseDimension {
         _totalSecondaryHeight +
         _totalLabelHeight;
   }
+
+  /// Height given to the volume pane when it is shown.
+  static const double volumeHeight = 60;
+
+  /// Height given to each indicator pane.
+  static const double secondaryPaneHeight = 100;
+
+  /// Height reserved above the candles for one legend row.
+  static const double legendRowHeight = 12;
+
+  /// Total height everything except the candle area needs.
+  ///
+  /// Lets a caller work out how tall the candles can be inside a given box.
+  static double panesHeight({
+    required bool volHidden,
+    required int paneCount,
+    required int legendRowCount,
+  }) =>
+      (volHidden ? 0 : volumeHeight) +
+      secondaryPaneHeight * paneCount +
+      legendRowHeight * legendRowCount;
 
   // the height of base chart
   double _mBaseHeight = 380;
@@ -38,25 +56,27 @@ class BaseDimension {
   double _mSecondaryHeight = 0;
   double _totalSecondaryHeight = 0;
 
-  final _mLabelHeight = 12.0;
-  double _totalLabelHeight = 12;
+  double _totalLabelHeight = 0;
 
   // total height of chart: _mBaseHeight + _mVolumeHeight + (_mSecondaryHeight * n)
   // n : number of secondary charts
   double _mDisplayHeight = 0;
 
-  // getter the vol height
+  /// Height of the volume pane, or 0 when it is hidden.
   double get mVolumeHeight => _mVolumeHeight;
 
-  // getter the secondary height
+  /// Height of one indicator pane.
   double get mSecondaryHeight => _mSecondaryHeight;
 
+  /// Height of every indicator pane together.
   double get totalSecondaryHeight => _totalSecondaryHeight;
 
-  double get mLabelHeight => _mLabelHeight;
+  /// Height of one legend row.
+  double get mLabelHeight => legendRowHeight;
 
+  /// Height reserved for the legend rows above the candles.
   double get totalLabelHeight => _totalLabelHeight;
 
-  // getter the total height
+  /// Height of the whole chart.
   double get mDisplayHeight => _mDisplayHeight;
 }

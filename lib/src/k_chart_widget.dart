@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'chart_style.dart';
 import 'chart_translations.dart';
 import 'components/popup_info_view.dart';
+import 'drawing/drawing_style.dart';
+import 'drawing/drawing_toolbar.dart';
 import 'entity/horizontal_line.dart';
 import 'entity/info_window_entity.dart';
 import 'entity/k_line_entity.dart';
@@ -14,43 +17,13 @@ import 'entity/line.dart';
 import 'entity/signal_entity.dart';
 import 'entity/trend_line.dart';
 import 'entity/vertical_lines.dart';
+import 'indicators/indicator.dart';
+import 'indicators/resolved_indicator.dart';
 import 'renderer/base_chart_painter.dart';
 import 'renderer/base_dimension.dart';
 import 'renderer/chart_painter.dart';
 import 'renderer/main_renderer.dart';
 import 'utils/date_format_util.dart';
-
-/// An overlay drawn on top of the candles in the main chart area.
-enum MainState {
-  /// Moving averages, one line per period in `maDayList`.
-  MA,
-
-  /// Bollinger bands.
-  BOLL,
-
-  /// Parabolic SAR dots.
-  SAR,
-}
-
-/// An indicator rendered in its own pane below the main chart.
-///
-/// Every selected state gets its own stacked pane.
-enum SecondaryState {
-  /// Moving average convergence divergence, with histogram.
-  MACD,
-
-  /// Stochastic oscillator.
-  KDJ,
-
-  /// Relative strength index.
-  RSI,
-
-  /// Williams %R.
-  WR,
-
-  /// Commodity channel index.
-  CCI,
-}
 
 /// The drawing mode the chart is currently in.
 ///
@@ -110,8 +83,7 @@ class TimeFormat {
 ///   isTrendLine: false,
 ///   watermarkAssetPath: 'assets/logo.svg',
 ///   timeFrame: const Duration(minutes: 15),
-///   mainStateLi: const {MainState.MA},
-///   secondaryStateLi: const {SecondaryState.MACD},
+///   indicators: [MaIndicator(period: 20), MacdIndicator()],
 /// );
 /// ```
 class KChartWidget extends StatefulWidget {
@@ -127,8 +99,7 @@ class KChartWidget extends StatefulWidget {
     this.verticalLines = const <VerticalLine>[],
     this.horizontalLines = const <HorizontalLine>[],
     this.trendLines = const <TrendLine>[],
-    this.mainStateLi = const <MainState>{},
-    this.secondaryStateLi = const <SecondaryState>{},
+    this.indicators = const <Indicator>[],
     this.currentDrawingTool = DrawingTool.none,
     this.onAddTrendLine,
     this.onAddHorizontalLine,
@@ -144,19 +115,21 @@ class KChartWidget extends StatefulWidget {
     this.showInfoDialog = true,
     this.materialInfoDialog = true,
     this.chartStyle = const ChartStyle(),
+    this.drawingStyle = const DrawingStyle(),
     this.chartTranslations = const ChartTranslations(),
     this.timeFormat = TimeFormat.YEAR_MONTH_DAY,
     this.infoDialogBuilder,
     this.dateFormatter,
     this.onLoadMore,
     this.fixedLength = 2,
-    this.maDayList = const [5, 10, 20],
     this.flingTime = 600,
     this.flingRatio = 0.5,
     this.flingCurve = Curves.decelerate,
     this.isOnDrag,
     this.verticalTextAlignment = VerticalTextAlignment.left,
-    this.mBaseHeight = 360,
+    this.mBaseHeight,
+    this.infoDialogWidth = 132,
+    this.infoDialogMaxWidth = 240,
     super.key,
   });
 
@@ -175,11 +148,18 @@ class KChartWidget extends StatefulWidget {
   /// Trend lines to draw, typically restored from storage.
   final List<TrendLine> trendLines;
 
-  /// Overlays drawn on the main chart. Empty draws candles alone.
-  final Set<MainState> mainStateLi;
-
-  /// Indicators to stack below the main chart, one pane each.
-  final Set<SecondaryState> secondaryStateLi;
+  /// The indicators to draw, in the order they were added.
+  ///
+  /// Each entry is a configured instance, so the same kind may appear several
+  /// times with different settings — `AtrIndicator(period: 8)` and
+  /// `AtrIndicator(period: 20)` are two panes. Overlays such as
+  /// [MaIndicator] draw over the candles; the rest each take a pane below.
+  ///
+  /// Two instances of one kind with the same settings are equal whatever
+  /// colours they carry, and the chart keeps only the last of an equal pair.
+  /// That is what makes re-adding an indicator in a new colour an edit rather
+  /// than a duplicate; see `upsert` on the list.
+  final List<Indicator> indicators;
 
   /// The active drawing mode; see [DrawingTool].
   final DrawingTool currentDrawingTool;
@@ -229,8 +209,14 @@ class KChartWidget extends StatefulWidget {
   /// Date pattern for axis labels; see [TimeFormat].
   final List<String> timeFormat;
 
-  /// Height of the main chart area, before sub-chart panes are added.
-  final double mBaseHeight;
+  /// Height of the candle area, before the volume and indicator panes are
+  /// added below it.
+  ///
+  /// Left null — the default — the candles take whatever height is left in the
+  /// widget's box once those panes have had their share, so the whole stack
+  /// fits without being clipped. In a box of unbounded height, such as inside a
+  /// scroll view, it falls back to 360.
+  final double? mBaseHeight;
 
   /// Replaces the built-in long-press info dialog.
   ///
@@ -246,9 +232,6 @@ class KChartWidget extends StatefulWidget {
 
   /// Decimal places used for every price shown.
   final int fixedLength;
-
-  /// Moving-average periods, matching what [DataUtil.calculate] was given.
-  final List<int> maDayList;
 
   /// Duration of the fling animation, in milliseconds.
   final int flingTime;
@@ -268,6 +251,9 @@ class KChartWidget extends StatefulWidget {
   /// Geometry: paddings, stroke widths and text sizes.
   final ChartStyle chartStyle;
 
+  /// How the drawing tools look and what their editor offers.
+  final DrawingStyle drawingStyle;
+
   /// Which side the price axis labels sit on.
   final VerticalTextAlignment verticalTextAlignment;
 
@@ -282,6 +268,14 @@ class KChartWidget extends StatefulWidget {
 
   /// Asset path of an SVG watermark; a missing asset is ignored.
   final String watermarkAssetPath;
+
+  /// Narrowest the long-press info dialog may be.
+  final double infoDialogWidth;
+
+  /// Widest the long-press info dialog may grow before its rows ellipsise.
+  ///
+  /// Also capped by the chart's own width, so the dialog always fits.
+  final double infoDialogMaxWidth;
 
   @override
   State<KChartWidget> createState() => _KChartWidgetState();
@@ -310,7 +304,12 @@ class _KChartWidgetState extends State<KChartWidget>
   Timer? _countdownTimer;
 
   PictureInfo? _watermarkPicture;
-  Offset? _editPanelOffset;
+  late Offset _toolbarOffset;
+
+  /// Where the pointer was, and what the line looked like, when a drag on a
+  /// selected line began. Lets a trend line move as a whole.
+  ({int index, double price})? _dragStart;
+  ({int i1, double p1, int? i2, double? p2})? _dragOrigin;
 
   late ChartPainter painter;
   double _lastScale = 1.0;
@@ -321,25 +320,63 @@ class _KChartWidgetState extends State<KChartWidget>
   bool isDraggingHandle = false;
   int? draggingTrendEnd;
 
-  final List<Color> presetColors = [
-    Colors.yellow,
-    Colors.white,
-    Colors.black,
-    Colors.red,
-    Colors.green,
-    Colors.blue,
-    Colors.orange,
-    Colors.cyan,
-  ];
-
-  final List<double> presetThickness = [1.0, 2.0, 3.0, 4.0, 5.0];
-
   @override
   void initState() {
     super.initState();
-    _editPanelOffset = const Offset(16, 40);
+    _toolbarOffset = widget.drawingStyle.toolbarInitialOffset;
     _loadWatermark();
     _syncCountdownTimer();
+    _resolveIndicators();
+  }
+
+  /// The indicators, computed over the candles and split by where they draw.
+  ResolvedIndicators _resolved = ResolvedIndicators.empty;
+
+  /// What the last resolution was computed from, so a rebuild that changes
+  /// neither the candles nor the indicators reuses it.
+  ({int length, Object? last, DateTime? time})? _resolvedFrom;
+
+  /// The indicator instances the last resolution was computed from.
+  ///
+  /// Compared by identity rather than equality: two indicators of one kind with
+  /// the same settings are equal whatever colours they carry, and a recolour
+  /// still has to be redrawn.
+  List<Indicator> _resolvedIndicators = const [];
+
+  ({int length, Object? last, DateTime? time}) get _candleFingerprint {
+    final candles = widget.candles;
+    final last = candles == null || candles.isEmpty ? null : candles.last;
+    return (
+      length: candles?.length ?? 0,
+      last: last?.close,
+      time: last?.dateTime,
+    );
+  }
+
+  void _resolveIndicators() {
+    _resolved = resolveIndicators(widget.indicators, widget.candles);
+    _resolvedFrom = _candleFingerprint;
+    _resolvedIndicators = List<Indicator>.of(widget.indicators);
+  }
+
+  bool get _indicatorsAreStale {
+    final current = widget.indicators;
+    if (current.length != _resolvedIndicators.length) return true;
+    for (var i = 0; i < current.length; i++) {
+      if (!identical(current[i], _resolvedIndicators[i])) return true;
+    }
+    return false;
+  }
+
+  /// Recomputes the indicators when the candles or the indicators have moved on.
+  ///
+  /// Called from `build` because both lists are usually mutated in place — a
+  /// live feed appends candles, an "add indicator" button appends indicators —
+  /// which `didUpdateWidget` cannot see.
+  void _refreshIndicatorsIfStale() {
+    if (_resolvedFrom != _candleFingerprint || _indicatorsAreStale) {
+      _resolveIndicators();
+    }
   }
 
   /// Runs the one-second repaint only while the now-price countdown is shown.
@@ -376,6 +413,7 @@ class _KChartWidgetState extends State<KChartWidget>
     if (oldWidget.showNowPrice != widget.showNowPrice) {
       _syncCountdownTimer();
     }
+    if (!identical(oldWidget.candles, widget.candles)) _resolveIndicators();
   }
 
   @override
@@ -396,6 +434,8 @@ class _KChartWidgetState extends State<KChartWidget>
       selectedTrend = null;
       isDraggingHandle = false;
       draggingTrendEnd = null;
+      _dragStart = null;
+      _dragOrigin = null;
     });
   }
 
@@ -407,59 +447,61 @@ class _KChartWidgetState extends State<KChartWidget>
     _deselectAll();
   }
 
-  void _showColorPicker() {
-    final selected = _getSelectedLine();
-    if (selected == null) return;
+  /// Reports an edited line through the matching `onAdd*` callback, which is
+  /// where a host persists it.
+  void _notifyLineChanged(ChartLine line) {
+    switch (line) {
+      case HorizontalLine():
+        widget.onAddHorizontalLine?.call(line);
+      case VerticalLine():
+        widget.onAddVerticalLine?.call(line);
+      case TrendLine():
+        widget.onAddTrendLine?.call(line);
+    }
+  }
 
-    showDialog<void>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Select Color'),
-        children: presetColors
-            .map(
-              (color) => SimpleDialogOption(
-                onPressed: () {
-                  setState(() => selected.color = color);
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
+  void _notifySelectedChanged() {
+    final line = _getSelectedLine();
+    if (line != null) _notifyLineChanged(line);
+  }
+
+  void _moveToolbar(Offset delta) {
+    setState(() {
+      // Always leave a grabbable corner of the bar inside the chart.
+      const margin = 48.0;
+      _toolbarOffset = Offset(
+        (_toolbarOffset.dx + delta.dx).clamp(
+          0.0,
+          math.max(0.0, mWidth - margin),
+        ),
+        (_toolbarOffset.dy + delta.dy).clamp(
+          0.0,
+          math.max(0.0, mHeight - margin),
+        ),
+      );
+    });
+  }
+
+  /// The candle area's height: what the caller asked for, or whatever the box
+  /// has left once the panes below have taken their share.
+  double _resolveBaseHeight(double available) {
+    final asked = widget.mBaseHeight;
+    if (asked != null) return asked;
+    if (!available.isFinite) return _unboundedBaseHeight;
+
+    return math.max(
+      BaseChartPainter.minMainHeight,
+      available -
+          BaseDimension.panesHeight(
+            volHidden: widget.volHidden,
+            paneCount: _resolved.panes.length,
+            legendRowCount: _resolved.legendRowCount,
+          ),
     );
   }
 
-  void _showThicknessPicker() {
-    final selected = _getSelectedLine();
-    if (selected == null) return;
-
-    showDialog<void>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Line Thickness'),
-        children: presetThickness
-            .map(
-              (t) => SimpleDialogOption(
-                onPressed: () {
-                  setState(() => selected.thickness = t);
-                  Navigator.pop(context);
-                },
-                child: Text(t.toStringAsFixed(1)),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
+  /// Candle height used when the box does not constrain its height at all.
+  static const double _unboundedBaseHeight = 360;
 
   @override
   Widget build(BuildContext context) {
@@ -468,60 +510,63 @@ class _KChartWidgetState extends State<KChartWidget>
       mScaleX = 1.0;
     }
 
-    final baseDimension = BaseDimension(
-      mBaseHeight: widget.mBaseHeight,
-      volHidden: widget.volHidden,
-      secondaryStateLi: widget.secondaryStateLi,
-      mainStateLi: widget.mainStateLi,
-    );
-
-    painter = ChartPainter(
-      widget.chartStyle,
-      widget.chartColors,
-      isDrawing: _isDrawing,
-      currentDrawingTool: widget.currentDrawingTool,
-      showLiveVerticalPreview:
-          _isDrawing && widget.currentDrawingTool == DrawingTool.vertical,
-      showLiveHorizontalPreview:
-          _isDrawing && widget.currentDrawingTool == DrawingTool.horizontal,
-      baseDimension: baseDimension,
-      trendLines: widget.trendLines,
-      horizontalLines: widget.horizontalLines,
-      verticalLines: widget.verticalLines,
-      signals: widget.signals,
-      timeFrame: widget.timeFrame,
-      sink: mInfoWindowStream.sink,
-      xFrontPadding: widget.xFrontPadding,
-      isTrendLine: widget.isTrendLine,
-      selectY: mSelectY,
-      tempTrendLine: tempTrendLine,
-      candles: widget.candles,
-      scaleX: mScaleX,
-      scrollX: mScrollX,
-      selectX: mSelectX,
-      isLongPress: isLongPress,
-      isOnTap: isOnTap,
-      isTapShowInfoDialog: widget.isTapShowInfoDialog,
-      mainStateLi: widget.mainStateLi,
-      volHidden: widget.volHidden,
-      secondaryStateLi: widget.secondaryStateLi,
-      isLine: widget.isLine,
-      hideGrid: widget.hideGrid,
-      showNowPrice: widget.showNowPrice,
-      fixedLength: widget.fixedLength,
-      maDayList: widget.maDayList,
-      verticalTextAlignment: widget.verticalTextAlignment,
-      dateFormatter: widget.dateFormatter,
-      watermarkPicture: _watermarkPicture,
-      selectedHorizontal: selectedHorizontal,
-      selectedVertical: selectedVertical,
-      selectedTrend: selectedTrend,
-    );
+    _refreshIndicatorsIfStale();
 
     return LayoutBuilder(
       builder: (context, constraints) {
         mHeight = constraints.maxHeight;
         mWidth = constraints.maxWidth;
+
+        final baseDimension = BaseDimension(
+          mBaseHeight: _resolveBaseHeight(constraints.maxHeight),
+          volHidden: widget.volHidden,
+          paneCount: _resolved.panes.length,
+          legendRowCount: _resolved.legendRowCount,
+        );
+
+        painter = ChartPainter(
+          widget.chartStyle,
+          widget.chartColors,
+          isDrawing: _isDrawing,
+          currentDrawingTool: widget.currentDrawingTool,
+          showLiveVerticalPreview:
+              _isDrawing && widget.currentDrawingTool == DrawingTool.vertical,
+          showLiveHorizontalPreview:
+              _isDrawing && widget.currentDrawingTool == DrawingTool.horizontal,
+          baseDimension: baseDimension,
+          trendLines: widget.trendLines,
+          horizontalLines: widget.horizontalLines,
+          verticalLines: widget.verticalLines,
+          signals: widget.signals,
+          timeFrame: widget.timeFrame,
+          sink: mInfoWindowStream.sink,
+          xFrontPadding: widget.xFrontPadding,
+          isTrendLine: widget.isTrendLine,
+          selectY: mSelectY,
+          tempTrendLine: tempTrendLine,
+          candles: widget.candles,
+          scaleX: mScaleX,
+          scrollX: mScrollX,
+          selectX: mSelectX,
+          isLongPress: isLongPress,
+          isOnTap: isOnTap,
+          suppressCrosshair: _isDrawing || isDraggingHandle,
+          isTapShowInfoDialog: widget.isTapShowInfoDialog,
+          overlays: _resolved.overlays,
+          panes: _resolved.panes,
+          volHidden: widget.volHidden,
+          isLine: widget.isLine,
+          hideGrid: widget.hideGrid,
+          showNowPrice: widget.showNowPrice,
+          fixedLength: widget.fixedLength,
+          verticalTextAlignment: widget.verticalTextAlignment,
+          dateFormatter: widget.dateFormatter,
+          watermarkPicture: _watermarkPicture,
+          selectedHorizontal: selectedHorizontal,
+          selectedVertical: selectedVertical,
+          selectedTrend: selectedTrend,
+          drawingStyle: widget.drawingStyle,
+        );
 
         return Stack(
           children: [
@@ -545,13 +590,15 @@ class _KChartWidgetState extends State<KChartWidget>
 
                   final pos = details.localPosition;
 
-                  if (widget.currentDrawingTool == DrawingTool.none) {
-                    _trySelectLine(pos);
-                  }
-
                   if (!_isInChartArea(pos)) {
+                    _closeInfoWindow();
                     _cancelDrawing();
                     return;
+                  }
+
+                  if (widget.currentDrawingTool == DrawingTool.none) {
+                    _trySelectLine(pos);
+                    _handleReadoutTap(pos);
                   }
                   notifyChanged();
                 },
@@ -572,30 +619,8 @@ class _KChartWidgetState extends State<KChartWidget>
                   notifyChanged();
                 },
                 onLongPressMoveUpdate: (details) {
-                  if (isDraggingHandle && _getSelectedLine()?.locked == false) {
-                    final pos = details.localPosition;
-                    final price = painter.calculatePrice(pos.dy);
-                    final index = painter.calculateSelectedX(pos.dx);
-                    final time = widget.candles![index].dateTime!;
-
-                    if (selectedHorizontal != null) {
-                      selectedHorizontal!.price = price;
-                    } else if (selectedVertical != null) {
-                      selectedVertical!.time = time;
-                    } else if (selectedTrend != null &&
-                        draggingTrendEnd != null) {
-                      if (draggingTrendEnd == 1) {
-                        selectedTrend!.time1 = time;
-                        selectedTrend!.price1 = price;
-                      } else {
-                        selectedTrend!.time2 = time;
-                        selectedTrend!.price2 = price;
-                      }
-                    }
-
-                    // Removed auto-scroll for vertical and trend lines as per issue 2
-
-                    notifyChanged();
+                  if (isDraggingHandle) {
+                    _applyHandleDrag(details.localPosition);
                   } else if (widget.currentDrawingTool == DrawingTool.none) {
                     mSelectX = details.localPosition.dx;
                     mSelectY = details.localPosition.dy;
@@ -604,6 +629,7 @@ class _KChartWidgetState extends State<KChartWidget>
                 },
                 onLongPressEnd: (_) {
                   isLongPress = false;
+                  if (isDraggingHandle) _notifySelectedChanged();
                   notifyChanged();
                 },
                 onScaleStart: (details) {
@@ -632,12 +658,7 @@ class _KChartWidgetState extends State<KChartWidget>
                     _isDrawing = true;
                   } else {
                     _trySelectLine(pos);
-                    if (_getSelectedLine() != null) {
-                      isDraggingHandle = true;
-                      _onDragChanged(true);
-                    } else {
-                      _onDragChanged(true);
-                    }
+                    _onDragChanged(true);
                   }
                   notifyChanged();
                 },
@@ -672,28 +693,8 @@ class _KChartWidgetState extends State<KChartWidget>
                       tempTrendLine!.price2 = price;
                     }
                     notifyChanged();
-                  } else if (isDraggingHandle &&
-                      _getSelectedLine()?.locked == false) {
-                    final price = painter.calculatePrice(pos.dy);
-                    final index = painter.calculateSelectedX(pos.dx);
-                    final time = widget.candles![index].dateTime!;
-
-                    if (selectedHorizontal != null) {
-                      selectedHorizontal!.price = price;
-                    } else if (selectedVertical != null) {
-                      selectedVertical!.time = time;
-                    } else if (selectedTrend != null &&
-                        draggingTrendEnd != null) {
-                      if (draggingTrendEnd == 1) {
-                        selectedTrend!.time1 = time;
-                        selectedTrend!.price1 = price;
-                      } else {
-                        selectedTrend!.time2 = time;
-                        selectedTrend!.price2 = price;
-                      }
-                    }
-                    // Removed auto-scroll for vertical and trend lines as per issue 2
-                    notifyChanged();
+                  } else if (isDraggingHandle) {
+                    _applyHandleDrag(pos);
                   } else {
                     mScrollX += details.focalPointDelta.dx / mScaleX;
                     mScrollX = mScrollX.clamp(0.0, BaseChartPainter.maxScrollX);
@@ -729,6 +730,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
                   if (isDraggingHandle) {
                     isDraggingHandle = false;
+                    _notifySelectedChanged();
                     _onDragChanged(false);
                   }
 
@@ -751,7 +753,7 @@ class _KChartWidgetState extends State<KChartWidget>
                       painter: painter,
                     ),
                     if (widget.showInfoDialog) _buildInfoDialog(),
-                    if (_getSelectedLine() != null) _buildEditPanel(),
+                    if (_getSelectedLine() != null) _buildDrawingToolbar(),
                   ],
                 ),
               ),
@@ -771,6 +773,34 @@ class _KChartWidgetState extends State<KChartWidget>
 
   bool _isInChartArea(Offset pos) => painter.mMainRect.contains(pos);
 
+  /// Opens, moves or dismisses the tap-driven readout.
+  ///
+  /// Only runs when [KChartWidget.isTapShowInfoDialog] is set; a tap that
+  /// selected a line belongs to the line, not the readout.
+  void _handleReadoutTap(Offset pos) {
+    if (!widget.isTapShowInfoDialog || _getSelectedLine() != null) {
+      if (isOnTap) {
+        isOnTap = false;
+        _closeInfoWindow();
+      }
+      return;
+    }
+
+    // Tapping the readout's own candle again puts it away.
+    final samePlace = isOnTap && (pos.dx - mSelectX).abs() < 2;
+    isOnTap = !samePlace;
+    if (!isOnTap) {
+      _closeInfoWindow();
+      return;
+    }
+    mSelectX = pos.dx;
+    mSelectY = pos.dy.clamp(painter.mMainRect.top, painter.mMainRect.bottom);
+  }
+
+  void _closeInfoWindow() {
+    if (!mInfoWindowStream.isClosed) mInfoWindowStream.sink.add(null);
+  }
+
   void _cancelDrawing() {
     tempTrendLine = null;
     selectedHorizontal = null;
@@ -783,69 +813,197 @@ class _KChartWidgetState extends State<KChartWidget>
     isDraggingHandle = false;
     draggingTrendEnd = null;
 
+    final candles = widget.candles;
+    if (candles == null || candles.isEmpty) {
+      _deselectAll();
+      return;
+    }
+
+    final tolerance = widget.drawingStyle.hitTestTolerance;
+    final handleTolerance = widget.drawingStyle.handleHitTestTolerance;
+
     for (final line in widget.horizontalLines) {
-      final y = painter.getMainY(line.price);
-      if ((pos.dy - y).abs() < 20) {
-        selectedHorizontal = line;
-        selectedVertical = null;
-        selectedTrend = null;
-        isDraggingHandle = true;
-        setState(() {});
+      if ((pos.dy - painter.getMainY(line.price)).abs() < tolerance) {
+        _select(pos, horizontal: line);
         return;
       }
     }
 
     for (final line in widget.verticalLines) {
-      final index = widget.candles!.indexWhere((e) => e.dateTime == line.time);
+      final index = candles.indexWhere((e) => e.dateTime == line.time);
       if (index == -1) continue;
-      final x = painter.getX(index);
-      if ((pos.dx - painter.translateXtoX(x)).abs() < 20) {
-        selectedVertical = line;
-        selectedHorizontal = null;
-        selectedTrend = null;
-        isDraggingHandle = true;
-        setState(() {});
+      final x = painter.translateXtoX(painter.getX(index));
+      if ((pos.dx - x).abs() < tolerance) {
+        _select(pos, vertical: line);
         return;
       }
     }
 
     for (final line in widget.trendLines) {
-      final i1 = widget.candles!.indexWhere((e) => e.dateTime == line.time1);
+      final i1 = candles.indexWhere((e) => e.dateTime == line.time1);
       if (i1 == -1) continue;
       final p1 = Offset(
         painter.translateXtoX(painter.getX(i1)),
         painter.getMainY(line.price1),
       );
-      final dist1 = (pos - p1).distance;
-      if (line.time2 != null) {
-        final i2 = widget.candles!.indexWhere((e) => e.dateTime == line.time2);
-        if (i2 == -1) continue;
-        final p2 = Offset(
-          painter.translateXtoX(painter.getX(i2)),
-          painter.getMainY(line.price2!),
-        );
-        final dist2 = (pos - p2).distance;
-        if (dist1 < 40 || dist2 < 40) {
-          selectedTrend = line;
-          selectedHorizontal = null;
-          selectedVertical = null;
-          draggingTrendEnd = dist1 < dist2 ? 1 : 2;
-          isDraggingHandle = true;
-          setState(() {});
-          return;
-        }
-      } else if (dist1 < 40) {
-        selectedTrend = line;
-        selectedHorizontal = null;
-        selectedVertical = null;
-        draggingTrendEnd = 1;
-        isDraggingHandle = true;
-        setState(() {});
+      final distance1 = (pos - p1).distance;
+
+      // A half-drawn line only has its first anchor to grab.
+      if (line.time2 == null || line.price2 == null) {
+        if (distance1 >= handleTolerance) continue;
+        _select(pos, trend: line, end: 1);
+        return;
+      }
+
+      final i2 = candles.indexWhere((e) => e.dateTime == line.time2);
+      if (i2 == -1) continue;
+      final p2 = Offset(
+        painter.translateXtoX(painter.getX(i2)),
+        painter.getMainY(line.price2!),
+      );
+      final distance2 = (pos - p2).distance;
+
+      // Near an end grabs that end; anywhere else along the stroke picks the
+      // whole line up.
+      if (distance1 < handleTolerance || distance2 < handleTolerance) {
+        _select(pos, trend: line, end: distance1 <= distance2 ? 1 : 2);
+        return;
+      }
+      if (_distanceToSegment(pos, p1, p2) < tolerance) {
+        _select(pos, trend: line, end: 0);
         return;
       }
     }
 
     _deselectAll();
+  }
+
+  /// Selects one line, clearing the others, and arms it for dragging from
+  /// [pos] — the point that picked it, whether that was a tap, a long press or
+  /// the start of a drag.
+  void _select(
+    Offset pos, {
+    HorizontalLine? horizontal,
+    VerticalLine? vertical,
+    TrendLine? trend,
+    int? end,
+  }) {
+    setState(() {
+      selectedHorizontal = horizontal;
+      selectedVertical = vertical;
+      selectedTrend = trend;
+      draggingTrendEnd = end;
+      isDraggingHandle = true;
+    });
+    _beginHandleDrag(pos);
+  }
+
+  /// Shortest distance from [point] to the segment [a]–[b].
+  static double _distanceToSegment(Offset point, Offset a, Offset b) {
+    final ab = b - a;
+    final lengthSquared = ab.distanceSquared;
+    if (lengthSquared == 0) return (point - a).distance;
+
+    final ap = point - a;
+    final t = ((ap.dx * ab.dx + ap.dy * ab.dy) / lengthSquared).clamp(0.0, 1.0);
+    return (point - (a + ab * t)).distance;
+  }
+
+  /// Remembers where a drag began, so a whole trend line can be shifted.
+  void _beginHandleDrag(Offset pos) {
+    final candles = widget.candles;
+    if (candles == null || candles.isEmpty) return;
+
+    _dragStart = (
+      index: painter.calculateSelectedX(pos.dx),
+      price: painter.calculatePrice(pos.dy),
+    );
+
+    final trend = selectedTrend;
+    if (trend == null) {
+      _dragOrigin = null;
+      return;
+    }
+    _dragOrigin = (
+      i1: candles.indexWhere((e) => e.dateTime == trend.time1),
+      p1: trend.price1,
+      i2: trend.time2 == null
+          ? null
+          : candles.indexWhere((e) => e.dateTime == trend.time2),
+      p2: trend.price2,
+    );
+  }
+
+  /// Moves the selected line to follow the pointer at [pos].
+  void _applyHandleDrag(Offset pos) {
+    final candles = widget.candles;
+    final line = _getSelectedLine();
+    if (candles == null || candles.isEmpty || line == null || line.locked) {
+      return;
+    }
+
+    final index = painter.calculateSelectedX(pos.dx);
+    if (index < 0 || index >= candles.length) return;
+    final time = candles[index].dateTime;
+    if (time == null) return;
+    final price = painter.calculatePrice(pos.dy);
+
+    switch (line) {
+      case HorizontalLine():
+        // A title the user never customised tracks the price it was named for.
+        if (line.title == line.price.toStringAsFixed(widget.fixedLength)) {
+          line.title = price.toStringAsFixed(widget.fixedLength);
+        }
+        line.price = price;
+      case VerticalLine():
+        if (line.title == painter.getDate(line.time)) {
+          line.title = painter.getDate(time);
+        }
+        line.time = time;
+      case TrendLine():
+        _dragTrendLine(line, candles, index, time, price);
+    }
+    notifyChanged();
+  }
+
+  void _dragTrendLine(
+    TrendLine line,
+    List<KLineEntity> candles,
+    int index,
+    DateTime time,
+    double price,
+  ) {
+    switch (draggingTrendEnd) {
+      case 1:
+        line.time1 = time;
+        line.price1 = price;
+      case 2:
+        line.time2 = time;
+        line.price2 = price;
+      case 0:
+        final start = _dragStart;
+        final origin = _dragOrigin;
+        final i2 = origin?.i2;
+        if (start == null || origin == null || i2 == null) return;
+
+        // Shift both ends by the same number of candles and the same amount of
+        // price, stopping once either end reaches the edge of the data.
+        final lowest = math.min(origin.i1, i2);
+        final highest = math.max(origin.i1, i2);
+        final shift = (index - start.index).clamp(
+          -lowest,
+          candles.length - 1 - highest,
+        );
+        final time1 = candles[origin.i1 + shift].dateTime;
+        final time2 = candles[i2 + shift].dateTime;
+        if (time1 == null || time2 == null) return;
+
+        final priceShift = price - start.price;
+        line.time1 = time1;
+        line.price1 = origin.p1 + priceShift;
+        line.time2 = time2;
+        line.price2 = (origin.p2 ?? origin.p1) + priceShift;
+    }
   }
 
   void _stopAnimation({bool needNotify = true}) {
@@ -902,9 +1060,12 @@ class _KChartWidgetState extends State<KChartWidget>
           return const SizedBox.shrink();
         }
         final entity = snapshot.data!.kLineEntity;
-        const dialogWidth = 130.0;
+        // Never wider than the chart itself, whatever the caller asked for.
+        final maxWidth = math.min(
+          widget.infoDialogMaxWidth,
+          math.max(widget.infoDialogWidth, mWidth - 20),
+        );
         return Positioned(
-          width: dialogWidth,
           top: 10,
           left: snapshot.data!.isLeft ? 10.0 : null,
           right: snapshot.data!.isLeft ? null : 10.0,
@@ -916,7 +1077,8 @@ class _KChartWidgetState extends State<KChartWidget>
               ) ??
               PopupInfoView(
                 entity: entity,
-                width: dialogWidth,
+                width: widget.infoDialogWidth,
+                maxWidth: maxWidth,
                 chartColors: widget.chartColors,
                 chartTranslations: widget.chartTranslations,
                 materialInfoDialog: widget.materialInfoDialog,
@@ -952,99 +1114,24 @@ class _KChartWidgetState extends State<KChartWidget>
     );
   }
 
-  Widget _buildEditPanel() {
+  Widget _buildDrawingToolbar() {
     final selected = _getSelectedLine();
     if (selected == null) return const SizedBox.shrink();
 
     return Positioned(
-      left: _editPanelOffset?.dx ?? 20,
-      top: _editPanelOffset?.dy ?? 60,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: widget.chartColors.bgColor.withAlpha(240),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: Colors.white.withAlpha(40), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(80),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
-              onPanUpdate: (details) {
-                setState(() {
-                  _editPanelOffset =
-                      (_editPanelOffset ?? Offset.zero) + details.delta;
-                });
-              },
-              child: const Icon(Icons.drag_indicator_rounded),
-            ),
-            _buildActionButton(
-              icon: Icons.line_weight,
-              onPressed: _showThicknessPicker,
-            ),
-            _buildActionButton(
-              icon: Icons.palette,
-              onPressed: _showColorPicker,
-            ),
-            _buildActionButton(
-              icon: selected.isDashed ? Icons.border_clear : Icons.border_style,
-              onPressed: () =>
-                  setState(() => selected.isDashed = !selected.isDashed),
-            ),
-            if (selected is TrendLine)
-              _buildActionButton(
-                icon: selected.showLabel
-                    ? Icons.visibility
-                    : Icons.visibility_off,
-                onPressed: () =>
-                    setState(() => selected.showLabel = !selected.showLabel),
-              ),
-            if (selected is HorizontalLine || selected is VerticalLine)
-              _buildActionButton(
-                icon: selected.showLabel
-                    ? Icons.visibility
-                    : Icons.visibility_off,
-                onPressed: () =>
-                    setState(() => selected.showLabel = !selected.showLabel),
-              ),
-            _buildActionButton(
-              icon: selected.locked ? Icons.lock : Icons.lock_open,
-              onPressed: () =>
-                  setState(() => selected.locked = !selected.locked),
-            ),
-            _buildActionButton(
-              icon: Icons.delete_outline_rounded,
-              onPressed: _deleteSelected,
-              color: Colors.redAccent,
-            ),
-            _buildActionButton(
-              icon: Icons.check_circle_outline_rounded,
-              onPressed: _deselectAll,
-              color: Colors.greenAccent,
-            ),
-          ],
-        ),
+      left: _toolbarOffset.dx,
+      top: _toolbarOffset.dy,
+      child: DrawingToolbar(
+        line: selected,
+        style: widget.drawingStyle,
+        translations: widget.chartTranslations.drawing,
+        chartColors: widget.chartColors,
+        onChanged: notifyChanged,
+        onCommitted: () => _notifyLineChanged(selected),
+        onDelete: _deleteSelected,
+        onDone: _deselectAll,
+        onMoved: widget.drawingStyle.toolbarDraggable ? _moveToolbar : null,
       ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    Color? color,
-  }) {
-    return IconButton(
-      icon: Icon(icon, size: 22),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-      onPressed: onPressed,
     );
   }
 }

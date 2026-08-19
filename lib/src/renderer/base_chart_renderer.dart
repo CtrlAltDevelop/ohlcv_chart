@@ -10,14 +10,34 @@ abstract class BaseChartRenderer<T> {
     required this.topPadding,
     required this.fixedLength,
     required Color gridColor,
+    Color? separatorColor,
+    double gridStrokeWidth = 0.5,
+    double separatorWidth = 1.0,
+    this.labelCornerRadius = 3.0,
+    this.legendPadding = 4.0,
+    this.legendBgColor,
   }) {
     if (maxValue == minValue) {
       maxValue *= 1.5;
       minValue /= 2;
     }
     scaleY = chartRect.height / (maxValue - minValue);
-    gridPaint.color = gridColor;
+    gridPaint
+      ..color = gridColor
+      ..strokeWidth = gridStrokeWidth;
+    separatedPaint
+      ..color = separatorColor ?? gridColor
+      ..strokeWidth = separatorWidth;
   }
+
+  /// Corner radius of the legend pill.
+  final double labelCornerRadius;
+
+  /// Space between the legend pill and its text.
+  final double legendPadding;
+
+  /// Fill of the legend pill; null leaves the legend unbacked.
+  final Color? legendBgColor;
 
   double maxValue;
   double minValue;
@@ -38,8 +58,8 @@ abstract class BaseChartRenderer<T> {
   Paint separatedPaint = Paint()
     ..isAntiAlias = true
     ..filterQuality = FilterQuality.high
-    ..strokeWidth = 0.5
-    ..color = Colors.amber;
+    ..strokeWidth = 1.0
+    ..color = const Color(0xFFD1D3DB);
 
   double getValue(double y);
 
@@ -57,10 +77,18 @@ abstract class BaseChartRenderer<T> {
 
   void drawGrid(Canvas canvas, int gridRows, int gridColumns);
 
-  void drawText(Canvas canvas, T data, double x);
-
   void drawVerticalText(Canvas canvas, TextStyle textStyle, int gridRows);
 
+  /// Draws this renderer's legend for the candle at [data].
+  ///
+  /// Renderers that read their values from a precomputed series draw their
+  /// legend from the candle index instead, and leave this alone.
+  void drawText(Canvas canvas, T data, double x) {}
+
+  /// Draws the part of the series between two neighbouring candles.
+  ///
+  /// Only the candle and volume renderers work this way; indicators draw their
+  /// whole visible range in one pass.
   void drawChart(
     T lastPoint,
     T curPoint,
@@ -68,7 +96,7 @@ abstract class BaseChartRenderer<T> {
     double curX,
     Size size,
     Canvas canvas,
-  );
+  ) {}
 
   void drawLine(
     double? lastPrice,
@@ -103,6 +131,25 @@ abstract class BaseChartRenderer<T> {
 
   TextStyle getTextStyle(Color color) {
     return TextStyle(fontSize: 10.0, color: color);
+  }
+
+  /// Paints an indicator legend at [offset] on a rounded, translucent pill, so
+  /// it stays readable wherever the series happens to run.
+  void paintLegend(Canvas canvas, TextPainter tp, Offset offset) {
+    final background = legendBgColor;
+    if (background != null && background.a > 0) {
+      canvas.drawRRect(
+        RRect.fromLTRBR(
+          offset.dx - legendPadding,
+          offset.dy - legendPadding / 2,
+          offset.dx + tp.width + legendPadding,
+          offset.dy + tp.height + legendPadding / 2,
+          Radius.circular(labelCornerRadius),
+        ),
+        Paint()..color = background,
+      );
+    }
+    tp.paint(canvas, offset);
   }
 
   void drawHorizontalLine(

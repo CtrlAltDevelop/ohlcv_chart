@@ -18,6 +18,7 @@ class TrendLine extends ChartLine {
     this.label2,
     super.color = Colors.yellow,
     super.thickness = 2.0,
+    super.style,
     super.isDashed = false,
     super.locked = false,
     super.showLabel = false,

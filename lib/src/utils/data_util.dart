@@ -1,15 +1,14 @@
-import 'dart:math';
-
 import '../entity/k_line_entity.dart';
+import '../indicators/series_math.dart';
 
 /// Computes every indicator the chart can draw.
 class DataUtil {
   /// Fills the indicator fields on each entry of [dataList], in place.
   ///
-  /// Call this before handing candles to [KChartWidget], and again whenever
-  /// candles are appended. [maDayList] must match the widget's `maDayList`.
-  /// [n] and [k] are the Bollinger band period and standard-deviation
-  /// multiplier.
+  /// Handy when you read the values yourself — the chart computes what it draws
+  /// from the indicators you give it, so calling this is not required for
+  /// rendering. [maDayList] is the set of moving-average periods, and [n] and
+  /// [k] the Bollinger band period and standard-deviation multiplier.
   static void calculate(
     List<KLineEntity> dataList, [
     List<int> maDayList = const [5, 10, 20],
@@ -20,8 +19,10 @@ class DataUtil {
 
     /// calculate main state
     calcMA(dataList, maDayList);
+    calcEMA(dataList, maDayList);
     calcBOLL(dataList, n, k);
     calcSAR(dataList);
+    calcVWAP(dataList);
 
     /// calculate secondary state
     calcVolumeMA(dataList);
@@ -30,160 +31,151 @@ class DataUtil {
     calcRSI(dataList);
     calcWR(dataList);
     calcCCI(dataList);
+    calcATR(dataList);
+    calcOBV(dataList);
+    calcMFI(dataList);
+    calcDMI(dataList);
   }
 
+  /// Fills `maValueList` with one simple moving average per period.
   static void calcMA(List<KLineEntity> dataList, List<int> maDayList) {
-    final ma = List<double>.filled(maDayList.length, 0);
-    if (dataList.isNotEmpty) {
-      for (int i = 0; i < dataList.length; i++) {
-        final entity = dataList[i];
-        final closePrice = entity.close;
-        entity.maValueList = List<double>.filled(maDayList.length, 0);
-
-        for (int j = 0; j < maDayList.length; j++) {
-          ma[j] += closePrice;
-          if (i == maDayList[j] - 1) {
-            entity.maValueList?[j] = ma[j] / maDayList[j];
-          } else if (i >= maDayList[j]) {
-            ma[j] -= dataList[i - maDayList[j]].close;
-            entity.maValueList?[j] = ma[j] / maDayList[j];
-          }
-        }
-      }
+    final series = [
+      for (final period in maDayList) smaSeries(dataList, period),
+    ];
+    for (var i = 0; i < dataList.length; i++) {
+      // Zero, not null, is this field's "no value yet" — the renderers and any
+      // existing caller both read it that way.
+      dataList[i].maValueList = [for (final line in series) line[i] ?? 0];
     }
   }
 
-  static void calcSAR(List<KLineEntity> dataList) {
-    const List<double> params = [2, 2, 20];
-    final startAf = params[0] / 100;
-    final step = params[1] / 100;
-    final maxAf = params[2] / 100;
-
-    // Acceleration factor
-    double af = startAf;
-    // Extreme point
-    double ep = -100;
-    // Determine trend direction — false: downtrend
-    bool isIncreasing = false;
-    double sar = 0;
-
-    for (int i = 0; i < dataList.length; ++i) {
-      // the previous period SAR
-      final preSar = sar;
-      final high = dataList[i].high;
-      final low = dataList[i].low;
-
-      if (isIncreasing) {
-        // Uptrend
-        if (ep == -100 || ep < high) {
-          // Reinitialize parameters
-          ep = high;
-          af = min(af + step, maxAf);
-        }
-        sar = preSar + af * (ep - preSar);
-        final lowMin = min(dataList[max(1, i) - 1].low, low);
-        if (sar > dataList[i].low) {
-          sar = ep;
-          // Reinitialize parameters. The AF is cleared rather than set to
-          // startAf because the first bar of the new trend re-seeds `ep` and
-          // bumps the AF by one `step`, which lands it back on startAf.
-          af = 0;
-          ep = -100;
-          isIncreasing = !isIncreasing;
-        } else if (sar > lowMin) {
-          sar = lowMin;
-        }
-      } else {
-        if (ep == -100 || ep > low) {
-          // Reinitialize parameters
-          ep = low;
-          af = min(af + step, maxAf);
-        }
-        sar = preSar + af * (ep - preSar);
-        final highMax = max(dataList[max(1, i) - 1].high, high);
-        if (sar < dataList[i].high) {
-          sar = ep;
-          // Reinitialize parameters
-          af = 0;
-          ep = -100;
-          isIncreasing = !isIncreasing;
-        } else if (sar < highMax) {
-          sar = highMax;
-        }
-      }
-
-      dataList[i].sar = sar;
+  /// Fills `emaValueList` with one exponential moving average per period.
+  ///
+  /// Each average is seeded with the first close, so it has a value from the
+  /// first candle rather than after a warm-up.
+  static void calcEMA(List<KLineEntity> dataList, List<int> maDayList) {
+    final series = [
+      for (final period in maDayList) emaSeries(dataList, period),
+    ];
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].emaValueList = [for (final line in series) line[i] ?? 0];
     }
   }
 
+  /// Fills `mb`, `up` and `dn` with the Bollinger bands, and `bollMa` with the
+  /// average they are centred on.
   static void calcBOLL(List<KLineEntity> dataList, int n, int k) {
-    _calcBOLLMA(n, dataList);
-    for (int i = 0; i < dataList.length; i++) {
+    final bands = bollSeries(dataList, n, k.toDouble());
+    for (var i = 0; i < dataList.length; i++) {
       final entity = dataList[i];
-      if (i >= n) {
-        double md = 0;
-        for (int j = i - n + 1; j <= i; j++) {
-          final c = dataList[j].close;
-          final m = entity.bollMa!;
-          final value = c - m;
-          md += value * value;
-        }
-        md = md / (n - 1);
-        md = sqrt(md);
-        entity.mb = entity.bollMa;
-        entity.up = entity.mb! + k * md;
-        entity.dn = entity.mb! - k * md;
-      }
+      entity.bollMa = bands.middle[i];
+      entity.mb = bands.upper[i] == null ? null : bands.middle[i];
+      entity.up = bands.upper[i];
+      entity.dn = bands.lower[i];
     }
   }
 
-  static void _calcBOLLMA(int day, List<KLineEntity> dataList) {
-    double ma = 0;
-    for (int i = 0; i < dataList.length; i++) {
-      final entity = dataList[i];
-      ma += entity.close;
-      if (i == day - 1) {
-        entity.bollMa = ma / day;
-      } else if (i >= day) {
-        ma -= dataList[i - day].close;
-        entity.bollMa = ma / day;
-      } else {
-        entity.bollMa = null;
-      }
+  /// Fills `sar` with the parabolic SAR.
+  static void calcSAR(List<KLineEntity> dataList) {
+    final series = sarSeries(dataList);
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].sar = series[i];
     }
   }
 
+  /// Fills `vwap` with the volume-weighted average price.
+  ///
+  /// Accumulated over the whole list rather than reset per session, so it
+  /// answers "what has everyone paid so far" across the candles you pass.
+  static void calcVWAP(List<KLineEntity> dataList) {
+    final series = vwapSeries(dataList);
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].vwap = series[i];
+    }
+  }
+
+  /// Fills `dif`, `dea` and `macd`.
   static void calcMACD(List<KLineEntity> dataList) {
-    double ema12 = 0;
-    double ema26 = 0;
-    double dif = 0;
-    double dea = 0;
-    double macd = 0;
-
-    for (int i = 0; i < dataList.length; i++) {
+    final series = macdSeries(dataList);
+    for (var i = 0; i < dataList.length; i++) {
       final entity = dataList[i];
-      final closePrice = entity.close;
-      if (i == 0) {
-        ema12 = closePrice;
-        ema26 = closePrice;
-      } else {
-        // EMA（12） = 前一日EMA（12） X 11/13 + 今日收盘价 X 2/13
-        ema12 = ema12 * 11 / 13 + closePrice * 2 / 13;
-        // EMA（26） = 前一日EMA（26） X 25/27 + 今日收盘价 X 2/27
-        ema26 = ema26 * 25 / 27 + closePrice * 2 / 27;
-      }
-      // DIF = EMA（12） - EMA（26） 。
-      // 今日DEA = （前一日DEA X 8/10 + 今日DIF X 2/10）
-      // 用（DIF-DEA）*2即为MACD柱状图。
-      dif = ema12 - ema26;
-      dea = dea * 8 / 10 + dif * 2 / 10;
-      macd = (dif - dea) * 2;
-      entity.dif = dif;
-      entity.dea = dea;
-      entity.macd = macd;
+      entity.dif = series.dif[i];
+      entity.dea = series.dea[i];
+      entity.macd = series.macd[i];
     }
   }
 
+  /// Fills `k`, `d` and `j` with the stochastic oscillator.
+  static void calcKDJ(List<KLineEntity> dataList) {
+    final series = kdjSeries(dataList);
+    for (var i = 0; i < dataList.length; i++) {
+      final entity = dataList[i];
+      entity.k = series.k[i];
+      entity.d = series.d[i];
+      entity.j = series.j[i];
+    }
+  }
+
+  /// Fills `rsi` with the relative strength index over [period] candles.
+  static void calcRSI(List<KLineEntity> dataList, [int period = 14]) {
+    final series = rsiSeries(dataList, period);
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].rsi = series[i];
+    }
+  }
+
+  /// Fills `r` with Williams %R over [period] candles.
+  static void calcWR(List<KLineEntity> dataList, [int period = 14]) {
+    final series = wrSeries(dataList, period);
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].r = series[i];
+    }
+  }
+
+  /// Fills `cci` with the commodity channel index over [period] candles.
+  static void calcCCI(List<KLineEntity> dataList, [int period = 14]) {
+    final series = cciSeries(dataList, period);
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].cci = series[i];
+    }
+  }
+
+  /// Fills `atr` with Wilder's average true range over [period] candles.
+  static void calcATR(List<KLineEntity> dataList, [int period = 14]) {
+    final series = atrSeries(dataList, period);
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].atr = series[i];
+    }
+  }
+
+  /// Fills `obv` with on-balance volume, starting from zero.
+  static void calcOBV(List<KLineEntity> dataList) {
+    final series = obvSeries(dataList);
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].obv = series[i];
+    }
+  }
+
+  /// Fills `mfi` with the money flow index over [period] candles.
+  static void calcMFI(List<KLineEntity> dataList, [int period = 14]) {
+    final series = mfiSeries(dataList, period);
+    for (var i = 0; i < dataList.length; i++) {
+      dataList[i].mfi = series[i];
+    }
+  }
+
+  /// Fills `pdi`, `mdi` and `adx` with Wilder's directional movement system.
+  static void calcDMI(List<KLineEntity> dataList, [int period = 14]) {
+    final series = dmiSeries(dataList, period);
+    for (var i = 0; i < dataList.length; i++) {
+      final entity = dataList[i];
+      entity.pdi = series.plusDi[i];
+      entity.mdi = series.minusDi[i];
+      entity.adx = series.adx[i];
+    }
+  }
+
+  /// Fills `ma5Volume` and `ma10Volume` with trailing volume averages.
   static void calcVolumeMA(List<KLineEntity> dataList) {
     double volumeMa5 = 0;
     double volumeMa10 = 0;
@@ -210,122 +202,6 @@ class DataUtil {
         entry.ma10Volume = volumeMa10 / 10;
       } else {
         entry.ma10Volume = 0;
-      }
-    }
-  }
-
-  static void calcRSI(List<KLineEntity> dataList) {
-    double? rsi;
-    double rsiABSEma = 0;
-    double rsiMaxEma = 0;
-    for (int i = 0; i < dataList.length; i++) {
-      final entity = dataList[i];
-      final double closePrice = entity.close;
-      if (i == 0) {
-        rsi = 0;
-        rsiABSEma = 0;
-        rsiMaxEma = 0;
-      } else {
-        final rMax = max(0, closePrice - dataList[i - 1].close.toDouble());
-        final rAbs = (closePrice - dataList[i - 1].close.toDouble()).abs();
-
-        rsiMaxEma = (rMax + (14 - 1) * rsiMaxEma) / 14;
-        rsiABSEma = (rAbs + (14 - 1) * rsiABSEma) / 14;
-        rsi = (rsiMaxEma / rsiABSEma) * 100;
-      }
-      if (i < 13) rsi = null;
-      if (rsi != null && rsi.isNaN) rsi = null;
-      entity.rsi = rsi;
-    }
-  }
-
-  static void calcKDJ(List<KLineEntity> dataList) {
-    if (dataList.isEmpty) return;
-    var preK = 50.0;
-    var preD = 50.0;
-    final tmp = dataList.first;
-    tmp.k = preK;
-    tmp.d = preD;
-    tmp.j = 50.0;
-    for (int i = 1; i < dataList.length; i++) {
-      final entity = dataList[i];
-      final n = max(0, i - 8);
-      var low = entity.low;
-      var high = entity.high;
-      for (int j = n; j < i; j++) {
-        final t = dataList[j];
-        if (t.low < low) {
-          low = t.low;
-        }
-        if (t.high > high) {
-          high = t.high;
-        }
-      }
-      final cur = entity.close;
-      var rsv = (cur - low) * 100.0 / (high - low);
-      rsv = rsv.isNaN ? 0 : rsv;
-      final k = (2 * preK + rsv) / 3.0;
-      final d = (2 * preD + k) / 3.0;
-      final j = 3 * k - 2 * d;
-      preK = k;
-      preD = d;
-      entity.k = k;
-      entity.d = d;
-      entity.j = j;
-    }
-  }
-
-  static void calcWR(List<KLineEntity> dataList) {
-    double r;
-    for (int i = 0; i < dataList.length; i++) {
-      final entity = dataList[i];
-      int startIndex = i - 14;
-      if (startIndex < 0) {
-        startIndex = 0;
-      }
-      double max14 = -double.maxFinite;
-      double min14 = double.maxFinite;
-      for (int index = startIndex; index <= i; index++) {
-        max14 = max(max14, dataList[index].high);
-        min14 = min(min14, dataList[index].low);
-      }
-      if (i < 13) {
-        entity.r = -10;
-      } else {
-        r = -100 * (max14 - dataList[i].close) / (max14 - min14);
-        if (r.isNaN) {
-          entity.r = null;
-        } else {
-          entity.r = r;
-        }
-      }
-    }
-  }
-
-  static void calcCCI(List<KLineEntity> dataList) {
-    final size = dataList.length;
-    const count = 14;
-    for (int i = 0; i < size; i++) {
-      final kline = dataList[i];
-      final tp = (kline.high + kline.low + kline.close) / 3;
-      final start = max(0, i - count + 1);
-      var amount = 0.0;
-      var len = 0;
-      for (int n = start; n <= i; n++) {
-        amount += (dataList[n].high + dataList[n].low + dataList[n].close) / 3;
-        len++;
-      }
-      final ma = amount / len;
-      amount = 0.0;
-      for (int n = start; n <= i; n++) {
-        amount +=
-            (ma - (dataList[n].high + dataList[n].low + dataList[n].close) / 3)
-                .abs();
-      }
-      final md = amount / len;
-      kline.cci = (tp - ma) / 0.015 / md;
-      if (kline.cci!.isNaN) {
-        kline.cci = 0.0;
       }
     }
   }

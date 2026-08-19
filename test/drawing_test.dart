@@ -1,0 +1,382 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ohlcv_chart/ohlcv_chart.dart';
+
+import 'test_utils.dart';
+
+/// Any tap inside the chart selects the one line under test, so the toolbar can
+/// be exercised without guessing where a price lands on screen.
+const _grabAnything = DrawingStyle(hitTestTolerance: 10000);
+
+Widget _host(Widget child) => MaterialApp(
+  home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
+);
+
+/// A chart holding a single [HorizontalLine], with the drawing tools enabled.
+({Widget widget, HorizontalLine line, List<ChartLine> persisted})
+_chartWithLine({
+  DrawingStyle style = _grabAnything,
+  ChartTranslations translations = const ChartTranslations(),
+}) {
+  final data = candles(rampThenFall(60));
+  DataUtil.calculate(data);
+
+  final line = HorizontalLine(price: data[30].close, title: 'entry');
+  final persisted = <ChartLine>[];
+
+  return (
+    line: line,
+    persisted: persisted,
+    widget: _host(
+      KChartWidget(
+        data,
+        ChartColors(),
+        isTrendLine: true,
+        watermarkAssetPath: 'assets/none.svg',
+        timeFrame: const Duration(minutes: 15),
+        showNowPrice: false,
+        drawingStyle: style,
+        chartTranslations: translations,
+        horizontalLines: [line],
+        onAddHorizontalLine: persisted.add,
+      ),
+    ),
+  );
+}
+
+/// Finds a colour swatch by the colour it paints.
+Finder _swatch(Color color) => find.byWidgetPredicate(
+  (widget) =>
+      widget is Container &&
+      widget.decoration is BoxDecoration &&
+      (widget.decoration! as BoxDecoration).color == color &&
+      (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
+);
+
+Future<void> _selectLine(WidgetTester tester) async {
+  await tester.tap(find.byType(KChartWidget));
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  group('ChartLine', () {
+    test('style and isDashed agree', () {
+      final line = HorizontalLine(price: 1);
+      expect(line.style, LineStyle.solid);
+      expect(line.isDashed, isFalse);
+
+      line.isDashed = true;
+      expect(line.style, LineStyle.dashed);
+
+      line.style = LineStyle.dotted;
+      expect(line.isDashed, isTrue, reason: 'dotted is a broken stroke too');
+
+      line.isDashed = false;
+      expect(line.style, LineStyle.solid);
+    });
+
+    test('a line built with isDashed keeps drawing dashed', () {
+      expect(HorizontalLine(price: 1, isDashed: true).style, LineStyle.dashed);
+      expect(
+        HorizontalLine(price: 1, style: LineStyle.dotted).style,
+        LineStyle.dotted,
+      );
+    });
+
+    test('opacity is the colour alpha', () {
+      final line = TrendLine(time1: DateTime(2024), price1: 1);
+      line.opacity = 0.5;
+      expect(line.opacity, closeTo(0.5, 0.01));
+      expect(line.color.a, closeTo(0.5, 0.01));
+
+      line.opacity = 4;
+      expect(line.opacity, 1.0, reason: 'clamped');
+    });
+  });
+
+  group('DrawingStyle', () {
+    test('the thickness slider widens to hold every preset', () {
+      const style = DrawingStyle(thicknessOptions: [0.25, 12]);
+      expect(style.thicknessRange, (0.25, 12.0));
+    });
+
+    test('copyWith replaces one field and keeps the rest', () {
+      const style = DrawingStyle(swatchesPerRow: 3);
+      final copy = style.copyWith(iconSize: 30);
+      expect(copy.iconSize, 30);
+      expect(copy.swatchesPerRow, 3);
+    });
+  });
+
+  group('DrawingToolbar', () {
+    testWidgets('appears once a line is selected and dismisses on done', (
+      tester,
+    ) async {
+      final harness = _chartWithLine();
+      await tester.pumpWidget(harness.widget);
+      expect(find.byTooltip('Colour'), findsNothing);
+
+      await _selectLine(tester);
+      expect(find.byTooltip('Colour'), findsOne);
+
+      await tester.tap(find.byTooltip('Done'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Colour'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('only shows the controls the style enables', (tester) async {
+      final harness = _chartWithLine(
+        style: _grabAnything.copyWith(
+          showThicknessControl: false,
+          showLineStyleControl: false,
+          showLabelTextControl: false,
+          showLockControl: false,
+        ),
+      );
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+
+      expect(find.byTooltip('Colour'), findsOne);
+      expect(find.byTooltip('Thickness'), findsNothing);
+      expect(find.byTooltip('Style'), findsNothing);
+      expect(find.byTooltip('Label'), findsNothing);
+      expect(find.byTooltip('Lock'), findsNothing);
+      expect(find.byTooltip('Delete'), findsOne);
+    });
+
+    testWidgets('picking a colour restyles the line and reports it', (
+      tester,
+    ) async {
+      const teal = Color(0xFF00BFA5);
+      final harness = _chartWithLine(
+        style: _grabAnything.copyWith(colorOptions: const [teal]),
+      );
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+
+      await tester.tap(find.byTooltip('Colour'));
+      await tester.pumpAndSettle();
+      await tester.tap(_swatch(teal).first);
+      await tester.pumpAndSettle();
+
+      expect(harness.line.color, teal);
+      expect(harness.persisted, [
+        harness.line,
+      ], reason: 'an edit is reported so the host can persist it');
+    });
+
+    testWidgets('the opacity slider dims the line without losing its hue', (
+      tester,
+    ) async {
+      const teal = Color(0xFF00BFA5);
+      final harness = _chartWithLine(
+        style: _grabAnything.copyWith(
+          colorOptions: const [teal],
+          showThicknessControl: false,
+        ),
+      );
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+
+      await tester.tap(find.byTooltip('Colour'));
+      await tester.pumpAndSettle();
+      await tester.tap(_swatch(teal).first);
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(Slider), const Offset(-200, 0));
+      await tester.pumpAndSettle();
+
+      expect(harness.line.opacity, lessThan(1.0));
+      expect(harness.line.color.r, closeTo(teal.r, 0.01));
+      expect(harness.line.color.g, closeTo(teal.g, 0.01));
+      expect(harness.persisted, isNotEmpty);
+    });
+
+    testWidgets('the thickness slider resizes the stroke', (tester) async {
+      final harness = _chartWithLine(
+        style: _grabAnything.copyWith(showColorControl: false),
+      );
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+
+      await tester.tap(find.byTooltip('Thickness'));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(Slider), const Offset(200, 0));
+      await tester.pumpAndSettle();
+
+      expect(harness.line.thickness, greaterThan(2.0));
+      expect(harness.persisted, isNotEmpty);
+    });
+
+    testWidgets('the style picker switches the stroke to dotted', (
+      tester,
+    ) async {
+      final harness = _chartWithLine();
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+
+      await tester.tap(find.byTooltip('Style'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Dotted'));
+      await tester.pumpAndSettle();
+
+      expect(harness.line.style, LineStyle.dotted);
+      expect(harness.persisted, isNotEmpty);
+    });
+
+    testWidgets('the label field renames the line and reveals the label', (
+      tester,
+    ) async {
+      final harness = _chartWithLine();
+      harness.line.showLabel = false;
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+
+      await tester.tap(find.byTooltip('Label'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'take profit');
+      await tester.pumpAndSettle();
+
+      expect(harness.line.title, 'take profit');
+      expect(harness.line.showLabel, isTrue);
+    });
+
+    testWidgets('lock and label visibility toggle', (tester) async {
+      final harness = _chartWithLine();
+      expect(
+        harness.line.showLabel,
+        isFalse,
+        reason: 'the default for a price',
+      );
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+
+      await tester.tap(find.byTooltip('Lock'));
+      await tester.pumpAndSettle();
+      expect(harness.line.locked, isTrue);
+      expect(find.byTooltip('Unlock'), findsOne);
+
+      await tester.tap(find.byTooltip('Show label'));
+      await tester.pumpAndSettle();
+      expect(harness.line.showLabel, isTrue);
+      expect(find.byTooltip('Hide label'), findsOne);
+    });
+
+    testWidgets('delete removes the line through the callback', (tester) async {
+      final data = candles(rampThenFall(60));
+      DataUtil.calculate(data);
+      final lines = [HorizontalLine(price: data[30].close)];
+      final removed = <HorizontalLine>[];
+
+      await tester.pumpWidget(
+        _host(
+          StatefulBuilder(
+            builder: (context, setState) => KChartWidget(
+              data,
+              ChartColors(),
+              isTrendLine: true,
+              watermarkAssetPath: 'assets/none.svg',
+              timeFrame: const Duration(minutes: 15),
+              showNowPrice: false,
+              drawingStyle: _grabAnything,
+              horizontalLines: lines,
+              onRemoveHorizontalLine: (line) => setState(() {
+                removed.add(line);
+                lines.remove(line);
+              }),
+            ),
+          ),
+        ),
+      );
+      await _selectLine(tester);
+
+      await tester.tap(find.byTooltip('Delete'));
+      await tester.pumpAndSettle();
+
+      expect(removed, hasLength(1));
+      expect(lines, isEmpty);
+      expect(find.byTooltip('Delete'), findsNothing);
+    });
+
+    testWidgets('translations reach every control', (tester) async {
+      final harness = _chartWithLine(
+        translations: const ChartTranslations(
+          drawing: DrawingTranslations(
+            color: 'Couleur',
+            thickness: 'Épaisseur',
+            delete: 'Supprimer',
+          ),
+        ),
+      );
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+
+      expect(find.byTooltip('Couleur'), findsOne);
+      expect(find.byTooltip('Épaisseur'), findsOne);
+      expect(find.byTooltip('Supprimer'), findsOne);
+    });
+
+    testWidgets('dragging a trend line by its stroke moves both ends', (
+      tester,
+    ) async {
+      final data = candles(rampThenFall(60));
+      DataUtil.calculate(data);
+
+      final line = TrendLine(
+        time1: data[10].dateTime!,
+        price1: data[10].close,
+        time2: data[40].dateTime!,
+        price2: data[40].close,
+      );
+      final before = (line.time1, line.price1, line.time2, line.price2);
+
+      await tester.pumpWidget(
+        _host(
+          KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: true,
+            watermarkAssetPath: 'assets/none.svg',
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: false,
+            // Ends unreachable, stroke reachable: every grab is a body grab.
+            drawingStyle: const DrawingStyle(
+              hitTestTolerance: 10000,
+              handleHitTestTolerance: 0,
+            ),
+            trendLines: [line],
+          ),
+        ),
+      );
+
+      await tester.drag(find.byType(KChartWidget), const Offset(-40, -60));
+      await tester.pumpAndSettle();
+
+      expect(line.price1, greaterThan(before.$2));
+      expect(line.price2, greaterThan(before.$4!));
+      expect(
+        line.price1 - before.$2,
+        closeTo(line.price2! - before.$4!, 0.001),
+        reason: 'both ends shift by the same amount of price',
+      );
+      expect(
+        line.time2!.difference(line.time1),
+        before.$3!.difference(before.$1),
+        reason: 'and the line keeps its length in time',
+      );
+    });
+
+    testWidgets('a locked line stays put when dragged', (tester) async {
+      final harness = _chartWithLine();
+      harness.line.locked = true;
+      final price = harness.line.price;
+
+      await tester.pumpWidget(harness.widget);
+      await _selectLine(tester);
+      await tester.drag(find.byType(KChartWidget), const Offset(0, -80));
+      await tester.pumpAndSettle();
+
+      expect(harness.line.price, price);
+    });
+  });
+}

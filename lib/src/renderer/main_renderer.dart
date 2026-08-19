@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../entity/candle_entity.dart';
-import '../k_chart_widget.dart' show MainState;
+import '../entity/k_line_entity.dart';
+import '../indicators/resolved_indicator.dart';
 import 'base_chart_renderer.dart';
+import 'series_painter.dart';
 
 /// Which side of the main chart the price axis labels sit on.
 enum VerticalTextAlignment {
@@ -24,22 +26,28 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     double maxValue,
     double minValue,
     double topPadding,
-    this.stateLi,
+    this.overlays,
     this.isLine,
     int fixedLength,
     this.chartStyle,
     this.chartColors,
     this.scaleX,
-    this.verticalTextAlignment, [
-    this.maDayList = const [5, 10, 20],
-  ]) : super(
-         chartRect: mainRect,
-         maxValue: maxValue,
-         minValue: minValue,
-         topPadding: topPadding,
-         fixedLength: fixedLength,
-         gridColor: chartColors.gridColor,
-       ) {
+    this.verticalTextAlignment,
+    this.hasPanesBelow,
+  ) : super(
+        chartRect: mainRect,
+        maxValue: maxValue,
+        minValue: minValue,
+        topPadding: topPadding,
+        fixedLength: fixedLength,
+        gridColor: chartColors.gridColor,
+        separatorColor: chartColors.effectiveSeparatorColor,
+        gridStrokeWidth: chartStyle.gridStrokeWidth,
+        separatorWidth: chartStyle.separatorWidth,
+        labelCornerRadius: chartStyle.labelCornerRadius,
+        legendPadding: chartStyle.legendPadding,
+        legendBgColor: chartColors.effectiveLegendBgColor,
+      ) {
     mCandleWidth = chartStyle.candleWidth;
     mCandleLineWidth = chartStyle.candleLineWidth;
     mLinePaint = Paint()
@@ -62,13 +70,14 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
   late double mCandleWidth;
   late double mCandleLineWidth;
-  List<MainState> stateLi;
+
+  /// Indicators drawn over the candles, with their values.
+  List<ResolvedIndicator> overlays;
   bool isLine;
 
   // The content area to be drawn
   late Rect _contentRect;
   final _contentPadding = 5.0;
-  List<int> maDayList;
   final ChartStyle chartStyle;
   final ChartColors chartColors;
   final double mLineStrokeWidth = 1.0;
@@ -76,71 +85,92 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   late Paint mLinePaint;
   final VerticalTextAlignment verticalTextAlignment;
 
-  @override
-  void drawText(Canvas canvas, CandleEntity data, double x) {
-    if (isLine == true) return;
-    for (int i = 0; i < stateLi.length; ++i) {
-      TextSpan? span;
-      if (stateLi[i] == MainState.MA) {
-        span = TextSpan(children: _createMATextSpan(data));
-      } else if (stateLi[i] == MainState.BOLL) {
-        span = TextSpan(
-          children: [
-            if (data.up != 0)
-              TextSpan(
-                text: 'BOLL:${format(data.mb)}    ',
-                style: getTextStyle(chartColors.ma5Color),
-              ),
-            if (data.mb != 0)
-              TextSpan(
-                text: 'UB:${format(data.up)}    ',
-                style: getTextStyle(chartColors.ma10Color),
-              ),
-            if (data.dn != 0)
-              TextSpan(
-                text: 'LB:${format(data.dn)}    ',
-                style: getTextStyle(chartColors.ma30Color),
-              ),
-          ],
-        );
-      } else if (stateLi[i] == MainState.SAR) {
-        span = TextSpan(
-          text: 'SAR:${format(data.sar)}',
-          style: getTextStyle(chartColors.sarColor),
+  /// Whether a volume or indicator pane is stacked under the main chart.
+  ///
+  /// When one is, the bottom-most price label is left out: it would sit on that
+  /// pane's own legend, and the low of the range is already marked on the
+  /// candle that set it.
+  final bool hasPanesBelow;
+
+  /// Draws the overlay legends, one row per kind of indicator.
+  ///
+  /// Repeated averages share a row — `MA5 MA10 MA20` reads as one line — while
+  /// a different indicator starts a new one.
+  void drawLegends(Canvas canvas, int index, double x) {
+    if (isLine) return;
+
+    final rows = <String, List<InlineSpan>>{};
+    for (final overlay in overlays) {
+      final spans = rows.putIfAbsent(overlay.indicator.group, () => []);
+      for (var line = 0; line < overlay.indicator.lines.length; line++) {
+        final value = overlay.valueAt(line, index);
+        if (value == null || !value.isFinite) continue;
+        spans.add(
+          TextSpan(
+            text:
+                '${overlay.indicator.lines[line].label}:'
+                '${format(value)}    ',
+            style: getTextStyle(overlay.colorFor(line, chartColors)),
+          ),
         );
       }
-      if (span == null) return;
-      final tp = TextPainter(text: span, textDirection: TextDirection.ltr);
-      tp.layout();
+    }
 
-      final offset = Offset(x, chartRect.top - topPadding + i * 12);
-
-      canvas.drawRect(
-        Rect.fromLTRB(
-          offset.dx - 2,
-          offset.dy - 2,
-          tp.width + offset.dx + 2,
-          tp.height + offset.dy + 2,
+    var row = 0;
+    for (final spans in rows.values) {
+      if (spans.isEmpty) continue;
+      final tp = TextPainter(
+        text: TextSpan(children: spans),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      paintLegend(
+        canvas,
+        tp,
+        Offset(
+          x,
+          chartRect.top -
+              topPadding +
+              row * (tp.height + chartStyle.legendSpacing),
         ),
-        Paint()..color = chartColors.bgColor,
       );
-
-      tp.paint(canvas, offset);
+      row++;
     }
   }
 
-  List<InlineSpan> _createMATextSpan(CandleEntity data) {
-    final result = <InlineSpan>[];
-    for (int i = 0; i < (data.maValueList?.length ?? 0); i++) {
-      if (data.maValueList?[i] != 0) {
-        final item = TextSpan(
-          text: 'MA${maDayList[i]}:${format(data.maValueList![i])}    ',
-          style: getTextStyle(chartColors.getMAColor(i)),
-        );
-        result.add(item);
-      }
+  /// Draws every overlay's lines and dots across the visible candles.
+  void drawOverlays(
+    Canvas canvas,
+    List<KLineEntity> candles, {
+    required int start,
+    required int stop,
+    required double Function(int index) xOf,
+  }) {
+    if (isLine || overlays.isEmpty) return;
+
+    canvas.save();
+    canvas.clipRect(
+      Rect.fromLTRB(
+        chartRect.left,
+        chartRect.top - topPadding,
+        chartRect.right,
+        chartRect.bottom,
+      ),
+    );
+    for (final overlay in overlays) {
+      paintIndicatorSeries(
+        canvas,
+        resolved: overlay,
+        candles: candles,
+        start: start,
+        stop: stop,
+        xOf: xOf,
+        yOf: getY,
+        colors: chartColors,
+        strokeWidth: chartStyle.indicatorLineWidth,
+        barWidth: chartStyle.candleWidth,
+      );
     }
-    return result;
+    canvas.restore();
   }
 
   @override
@@ -156,17 +186,6 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       drawPolyline(lastPoint.close, curPoint.close, canvas, lastX, curX);
     } else {
       drawCandle(curPoint, canvas, curX);
-
-      /// draw chart main state
-      for (int i = 0; i < stateLi.length; ++i) {
-        if (stateLi[i] == MainState.MA) {
-          drawMaLine(lastPoint, curPoint, canvas, lastX, curX);
-        } else if (stateLi[i] == MainState.BOLL) {
-          drawBollLine(lastPoint, curPoint, canvas, lastX, curX);
-        } else if (stateLi[i] == MainState.SAR) {
-          drawSAR(lastPoint, curPoint, canvas, lastX, curX);
-        }
-      }
     }
   }
 
@@ -249,125 +268,52 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     mLinePath!.reset();
   }
 
-  void drawMaLine(
-    CandleEntity lastPoint,
-    CandleEntity curPoint,
-    Canvas canvas,
-    double lastX,
-    double curX,
-  ) {
-    for (int i = 0; i < (curPoint.maValueList?.length ?? 0); i++) {
-      if (i == 3) {
-        break;
-      }
-      if (lastPoint.maValueList?[i] != 0) {
-        drawLine(
-          lastPoint.maValueList?[i],
-          curPoint.maValueList?[i],
-          canvas,
-          lastX,
-          curX,
-          chartColors.getMAColor(i),
-        );
-      }
-    }
-  }
-
-  void drawBollLine(
-    CandleEntity lastPoint,
-    CandleEntity curPoint,
-    Canvas canvas,
-    double lastX,
-    double curX,
-  ) {
-    if (lastPoint.up != 0) {
-      drawLine(
-        lastPoint.up,
-        curPoint.up,
-        canvas,
-        lastX,
-        curX,
-        chartColors.ma10Color,
-      );
-    }
-    if (lastPoint.mb != 0) {
-      drawLine(
-        lastPoint.mb,
-        curPoint.mb,
-        canvas,
-        lastX,
-        curX,
-        chartColors.ma5Color,
-      );
-    }
-    if (lastPoint.dn != 0) {
-      drawLine(
-        lastPoint.dn,
-        curPoint.dn,
-        canvas,
-        lastX,
-        curX,
-        chartColors.ma30Color,
-      );
-    }
-  }
-
-  void drawSAR(
-    CandleEntity lastPoint,
-    CandleEntity curPoint,
-    Canvas canvas,
-    double lastX,
-    double curX,
-  ) {
-    final sar = curPoint.sar;
-    if (sar == null) return;
-    final halfHL = (curPoint.high + curPoint.low) / 2;
-    late final Color color;
-    if (sar == halfHL) {
-      color = chartColors.avgColor;
-    } else if (sar < halfHL) {
-      color = chartColors.upColor;
-    } else {
-      color = chartColors.dnColor;
-    }
-    drawCircle(canvas, curX, sar, color);
-  }
-
   void drawCandle(CandleEntity curPoint, Canvas canvas, double curX) {
     final high = getY(curPoint.high);
     final low = getY(curPoint.low);
-    var open = getY(curPoint.open);
+    final open = getY(curPoint.open);
     final close = getY(curPoint.close);
     final double r = mCandleWidth / 2;
     final double lineR = mCandleLineWidth / 2;
-    if (open >= close) {
-      // Entity height >= CandleLineWidth
-      if (open - close < mCandleLineWidth) {
-        open = close + mCandleLineWidth;
-      }
-      chartPaint.color = chartColors.upColor;
+
+    // In screen space a rising candle closes above where it opened, so its
+    // close carries the smaller y.
+    final isRising = open >= close;
+    var bodyTop = isRising ? close : open;
+    var bodyBottom = isRising ? open : close;
+
+    // A doji would otherwise vanish; keep it one stroke tall.
+    if (bodyBottom - bodyTop < mCandleLineWidth) {
+      final centre = (bodyTop + bodyBottom) / 2;
+      bodyTop = centre - mCandleLineWidth / 2;
+      bodyBottom = centre + mCandleLineWidth / 2;
+    }
+
+    chartPaint
+      ..color = isRising ? chartColors.upColor : chartColors.dnColor
+      ..style = PaintingStyle.fill;
+
+    // The wick spans the whole high-low range, behind the body.
+    canvas.drawRect(
+      Rect.fromLTRB(curX - lineR, high, curX + lineR, low),
+      chartPaint,
+    );
+
+    final body = Rect.fromLTRB(curX - r, bodyTop, curX + r, bodyBottom);
+    if (chartStyle.hollowUpCandles &&
+        isRising &&
+        bodyBottom - bodyTop > mCandleLineWidth * 3) {
+      // Clear the wick out of the body, then outline it.
+      canvas.drawRect(body, Paint()..color = chartColors.bgColor);
       canvas.drawRect(
-        Rect.fromLTRB(curX - r, close, curX + r, open),
-        chartPaint,
+        body.deflate(mCandleLineWidth / 2),
+        chartPaint
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = mCandleLineWidth,
       );
-      canvas.drawRect(
-        Rect.fromLTRB(curX - lineR, high, curX + lineR, low),
-        chartPaint,
-      );
-    } else if (close > open) {
-      // Entity height >= CandleLineWidth
-      if (close - open < mCandleLineWidth) {
-        open = close - mCandleLineWidth;
-      }
-      chartPaint.color = chartColors.dnColor;
-      canvas.drawRect(
-        Rect.fromLTRB(curX - r, open, curX + r, close),
-        chartPaint,
-      );
-      canvas.drawRect(
-        Rect.fromLTRB(curX - lineR, high, curX + lineR, low),
-        chartPaint,
-      );
+      chartPaint.style = PaintingStyle.fill;
+    } else {
+      canvas.drawRect(body, chartPaint);
     }
   }
 
@@ -375,6 +321,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   void drawVerticalText(Canvas canvas, TextStyle textStyle, int gridRows) {
     final double rowSpace = chartRect.height / gridRows;
     for (var i = 0; i <= gridRows; ++i) {
+      if (i == gridRows && hasPanesBelow) continue;
       final double value = (gridRows - i) * rowSpace / scaleY + minValue;
       final TextSpan span = TextSpan(text: format(value), style: textStyle);
       final TextPainter tp = TextPainter(
@@ -383,22 +330,28 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       );
       tp.layout();
 
-      double offsetX;
-      switch (verticalTextAlignment) {
-        case VerticalTextAlignment.left:
-          offsetX = 0;
-        case VerticalTextAlignment.right:
-          offsetX = chartRect.width - tp.width;
-      }
+      final padding = chartStyle.axisLabelPadding;
+      final double offsetX = switch (verticalTextAlignment) {
+        VerticalTextAlignment.left => padding,
+        VerticalTextAlignment.right => chartRect.width - tp.width - padding,
+      };
+      final double offsetY = i == 0
+          ? topPadding
+          : rowSpace * i - tp.height + topPadding;
 
-      if (i == 0) {
-        tp.paint(canvas, Offset(offsetX, topPadding));
-      } else {
-        tp.paint(
-          canvas,
-          Offset(offsetX, rowSpace * i - tp.height + topPadding),
+      if (chartStyle.axisLabelBackground) {
+        canvas.drawRRect(
+          RRect.fromLTRBR(
+            offsetX - padding / 2,
+            offsetY,
+            offsetX + tp.width + padding / 2,
+            offsetY + tp.height,
+            Radius.circular(chartStyle.labelCornerRadius),
+          ),
+          Paint()..color = chartColors.effectiveAxisLabelBgColor,
         );
       }
+      tp.paint(canvas, Offset(offsetX, offsetY));
     }
   }
 
@@ -414,8 +367,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       );
     }
     final double columnSpace = chartRect.width / gridColumns;
-
-    for (int i = 0; i <= columnSpace; i++) {
+    for (int i = 0; i <= gridColumns; i++) {
       canvas.drawLine(
         Offset(columnSpace * i, 0),
         Offset(columnSpace * i, chartRect.bottom),

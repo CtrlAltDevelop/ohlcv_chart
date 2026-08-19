@@ -4,14 +4,15 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart' as vg;
 
+import '../drawing/line_painting.dart';
 import '../entity/horizontal_line.dart';
 import '../entity/info_window_entity.dart';
 import '../export.dart';
 import '../utils/date_format_util.dart';
 import 'base_chart_painter.dart';
 import 'base_chart_renderer.dart';
+import 'indicator_pane_renderer.dart';
 import 'main_renderer.dart';
-import 'secondary_renderer.dart';
 import 'vol_renderer.dart';
 
 enum CrossArea { main, volume, secondary, none }
@@ -45,16 +46,17 @@ class ChartPainter extends BaseChartPainter {
     required this.selectedHorizontal,
     required this.selectedVertical,
     required this.selectedTrend,
+    this.drawingStyle = const DrawingStyle(),
+    super.suppressCrosshair,
     super.isOnTap,
     super.isTapShowInfoDialog,
-    super.mainStateLi,
+    super.overlays,
+    super.panes,
     super.volHidden,
-    super.secondaryStateLi,
     super.isLine = false,
     this.hideGrid = false,
     this.showNowPrice = true,
     this.fixedLength = 2,
-    this.maDayList = const [5, 10, 20],
     this.dateFormatter,
   }) {
     selectPointPaint = Paint()
@@ -87,6 +89,9 @@ class ChartPainter extends BaseChartPainter {
   final bool showLiveVerticalPreview;
   final bool showLiveHorizontalPreview;
 
+  /// Geometry and palette used for the user-drawn lines and their labels.
+  final DrawingStyle drawingStyle;
+
   final ChartColors chartColors;
   late Paint selectPointPaint;
   late Paint selectorBorderPaint;
@@ -98,11 +103,12 @@ class ChartPainter extends BaseChartPainter {
   final vg.PictureInfo? watermarkPicture;
   final Duration timeFrame;
   int fixedLength;
-  List<int> maDayList;
 
-  late BaseChartRenderer<dynamic> mMainRenderer;
+  late MainRenderer mMainRenderer;
   BaseChartRenderer<dynamic>? mVolRenderer;
-  Set<BaseChartRenderer<dynamic>> mSecondaryRendererList = {};
+
+  /// One renderer per indicator pane, in the order the panes are stacked.
+  List<IndicatorPaneRenderer> mIndicatorPaneList = [];
 
   static const kLabelBgOpacity = 220;
   static const kLabelBorderWidth = 1.4;
@@ -117,14 +123,14 @@ class ChartPainter extends BaseChartPainter {
       mMainMaxValue,
       mMainMinValue,
       mTopPadding,
-      mainStateLi.toList(),
+      overlays,
       isLine,
       fixedLength,
       chartStyle,
       chartColors,
       scaleX,
       verticalTextAlignment,
-      maDayList,
+      mVolRect != null || mSecondaryRectList.isNotEmpty,
     );
     if (mVolRect != null) {
       mVolRenderer = VolRenderer(
@@ -137,21 +143,19 @@ class ChartPainter extends BaseChartPainter {
         chartColors,
       );
     }
-    mSecondaryRendererList.clear();
-    for (int i = 0; i < mSecondaryRectList.length; ++i) {
-      mSecondaryRendererList.add(
-        SecondaryRenderer(
+    mIndicatorPaneList = [
+      for (int i = 0; i < mSecondaryRectList.length && i < panes.length; ++i)
+        IndicatorPaneRenderer(
           mSecondaryRectList[i].mRect,
           mSecondaryRectList[i].mMaxValue,
           mSecondaryRectList[i].mMinValue,
           mChildPadding,
-          secondaryStateLi.elementAt(i),
           fixedLength,
           chartStyle,
           chartColors,
+          panes[i],
         ),
-      );
-    }
+    ];
   }
 
   @override
@@ -200,8 +204,8 @@ class ChartPainter extends BaseChartPainter {
     if (!hideGrid) {
       mMainRenderer.drawGrid(canvas, mGridRows, mGridColumns);
       mVolRenderer?.drawGrid(canvas, mGridRows, mGridColumns);
-      for (final element in mSecondaryRendererList) {
-        element.drawGrid(canvas, mGridRows, mGridColumns);
+      for (final pane in mIndicatorPaneList) {
+        pane.drawGrid(canvas, mGridRows, mGridColumns);
       }
     }
   }
@@ -221,24 +225,46 @@ class ChartPainter extends BaseChartPainter {
 
       mMainRenderer.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
       mVolRenderer?.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
-      for (final element in mSecondaryRendererList) {
-        element.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
+    }
+
+    if (showCrosshair) {
+      drawCrossLine(canvas, size);
+    }
+    canvas.restore();
+
+    // Indicators paint in view space too, from their precomputed values, so a
+    // line keeps its width however far the chart is zoomed.
+    final data = candles;
+    if (data != null && data.isNotEmpty) {
+      double xOf(int index) => translateXtoX(getX(index));
+      mMainRenderer.drawOverlays(
+        canvas,
+        data,
+        start: mStartIndex,
+        stop: mStopIndex,
+        xOf: xOf,
+      );
+      for (final pane in mIndicatorPaneList) {
+        pane.drawSeries(
+          canvas,
+          data,
+          start: mStartIndex,
+          stop: mStopIndex,
+          xOf: xOf,
+        );
       }
     }
 
-    if ((isLongPress == true || (isTapShowInfoDialog && isOnTap)) &&
-        !isTrendLine) {
-      drawCrossLine(canvas, size);
-    }
-
+    // User-drawn lines paint in view space, once the horizontal scale is
+    // restored: a stroke then keeps the thickness it was given whatever the
+    // zoom level, and a drag handle stays a circle instead of an ellipse.
     drawHorizontalLines(canvas, size);
     drawVerticalLines(canvas, size);
     drawTrendLines(canvas, size);
-    canvas.restore();
 
-    drawTrendLineLabels(canvas, size);
     drawHorizontalLineTitles(canvas, size);
     drawVerticalLineTitles(canvas, size);
+    drawTrendLineLabels(canvas, size);
   }
 
   void drawHorizontalLines(Canvas canvas, Size size) {
@@ -250,33 +276,17 @@ class ChartPainter extends BaseChartPainter {
     }
 
     for (final line in effectiveHorizontals) {
-      final paint = Paint()
-        ..color = line.color
-        ..strokeWidth = line.thickness
-        ..isAntiAlias = true;
-
       final y = getMainY(line.price);
-
-      final start = Offset(-mTranslateX, y);
-      final end = Offset(-mTranslateX + mWidth / scaleX, y);
-
-      if (line.isDashed) {
-        drawDashedLine(canvas, start, end, paint);
-      } else {
-        canvas.drawLine(start, end, paint);
-      }
+      strokeChartLine(canvas, Offset(0, y), Offset(size.width, y), line);
 
       if (line == selectedHorizontal) {
-        final visibleLeft = -mTranslateX;
-        final visibleRight = -mTranslateX + mWidth / scaleX;
-        final handleX = visibleLeft + (visibleRight - visibleLeft) / 2;
-        final handleY = y.clamp(mMainRect.top + 20, mMainRect.bottom - 20);
-        canvas.drawCircle(
-          Offset(handleX, handleY),
-          10,
-          Paint()
-            ..color = line.color
-            ..style = PaintingStyle.fill,
+        final radius = drawingStyle.handleRadius;
+        final top = mMainRect.top + radius;
+        final bottom = math.max(top, mMainRect.bottom - radius);
+        drawLineHandle(
+          canvas,
+          Offset(size.width / 2, y.clamp(top, bottom)),
+          line,
         );
       }
     }
@@ -288,39 +298,14 @@ class ChartPainter extends BaseChartPainter {
 
       final y = getMainY(line.price);
       final title = line.title ?? line.price.toStringAsFixed(fixedLength);
-      final tp = getTextPainter(title, line.color);
+      final tp = getLabelPainter(title, line.color);
+      final padding = drawingStyle.labelPadding;
 
-      final offsetX = verticalTextAlignment == VerticalTextAlignment.right
-          ? size.width - tp.width - 8 - kLabelPaddingH * 2
-          : 8.0;
+      final textX = verticalTextAlignment == VerticalTextAlignment.right
+          ? size.width - tp.width - padding.right - 8
+          : 8.0 + padding.left;
 
-      final top = y - tp.height / 2;
-
-      final rect = RRect.fromLTRBR(
-        offsetX - kLabelPaddingH,
-        top - kLabelPaddingV,
-        offsetX + tp.width + kLabelPaddingH * 2,
-        top + tp.height + kLabelPaddingV * 2,
-        const Radius.circular(kLabelCornerRadius),
-      );
-
-      // Background - neutral semi-transparent
-      canvas.drawRRect(
-        rect,
-        Paint()
-          ..color = chartColors.defaultTextColor.withAlpha(kLabelBgOpacity),
-      );
-
-      // Border - line color
-      canvas.drawRRect(
-        rect,
-        Paint()
-          ..color = line.color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = kLabelBorderWidth,
-      );
-
-      tp.paint(canvas, Offset(offsetX, top));
+      drawLineLabel(canvas, tp, Offset(textX, y - tp.height / 2), line.color);
     }
   }
 
@@ -334,70 +319,39 @@ class ChartPainter extends BaseChartPainter {
       final index = candles!.indexWhere((e) => e.dateTime == line.time);
       if (index == -1) continue;
 
-      final paint = Paint()
-        ..color = line.color
-        ..strokeWidth = line.thickness
-        ..isAntiAlias = true;
+      final x = translateXtoX(getX(index));
+      strokeChartLine(
+        canvas,
+        Offset(x, mTopPadding),
+        Offset(x, size.height - mBottomPadding),
+        line,
+      );
+
+      if (line == selectedVertical) {
+        drawLineHandle(canvas, Offset(x, mMainRect.center.dy), line);
+      }
+    }
+  }
+
+  void drawVerticalLineTitles(Canvas canvas, Size size) {
+    for (final line in verticalLines) {
+      if (!line.showLabel) continue;
+
+      final index = candles!.indexWhere((e) => e.dateTime == line.time);
+      if (index == -1) continue;
 
       final x = getX(index);
-      final start = Offset(x, mTopPadding);
-      final end = Offset(x, size.height - mBottomPadding);
+      if (x < -mTranslateX || x > -mTranslateX + mWidth / scaleX) continue;
 
-      if (line.isDashed) {
-        drawDashedLine(canvas, start, end, paint);
-      } else {
-        canvas.drawLine(start, end, paint);
-      }
-
-      // ── Label ───────────────────────────────────────────────────────────────
-      final title = line.title ?? getDate(line.time);
-      final tp = getTextPainter(title, line.color);
-
+      final tp = getLabelPainter(line.title ?? getDate(line.time), line.color);
       final dateX = translateXtoX(x);
 
-      // Bottom position - you can adjust this value
-      const double bottomY = 8.0;
-
-      final rect = RRect.fromLTRBR(
-        dateX - tp.width / 2 - kLabelPaddingH,
-        bottomY,
-        dateX + tp.width / 2 + kLabelPaddingH * 2,
-        bottomY + tp.height + kLabelPaddingV * 2,
-        const Radius.circular(kLabelCornerRadius),
+      drawLineLabel(
+        canvas,
+        tp,
+        Offset(dateX - tp.width / 2, 8.0 + drawingStyle.labelPadding.top),
+        line.color,
       );
-
-      // Background - same as horizontal & trend
-      canvas.drawRRect(
-        rect,
-        Paint()
-          ..color = chartColors.defaultTextColor.withAlpha(kLabelBgOpacity),
-      );
-
-      // Border - same as others
-      canvas.drawRRect(
-        rect,
-        Paint()
-          ..color = line.color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = kLabelBorderWidth,
-      );
-
-      // Text centered
-      tp.paint(canvas, Offset(dateX - tp.width / 2, bottomY + kLabelPaddingV));
-
-      // Selection handle
-      if (line == selectedVertical) {
-        final visibleTop = mMainRect.top;
-        final visibleBottom = mMainRect.bottom;
-        final handleY = visibleTop + (visibleBottom - visibleTop) / 2;
-        canvas.drawCircle(
-          Offset(x, handleY),
-          10,
-          Paint()
-            ..color = line.color
-            ..style = PaintingStyle.fill,
-        );
-      }
     }
   }
 
@@ -409,54 +363,23 @@ class ChartPainter extends BaseChartPainter {
       final index1 = candles!.indexWhere((e) => e.dateTime == line.time1);
       if (index1 == -1) continue;
 
-      final x1 = getX(index1);
-      final y1 = getMainY(line.price1);
+      final start = Offset(translateXtoX(getX(index1)), getMainY(line.price1));
 
       if (line.time2 == null || line.price2 == null) {
-        canvas.drawCircle(
-          Offset(x1, y1),
-          10,
-          Paint()
-            ..color = line.color
-            ..style = PaintingStyle.fill,
-        );
+        // Still being drawn: only the anchor exists so far.
+        drawLineHandle(canvas, start, line);
         continue;
       }
 
       final index2 = candles!.indexWhere((e) => e.dateTime == line.time2!);
       if (index2 == -1) continue;
-      final x2 = getX(index2);
-      final y2 = getMainY(line.price2!);
+      final end = Offset(translateXtoX(getX(index2)), getMainY(line.price2!));
 
-      final paint = Paint()
-        ..color = line.color
-        ..strokeWidth = line.thickness
-        ..isAntiAlias = true;
-
-      final start = Offset(x1, y1);
-      final end = Offset(x2, y2);
-
-      if (line.isDashed) {
-        drawDashedLine(canvas, start, end, paint);
-      } else {
-        canvas.drawLine(start, end, paint);
-      }
+      strokeChartLine(canvas, start, end, line);
 
       if (line == selectedTrend) {
-        canvas.drawCircle(
-          Offset(x1, y1),
-          10,
-          Paint()
-            ..color = line.color
-            ..style = PaintingStyle.fill,
-        );
-        canvas.drawCircle(
-          Offset(x2, y2),
-          10,
-          Paint()
-            ..color = line.color
-            ..style = PaintingStyle.fill,
-        );
+        drawLineHandle(canvas, start, line);
+        drawLineHandle(canvas, end, line);
       }
     }
   }
@@ -483,89 +406,126 @@ class ChartPainter extends BaseChartPainter {
           line.label2 ??
           '${line.price2!.toStringAsFixed(fixedLength)}\n${getDate(line.time2)}';
 
-      final tp1 = getTextPainter(label1, line.color);
-      final tp2 = getTextPainter(label2, line.color);
+      final tp1 = getLabelPainter(label1, line.color);
+      final tp2 = getLabelPainter(label2, line.color);
 
-      // Point 1 Label (left side or above)
-      double label1X = x1 - tp1.width - 10;
-      final label1Y = y1 - tp1.height / 2;
-      if (label1X < 10) label1X = x1 + 10; // flip to right if too left
+      // Point 1 sits to the left of its anchor, flipping right when there is
+      // no room; point 2 does the opposite.
+      var label1X = x1 - tp1.width - 10;
+      if (label1X < 10) label1X = x1 + 10;
+      drawLineLabel(
+        canvas,
+        tp1,
+        Offset(label1X, y1 - tp1.height / 2),
+        line.color,
+      );
 
-      _drawLabel(canvas, label1X, label1Y, tp1, line.color);
-
-      // Point 2 Label (right side or below)
-      double label2X = x2 + 10;
-      final label2Y = y2 - tp2.height / 2;
+      var label2X = x2 + 10;
       if (label2X + tp2.width > size.width - 10) label2X = x2 - tp2.width - 10;
-
-      _drawLabel(canvas, label2X, label2Y, tp2, line.color);
+      drawLineLabel(
+        canvas,
+        tp2,
+        Offset(label2X, y2 - tp2.height / 2),
+        line.color,
+      );
     }
   }
 
-  void _drawLabel(
-    Canvas canvas,
-    double x,
-    double y,
-    TextPainter tp,
-    Color lineColor,
-  ) {
-    final rect = RRect.fromLTRBR(
-      x - kLabelPaddingH,
-      y - kLabelPaddingV,
-      x + tp.width + kLabelPaddingH * 2,
-      y + tp.height + kLabelPaddingV * 2,
-      const Radius.circular(kLabelCornerRadius),
-    );
-
-    // Background - same neutral style
-    canvas.drawRRect(
-      rect,
-      Paint()..color = chartColors.defaultTextColor.withAlpha(kLabelBgOpacity),
-    );
-
-    // Border - line color
-    canvas.drawRRect(
-      rect,
-      Paint()
-        ..color = lineColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = kLabelBorderWidth,
-    );
-
-    tp.paint(canvas, Offset(x, y));
-  }
-
-  void drawDashedLine(
+  /// Strokes [line] between two points, honouring its colour, thickness and
+  /// [LineStyle].
+  void strokeChartLine(
     Canvas canvas,
     Offset start,
     Offset end,
-    Paint paint, {
-    double dashLength = 6,
-    double gapLength = 4,
-  }) {
-    final dx = end.dx - start.dx;
-    final dy = end.dy - start.dy;
-    double distance = math.sqrt(dx * dx + dy * dy);
-    if (distance == 0) return;
+    ChartLine line,
+  ) {
+    final paint = Paint()
+      ..color = line.color
+      ..strokeWidth = line.thickness
+      ..isAntiAlias = true;
 
-    final dashX = dx / distance * dashLength;
-    final dashY = dy / distance * dashLength;
-    final gapX = dx / distance * gapLength;
-    final gapY = dy / distance * gapLength;
+    paintStyledLine(
+      canvas,
+      start,
+      end,
+      paint,
+      style: line.style,
+      dashLength: drawingStyle.dashLength,
+      dashGap: drawingStyle.dashGap,
+      dotGap: drawingStyle.dotGap,
+    );
+  }
 
-    double x = start.dx;
-    double y = start.dy;
-    bool draw = true;
+  /// Paints the round grab handle shown on a selected line.
+  void drawLineHandle(Canvas canvas, Offset center, ChartLine line) {
+    final radius = drawingStyle.handleRadius;
+    if (radius <= 0) return;
 
-    while (distance > 0) {
-      if (draw) {
-        canvas.drawLine(Offset(x, y), Offset(x + dashX, y + dashY), paint);
-      }
-      x += draw ? dashX + gapX : gapX;
-      y += draw ? dashY + gapY : gapY;
-      distance -= draw ? dashLength + gapLength : gapLength;
-      draw = !draw;
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = line.color
+        ..isAntiAlias = true,
+    );
+
+    if (drawingStyle.handleBorderWidth > 0) {
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = line.locked
+              ? drawingStyle.handleBorderColor.withValues(alpha: .5)
+              : drawingStyle.handleBorderColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = drawingStyle.handleBorderWidth
+          ..isAntiAlias = true,
+      );
     }
+  }
+
+  /// Lays out one of a line's labels at [drawingStyle]'s text size.
+  TextPainter getLabelPainter(String text, Color color) =>
+      getTextPainter(text, color, fontSize: drawingStyle.labelTextSize);
+
+  /// Paints a line's label: a filled, outlined pill with [tp] inside it.
+  ///
+  /// [textOffset] is where the text itself starts; the pill is grown around it
+  /// by `DrawingStyle.labelPadding`.
+  void drawLineLabel(
+    Canvas canvas,
+    TextPainter tp,
+    Offset textOffset,
+    Color borderColor,
+  ) {
+    final padding = drawingStyle.labelPadding;
+    final rect = RRect.fromLTRBR(
+      textOffset.dx - padding.left,
+      textOffset.dy - padding.top,
+      textOffset.dx + tp.width + padding.right,
+      textOffset.dy + tp.height + padding.bottom,
+      Radius.circular(drawingStyle.labelCornerRadius),
+    );
+
+    canvas.drawRRect(
+      rect,
+      Paint()
+        ..color =
+            (drawingStyle.labelBackgroundColor ?? chartColors.defaultTextColor)
+                .withAlpha(drawingStyle.labelBackgroundAlpha.clamp(0, 255)),
+    );
+
+    if (drawingStyle.labelBorderWidth > 0) {
+      canvas.drawRRect(
+        rect,
+        Paint()
+          ..color = borderColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = drawingStyle.labelBorderWidth,
+      );
+    }
+
+    tp.paint(canvas, textOffset);
   }
 
   @override
@@ -575,8 +535,8 @@ class ChartPainter extends BaseChartPainter {
       mMainRenderer.drawVerticalText(canvas, textStyle, mGridRows);
     }
     mVolRenderer?.drawVerticalText(canvas, textStyle, mGridRows);
-    for (final element in mSecondaryRendererList) {
-      element.drawVerticalText(canvas, textStyle, mGridRows);
+    for (final pane in mIndicatorPaneList) {
+      pane.drawVerticalText(canvas, textStyle, mGridRows);
     }
   }
 
@@ -625,10 +585,11 @@ class ChartPainter extends BaseChartPainter {
     return CrossArea.none;
   }
 
-  BaseChartRenderer<dynamic>? _getSecondaryRendererByY(double y) {
+  IndicatorPaneRenderer? _getSecondaryRendererByY(double y) {
     for (int i = 0; i < mSecondaryRectList.length; i++) {
-      if (mSecondaryRectList[i].mRect.contains(Offset(0, y))) {
-        return mSecondaryRendererList.elementAt(i);
+      if (mSecondaryRectList[i].mRect.contains(Offset(0, y)) &&
+          i < mIndicatorPaneList.length) {
+        return mIndicatorPaneList[i];
       }
     }
     return null;
@@ -657,7 +618,7 @@ class ChartPainter extends BaseChartPainter {
         final renderer = _getSecondaryRendererByY(selectY);
         if (renderer == null) return;
         value = renderer.getValue(selectY);
-        valueText = '${renderer.name}: ${value.toStringAsFixed(2)}';
+        valueText = '${renderer.name}: ${renderer.formatValue(value)}';
       default:
         return;
     }
@@ -789,53 +750,53 @@ class ChartPainter extends BaseChartPainter {
 
   @override
   void drawText(Canvas canvas, KLineEntity dataO, double x) {
-    KLineEntity data = dataO;
+    // The legends read out the candle under the crosshair, or the newest one.
+    var index = (candles?.length ?? 1) - 1;
     if (isLongPress || (isTapShowInfoDialog && isOnTap)) {
-      final index = calculateSelectedX(selectX);
-      data = getItem(index);
+      index = calculateSelectedX(selectX);
     }
-    mMainRenderer.drawText(canvas, data, x);
+    final data = getItem(index);
+
+    mMainRenderer.drawLegends(canvas, index, x);
     mVolRenderer?.drawText(canvas, data, x);
-    for (final element in mSecondaryRendererList) {
-      element.drawText(canvas, data, x);
+    for (final pane in mIndicatorPaneList) {
+      pane.drawLegendAt(canvas, index, x);
     }
   }
 
   @override
   void drawMaxAndMin(Canvas canvas) {
     if (isLine) return;
+    drawExtreme(canvas, mMainMinIndex, mMainLowMinValue, chartColors.minColor);
+    drawExtreme(canvas, mMainMaxIndex, mMainHighMaxValue, chartColors.maxColor);
+  }
 
-    double x = translateXtoX(getX(mMainMinIndex));
-    double y = getMainY(mMainLowMinValue);
-    if (x < mWidth / 2) {
-      final tp = getTextPainter(
-        '── ${mMainLowMinValue.toStringAsFixed(fixedLength)}',
-        chartColors.minColor,
-      );
-      tp.paint(canvas, Offset(x, y - tp.height / 2));
-    } else {
-      final tp = getTextPainter(
-        '${mMainLowMinValue.toStringAsFixed(fixedLength)} ──',
-        chartColors.minColor,
-      );
-      tp.paint(canvas, Offset(x - tp.width, y - tp.height / 2));
-    }
+  /// Labels one extreme of the visible range with a short leader line pointing
+  /// back at the candle that set it.
+  void drawExtreme(Canvas canvas, int index, double value, Color color) {
+    const leader = 8.0;
+    const gap = 3.0;
 
-    x = translateXtoX(getX(mMainMaxIndex));
-    y = getMainY(mMainHighMaxValue);
-    if (x < mWidth / 2) {
-      final tp = getTextPainter(
-        '── ${mMainHighMaxValue.toStringAsFixed(fixedLength)}',
-        chartColors.maxColor,
-      );
-      tp.paint(canvas, Offset(x, y - tp.height / 2));
-    } else {
-      final tp = getTextPainter(
-        '${mMainHighMaxValue.toStringAsFixed(fixedLength)} ──',
-        chartColors.maxColor,
-      );
-      tp.paint(canvas, Offset(x - tp.width, y - tp.height / 2));
-    }
+    final x = translateXtoX(getX(index));
+    final y = getMainY(value);
+    final tp = getTextPainter(value.toStringAsFixed(fixedLength), color);
+    final linePaint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..isAntiAlias = true;
+
+    // Point away from the nearer edge so the label always has room.
+    final pointsRight = x < mWidth / 2;
+    final textLeft = pointsRight
+        ? math.min(x + leader + gap, mWidth - tp.width - 2)
+        : math.max(x - leader - gap - tp.width, 2.0);
+
+    canvas.drawLine(
+      Offset(pointsRight ? x : x - leader, y),
+      Offset(pointsRight ? x + leader : x, y),
+      linePaint,
+    );
+    tp.paint(canvas, Offset(textLeft, y - tp.height / 2));
   }
 
   @override
@@ -851,11 +812,25 @@ class ChartPainter extends BaseChartPainter {
     if (y < getMainY(mMainHighMaxValue)) y = getMainY(mMainHighMaxValue);
 
     nowPricePaint.color = value >= open
-        ? chartColors.maxColor
-        : chartColors.minColor;
+        ? chartColors.nowPriceUpColor
+        : chartColors.nowPriceDnColor;
 
-    final lastIndex = candles!.length - 1;
-    final lastX = translateXtoX(getX(lastIndex));
+    // Dashes run the full width so the level can be read anywhere, while the
+    // stretch since the last candle stays solid.
+    final lastX = translateXtoX(getX(candles!.length - 1)).clamp(0.0, mWidth);
+    if (chartStyle.nowPriceDashed) {
+      paintStyledLine(
+        canvas,
+        Offset(0, y),
+        Offset(lastX, y),
+        nowPricePaint,
+        style: LineStyle.dashed,
+        dashLength: chartStyle.nowPriceLineLength,
+        dashGap: chartStyle.nowPriceLineSpan,
+      );
+    } else {
+      canvas.drawLine(Offset(0, y), Offset(lastX, y), nowPricePaint);
+    }
     canvas.drawLine(Offset(lastX, y), Offset(mWidth, y), nowPricePaint);
 
     String countdown = '00:00';
@@ -885,20 +860,32 @@ class ChartPainter extends BaseChartPainter {
       '${value.toStringAsFixed(fixedLength)} ($countdown)',
       chartColors.nowPriceTextColor,
     );
-    final offsetX = mWidth - tp.width - 4;
-    final top = y - tp.height / 2;
+    drawPriceTag(canvas, tp, y, nowPricePaint.color);
+  }
+
+  /// Paints a price tag against the edge opposite the axis labels, so the two
+  /// never sit on top of each other.
+  void drawPriceTag(Canvas canvas, TextPainter tp, double y, Color color) {
+    const padding = 4.0;
+    final tagWidth = tp.width + padding * 2;
+    final left = verticalTextAlignment == VerticalTextAlignment.left
+        ? mWidth - tagWidth - 1
+        : 1.0;
+    final top = y - tp.height / 2 - padding / 2;
 
     canvas.drawRRect(
       RRect.fromLTRBR(
-        offsetX,
+        left,
         top,
-        offsetX + tp.width + 4,
-        top + tp.height,
-        const Radius.circular(2),
+        left + tagWidth,
+        top + tp.height + padding,
+        Radius.circular(chartStyle.labelCornerRadius),
       ),
-      nowPricePaint,
+      Paint()
+        ..color = color
+        ..isAntiAlias = true,
     );
-    tp.paint(canvas, Offset(offsetX + 2, top));
+    tp.paint(canvas, Offset(left + padding, top + padding / 2));
   }
 
   @override
@@ -916,42 +903,21 @@ class ChartPainter extends BaseChartPainter {
         ..strokeWidth = chartStyle.nowPriceLineWidth
         ..isAntiAlias = true;
 
-      double startX = 0;
-      final max = math.max(mWidth, -mTranslateX + mWidth / scaleX);
-      double space = chartStyle.nowPriceLineLength;
-      if (signal.useDash) space += chartStyle.nowPriceLineSpan;
-
-      while (startX < max) {
-        canvas.drawLine(
-          Offset(startX, y),
-          Offset(startX + chartStyle.nowPriceLineLength, y),
-          linePaint,
-        );
-        startX += space;
-      }
+      paintStyledLine(
+        canvas,
+        Offset(0, y),
+        Offset(mWidth, y),
+        linePaint,
+        style: signal.useDash ? LineStyle.dashed : LineStyle.solid,
+        dashLength: chartStyle.nowPriceLineLength,
+        dashGap: chartStyle.nowPriceLineSpan,
+      );
 
       final tp = getTextPainter(
-        '${signal.title}: ${value.toStringAsFixed(fixedLength)}',
+        '${signal.title} ${value.toStringAsFixed(fixedLength)}',
         chartColors.nowPriceTextColor,
       );
-
-      final offsetX = verticalTextAlignment == VerticalTextAlignment.left
-          ? mWidth - tp.width - 4
-          : 0.0;
-      final top = y - tp.height / 2;
-
-      final bgPaint = Paint()..color = signal.color;
-      canvas.drawRRect(
-        RRect.fromLTRBR(
-          offsetX,
-          top,
-          offsetX + tp.width + 4,
-          top + tp.height,
-          const Radius.circular(2),
-        ),
-        bgPaint,
-      );
-      tp.paint(canvas, Offset(offsetX + 2, top));
+      drawPriceTag(canvas, tp, y, signal.color);
     }
   }
 
@@ -959,8 +925,8 @@ class ChartPainter extends BaseChartPainter {
   void drawCrossLine(Canvas canvas, Size size) {
     final index = calculateSelectedX(selectX);
     final point = getItem(index);
-    const double dashWidth = 6.0;
-    const double dashSpace = 4.0;
+    final double dashWidth = chartStyle.crossDashLength;
+    final double dashSpace = chartStyle.crossDashGap;
 
     final paintY = Paint()
       ..color = chartColors.vCrossColor
@@ -1020,9 +986,12 @@ class ChartPainter extends BaseChartPainter {
     canvas.drawCircle(Offset(x, selectY), 2.0, circlePaint);
   }
 
-  TextPainter getTextPainter(String text, Color? color) {
+  TextPainter getTextPainter(String text, Color? color, {double? fontSize}) {
     final c = color ?? chartColors.defaultTextColor;
-    final span = TextSpan(text: text, style: getTextStyle(c));
+    final style = fontSize == null
+        ? getTextStyle(c)
+        : getTextStyle(c).copyWith(fontSize: fontSize);
+    final span = TextSpan(text: text, style: style);
     final tp = TextPainter(text: span, textDirection: TextDirection.ltr);
     tp.layout();
     return tp;
@@ -1035,104 +1004,34 @@ class ChartPainter extends BaseChartPainter {
 
   @override
   void drawWatermarkLogo(Canvas canvas, Size size) {
-    if (watermarkPicture == null) return;
+    final picture = watermarkPicture;
+    if (picture == null) return;
 
-    final logoSize = math.min(size.width, size.height) * 0.4;
-    final imgSize = watermarkPicture!.size;
-    final scale = logoSize / imgSize.width;
+    final area = Rect.fromLTRB(
+      0,
+      mTopPadding,
+      mWidth,
+      mTopPadding + mMainRect.height,
+    );
+    final logoWidth =
+        math.min(area.width, area.height) * chartStyle.watermarkScale;
+    final scale = logoWidth / picture.size.width;
+    final logoHeight = picture.size.height * scale;
 
-    final logoWidth = imgSize.width * scale;
-    final logoHeight = imgSize.height * scale;
-
-    const topLeft = Offset(40, 270);
-    final paint = Paint()..color = const Color.fromRGBO(255, 255, 255, 0.08);
+    final spot = chartStyle.watermarkAlignment.inscribe(
+      Size(logoWidth, logoHeight),
+      area,
+    );
 
     canvas.save();
     canvas.saveLayer(
-      Rect.fromLTWH(topLeft.dx, topLeft.dy, logoWidth, logoHeight),
-      paint,
+      spot,
+      Paint()..color = chartColors.effectiveWatermarkColor,
     );
-    canvas.translate(topLeft.dx, topLeft.dy);
+    canvas.translate(spot.left, spot.top);
     canvas.scale(scale, scale);
-    canvas.drawPicture(watermarkPicture!.picture);
+    canvas.drawPicture(picture.picture);
     canvas.restore();
     canvas.restore();
-  }
-
-  @override
-  void drawVerticalTimeLines(Canvas canvas, Size size) {
-    for (final line in verticalLines) {
-      final index = candles!.indexWhere((e) => e.dateTime == line.time);
-      if (index == -1) continue;
-
-      final x = getX(index);
-      if (x < -mTranslateX || x > -mTranslateX + mWidth / scaleX) continue;
-
-      final paint = Paint()
-        ..color = line.color.withAlpha(200)
-        ..strokeWidth = 1
-        ..style = PaintingStyle.stroke
-        ..isAntiAlias = true;
-
-      final start = Offset(x, mTopPadding);
-      final end = Offset(x, size.height - mBottomPadding);
-
-      canvas.drawLine(start, end, paint);
-    }
-  }
-
-  void drawVerticalLineTitles(Canvas canvas, Size size) {
-    for (final line in verticalLines) {
-      if (!line.showLabel) continue;
-
-      final index = candles!.indexWhere((e) => e.dateTime == line.time);
-      if (index == -1) continue;
-
-      final x = getX(index);
-      if (x < -mTranslateX || x > -mTranslateX + mWidth / scaleX) continue;
-
-      final dateTp = getTextPainter(
-        line.title ?? getDate(line.time),
-        line.color, // text color = line color
-      );
-
-      final dateX = translateXtoX(getX(index));
-
-      // ── Modern unified label style ────────────────────────────────────────
-      const double bottomY = 8.0; // slightly above bottom edge
-      const double paddingH = 8.0;
-      const double paddingV = 4.0;
-      const double cornerRadius = 5.0;
-      const double borderWidth = 1.4;
-
-      final rect = RRect.fromLTRBR(
-        dateX - dateTp.width / 2 - paddingH,
-        bottomY,
-        dateX + dateTp.width / 2 + paddingH * 2,
-        bottomY + dateTp.height + paddingV * 2,
-        const Radius.circular(cornerRadius),
-      );
-
-      // 1. Background - neutral semi-transparent (same as others)
-      canvas.drawRRect(
-        rect,
-        Paint()..color = chartColors.defaultTextColor.withAlpha(200),
-      );
-
-      // 2. Border - line color (same thickness as other labels)
-      canvas.drawRRect(
-        rect,
-        Paint()
-          ..color = line.color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = borderWidth,
-      );
-
-      // 3. Text centered
-      dateTp.paint(
-        canvas,
-        Offset(dateX - dateTp.width / 2, bottomY + paddingV),
-      );
-    }
   }
 }

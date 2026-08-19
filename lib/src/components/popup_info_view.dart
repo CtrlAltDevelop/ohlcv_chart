@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -8,10 +9,17 @@ import '../entity/k_line_entity.dart';
 import '../utils/date_format_util.dart';
 import '../utils/number_util.dart';
 
+/// The readout shown while the crosshair is up.
+///
+/// Sizes itself to its content between [width] and [maxWidth]; labels and
+/// values ellipsise rather than overflow, so long translations, intraday
+/// timestamps and large volumes all stay inside the card.
 class PopupInfoView extends StatelessWidget {
+  /// Creates a readout for [entity].
   const PopupInfoView({
     required this.entity,
     required this.width,
+    required this.maxWidth,
     required this.chartColors,
     required this.chartTranslations,
     required this.materialInfoDialog,
@@ -22,7 +30,12 @@ class PopupInfoView extends StatelessWidget {
   });
 
   final KLineEntity entity;
+
+  /// Narrowest the card may be.
   final double width;
+
+  /// Widest the card may grow before its rows ellipsise.
+  final double maxWidth;
   final ChartColors chartColors;
   final ChartTranslations chartTranslations;
   final bool materialInfoDialog;
@@ -37,12 +50,14 @@ class PopupInfoView extends StatelessWidget {
         ? chartColors.selectFillColor.withAlpha(180)
         : chartColors.selectFillColor.withAlpha(180);
 
+    final minWidth = math.min(width, maxWidth);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
         child: Container(
-          width: width,
+          constraints: BoxConstraints(minWidth: minWidth, maxWidth: maxWidth),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(8),
@@ -62,7 +77,9 @@ class PopupInfoView extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 4),
-            child: _buildContent(),
+            // Lets the card hug its widest row instead of always filling the
+            // maximum width.
+            child: IntrinsicWidth(child: _buildContent()),
           ),
         ),
       ),
@@ -90,26 +107,13 @@ class PopupInfoView extends StatelessWidget {
               ),
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                chartTranslations.date,
-                style: TextStyle(
-                  color: chartColors.infoWindowTitleColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                getDate(entity.dateTime),
-                style: TextStyle(
-                  color: chartColors.infoWindowNormalColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          child: _InfoRow(
+            label: chartTranslations.date,
+            value: getDate(entity.dateTime),
+            labelColor: chartColors.infoWindowTitleColor,
+            valueColor: chartColors.infoWindowNormalColor,
+            fontSize: 10,
+            labelWeight: FontWeight.w600,
           ),
         ),
 
@@ -197,26 +201,12 @@ class PopupInfoView extends StatelessWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1.5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: chartColors.infoWindowTitleColor,
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: chartColors.infoWindowNormalColor,
-              fontSize: 9,
-              fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
-            ),
-          ),
-        ],
+      child: _InfoRow(
+        label: label,
+        value: value,
+        labelColor: chartColors.infoWindowTitleColor,
+        valueColor: chartColors.infoWindowNormalColor,
+        valueWeight: isBold ? FontWeight.w600 : FontWeight.w500,
       ),
     );
   }
@@ -227,36 +217,77 @@ class PopupInfoView extends StatelessWidget {
     required bool isUp,
     String prefix = '',
   }) {
-    final color = isUp
-        ? chartColors.infoWindowUpColor
-        : chartColors.infoWindowDnColor;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1.5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: chartColors.infoWindowTitleColor,
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            '$prefix$value',
-            style: TextStyle(
-              color: color,
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+      child: _InfoRow(
+        label: label,
+        value: '$prefix$value',
+        labelColor: chartColors.infoWindowTitleColor,
+        valueColor: isUp
+            ? chartColors.infoWindowUpColor
+            : chartColors.infoWindowDnColor,
+        valueWeight: FontWeight.w600,
       ),
     );
   }
 
   String getDate(DateTime? date) =>
       dateFormat(date ?? DateTime.now(), timeFormat);
+}
+
+/// One label-and-value line of the readout.
+///
+/// Both halves shrink and ellipsise before the row can overflow, and the gap
+/// between them survives even when the card is at its narrowest.
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    required this.labelColor,
+    required this.valueColor,
+    this.fontSize = 9,
+    this.labelWeight = FontWeight.w500,
+    this.valueWeight = FontWeight.w500,
+  });
+
+  final String label;
+  final String value;
+  final Color labelColor;
+  final Color valueColor;
+  final double fontSize;
+  final FontWeight labelWeight;
+  final FontWeight valueWeight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: labelColor,
+              fontSize: fontSize,
+              fontWeight: labelWeight,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: fontSize,
+              fontWeight: valueWeight,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

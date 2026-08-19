@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../depth_mode.dart';
 import '../depth_style.dart';
 import '../depth_translations.dart';
+import '../entity/depth_book.dart';
 import '../entity/depth_entity.dart';
 import '../extension/canvas_extension.dart';
 import '../utils/number_util.dart';
@@ -19,8 +21,11 @@ class DepthChartPainter extends CustomPainter {
     this.chartColors,
     this.chartStyle,
     this.offset,
-    this.chartTranslations,
-  ) {
+    this.chartTranslations, {
+    this.mode = DepthChartMode.cumulative,
+    this.scale = DepthScale.linear,
+    double? zoom,
+  }) {
     mBuyLinePaint ??= Paint()
       ..isAntiAlias = true
       ..color = chartColors.upColor
@@ -48,8 +53,29 @@ class DepthChartPainter extends CustomPainter {
 
     mBuyPath ??= Path();
     mSellPath ??= Path();
+    book = DepthBook.fromCurves(
+      mBuyData ?? const <DepthEntity>[],
+      mSellData ?? const <DepthEntity>[],
+      zoom: zoom,
+    );
+    if (zoom != null && zoom > 0 && !book.isEmpty) {
+      // Zooming keeps only the levels near the mid, so the curves are redrawn
+      // from what survived rather than from the whole book.
+      mBuyData = [
+        for (final level in book.bids)
+          DepthEntity(level.price, level.cumulative),
+      ];
+      mSellData = [
+        for (final level in book.asks)
+          DepthEntity(level.price, level.cumulative),
+      ];
+    }
+    mBarPaint = Paint()..isAntiAlias = true;
     init();
   }
+
+  /// Paints the per-rung bars, recoloured per side as they are drawn.
+  late final Paint mBarPaint;
 
   //Buy//Sell
   List<DepthEntity>? mBuyData;
@@ -71,9 +97,25 @@ class DepthChartPainter extends CustomPainter {
   Offset offset;
   DepthChartTranslations chartTranslations;
 
+  /// Which picture of the book is drawn; see [DepthChartMode].
+  final DepthChartMode mode;
+
+  /// How volume is spaced up the vertical axis.
+  final DepthScale scale;
+
+  /// The book behind the curves: each rung's own size and the total out to it.
+  late final DepthBook book;
+
+  /// Whether the running-total curves are drawn.
+  bool get _drawsCurve =>
+      mode == DepthChartMode.cumulative || mode == DepthChartMode.combined;
+
+  /// Whether the per-rung bars are drawn.
+  bool get _drawsBars =>
+      mode == DepthChartMode.histogram || mode == DepthChartMode.combined;
+
   //Maximum commission amount
   double? mMaxVolume;
-  double? mMultiple;
 
   int mLineCount = 6;
 
@@ -96,10 +138,14 @@ class DepthChartPainter extends CustomPainter {
         mSellData!.isEmpty) {
       return;
     }
-    final maxBuyVol = mBuyData!.reduce((a, b) => a.vol > b.vol ? a : b).vol;
-    final maxSellVol = mSellData!.reduce((a, b) => a.vol > b.vol ? a : b).vol;
-    mMaxVolume = max(maxBuyVol, maxSellVol);
-    mMultiple = mMaxVolume! / mLineCount;
+    // A histogram is scaled to the biggest single rung; anything showing the
+    // running total is scaled to the deepest total.
+    mMaxVolume = _drawsCurve ? book.maxCumulative : book.maxSize;
+    if (mMaxVolume == null || mMaxVolume! <= 0) {
+      final maxBuyVol = mBuyData!.reduce((a, b) => a.vol > b.vol ? a : b).vol;
+      final maxSellVol = mSellData!.reduce((a, b) => a.vol > b.vol ? a : b).vol;
+      mMaxVolume = max(maxBuyVol, maxSellVol);
+    }
 
     selectPaint = Paint()
       ..isAntiAlias = true
@@ -123,10 +169,57 @@ class DepthChartPainter extends CustomPainter {
     mDrawWidth = mWidth / 2;
     mDrawHeight = size.height - mPaddingBottom;
     canvas.save();
-    drawBuy(canvas);
-    drawSell(canvas);
+    if (_drawsBars) drawBars(canvas);
+    if (_drawsCurve) {
+      drawBuy(canvas);
+      drawSell(canvas);
+    }
     drawText(canvas);
     canvas.restore();
+  }
+
+  /// Draws one bar per price level, each the size resting on that rung.
+  ///
+  /// The bars sit on the same halves as the curves — bids left, asks right —
+  /// and are drawn under them, so a combined chart reads as walls beneath the
+  /// running total.
+  void drawBars(Canvas canvas) {
+    void side(List<DepthLevel> levels, double left, Color color) {
+      if (levels.isEmpty) return;
+      final slot = mDrawWidth / levels.length;
+      // Leave a hairline between bars, but never draw one thinner than a pixel.
+      final width = max(1.0, slot * chartStyle.barWidthFactor);
+
+      mBarPaint.color = color;
+      for (var i = 0; i < levels.length; i++) {
+        final centre = left + slot * (i + 0.5);
+        final top = getY(levels[i].size);
+        if (top >= mDrawHeight) continue;
+        canvas.drawRect(
+          Rect.fromLTRB(
+            centre - width / 2,
+            top,
+            centre + width / 2,
+            mDrawHeight,
+          ),
+          mBarPaint,
+        );
+      }
+    }
+
+    // Under a curve the bars step back to the fill colours, so the stroke of
+    // the running total stays the thing the eye follows.
+    final isCombined = mode == DepthChartMode.combined;
+    side(
+      book.bids,
+      0,
+      isCombined ? chartColors.upFillPathColor : chartColors.upColor,
+    );
+    side(
+      book.asks,
+      mDrawWidth,
+      isCombined ? chartColors.dnFillPathColor : chartColors.dnColor,
+    );
   }
 
   void drawBuy(Canvas canvas) {
@@ -218,12 +311,8 @@ class DepthChartPainter extends CustomPainter {
   // int? mLastPosition;
 
   void drawText(Canvas canvas) {
-    double value;
-    String str;
     for (int j = 0; j < mLineCount; j++) {
-      value = mMaxVolume! - mMultiple! * j;
-      str = NumberUtil.formatCompact(value, baseUnit);
-      final tp = getTextPainter(str);
+      final tp = getTextPainter(_axisLabel(j));
       tp.layout();
       tp.paint(
         canvas,
@@ -320,8 +409,9 @@ class DepthChartPainter extends CustomPainter {
 
   void drawLeftSelectView(Canvas canvas, int index) {
     final entity = mBuyData![index];
+    final level = index < book.bids.length ? book.bids[index] : null;
     double dx = getBuyX(index);
-    double dy = getY(entity.vol);
+    double dy = getY(_plotted(level, entity));
 
     canvas.drawRect(Rect.fromLTRB(0, 0, dx, mDrawHeight), mBarrierPathPaint!);
 
@@ -352,6 +442,9 @@ class DepthChartPainter extends CustomPainter {
       chartStyle: chartStyle,
       price: NumberUtil.format(entity.price, quoteUnit) ?? '',
       amount: NumberUtil.formatCompact(entity.vol, baseUnit),
+      size: level == null
+          ? null
+          : NumberUtil.formatCompact(level.size, baseUnit),
     );
 
     dx = dx < mWidth * 0.25
@@ -375,8 +468,9 @@ class DepthChartPainter extends CustomPainter {
 
   void drawRightSelectView(Canvas canvas, int index) {
     final entity = mSellData![index];
+    final level = index < book.asks.length ? book.asks[index] : null;
     double dx = getSellX(index);
-    double dy = getY(entity.vol);
+    double dy = getY(_plotted(level, entity));
 
     /// draw overlay barrier model
     canvas.drawRect(
@@ -411,6 +505,9 @@ class DepthChartPainter extends CustomPainter {
       chartStyle: chartStyle,
       price: NumberUtil.format(entity.price, quoteUnit) ?? '',
       amount: NumberUtil.formatCompact(entity.vol, baseUnit),
+      size: level == null
+          ? null
+          : NumberUtil.formatCompact(level.size, baseUnit),
     );
 
     dx = dx < mWidth * 0.75
@@ -464,6 +561,10 @@ class DepthChartPainter extends CustomPainter {
     }
   }
 
+  /// The value the readout's dot sits on: whatever this mode draws.
+  double _plotted(DepthLevel? level, DepthEntity entity) =>
+      _drawsCurve || level == null ? entity.vol : level.size;
+
   double getBuyX(int position) => position * mBuyPointWidth!;
 
   double getSellX(int position) => position * mSellPointWidth! + mDrawWidth;
@@ -479,8 +580,36 @@ class DepthChartPainter extends CustomPainter {
   double getBottomTextY(double textHeight) =>
       (mPaddingBottom - textHeight) / 2 + mDrawHeight;
 
-  double getY(double volume) =>
-      mDrawHeight - mDrawHeight * volume / mMaxVolume!;
+  /// Where [volume] sits on the vertical axis, through the chosen [scale].
+  double getY(double volume) {
+    final ceiling = _spaced(mMaxVolume ?? 0);
+    if (ceiling <= 0) return mDrawHeight;
+    return mDrawHeight - mDrawHeight * (_spaced(volume) / ceiling);
+  }
+
+  /// Spaces a volume up the axis: as it is, or logarithmically.
+  ///
+  /// Percentages are laid out exactly like plain volumes — only their labels
+  /// differ — so they share the linear spacing.
+  double _spaced(double volume) => switch (scale) {
+    DepthScale.log => log(1 + max(0, volume)),
+    _ => volume,
+  };
+
+  /// The volume that sits [fraction] of the way up the axis.
+  double _volumeAt(double fraction) => switch (scale) {
+    DepthScale.log => exp(_spaced(mMaxVolume ?? 0) * fraction) - 1,
+    _ => (mMaxVolume ?? 0) * fraction,
+  };
+
+  /// The axis label for the gridline [line] rows down from the top.
+  String _axisLabel(int line) {
+    final fraction = 1 - line / mLineCount;
+    if (scale == DepthScale.percent) {
+      return '${(fraction * 100).round()}%';
+    }
+    return NumberUtil.formatCompact(_volumeAt(fraction), baseUnit);
+  }
 
   @override
   bool shouldRepaint(DepthChartPainter oldDelegate) {
@@ -499,11 +628,14 @@ class PopupPainter {
     required this.chartStyle,
     required String price,
     required String amount,
+    String? size,
   }) {
     pricePaint = _getTextPainter(translations.price, price);
     amountPaint = _getTextPainter(translations.amount, amount);
+    sizePaint = size == null ? null : _getTextPainter(translations.size, size);
     pricePaint.layout();
     amountPaint.layout();
+    sizePaint?.layout();
   }
 
   final DepthChartColors chartColors;
@@ -513,13 +645,18 @@ class PopupPainter {
   late final TextPainter pricePaint;
   late final TextPainter amountPaint;
 
+  /// The size resting on the rung under the finger, where there is one.
+  late final TextPainter? sizePaint;
+
   ///getter
   double get width =>
-      max(pricePaint.width, amountPaint.width) + 2 * chartStyle.padding;
+      max(max(pricePaint.width, amountPaint.width), sizePaint?.width ?? 0) +
+      2 * chartStyle.padding;
 
   double get height =>
       pricePaint.height +
       amountPaint.height +
+      (sizePaint == null ? 0 : sizePaint!.height + chartStyle.space) +
       chartStyle.space +
       2 * chartStyle.padding;
 
@@ -534,6 +671,17 @@ class PopupPainter {
           Offset(
             chartStyle.padding,
             pricePaint.height + chartStyle.space + chartStyle.padding,
+          ),
+    );
+    sizePaint?.paint(
+      canvas,
+      offset +
+          Offset(
+            chartStyle.padding,
+            pricePaint.height +
+                amountPaint.height +
+                chartStyle.space * 2 +
+                chartStyle.padding,
           ),
     );
   }
