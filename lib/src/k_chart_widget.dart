@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'chart_style.dart';
@@ -28,7 +29,8 @@ import 'utils/date_format_util.dart';
 /// The drawing mode the chart is currently in.
 ///
 /// Anything other than [none] makes the next tap place a line instead of
-/// moving the crosshair.
+/// moving the crosshair. Every tool can be used either way round: tap to
+/// place each point, or press and drag from the first point to the last.
 enum DrawingTool {
   /// Normal chart interaction; taps select existing lines.
   none,
@@ -101,6 +103,7 @@ class KChartWidget extends StatefulWidget {
     this.trendLines = const <TrendLine>[],
     this.indicators = const <Indicator>[],
     this.currentDrawingTool = DrawingTool.none,
+    this.magnetMode = false,
     this.onAddTrendLine,
     this.onAddHorizontalLine,
     this.onAddVerticalLine,
@@ -163,6 +166,13 @@ class KChartWidget extends StatefulWidget {
 
   /// The active drawing mode; see [DrawingTool].
   final DrawingTool currentDrawingTool;
+
+  /// Snaps points being placed to the nearest open, high, low or close.
+  ///
+  /// A point only snaps when a candle's price is within
+  /// [DrawingStyle.magnetSnapDistance] pixels of the pointer; further away it
+  /// lands wherever the pointer is.
+  final bool magnetMode;
 
   /// Called when the user finishes drawing or edits a trend line.
   final ValueChanged<TrendLine>? onAddTrendLine;
@@ -293,6 +303,18 @@ class _KChartWidgetState extends State<KChartWidget>
 
   bool _isDrawing = false;
 
+  /// True once the first anchor of a two-point drawing has landed and the
+  /// chart is waiting for the point that finishes it.
+  ///
+  /// This is what lets a line be drawn the way a charting desk expects: click
+  /// once, move, click again — with a drag from the first point to the last
+  /// still working as it always did.
+  bool _awaitingSecondPoint = false;
+
+  /// True while an armed tool is only trailing the mouse: the line under the
+  /// cursor is a preview and nothing has been placed yet.
+  bool _isPreviewing = false;
+
   double mScaleX = 1.0;
   double mScrollX = 0.0;
   double mSelectX = 0.0;
@@ -327,6 +349,19 @@ class _KChartWidgetState extends State<KChartWidget>
     _loadWatermark();
     _syncCountdownTimer();
     _resolveIndicators();
+    HardwareKeyboard.instance.addHandler(_handleKey);
+  }
+
+  /// Lets Escape throw away whatever is being drawn, wherever the focus is.
+  ///
+  /// Only claims the key while a drawing is actually in progress, so it never
+  /// swallows an Escape the host wanted for a dialog of its own.
+  bool _handleKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    if (event.logicalKey != LogicalKeyboardKey.escape) return false;
+    if (!_isDrawing && !_isPreviewing) return false;
+    _cancelDrawing();
+    return true;
   }
 
   /// The indicators, computed over the candles and split by where they draw.
@@ -414,10 +449,16 @@ class _KChartWidgetState extends State<KChartWidget>
       _syncCountdownTimer();
     }
     if (!identical(oldWidget.candles, widget.candles)) _resolveIndicators();
+    if (oldWidget.currentDrawingTool != widget.currentDrawingTool) {
+      // Picking a different tool abandons whatever the last one had started.
+      // The rebuild is already under way, so no setState here.
+      _resetDraft();
+    }
   }
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKey);
     _countdownTimer?.cancel();
     mInfoWindowStream.close();
     _controller?.dispose();
@@ -527,7 +568,7 @@ class _KChartWidgetState extends State<KChartWidget>
         painter = ChartPainter(
           widget.chartStyle,
           widget.chartColors,
-          isDrawing: _isDrawing,
+          isDrawing: _isDrawing || _isPreviewing,
           currentDrawingTool: widget.currentDrawingTool,
           showLiveVerticalPreview:
               _isDrawing && widget.currentDrawingTool == DrawingTool.vertical,
@@ -580,181 +621,156 @@ class _KChartWidgetState extends State<KChartWidget>
                   notifyChanged();
                 }
               },
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: (details) {
-                  if (isLongPress) {
-                    isLongPress = false;
-                    mInfoWindowStream.sink.add(null);
-                  }
-
-                  final pos = details.localPosition;
-
-                  if (!_isInChartArea(pos)) {
-                    _closeInfoWindow();
-                    _cancelDrawing();
-                    return;
-                  }
-
-                  if (widget.currentDrawingTool == DrawingTool.none) {
-                    _trySelectLine(pos);
-                    _handleReadoutTap(pos);
-                  }
-                  notifyChanged();
+              child: MouseRegion(
+                opaque: false,
+                cursor: widget.currentDrawingTool == DrawingTool.none
+                    ? MouseCursor.defer
+                    : SystemMouseCursors.precise,
+                onHover: (event) => _handleHover(event.localPosition),
+                onExit: (_) {
+                  if (_isPreviewing) _cancelDrawing();
                 },
-                onLongPressStart: (details) {
-                  isOnTap = false;
-                  isLongPress = true;
-                  mSelectX = details.localPosition.dx;
-                  mSelectY = details.localPosition.dy.clamp(
-                    painter.mMainRect.top,
-                    painter.mMainRect.bottom,
-                  );
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapUp: (details) {
+                    if (isLongPress) {
+                      isLongPress = false;
+                      mInfoWindowStream.sink.add(null);
+                    }
 
-                  if (widget.currentDrawingTool == DrawingTool.none) {
-                    _trySelectLine(details.localPosition);
-                  } else {
-                    _cancelDrawing();
-                  }
-                  notifyChanged();
-                },
-                onLongPressMoveUpdate: (details) {
-                  if (isDraggingHandle) {
-                    _applyHandleDrag(details.localPosition);
-                  } else if (widget.currentDrawingTool == DrawingTool.none) {
+                    final pos = details.localPosition;
+
+                    if (!_isInChartArea(pos)) {
+                      _closeInfoWindow();
+                      _cancelDrawing();
+                      return;
+                    }
+
+                    if (widget.currentDrawingTool == DrawingTool.none) {
+                      _trySelectLine(pos);
+                      _handleReadoutTap(pos);
+                    } else {
+                      _handleDrawingTap(pos);
+                    }
+                    notifyChanged();
+                  },
+                  onLongPressStart: (details) {
+                    isOnTap = false;
+                    isLongPress = true;
                     mSelectX = details.localPosition.dx;
-                    mSelectY = details.localPosition.dy;
-                    notifyChanged();
-                  }
-                },
-                onLongPressEnd: (_) {
-                  isLongPress = false;
-                  if (isDraggingHandle) _notifySelectedChanged();
-                  notifyChanged();
-                },
-                onScaleStart: (details) {
-                  _stopAnimation();
-                  final pos = details.localFocalPoint;
-                  if (widget.currentDrawingTool != DrawingTool.none) {
-                    if (!_isInChartArea(pos)) return;
-                    final index = painter.calculateSelectedX(pos.dx);
-                    if (index < 0 || index >= widget.candles!.length) return;
-                    final time = widget.candles![index].dateTime!;
-                    final price = painter.calculatePrice(pos.dy);
-                    if (widget.currentDrawingTool == DrawingTool.horizontal) {
-                      selectedHorizontal = HorizontalLine(
-                        price: price,
-                        title: price.toStringAsFixed(widget.fixedLength),
-                      );
-                    } else if (widget.currentDrawingTool ==
-                        DrawingTool.vertical) {
-                      selectedVertical = VerticalLine(
-                        time: time,
-                        title: painter.getDate(time),
-                      );
-                    } else if (widget.currentDrawingTool == DrawingTool.trend) {
-                      tempTrendLine = TrendLine(time1: time, price1: price);
-                    }
-                    _isDrawing = true;
-                  } else {
-                    _trySelectLine(pos);
-                    _onDragChanged(true);
-                  }
-                  notifyChanged();
-                },
-                onScaleUpdate: (details) {
-                  if (isLongPress) return;
+                    mSelectY = details.localPosition.dy.clamp(
+                      painter.mMainRect.top,
+                      painter.mMainRect.bottom,
+                    );
 
-                  if (details.scale != 1.0) {
-                    // Zoom
-                    mScaleX = (_lastScale * details.scale).clamp(0.1, 3.0);
-                    notifyChanged();
-                    return;
-                  }
-
-                  // Pan (drag)
-                  final pos = details.localFocalPoint;
-                  if (_isDrawing) {
-                    final index = painter.calculateSelectedX(pos.dx);
-                    if (index < 0 || index >= widget.candles!.length) return;
-                    final time = widget.candles![index].dateTime!;
-                    final price = painter.calculatePrice(pos.dy);
-                    if (widget.currentDrawingTool == DrawingTool.horizontal) {
-                      selectedHorizontal!.price = price;
-                      selectedHorizontal!.title = price.toStringAsFixed(
-                        widget.fixedLength,
-                      );
-                    } else if (widget.currentDrawingTool ==
-                        DrawingTool.vertical) {
-                      selectedVertical!.time = time;
-                      selectedVertical!.title = painter.getDate(time);
-                    } else if (widget.currentDrawingTool == DrawingTool.trend) {
-                      tempTrendLine!.time2 = time;
-                      tempTrendLine!.price2 = price;
+                    if (widget.currentDrawingTool == DrawingTool.none) {
+                      _trySelectLine(details.localPosition);
+                    } else {
+                      _cancelDrawing();
                     }
                     notifyChanged();
-                  } else if (isDraggingHandle) {
-                    _applyHandleDrag(pos);
-                  } else {
-                    mScrollX += details.focalPointDelta.dx / mScaleX;
-                    mScrollX = mScrollX.clamp(0.0, BaseChartPainter.maxScrollX);
+                  },
+                  onLongPressMoveUpdate: (details) {
+                    if (isDraggingHandle) {
+                      _applyHandleDrag(details.localPosition);
+                    } else if (widget.currentDrawingTool == DrawingTool.none) {
+                      mSelectX = details.localPosition.dx;
+                      mSelectY = details.localPosition.dy;
+                      notifyChanged();
+                    }
+                  },
+                  onLongPressEnd: (_) {
+                    isLongPress = false;
+                    if (isDraggingHandle) _notifySelectedChanged();
                     notifyChanged();
-                  }
-                },
-                onScaleEnd: (details) {
-                  if (_isDrawing) {
-                    if (widget.currentDrawingTool == DrawingTool.horizontal) {
-                      widget.onAddHorizontalLine?.call(selectedHorizontal!);
-                    } else if (widget.currentDrawingTool ==
-                        DrawingTool.vertical) {
-                      widget.onAddVerticalLine?.call(selectedVertical!);
-                    } else if (widget.currentDrawingTool == DrawingTool.trend) {
-                      if (tempTrendLine!.time2 == null) {
-                        _cancelDrawing();
+                  },
+                  onScaleStart: (details) {
+                    _stopAnimation();
+                    final pos = details.localFocalPoint;
+                    if (widget.currentDrawingTool != DrawingTool.none) {
+                      // A drag that begins after the first point belongs to the
+                      // point still to come, so the anchor is left alone.
+                      if (!_awaitingSecondPoint && !_startDraft(pos)) {
+                        // Nowhere to anchor: drop the preview and let the drag
+                        // scroll the chart as usual.
+                        _resetDraft();
+                      }
+                    } else {
+                      _trySelectLine(pos);
+                      _onDragChanged(true);
+                    }
+                    notifyChanged();
+                  },
+                  onScaleUpdate: (details) {
+                    if (isLongPress) return;
+
+                    if (details.scale != 1.0) {
+                      // Zoom
+                      mScaleX = (_lastScale * details.scale).clamp(0.1, 3.0);
+                      notifyChanged();
+                      return;
+                    }
+
+                    // Pan (drag)
+                    final pos = details.localFocalPoint;
+                    if (_isDrawing) {
+                      _extendDraft(pos);
+                    } else if (isDraggingHandle) {
+                      _applyHandleDrag(pos);
+                    } else {
+                      mScrollX += details.focalPointDelta.dx / mScaleX;
+                      mScrollX = mScrollX.clamp(
+                        0.0,
+                        BaseChartPainter.maxScrollX,
+                      );
+                      notifyChanged();
+                    }
+                  },
+                  onScaleEnd: (details) {
+                    if (_isDrawing) {
+                      // Letting go without a far end keeps the anchor on the
+                      // chart: the next tap finishes the line, so a press that
+                      // wandered a pixel or two costs nothing.
+                      if (_draftIsIncomplete) {
+                        _awaitingSecondPoint = true;
                       } else {
-                        final newLine = TrendLine(
-                          time1: tempTrendLine!.time1,
-                          price1: tempTrendLine!.price1,
-                          time2: tempTrendLine!.time2,
-                          price2: tempTrendLine!.price2,
-                          color: tempTrendLine!.color,
-                          thickness: tempTrendLine!.thickness,
-                        );
-                        widget.onAddTrendLine?.call(newLine);
-                        selectedTrend = newLine;
-                        tempTrendLine = null;
+                        _commitDraft();
                       }
                     }
-                    _isDrawing = false;
-                  }
 
-                  if (isDraggingHandle) {
-                    isDraggingHandle = false;
-                    _notifySelectedChanged();
-                    _onDragChanged(false);
-                  }
+                    if (isDraggingHandle) {
+                      isDraggingHandle = false;
+                      _notifySelectedChanged();
+                      _onDragChanged(false);
+                    }
 
-                  isScale = false;
-                  _lastScale = mScaleX;
+                    isScale = false;
+                    _lastScale = mScaleX;
 
-                  if (!_isDrawing && !isDraggingHandle) {
-                    final velocity = details.velocity.pixelsPerSecond.dx;
-                    _onFling(velocity);
-                  } else {
-                    _onDragChanged(false);
-                  }
+                    if (!_isDrawing && !isDraggingHandle) {
+                      final velocity = details.velocity.pixelsPerSecond.dx;
+                      _onFling(velocity);
+                    } else {
+                      _onDragChanged(false);
+                    }
 
-                  notifyChanged();
-                },
-                child: Stack(
-                  children: [
-                    CustomPaint(
-                      size: Size.fromHeight(baseDimension.mDisplayHeight),
-                      painter: painter,
-                    ),
-                    if (widget.showInfoDialog) _buildInfoDialog(),
-                    if (_getSelectedLine() != null) _buildDrawingToolbar(),
-                  ],
+                    notifyChanged();
+                  },
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        size: Size.fromHeight(baseDimension.mDisplayHeight),
+                        painter: painter,
+                      ),
+                      if (widget.showInfoDialog) _buildInfoDialog(),
+                      // The editor is for finished lines; it would only be in
+                      // the way of one still being placed.
+                      if (!_isDrawing &&
+                          !_isPreviewing &&
+                          _getSelectedLine() != null)
+                        _buildDrawingToolbar(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -802,11 +818,201 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   void _cancelDrawing() {
+    _resetDraft();
+    notifyChanged();
+  }
+
+  /// Throws away the line being placed, without asking for a repaint.
+  void _resetDraft() {
     tempTrendLine = null;
     selectedHorizontal = null;
     selectedVertical = null;
     _isDrawing = false;
+    _awaitingSecondPoint = false;
+    _isPreviewing = false;
+  }
+
+  // ── Placing a new line ───────────────────────────────────────────────────
+
+  /// Where on the chart [pos] anchors a drawing, or null when it is off the
+  /// data.
+  ///
+  /// Points land on candles, so a line drawn today sits on the same candles
+  /// tomorrow. With [KChartWidget.magnetMode] on, the price snaps to a nearby
+  /// open, high, low or close as well.
+  ({DateTime time, double price})? _anchorAt(Offset pos) {
+    final candles = widget.candles;
+    if (candles == null || candles.isEmpty) return null;
+    final index = painter.calculateSelectedX(pos.dx);
+    if (index < 0 || index >= candles.length) return null;
+    final time = candles[index].dateTime;
+    if (time == null) return null;
+
+    final price = painter.calculatePrice(pos.dy);
+    return (
+      time: time,
+      price: widget.magnetMode
+          ? _magnetPrice(candles[index], pos.dy, price)
+          : price,
+    );
+  }
+
+  /// The candle price nearest to [y], or [fallback] when none is close enough.
+  double _magnetPrice(KLineEntity candle, double y, double fallback) {
+    var best = fallback;
+    var bestDistance = widget.drawingStyle.magnetSnapDistance;
+    for (final value in [candle.open, candle.high, candle.low, candle.close]) {
+      final distance = (painter.getMainY(value) - y).abs();
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = value;
+      }
+    }
+    return best;
+  }
+
+  /// Places the first point of a new drawing at [pos].
+  ///
+  /// Returns false when [pos] is not somewhere a line can be anchored, leaving
+  /// the tool armed and waiting for a better spot.
+  bool _startDraft(Offset pos, {bool preview = false}) {
+    if (!_isInChartArea(pos)) return false;
+    final anchor = _anchorAt(pos);
+    if (anchor == null) return false;
+
+    switch (widget.currentDrawingTool) {
+      case DrawingTool.none:
+        return false;
+      case DrawingTool.horizontal:
+        selectedHorizontal = HorizontalLine(
+          price: anchor.price,
+          title: anchor.price.toStringAsFixed(widget.fixedLength),
+        );
+        selectedVertical = null;
+        selectedTrend = null;
+      case DrawingTool.vertical:
+        selectedVertical = VerticalLine(
+          time: anchor.time,
+          title: painter.getDate(anchor.time),
+        );
+        selectedHorizontal = null;
+        selectedTrend = null;
+      case DrawingTool.trend:
+        if (preview) return false; // Nothing to show until a point lands.
+        tempTrendLine = TrendLine(time1: anchor.time, price1: anchor.price);
+        selectedHorizontal = null;
+        selectedVertical = null;
+        selectedTrend = null;
+    }
+
+    _isPreviewing = preview;
+    _isDrawing = !preview;
+    return true;
+  }
+
+  /// Moves the free end of the drawing in progress to [pos].
+  void _extendDraft(Offset pos) {
+    final anchor = _anchorAt(pos);
+    if (anchor == null) return;
+
+    switch (widget.currentDrawingTool) {
+      case DrawingTool.none:
+        return;
+      case DrawingTool.horizontal:
+        selectedHorizontal!
+          ..price = anchor.price
+          ..title = anchor.price.toStringAsFixed(widget.fixedLength);
+      case DrawingTool.vertical:
+        selectedVertical!
+          ..time = anchor.time
+          ..title = painter.getDate(anchor.time);
+      case DrawingTool.trend:
+        tempTrendLine!
+          ..time2 = anchor.time
+          ..price2 = anchor.price;
+    }
     notifyChanged();
+  }
+
+  /// True while the drawing in progress still needs a point.
+  bool get _draftIsIncomplete =>
+      widget.currentDrawingTool == DrawingTool.trend &&
+      tempTrendLine?.time2 == null;
+
+  /// Hands the finished drawing to the host and leaves it selected, the way
+  /// the editing toolbar expects to find it.
+  void _commitDraft() {
+    switch (widget.currentDrawingTool) {
+      case DrawingTool.none:
+        return;
+      case DrawingTool.horizontal:
+        if (selectedHorizontal == null) return;
+        widget.onAddHorizontalLine?.call(selectedHorizontal!);
+      case DrawingTool.vertical:
+        if (selectedVertical == null) return;
+        widget.onAddVerticalLine?.call(selectedVertical!);
+      case DrawingTool.trend:
+        final draft = tempTrendLine;
+        if (draft?.time2 == null) return;
+        final line = TrendLine(
+          time1: draft!.time1,
+          price1: draft.price1,
+          time2: draft.time2,
+          price2: draft.price2,
+          color: draft.color,
+          thickness: draft.thickness,
+        );
+        widget.onAddTrendLine?.call(line);
+        selectedTrend = line;
+        tempTrendLine = null;
+    }
+
+    _isDrawing = false;
+    _awaitingSecondPoint = false;
+    _isPreviewing = false;
+  }
+
+  /// Handles a tap while a drawing tool is armed.
+  ///
+  /// One tap is a whole horizontal or vertical line; a trend line takes the
+  /// first tap as its anchor and the next one as its far end.
+  void _handleDrawingTap(Offset pos) {
+    if (_awaitingSecondPoint) {
+      _extendDraft(pos);
+      if (!_draftIsIncomplete) _commitDraft();
+      return;
+    }
+
+    if (!_startDraft(pos)) return;
+    if (_draftIsIncomplete) {
+      _awaitingSecondPoint = true;
+    } else {
+      _commitDraft();
+    }
+  }
+
+  /// Trails an armed tool along with the mouse.
+  ///
+  /// Before anything is placed this previews where a line would land; between
+  /// the two points of a trend line it rubber-bands the far end.
+  void _handleHover(Offset pos) {
+    if (widget.currentDrawingTool == DrawingTool.none) return;
+
+    if (_awaitingSecondPoint) {
+      if (_isInChartArea(pos)) _extendDraft(pos);
+      return;
+    }
+    if (_isDrawing) return;
+
+    if (!_isInChartArea(pos)) {
+      if (_isPreviewing) _cancelDrawing();
+      return;
+    }
+    if (_isPreviewing) {
+      _extendDraft(pos);
+    } else if (_startDraft(pos, preview: true)) {
+      notifyChanged();
+    }
   }
 
   void _trySelectLine(Offset pos) {

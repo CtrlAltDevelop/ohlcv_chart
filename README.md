@@ -242,6 +242,18 @@ KChartWidget(
 );
 ```
 
+Placement works the way a charting desk expects. A horizontal or vertical line
+lands with a single tap. A trend line takes one tap per end: tap its start, move,
+and tap again to finish — the line rubber-bands along with the pointer in
+between. Pressing and dragging from one end to the other still draws a line in
+one gesture, on a touch screen as much as with a mouse. Escape abandons a line
+that is half-placed, as does tapping outside the chart or switching tools, and
+the line editor stays out of the way until the line is finished.
+
+With `magnetMode: true`, each point placed snaps to the nearest open, high, low
+or close within `DrawingStyle.magnetSnapDistance` pixels, and lands wherever the
+pointer is when nothing is that close.
+
 Tapping an existing line selects it and opens the editing toolbar. Dragging an
 end of a trend line moves that end; dragging it anywhere along the stroke moves
 the whole line. Every edit — a new colour, a new thickness, a drag, a renamed

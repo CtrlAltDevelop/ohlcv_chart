@@ -1,3 +1,19 @@
+## Unreleased
+
+### Drawing tools
+
+- Placing a line now follows the flow of the big charting apps. Horizontal and
+  vertical lines land with a single tap; a trend line takes one tap per end,
+  with the far end rubber-banding along with the pointer in between. Press and
+  drag still draws a line in one gesture, and a press that only wandered a pixel
+  no longer throws the anchor away — the next tap finishes that line.
+- With a mouse, an armed horizontal or vertical tool previews where its line
+  would land as the pointer moves.
+- Escape cancels a line that is half-placed, as does switching to another tool.
+- The line editor no longer opens over a line that is still being placed.
+- New `KChartWidget.magnetMode`, which snaps points being placed to the nearest
+  open, high, low or close, within the new `DrawingStyle.magnetSnapDistance`.
+
 ## 1.1.0
 
 ### Drawing tools

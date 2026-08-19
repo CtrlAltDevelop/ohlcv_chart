@@ -65,7 +65,7 @@ class _Chart extends StatelessWidget {
       state.candles,
       state.colors,
       // Drawing tools stay enabled so a line can be selected and restyled at
-      // any time; `tool` decides what the next drag places.
+      // any time; `tool` decides what the next tap or drag places.
       isTrendLine: true,
       watermarkAssetPath: 'assets/watermark.svg',
       timeFrame: MarketData.timeFrame,
@@ -73,6 +73,7 @@ class _Chart extends StatelessWidget {
       drawingStyle: state.drawingStyle,
       chartTranslations: state.translations,
       currentDrawingTool: state.tool,
+      magnetMode: state.magnetMode,
       indicators: state.indicators,
       isLine: state.isLine,
       hideGrid: state.hideGrid,

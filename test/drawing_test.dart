@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 
@@ -56,6 +58,39 @@ Finder _swatch(Color color) => find.byWidgetPredicate(
 Future<void> _selectLine(WidgetTester tester) async {
   await tester.tap(find.byType(KChartWidget));
   await tester.pumpAndSettle();
+}
+
+/// A chart with [tool] armed and nothing drawn yet, collecting whatever the
+/// user places.
+({Widget widget, List<ChartLine> placed}) _chartWithTool(
+  DrawingTool tool, {
+  bool magnetMode = false,
+  DrawingStyle style = const DrawingStyle(),
+  List<KLineEntity>? data,
+}) {
+  final candleData = data ?? candles(rampThenFall(60));
+  DataUtil.calculate(candleData);
+  final placed = <ChartLine>[];
+
+  return (
+    placed: placed,
+    widget: _host(
+      KChartWidget(
+        candleData,
+        ChartColors(),
+        isTrendLine: true,
+        watermarkAssetPath: 'assets/none.svg',
+        timeFrame: const Duration(minutes: 15),
+        showNowPrice: false,
+        currentDrawingTool: tool,
+        magnetMode: magnetMode,
+        drawingStyle: style,
+        onAddTrendLine: placed.add,
+        onAddHorizontalLine: placed.add,
+        onAddVerticalLine: placed.add,
+      ),
+    ),
+  );
 }
 
 void main() {
@@ -377,6 +412,126 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(harness.line.price, price);
+    });
+  });
+
+  group('placing a line', () {
+    testWidgets('a trend line takes one tap per end', (tester) async {
+      final harness = _chartWithTool(DrawingTool.trend);
+      await tester.pumpWidget(harness.widget);
+
+      await tester.tapAt(const Offset(120, 200));
+      await tester.pumpAndSettle();
+      expect(harness.placed, isEmpty, reason: 'one end is not a line yet');
+
+      await tester.tapAt(const Offset(320, 300));
+      await tester.pumpAndSettle();
+
+      expect(harness.placed, hasLength(1));
+      final line = harness.placed.single as TrendLine;
+      expect(line.time2, isNotNull);
+      expect(line.price2, isNotNull);
+      expect(line.time2, isNot(line.time1));
+    });
+
+    testWidgets('dragging from end to end still draws a trend line', (
+      tester,
+    ) async {
+      final harness = _chartWithTool(DrawingTool.trend);
+      await tester.pumpWidget(harness.widget);
+
+      await tester.dragFrom(const Offset(120, 200), const Offset(180, 80));
+      await tester.pumpAndSettle();
+
+      expect(harness.placed, hasLength(1));
+      expect((harness.placed.single as TrendLine).time2, isNotNull);
+    });
+
+    testWidgets('one tap is a whole horizontal line', (tester) async {
+      final harness = _chartWithTool(DrawingTool.horizontal);
+      await tester.pumpWidget(harness.widget);
+
+      await tester.tapAt(const Offset(200, 220));
+      await tester.pumpAndSettle();
+
+      expect(harness.placed, hasLength(1));
+      expect(harness.placed.single, isA<HorizontalLine>());
+    });
+
+    testWidgets('one tap is a whole vertical line', (tester) async {
+      final harness = _chartWithTool(DrawingTool.vertical);
+      await tester.pumpWidget(harness.widget);
+
+      await tester.tapAt(const Offset(200, 220));
+      await tester.pumpAndSettle();
+
+      expect(harness.placed, hasLength(1));
+      expect(harness.placed.single, isA<VerticalLine>());
+    });
+
+    testWidgets('escape throws away a half-drawn trend line', (tester) async {
+      final harness = _chartWithTool(DrawingTool.trend);
+      await tester.pumpWidget(harness.widget);
+
+      await tester.tapAt(const Offset(120, 200));
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      // The anchor is gone, so this tap starts a new line rather than
+      // finishing the abandoned one.
+      await tester.tapAt(const Offset(320, 300));
+      await tester.pumpAndSettle();
+      expect(harness.placed, isEmpty);
+    });
+
+    testWidgets('hovering an armed tool previews without placing anything', (
+      tester,
+    ) async {
+      final harness = _chartWithTool(DrawingTool.horizontal);
+      await tester.pumpWidget(harness.widget);
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: const Offset(150, 180));
+      addTearDown(mouse.removePointer);
+      await tester.pump();
+      await mouse.moveTo(const Offset(220, 260));
+      await tester.pumpAndSettle();
+
+      expect(harness.placed, isEmpty, reason: 'a preview is not a line');
+
+      // The editor belongs to finished lines, not to the preview.
+      expect(find.byTooltip('Colour'), findsNothing);
+    });
+
+    testWidgets('magnet mode lands the point on a candle price', (
+      tester,
+    ) async {
+      final data = candles(rampThenFall(60));
+      final harness = _chartWithTool(
+        DrawingTool.horizontal,
+        magnetMode: true,
+        // Anywhere on the chart is "close enough", so the snap is certain.
+        style: const DrawingStyle(magnetSnapDistance: 10000),
+        data: data,
+      );
+      await tester.pumpWidget(harness.widget);
+
+      await tester.tapAt(const Offset(200, 220));
+      await tester.pumpAndSettle();
+
+      final price = (harness.placed.single as HorizontalLine).price;
+      expect(
+        data.any(
+          (c) =>
+              c.open == price ||
+              c.high == price ||
+              c.low == price ||
+              c.close == price,
+        ),
+        isTrue,
+        reason: 'the price snapped to an OHLC value',
+      );
     });
   });
 }

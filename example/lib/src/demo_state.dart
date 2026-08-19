@@ -72,6 +72,7 @@ class DemoState extends ChangeNotifier {
 
   // ── Drawing ─────────────────────────────────────────────────────────────
   DrawingTool tool = DrawingTool.none;
+  bool magnetMode = false;
   bool brandedToolbar = false;
   final List<TrendLine> trendLines = [];
   final List<HorizontalLine> horizontalLines = [];

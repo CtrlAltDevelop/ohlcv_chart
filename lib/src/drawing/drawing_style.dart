@@ -96,6 +96,7 @@ class DrawingStyle {
     this.dotGap = 3.0,
     this.hitTestTolerance = 20.0,
     this.handleHitTestTolerance = 40.0,
+    this.magnetSnapDistance = 14.0,
     this.labelTextSize = 10.0,
     this.labelBackgroundColor,
     this.labelBackgroundAlpha = 220,
@@ -235,6 +236,12 @@ class DrawingStyle {
   /// How far from a drag handle a tap may land and still grab it, in pixels.
   final double handleHitTestTolerance;
 
+  /// How close to an open, high, low or close a point being placed has to be
+  /// before magnet mode snaps it there, in pixels.
+  ///
+  /// Only consulted when [KChartWidget.magnetMode] is on.
+  final double magnetSnapDistance;
+
   // ── Painted labels ───────────────────────────────────────────────────────
 
   /// Font size of a line's label.
@@ -311,6 +318,7 @@ class DrawingStyle {
     double? dotGap,
     double? hitTestTolerance,
     double? handleHitTestTolerance,
+    double? magnetSnapDistance,
     double? labelTextSize,
     Color? labelBackgroundColor,
     int? labelBackgroundAlpha,
@@ -362,6 +370,7 @@ class DrawingStyle {
       hitTestTolerance: hitTestTolerance ?? this.hitTestTolerance,
       handleHitTestTolerance:
           handleHitTestTolerance ?? this.handleHitTestTolerance,
+      magnetSnapDistance: magnetSnapDistance ?? this.magnetSnapDistance,
       labelTextSize: labelTextSize ?? this.labelTextSize,
       labelBackgroundColor: labelBackgroundColor ?? this.labelBackgroundColor,
       labelBackgroundAlpha: labelBackgroundAlpha ?? this.labelBackgroundAlpha,

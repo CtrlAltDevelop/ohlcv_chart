@@ -20,7 +20,7 @@ class Controls extends StatelessWidget {
       children: [
         _Section(
           title: 'Drawing tools',
-          subtitle: 'Pick a tool, then drag on the chart',
+          subtitle: 'Pick a tool, then tap the chart — or drag',
           children: [
             Wrap(
               spacing: 6,
@@ -33,6 +33,12 @@ class Controls extends StatelessWidget {
                     onSelected: (_) => state.update(() => state.tool = tool),
                   ),
               ],
+            ),
+            _Toggle(
+              label: 'Magnet',
+              subtitle: 'Snap new points to the nearest open, high, low, close',
+              value: state.magnetMode,
+              onChanged: (v) => state.update(() => state.magnetMode = v),
             ),
             _Toggle(
               label: 'Branded editor',
