@@ -32,11 +32,27 @@ Named for the open-high-low-close-volume bars it renders.
 - **Fully themeable** — `ChartStyle` for geometry, `ChartColors` for every colour, `DrawingStyle` for the drawing tools; `ChartTranslations` for every label. Filled or hollow candles, dashed or solid crosshair, pane separators, axis-label pills and a placed, tinted watermark.
 - **Fits its box** — the candles take whatever height the volume and indicator panes leave, so the chart works from a phone to a desktop window without arithmetic on your side.
 
+## Contents
+
+- [Candlestick chart](#candlestick-chart) · [Indicators](#indicators)
+- [Chart types](#chart-types) · [Price axis](#price-axis) ·
+  [The legend and the crosshair](#the-legend-and-the-crosshair)
+- [Drawing tools](#drawing-tools) — [what can be drawn](#what-can-be-drawn),
+  [persisting a layout](#persisting-a-layout),
+  [undo and redo](#undo-redo-and-the-drawing-controller),
+  [the drawing manager](#the-drawing-manager), [level alerts](#level-alerts)
+- [Customising the line editor](#customising-the-line-editor) ·
+  [The long-press readout](#the-long-press-readout)
+- [Driving the chart](#driving-the-chart) · [Panes](#panes) ·
+  [Sessions and time zones](#sessions-and-time-zones)
+- [Depth chart](#depth-chart) · [Theming](#theming) · [Sizing](#sizing)
+- [Migrating from 1.x](#migrating-from-1x)
+
 ## Install
 
 ```yaml
 dependencies:
-  ohlcv_chart: ^1.1.0
+  ohlcv_chart: ^2.0.0
 ```
 
 ## Usage
@@ -585,6 +601,8 @@ KChartWidget(
     // Which controls appear
     showOpacityControl: false,
     showLabelTextControl: true,
+    showFillControl: true,     // shapes with an interior
+    showAlertControl: true,    // levels only
 
     // How the bar looks
     toolbarAxis: Axis.horizontal,
@@ -597,9 +615,20 @@ KChartWidget(
     dashLength: 6,
     dashGap: 4,
     hitTestTolerance: 22,
+
+    // What a newly drawn shape looks like
+    rectangleFillOpacity: 0.12,
+    shapeFillOpacity: 0.12,
+    measureFillOpacity: 0.14,
+    channelFillOpacity: 0.08,
+    positionFillOpacity: 0.16,
   ),
 );
 ```
+
+A control that a drawing has no use for is left out whatever these say: the fill
+slider only appears on a shape with an interior, the alert bell only on a level,
+and the label field only on a drawing that can carry one.
 
 A line's own appearance lives on the line, so you can style one before it ever
 reaches the chart:
@@ -790,15 +819,33 @@ KChartWidget(
 ```
 
 `ChartTranslations` carries every on-chart label (`date`, `open`, `high`, `low`,
-`close`, `changeAmount`, `change`, `amount`), so localising the chart is a matter
-of building one from your own `AppLocalizations`. Its `drawing` field does the
-same for the line editor:
+`close`, `changeAmount`, `change`, `amount`, `vol`, `jumpToNow`), so localising
+the chart is a matter of building one from your own `AppLocalizations`. Its
+`drawing` field does the same for the line editor, the drawing manager and what
+each of the seventeen kinds is called:
 
 ```dart
 ChartTranslations(
   date: l10n.date,
-  drawing: DrawingTranslations(color: l10n.colour, delete: l10n.delete),
+  drawing: DrawingTranslations(
+    color: l10n.colour,
+    delete: l10n.delete,
+    fill: l10n.fill,
+    alert: l10n.setAlert,
+    drawings: l10n.drawings,
+    trendLineName: l10n.trendLine,
+  ),
 );
+```
+
+`DrawingTranslations.nameOf` is what turns a drawing into the name the manager
+shows, so a kind you have renamed reads the same everywhere.
+
+`ChartColors` gained `sessionDividerColor` for the day dividers, and `ChartStyle`
+now has a `copyWith`, so a house geometry can be varied a switch at a time:
+
+```dart
+final style = ChartTheme.filled.copyWith(showSessionDividers: true);
 ```
 
 The long-press readout sizes itself to its content between `infoDialogWidth` and
@@ -812,6 +859,43 @@ pane (100px, until one is dragged) are stacked underneath. Left unset it is deri
 box, so the whole stack fits — put the chart in an `Expanded` and it fills the
 space. Pass a number to pin the candle area instead, for instance inside a scroll
 view where there is no height to divide up.
+
+### Migrating from 1.x
+
+Nothing was taken off `KChartWidget`: the per-kind drawing lists, their `onAdd*`
+and `onRemove*` callbacks and `isLine` all still work, so most apps upgrade by
+changing the version and nothing else. Three things to know:
+
+- **Two defaults changed what an existing chart shows.** `crosshairOnHover` and
+  `showScrollToNowButton` are both on. The first only ever fires for a pointer
+  that hovers, so a touch app never sees it; the second draws a small button over
+  the bottom right corner whenever the chart is scrolled away from the newest
+  candle. Set either to `false` to keep the old behaviour.
+- **A custom `ChartLine` now has to serialise.** `toJson` is part of the base
+  class, since that is what lets a layout be saved and a drawing be copied for
+  the undo history. Build yours on `baseJson`, and register a `fromJson` of your
+  own where you decode:
+
+  ```dart
+  class MyDrawing extends TwoPointDrawing {
+    @override
+    Map<String, dynamic> toJson() => {
+      ...baseJson('myDrawing'),
+      ...anchorsJson(),
+    };
+  }
+  ```
+
+  Adopting `LabelledDrawing` or `FilledDrawing` is what gets your drawing the
+  editor's label field or its fill slider.
+- **The painters moved on**, if you imported them from `src/` rather than through
+  the public API: `ChartPainter` now takes one `drawings` list rather than a list
+  per kind, and reports the crosshair's candle through an `emitInfoWindow`
+  callback rather than a `StreamSink`. `MainRenderer.getValue` is now the exact
+  inverse of `getY`, which also corrects a price read a few pixels out.
+
+`ChartLine.hidden` is new and defaults to false, so nothing disappears; the
+drawing manager is what turns it on.
 
 ## Notes
 
