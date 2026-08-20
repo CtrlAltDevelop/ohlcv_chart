@@ -20,6 +20,7 @@ class ChartTranslations {
     this.changeLive = 'Change% Live',
     this.amount = 'Amount',
     this.vol = 'Volume',
+    this.jumpToNow = 'Jump to the latest candle',
     this.drawing = const DrawingTranslations(),
   });
 
@@ -33,6 +34,9 @@ class ChartTranslations {
   final String changeLive;
   final String amount;
   final String vol;
+
+  /// Tooltip of the button that scrolls back to the newest candle.
+  final String jumpToNow;
 
   /// Text shown by the drawing tools' editing toolbar.
   final DrawingTranslations drawing;

@@ -13,6 +13,161 @@
 - The line editor no longer opens over a line that is still being placed.
 - New `KChartWidget.magnetMode`, which snaps points being placed to the nearest
   open, high, low or close, within the new `DrawingStyle.magnetSnapDistance`.
+- Six new things to draw, on the same tap-tap placement: `DrawingTool.ray` and
+  `.extendedLine` for a line that carries on past one or both of its anchors,
+  `.arrow` for one with an arrowhead, `.horizontalRay` for a level that only
+  applies from its own candle rightwards, `.rectangle` for a price range box,
+  and `.fibRetracement` for a labelled, banded retracement of a swing.
+- New `LineExtension` and `TrendLine.extend` and `.arrow` carry the three line
+  variants, so trend lines saved by an earlier version still load. New
+  `HorizontalLine.startTime` turns a level into a ray.
+- New `RectangleDrawing` and `FibRetracement`, drawn from `KChartWidget`'s new
+  `rectangles` and `fibRetracements` and reported through `onAddRectangle`,
+  `onRemoveRectangle`, `onAddFibRetracement` and `onRemoveFibRetracement`.
+- New `TwoPointDrawing` base, shared by every drawing with two anchors. Its
+  anchors can be dragged one at a time or the shape moved as a whole, whichever
+  the tap landed on.
+- New `DrawingStyle.arrowHeadLength`, `.rectangleFillOpacity`, `.fibLevels` and
+  `.fibFillOpacity`.
+- The editor's label field now also names a rectangle, and a retracement's level
+  labels are stacked so they no longer print on top of each other when the
+  levels bunch up.
+- Nine more things to draw: `DrawingTool.measure` for a ruler that reads out the
+  move in price, in percent, in candles and in time; `.channel` for a parallel
+  channel; `.position` for a planned trade with its risk-to-reward; `.ellipse`
+  and `.triangle`; `.text` for a note pinned to a point; and `.brush` for a
+  freehand stroke.
+- New `MeasureDrawing`, `ParallelChannel`, `PositionDrawing`, `EllipseDrawing`,
+  `TriangleDrawing`, `TextAnnotation` and `FreehandDrawing`, plus the
+  `ThreePointDrawing` base the three-point shapes share.
+- New `LabelledDrawing` and `FilledDrawing`, which is how the editor's label
+  field and its new fill slider reach every drawing that has one.
+- New `DrawingStyle.shapeFillOpacity`, `.measureFillOpacity`,
+  `.channelFillOpacity` and `.positionFillOpacity` for the new shapes' washes,
+  plus `.showFillControl` and `.showAlertControl` for the two new buttons.
+
+### Persisting what is drawn
+
+- Every drawing now serialises. `ChartLine.toJson` and the top-level
+  `drawingFromJson` are a matched pair, so a layout survives a restart:
+  `jsonEncode(drawings.toJson())` on the way out, `ChartDrawings.fromJson` on the
+  way back. A drawing of a kind this version does not know is skipped rather than
+  throwing, so a layout written by a newer release still opens.
+- New `ChartDrawings`: an ordered set of drawings with typed views —
+  `horizontalLines`, `trendLines`, `positions` and the rest — and `copyDrawing`,
+  which deep-copies one through its own JSON.
+- New `KChartWidget.drawings`, which takes drawings of any kind, and
+  `onAddDrawing` / `onRemoveDrawing`, which report every kind. The per-kind lists
+  and callbacks are unchanged.
+
+### Undo and redo
+
+- New `ChartDrawingController`, handed to `KChartWidget.drawingController`. It
+  owns the drawings: everything the user places, restyles, drags or deletes goes
+  through it, which is what makes `undo` and `redo` possible. An edit is a step,
+  so restyling a line and undoing gets the old style back.
+- ⌘Z, ⇧⌘Z (Ctrl and Ctrl+Y elsewhere) and Delete now work on the chart itself,
+  and Escape still abandons a drawing being placed. `enableKeyboardShortcuts`
+  turns the lot off.
+- The controller also holds the selection, so a panel outside the chart and the
+  chart itself always agree on what is selected.
+- New `KChartWidget.selectAfterDrawing`, so the editor need not open over each
+  drawing as it lands — which is what makes drawing several in a row bearable.
+
+### The drawing manager
+
+- New `DrawingManager`, a widget over a `ChartDrawingController`: every drawing
+  by name, with show/hide, lock, delete, undo, redo and clear. Tapping a row
+  selects that drawing on the chart.
+- New `ChartLine.hidden`, which leaves a drawing in the layout but off the chart.
+- `DrawingTranslations` now covers the manager and the names of all seventeen
+  kinds, through `nameOf`.
+
+### Alerts
+
+- New `HorizontalLine.alert` and `KChartWidget.onAlertCrossed`: a level with an
+  alert reports when the newest candle closes on the other side of it, once per
+  crossing. The editor's bell button arms one.
+
+### Chart types
+
+- New `KChartWidget.chartType`: `ChartType.candles`, `.bars` for OHLC bars,
+  `.line`, `.area` and `.baseline` — the close line washed towards
+  `baselinePrice`, or towards the oldest close in view. `isLine: true` still
+  means an area chart.
+- New `CandleTransforms.heikinAshi` and `.renko`, which rewrite the candles
+  rather than the way they are drawn, plus `.atrBrickSize` to size a Renko brick
+  from the market's own range.
+
+### Price axis
+
+- New `KChartWidget.priceAxisScale`: `PriceAxisScale.logarithmic` gives equal
+  ratios equal space, which is what makes a long history readable, and
+  `.percentage` reads the axis out as the move away from the oldest candle in
+  view. A window whose low is zero or negative falls back to a linear axis rather
+  than drawing nothing.
+- `ChartPainter.calculatePrice` and the crosshair's price now come from the
+  renderer's own inverse mapping, so a price and its pixel agree exactly whatever
+  the axis is spaced by. That also fixes the crosshair reading a price a few
+  pixels off on a linear axis.
+
+### Reading the chart on a desktop
+
+- The crosshair now follows a resting mouse, without waiting for a press — new
+  `KChartWidget.crosshairOnHover`, which touch devices never see.
+- New `KChartWidget.showOhlcLegend`, which reads the candle out above the chart —
+  date, open, high, low, close, the move over it and its volume — on a legend row
+  of its own, worded by `ChartTranslations`.
+- Fixed a repaint loop: the info dialog was told about the candle under the
+  crosshair on every paint, which rebuilt the dialog, which painted again. It is
+  only told when something has actually changed.
+- Fixed the info dialog throwing when the crosshair sat on the oldest candle,
+  which has nothing before it to compare against.
+
+### Driving the chart from your own code
+
+- New `KChartController`: `zoomIn`, `zoomOut`, `zoomTo`, `scrollToNow`,
+  `isAtRightEdge` and `capture`, which hands back the chart as PNG bytes without
+  the editor or any other control floating over it.
+- The chart now shows a button back to the live candle whenever it is scrolled
+  away from one — `showScrollToNowButton`, with its tooltip in
+  `ChartTranslations.jumpToNow`.
+
+### Panes, sessions and time zones
+
+- An indicator pane can be dragged taller or shorter by its lower edge
+  (`resizablePanes`) and up or down the stack by its legend row
+  (`reorderablePanes` and `onReorderPane`, which reports the move and leaves it
+  to the host, since the indicators own their order). New
+  `ChartStyle.paneResizeTolerance`, `.paneGrabHeight`, `.minPaneHeight` and
+  `.maxPaneHeight`.
+- New `ChartStyle.showSessionDividers` and `ChartColors.sessionDividerColor`,
+  which mark the first candle of each day.
+- New `KChartWidget.timeZoneOffset`, added to every candle's time before it is
+  shown — on the axis, in the crosshair, in the legend and when working out where
+  a day starts. It never touches the data.
+- New `ChartStyle.copyWith`.
+- Fixed raw pointer events never reaching the chart's own `Listener`, which sat
+  outside a `MouseRegion` that swallowed them. That is what a press has to be
+  read from to tell a pane's edge from its body, since a drag is only recognised
+  once it has moved on.
+
+### The demo
+
+- The example now drives all of it: every tool and chart type, the three price
+  axes, Heikin-Ashi and Renko, the drawing manager beside the chart, undo and
+  redo, saving the layout as JSON and restoring it, capturing the chart as a PNG,
+  resizable and reorderable panes, day dividers and a display time zone.
+- Its control panel lays every option list out as wrapping chips, so the panel no
+  longer overflows at its narrowest.
+
+### Tests
+
+- Golden tests over the painters: the five chart types, Heikin-Ashi and Renko, a
+  logarithmic axis, the legend and day dividers, and every drawing at once.
+- New suites for serialisation, the drawing controller and its shortcuts, the
+  drawing manager, the new shapes and alerts, the price axes, the chart types and
+  transforms, and the chart surface — the controller, panes, sessions and hover.
 
 ## 1.1.0
 

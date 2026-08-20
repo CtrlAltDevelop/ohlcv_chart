@@ -88,6 +88,8 @@ Future<void> _selectLine(WidgetTester tester) async {
         onAddTrendLine: placed.add,
         onAddHorizontalLine: placed.add,
         onAddVerticalLine: placed.add,
+        onAddRectangle: placed.add,
+        onAddFibRetracement: placed.add,
       ),
     ),
   );
@@ -532,6 +534,173 @@ void main() {
         isTrue,
         reason: 'the price snapped to an OHLC value',
       );
+    });
+  });
+
+  group('shapes', () {
+    /// Places a two-point shape with a tap at each end.
+    Future<ChartLine> place(WidgetTester tester, DrawingTool tool) async {
+      final harness = _chartWithTool(tool);
+      await tester.pumpWidget(harness.widget);
+      await tester.tapAt(const Offset(140, 180));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(320, 300));
+      await tester.pumpAndSettle();
+      return harness.placed.single;
+    }
+
+    testWidgets('a ray extends past its second end', (tester) async {
+      final line = await place(tester, DrawingTool.ray) as TrendLine;
+      expect(line.extend, LineExtension.right);
+      expect(line.arrow, isFalse);
+      expect(line.isComplete, isTrue);
+    });
+
+    testWidgets('an extended line runs both ways', (tester) async {
+      final line = await place(tester, DrawingTool.extendedLine) as TrendLine;
+      expect(line.extend, LineExtension.both);
+    });
+
+    testWidgets('an arrow keeps its head and stops at its end', (tester) async {
+      final line = await place(tester, DrawingTool.arrow) as TrendLine;
+      expect(line.arrow, isTrue);
+      expect(line.extend, LineExtension.none);
+    });
+
+    testWidgets('a horizontal ray starts where it was tapped', (tester) async {
+      final harness = _chartWithTool(DrawingTool.horizontalRay);
+      await tester.pumpWidget(harness.widget);
+
+      await tester.tapAt(const Offset(220, 240));
+      await tester.pumpAndSettle();
+
+      final line = harness.placed.single as HorizontalLine;
+      expect(line.isRay, isTrue, reason: 'one tap is the whole ray');
+      expect(line.startTime, isNotNull);
+    });
+
+    testWidgets('a rectangle takes two opposite corners', (tester) async {
+      final box =
+          await place(tester, DrawingTool.rectangle) as RectangleDrawing;
+      expect(box.isComplete, isTrue);
+      expect(box.price2, isNot(box.price1));
+      expect(
+        box.fillColor.a,
+        lessThan(box.color.a),
+        reason: 'the inside is a wash, not a block of colour',
+      );
+    });
+
+    testWidgets('a retracement carries the default levels', (tester) async {
+      final fib =
+          await place(tester, DrawingTool.fibRetracement) as FibRetracement;
+      expect(fib.levels, FibRetracement.defaultLevels);
+      expect(fib.priceAt(0), fib.price1);
+      expect(fib.priceAt(1), fib.price2);
+      expect(
+        fib.priceAt(0.5),
+        closeTo((fib.price1 + fib.price2!) / 2, 0.000001),
+      );
+    });
+
+    testWidgets('retracement levels can be configured', (tester) async {
+      final harness = _chartWithTool(
+        DrawingTool.fibRetracement,
+        style: const DrawingStyle(fibLevels: [0, 0.5, 1]),
+      );
+      await tester.pumpWidget(harness.widget);
+      await tester.tapAt(const Offset(140, 180));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(320, 300));
+      await tester.pumpAndSettle();
+
+      expect((harness.placed.single as FibRetracement).levels, [0, 0.5, 1]);
+    });
+
+    testWidgets('every new shape renders without blowing up', (tester) async {
+      for (final tool in [
+        DrawingTool.ray,
+        DrawingTool.extendedLine,
+        DrawingTool.arrow,
+        DrawingTool.rectangle,
+        DrawingTool.fibRetracement,
+      ]) {
+        await place(tester, tool);
+        expect(tester.takeException(), isNull, reason: '$tool');
+      }
+    });
+
+    testWidgets('the label field names a rectangle', (tester) async {
+      final data = candles(rampThenFall(60));
+      DataUtil.calculate(data);
+      final box = RectangleDrawing(
+        time1: data[20].dateTime!,
+        price1: data[20].close,
+        time2: data[40].dateTime!,
+        price2: data[40].close,
+      );
+
+      await tester.pumpWidget(
+        _host(
+          KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: true,
+            watermarkAssetPath: 'assets/none.svg',
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: false,
+            drawingStyle: _grabAnything,
+            rectangles: [box],
+          ),
+        ),
+      );
+      await _selectLine(tester);
+
+      await tester.tap(find.byTooltip('Label'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'supply zone');
+      await tester.pumpAndSettle();
+
+      expect(box.label, 'supply zone');
+      expect(box.showLabel, isTrue);
+    });
+
+    testWidgets('a drawn shape can be selected and dragged as a whole', (
+      tester,
+    ) async {
+      final data = candles(rampThenFall(60));
+      DataUtil.calculate(data);
+      final box = RectangleDrawing(
+        time1: data[20].dateTime!,
+        price1: data[20].close,
+        time2: data[40].dateTime!,
+        price2: data[40].close,
+      );
+      final saved = <ChartLine>[];
+
+      await tester.pumpWidget(
+        _host(
+          KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: true,
+            watermarkAssetPath: 'assets/none.svg',
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: false,
+            drawingStyle: _grabAnything,
+            rectangles: [box],
+            onAddRectangle: saved.add,
+          ),
+        ),
+      );
+
+      final before = (box.time1, box.price1);
+      await tester.drag(find.byType(KChartWidget), const Offset(-40, -60));
+      await tester.pumpAndSettle();
+
+      expect(saved, contains(box), reason: 'the move is reported for saving');
+      expect((box.time1, box.price1), isNot(before));
+      expect(box.isComplete, isTrue, reason: 'both corners moved together');
     });
   });
 }

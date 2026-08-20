@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../chart_style.dart';
 import '../entity/horizontal_line.dart';
 import '../entity/line.dart';
-import '../entity/vertical_lines.dart';
 import 'drawing_style.dart';
 import 'drawing_translations.dart';
 import 'line_painting.dart';
@@ -73,16 +72,19 @@ class DrawingToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasTitle = line is HorizontalLine || line is VerticalLine;
-    final canEditLabel = style.showLabelTextControl && hasTitle;
+    final canEditLabel = style.showLabelTextControl && line is LabelledDrawing;
+    final canFill = style.showFillControl && line is FilledDrawing;
+    final canAlert = style.showAlertControl && line is HorizontalLine;
 
     final controls = <Widget>[
       if (style.toolbarDraggable && onMoved != null) _buildGrip(),
       if (style.showColorControl) _buildColorControl(),
       if (style.showThicknessControl) _buildThicknessControl(),
       if (style.showLineStyleControl) _buildLineStyleControl(),
+      if (canFill) _buildFillControl(line as FilledDrawing),
       if (canEditLabel) _buildLabelTextControl(),
       if (style.showLabelControl) _buildLabelToggle(),
+      if (canAlert) _buildAlertToggle(line as HorizontalLine),
       if (style.showLockControl) _buildLockToggle(),
       if (style.showDeleteControl || style.showDoneControl) _buildSeparator(),
       if (style.showDeleteControl)
@@ -248,6 +250,61 @@ class DrawingToolbar extends StatelessWidget {
           close();
         },
       ),
+    );
+  }
+
+  Widget _buildFillControl(FilledDrawing filled) {
+    return _Popover(
+      style: style,
+      background: _popoverBackground,
+      borderColor: _borderColor,
+      tooltip: translations.fill,
+      button: Icon(
+        Icons.format_color_fill_rounded,
+        size: style.iconSize,
+        color: _iconColor,
+      ),
+      contentBuilder: (close) => SizedBox(
+        width: 184,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _PanelTitle(translations.fill, color: _iconColor),
+            StatefulBuilder(
+              builder: (context, setState) => _ValueSlider(
+                value: filled.fillOpacity.clamp(0.0, 1.0),
+                min: 0,
+                max: 1,
+                accent: style.accentColor,
+                labelColor: _iconColor,
+                format: (value) => '${(value * 100).round()}%',
+                onChanged: (value) {
+                  setState(() => filled.fillOpacity = value);
+                  onChanged();
+                },
+                onChangeEnd: (_) => onCommitted(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlertToggle(HorizontalLine level) {
+    return _ToolbarButton(
+      icon: level.alert
+          ? Icons.notifications_active_rounded
+          : Icons.notifications_none_rounded,
+      tooltip: level.alert ? translations.clearAlert : translations.alert,
+      color: level.alert ? style.accentColor : _iconColor,
+      style: style,
+      onPressed: () {
+        level.alert = !level.alert;
+        onChanged();
+        onCommitted();
+      },
     );
   }
 
@@ -727,7 +784,7 @@ class _LineStylePanel extends StatelessWidget {
   }
 }
 
-/// A text field bound to a horizontal or vertical line's title.
+/// A text field bound to the name a drawing carries.
 class _LabelPanel extends StatefulWidget {
   const _LabelPanel({
     required this.line,
@@ -756,22 +813,17 @@ class _LabelPanelState extends State<_LabelPanel> {
     text: _title,
   );
 
-  String? get _title => switch (widget.line) {
-    HorizontalLine(:final title) => title,
-    VerticalLine(:final title) => title,
-    _ => null,
-  };
+  String? get _title {
+    final line = widget.line;
+    return line is LabelledDrawing ? line.labelText : null;
+  }
 
   void _write(String value) {
+    final line = widget.line;
+    if (line is! LabelledDrawing) return;
+
     final title = value.trim().isEmpty ? null : value;
-    switch (widget.line) {
-      case HorizontalLine line:
-        line.title = title;
-      case VerticalLine line:
-        line.title = title;
-      default:
-        return;
-    }
+    line.labelText = title;
     // A label the user has just typed is only useful once it is visible.
     if (title != null) widget.line.showLabel = true;
     widget.onChanged();

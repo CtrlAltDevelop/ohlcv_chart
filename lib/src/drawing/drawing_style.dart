@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../entity/fib_retracement.dart';
 import '../entity/line.dart';
 
 /// The colours the line editor offers by default.
@@ -64,6 +65,8 @@ class DrawingStyle {
     this.showLineStyleControl = true,
     this.showLabelControl = true,
     this.showLabelTextControl = true,
+    this.showFillControl = true,
+    this.showAlertControl = true,
     this.showLockControl = true,
     this.showDeleteControl = true,
     this.showDoneControl = true,
@@ -97,6 +100,14 @@ class DrawingStyle {
     this.hitTestTolerance = 20.0,
     this.handleHitTestTolerance = 40.0,
     this.magnetSnapDistance = 14.0,
+    this.arrowHeadLength = 14.0,
+    this.rectangleFillOpacity = 0.12,
+    this.shapeFillOpacity = 0.12,
+    this.measureFillOpacity = 0.14,
+    this.channelFillOpacity = 0.08,
+    this.positionFillOpacity = 0.16,
+    this.fibLevels = FibRetracement.defaultLevels,
+    this.fibFillOpacity = 0.07,
     this.labelTextSize = 10.0,
     this.labelBackgroundColor,
     this.labelBackgroundAlpha = 220,
@@ -141,9 +152,22 @@ class DrawingStyle {
 
   /// Shows the field that edits the label's text.
   ///
-  /// Only horizontal and vertical lines have an editable title, so the control
-  /// is hidden for trend lines regardless.
+  /// Only a drawing that can carry a label — a level, a box, a note — has one
+  /// to edit, so the control is hidden for the rest regardless.
   final bool showLabelTextControl;
+
+  /// Shows the slider that washes the inside of a shape.
+  ///
+  /// Only shapes with an interior — rectangles, ellipses, triangles, channels,
+  /// measurements and positions — have a fill, so the control is hidden for the
+  /// rest regardless.
+  final bool showFillControl;
+
+  /// Shows the button that asks to be told when a level is crossed.
+  ///
+  /// Only horizontal lines and rays can carry an alert. Setting one is only
+  /// useful if you have given the chart an `onAlertCrossed`.
+  final bool showAlertControl;
 
   /// Shows the lock button, which freezes a line in place.
   final bool showLockControl;
@@ -242,6 +266,32 @@ class DrawingStyle {
   /// Only consulted when [KChartWidget.magnetMode] is on.
   final double magnetSnapDistance;
 
+  // ── Shapes ───────────────────────────────────────────────────────────────
+
+  /// Length of the arrowhead on an arrow line, in pixels.
+  final double arrowHeadLength;
+
+  /// How solid the wash inside a newly drawn rectangle is.
+  final double rectangleFillOpacity;
+
+  /// How solid the wash inside a newly drawn ellipse or triangle is.
+  final double shapeFillOpacity;
+
+  /// How solid the wash over a newly drawn measurement is.
+  final double measureFillOpacity;
+
+  /// How solid the wash between a new channel's two lines is.
+  final double channelFillOpacity;
+
+  /// How solid a new position's target and stop bands are.
+  final double positionFillOpacity;
+
+  /// The ratios a newly drawn Fibonacci retracement is given.
+  final List<double> fibLevels;
+
+  /// How solid the wash between two retracement levels is.
+  final double fibFillOpacity;
+
   // ── Painted labels ───────────────────────────────────────────────────────
 
   /// Font size of a line's label.
@@ -289,6 +339,8 @@ class DrawingStyle {
     bool? showLineStyleControl,
     bool? showLabelControl,
     bool? showLabelTextControl,
+    bool? showFillControl,
+    bool? showAlertControl,
     bool? showLockControl,
     bool? showDeleteControl,
     bool? showDoneControl,
@@ -319,6 +371,14 @@ class DrawingStyle {
     double? hitTestTolerance,
     double? handleHitTestTolerance,
     double? magnetSnapDistance,
+    double? arrowHeadLength,
+    double? rectangleFillOpacity,
+    double? shapeFillOpacity,
+    double? measureFillOpacity,
+    double? channelFillOpacity,
+    double? positionFillOpacity,
+    List<double>? fibLevels,
+    double? fibFillOpacity,
     double? labelTextSize,
     Color? labelBackgroundColor,
     int? labelBackgroundAlpha,
@@ -338,6 +398,8 @@ class DrawingStyle {
       showLineStyleControl: showLineStyleControl ?? this.showLineStyleControl,
       showLabelControl: showLabelControl ?? this.showLabelControl,
       showLabelTextControl: showLabelTextControl ?? this.showLabelTextControl,
+      showFillControl: showFillControl ?? this.showFillControl,
+      showAlertControl: showAlertControl ?? this.showAlertControl,
       showLockControl: showLockControl ?? this.showLockControl,
       showDeleteControl: showDeleteControl ?? this.showDeleteControl,
       showDoneControl: showDoneControl ?? this.showDoneControl,
@@ -371,6 +433,14 @@ class DrawingStyle {
       handleHitTestTolerance:
           handleHitTestTolerance ?? this.handleHitTestTolerance,
       magnetSnapDistance: magnetSnapDistance ?? this.magnetSnapDistance,
+      arrowHeadLength: arrowHeadLength ?? this.arrowHeadLength,
+      rectangleFillOpacity: rectangleFillOpacity ?? this.rectangleFillOpacity,
+      shapeFillOpacity: shapeFillOpacity ?? this.shapeFillOpacity,
+      measureFillOpacity: measureFillOpacity ?? this.measureFillOpacity,
+      channelFillOpacity: channelFillOpacity ?? this.channelFillOpacity,
+      positionFillOpacity: positionFillOpacity ?? this.positionFillOpacity,
+      fibLevels: fibLevels ?? this.fibLevels,
+      fibFillOpacity: fibFillOpacity ?? this.fibFillOpacity,
       labelTextSize: labelTextSize ?? this.labelTextSize,
       labelBackgroundColor: labelBackgroundColor ?? this.labelBackgroundColor,
       labelBackgroundAlpha: labelBackgroundAlpha ?? this.labelBackgroundAlpha,

@@ -9,11 +9,20 @@ class BaseDimension {
     required bool volHidden,
     required int paneCount,
     required int legendRowCount,
+    List<double>? paneHeights,
   }) {
     _mBaseHeight = mBaseHeight;
     _mVolumeHeight = volHidden ? 0 : volumeHeight;
-    _mSecondaryHeight = secondaryPaneHeight;
-    _totalSecondaryHeight = _mSecondaryHeight * paneCount;
+    _paneHeights = [
+      for (var i = 0; i < paneCount; i++)
+        paneHeights != null && i < paneHeights.length
+            ? paneHeights[i]
+            : secondaryPaneHeight,
+    ];
+    _mSecondaryHeight = _paneHeights.isEmpty
+        ? secondaryPaneHeight
+        : _paneHeights.first;
+    _totalSecondaryHeight = _paneHeights.fold(0.0, (sum, h) => sum + h);
     _totalLabelHeight = legendRowHeight * legendRowCount;
 
     _mDisplayHeight =
@@ -39,10 +48,18 @@ class BaseDimension {
     required bool volHidden,
     required int paneCount,
     required int legendRowCount,
-  }) =>
-      (volHidden ? 0 : volumeHeight) +
-      secondaryPaneHeight * paneCount +
-      legendRowHeight * legendRowCount;
+    List<double>? paneHeights,
+  }) {
+    var panes = 0.0;
+    for (var i = 0; i < paneCount; i++) {
+      panes += paneHeights != null && i < paneHeights.length
+          ? paneHeights[i]
+          : secondaryPaneHeight;
+    }
+    return (volHidden ? 0 : volumeHeight) +
+        panes +
+        legendRowHeight * legendRowCount;
+  }
 
   // the height of base chart
   double _mBaseHeight = 380;
@@ -54,6 +71,7 @@ class BaseDimension {
   // default: 0
   // the height of a secondary chart
   double _mSecondaryHeight = 0;
+  List<double> _paneHeights = const [];
   double _totalSecondaryHeight = 0;
 
   double _totalLabelHeight = 0;
@@ -65,8 +83,14 @@ class BaseDimension {
   /// Height of the volume pane, or 0 when it is hidden.
   double get mVolumeHeight => _mVolumeHeight;
 
-  /// Height of one indicator pane.
+  /// Height of the first indicator pane, or the default when there are none.
+  ///
+  /// Panes may differ in height once the user has dragged a separator; see
+  /// [paneHeights].
   double get mSecondaryHeight => _mSecondaryHeight;
+
+  /// The height of each indicator pane, in the order they are stacked.
+  List<double> get paneHeights => List<double>.unmodifiable(_paneHeights);
 
   /// Height of every indicator pane together.
   double get totalSecondaryHeight => _totalSecondaryHeight;

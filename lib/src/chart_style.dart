@@ -91,6 +91,7 @@ class ChartColors {
 
     ///line between the main chart and each pane below it
     this.separatorColor,
+    this.sessionDividerColor,
 
     ///pill painted behind the price axis labels; null derives it from bgColor
     this.axisLabelBgColor,
@@ -262,6 +263,15 @@ class ChartColors {
   /// [separatorColor], or [gridColor] if it was left null.
   Color get effectiveSeparatorColor => separatorColor ?? gridColor;
 
+  /// Colour of the lines marking the start of each day.
+  ///
+  /// Defaults to a faint [gridColor] when null.
+  Color? sessionDividerColor;
+
+  /// [sessionDividerColor], or a faint [gridColor] if it was left null.
+  Color get effectiveSessionDividerColor =>
+      sessionDividerColor ?? gridColor.withValues(alpha: 0.5);
+
   /// [axisLabelBgColor], or a translucent [bgColor] if it was left null.
   Color get effectiveAxisLabelBgColor =>
       axisLabelBgColor ?? bgColor.withValues(alpha: 0.72);
@@ -320,6 +330,11 @@ class ChartStyle {
     this.gridStrokeWidth = 0.5,
     this.separatorWidth = 1.0,
     this.hollowUpCandles = false,
+    this.showSessionDividers = false,
+    this.paneResizeTolerance = 6.0,
+    this.paneGrabHeight = 16.0,
+    this.minPaneHeight = 40.0,
+    this.maxPaneHeight = 400.0,
     this.axisLabelBackground = true,
     this.axisLabelPadding = 4.0,
     this.labelCornerRadius = 3.0,
@@ -380,6 +395,31 @@ class ChartStyle {
   /// Draws rising candles as outlines rather than filled bodies.
   final bool hollowUpCandles;
 
+  /// How close to a pane's lower edge a press has to land to start resizing it.
+  ///
+  /// Only consulted when `KChartWidget.resizablePanes` is on.
+  final double paneResizeTolerance;
+
+  /// How tall the strip at the top of a pane is that grabs it for reordering.
+  ///
+  /// Only consulted when `KChartWidget.reorderablePanes` is on. It is the
+  /// pane's legend row, which is why it is the part that picks the pane up.
+  final double paneGrabHeight;
+
+  /// Shortest an indicator pane may be dragged.
+  final double minPaneHeight;
+
+  /// Tallest an indicator pane may be dragged.
+  final double maxPaneHeight;
+
+  /// Marks the start of each day with a vertical line.
+  ///
+  /// What tells one session from the next on an intraday chart, where the date
+  /// only appears every few axis labels. Drawn in
+  /// [ChartColors.sessionDividerColor], in the time zone the chart is showing —
+  /// see `KChartWidget.timeZoneOffset`.
+  final bool showSessionDividers;
+
   /// Paints a pill behind the price axis labels so they stay readable where
   /// they cross the candles.
   final bool axisLabelBackground;
@@ -404,4 +444,81 @@ class ChartStyle {
 
   ///customize the time below
   final List<String>? dateTimeFormat;
+
+  /// Returns a copy with the given fields replaced.
+  ChartStyle copyWith({
+    double? topPadding,
+    double? bottomPadding,
+    double? childPadding,
+    double? pointWidth,
+    double? candleWidth,
+    double? candleLineWidth,
+    double? volWidth,
+    double? macdWidth,
+    double? indicatorLineWidth,
+    double? vCrossWidth,
+    double? hCrossWidth,
+    double? crossDashLength,
+    double? crossDashGap,
+    double? nowPriceLineLength,
+    double? nowPriceLineSpan,
+    double? nowPriceLineWidth,
+    bool? nowPriceDashed,
+    int? gridRows,
+    int? gridColumns,
+    double? gridStrokeWidth,
+    double? separatorWidth,
+    bool? hollowUpCandles,
+    bool? showSessionDividers,
+    double? paneResizeTolerance,
+    double? paneGrabHeight,
+    double? minPaneHeight,
+    double? maxPaneHeight,
+    bool? axisLabelBackground,
+    double? axisLabelPadding,
+    double? labelCornerRadius,
+    double? legendPadding,
+    double? legendSpacing,
+    Alignment? watermarkAlignment,
+    double? watermarkScale,
+    List<String>? dateTimeFormat,
+  }) {
+    return ChartStyle(
+      topPadding: topPadding ?? this.topPadding,
+      bottomPadding: bottomPadding ?? this.bottomPadding,
+      childPadding: childPadding ?? this.childPadding,
+      pointWidth: pointWidth ?? this.pointWidth,
+      candleWidth: candleWidth ?? this.candleWidth,
+      candleLineWidth: candleLineWidth ?? this.candleLineWidth,
+      volWidth: volWidth ?? this.volWidth,
+      macdWidth: macdWidth ?? this.macdWidth,
+      indicatorLineWidth: indicatorLineWidth ?? this.indicatorLineWidth,
+      vCrossWidth: vCrossWidth ?? this.vCrossWidth,
+      hCrossWidth: hCrossWidth ?? this.hCrossWidth,
+      crossDashLength: crossDashLength ?? this.crossDashLength,
+      crossDashGap: crossDashGap ?? this.crossDashGap,
+      nowPriceLineLength: nowPriceLineLength ?? this.nowPriceLineLength,
+      nowPriceLineSpan: nowPriceLineSpan ?? this.nowPriceLineSpan,
+      nowPriceLineWidth: nowPriceLineWidth ?? this.nowPriceLineWidth,
+      nowPriceDashed: nowPriceDashed ?? this.nowPriceDashed,
+      gridRows: gridRows ?? this.gridRows,
+      gridColumns: gridColumns ?? this.gridColumns,
+      gridStrokeWidth: gridStrokeWidth ?? this.gridStrokeWidth,
+      separatorWidth: separatorWidth ?? this.separatorWidth,
+      hollowUpCandles: hollowUpCandles ?? this.hollowUpCandles,
+      showSessionDividers: showSessionDividers ?? this.showSessionDividers,
+      paneResizeTolerance: paneResizeTolerance ?? this.paneResizeTolerance,
+      paneGrabHeight: paneGrabHeight ?? this.paneGrabHeight,
+      minPaneHeight: minPaneHeight ?? this.minPaneHeight,
+      maxPaneHeight: maxPaneHeight ?? this.maxPaneHeight,
+      axisLabelBackground: axisLabelBackground ?? this.axisLabelBackground,
+      axisLabelPadding: axisLabelPadding ?? this.axisLabelPadding,
+      labelCornerRadius: labelCornerRadius ?? this.labelCornerRadius,
+      legendPadding: legendPadding ?? this.legendPadding,
+      legendSpacing: legendSpacing ?? this.legendSpacing,
+      watermarkAlignment: watermarkAlignment ?? this.watermarkAlignment,
+      watermarkScale: watermarkScale ?? this.watermarkScale,
+      dateTimeFormat: dateTimeFormat ?? this.dateTimeFormat,
+    );
+  }
 }

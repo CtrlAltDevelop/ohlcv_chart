@@ -26,6 +26,7 @@ abstract class BaseChartPainter extends CustomPainter {
     required this.baseDimension,
     this.candles,
     this.isOnTap = false,
+    this.isHovering = false,
     this.suppressCrosshair = false,
     this.overlays = const <ResolvedIndicator>[],
     this.panes = const <ResolvedIndicator>[],
@@ -61,13 +62,23 @@ abstract class BaseChartPainter extends CustomPainter {
   bool isLongPress = false;
   bool isOnTap;
 
+  /// Whether a mouse is resting over the chart, which shows the crosshair
+  /// without asking for a press.
+  bool isHovering;
+
   /// Hides the crosshair and its readout while the user is placing or dragging
   /// a line, so the two do not fight for the same gesture.
   bool suppressCrosshair;
 
   /// Whether the crosshair, its labels and the info window are showing.
   bool get showCrosshair =>
-      !suppressCrosshair && (isLongPress || (isTapShowInfoDialog && isOnTap));
+      !suppressCrosshair &&
+      (isLongPress || isHovering || (isTapShowInfoDialog && isOnTap));
+
+  /// Whether the legends read out a candle the user picked rather than the
+  /// newest one.
+  bool get isReadingSelection =>
+      isLongPress || isHovering || (isTapShowInfoDialog && isOnTap);
   bool isLine;
 
   late Rect mMainLabelRect;
@@ -220,7 +231,7 @@ abstract class BaseChartPainter extends CustomPainter {
   /// init the rectangle box to draw chart
   void initRect(Size size) {
     var volHeight = baseDimension.mVolumeHeight;
-    var secondaryHeight = baseDimension.mSecondaryHeight;
+    var paneHeights = baseDimension.paneHeights;
     var totalSecondaryHeight = baseDimension.totalSecondaryHeight;
 
     double mainHeight = mDisplayHeight - volHeight - totalSecondaryHeight;
@@ -234,7 +245,7 @@ abstract class BaseChartPainter extends CustomPainter {
           ? 0.0
           : (room / requested).clamp(0.0, 1.0).toDouble();
       volHeight *= factor;
-      secondaryHeight *= factor;
+      paneHeights = [for (final height in paneHeights) height * factor];
       totalSecondaryHeight *= factor;
       mainHeight = max(mDisplayHeight - room, 0.0);
     }
@@ -251,20 +262,15 @@ abstract class BaseChartPainter extends CustomPainter {
     }
 
     mSecondaryRectList.clear();
+    var top = mMainRect.bottom + volHeight;
     for (int i = 0; i < panes.length; ++i) {
+      final height = i < paneHeights.length
+          ? paneHeights[i]
+          : BaseDimension.secondaryPaneHeight;
       mSecondaryRectList.add(
-        RenderRect(
-          Rect.fromLTRB(
-            0,
-            mMainRect.bottom + volHeight + i * secondaryHeight + mChildPadding,
-            mWidth,
-            mMainRect.bottom +
-                volHeight +
-                i * secondaryHeight +
-                secondaryHeight,
-          ),
-        ),
+        RenderRect(Rect.fromLTRB(0, top + mChildPadding, mWidth, top + height)),
       );
+      top += height;
     }
   }
 

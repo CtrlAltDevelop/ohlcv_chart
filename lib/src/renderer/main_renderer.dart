@@ -1,8 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../chart_type.dart';
 import '../entity/candle_entity.dart';
 import '../entity/k_line_entity.dart';
 import '../indicators/resolved_indicator.dart';
+import '../price_axis_scale.dart';
 import 'base_chart_renderer.dart';
 import 'series_painter.dart';
 
@@ -33,21 +37,25 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     this.chartColors,
     this.scaleX,
     this.verticalTextAlignment,
-    this.hasPanesBelow,
-  ) : super(
-        chartRect: mainRect,
-        maxValue: maxValue,
-        minValue: minValue,
-        topPadding: topPadding,
-        fixedLength: fixedLength,
-        gridColor: chartColors.gridColor,
-        separatorColor: chartColors.effectiveSeparatorColor,
-        gridStrokeWidth: chartStyle.gridStrokeWidth,
-        separatorWidth: chartStyle.separatorWidth,
-        labelCornerRadius: chartStyle.labelCornerRadius,
-        legendPadding: chartStyle.legendPadding,
-        legendBgColor: chartColors.effectiveLegendBgColor,
-      ) {
+    this.hasPanesBelow, {
+    this.priceScale = PriceAxisScale.linear,
+    this.percentBase,
+    this.chartType = ChartType.candles,
+    this.baselinePrice,
+  }) : super(
+         chartRect: mainRect,
+         maxValue: maxValue,
+         minValue: minValue,
+         topPadding: topPadding,
+         fixedLength: fixedLength,
+         gridColor: chartColors.gridColor,
+         separatorColor: chartColors.effectiveSeparatorColor,
+         gridStrokeWidth: chartStyle.gridStrokeWidth,
+         separatorWidth: chartStyle.separatorWidth,
+         labelCornerRadius: chartStyle.labelCornerRadius,
+         legendPadding: chartStyle.legendPadding,
+         legendBgColor: chartColors.effectiveLegendBgColor,
+       ) {
     mCandleWidth = chartStyle.candleWidth;
     mCandleLineWidth = chartStyle.candleLineWidth;
     mLinePaint = Paint()
@@ -66,6 +74,56 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       minValue /= 2;
     }
     scaleY = _contentRect.height / (maxValue - minValue);
+
+    // The axis is drawn in transformed space — prices for a linear axis, their
+    // logarithms for a logarithmic one — so one scale factor covers both.
+    _transformedMax = _transform(maxValue);
+    final span = _transformedMax - _transform(minValue);
+    _transformedScaleY = span <= 0 ? scaleY : _contentRect.height / span;
+  }
+
+  /// What the candle area draws for each candle.
+  final ChartType chartType;
+
+  /// The level a [ChartType.baseline] chart is washed towards.
+  final double? baselinePrice;
+
+  /// How the price axis spaces its values.
+  final PriceAxisScale priceScale;
+
+  /// The close a [PriceAxisScale.percentage] axis measures against, which is
+  /// the first candle in view.
+  final double? percentBase;
+
+  late final double _transformedMax;
+  late final double _transformedScaleY;
+
+  /// Whether prices really are spaced by ratio.
+  ///
+  /// A window holding zero or a negative price has no logarithm to space by, so
+  /// it falls back to a linear axis rather than drawing nothing.
+  bool get isLogarithmic =>
+      priceScale == PriceAxisScale.logarithmic && minValue > 0;
+
+  double _transform(double price) =>
+      isLogarithmic ? math.log(price <= 0 ? _logFloor : price) : price;
+
+  double _untransform(double value) => isLogarithmic ? math.exp(value) : value;
+
+  /// Stands in for a price a logarithm cannot take.
+  static const double _logFloor = 1e-9;
+
+  /// Formats [price] the way the axis reads it.
+  ///
+  /// A percentage axis shows the move away from [percentBase]; every other
+  /// axis shows the price itself.
+  String formatAxis(double price) {
+    final base = percentBase;
+    if (priceScale != PriceAxisScale.percentage || base == null || base == 0) {
+      return format(price);
+    }
+    final move = (price / base - 1) * 100;
+    return '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
   }
 
   late double mCandleWidth;
@@ -95,8 +153,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   /// Draws the overlay legends, one row per kind of indicator.
   ///
   /// Repeated averages share a row — `MA5 MA10 MA20` reads as one line — while
-  /// a different indicator starts a new one.
-  void drawLegends(Canvas canvas, int index, double x) {
+  /// a different indicator starts a new one. [startRow] leaves room above for
+  /// rows someone else has already taken, such as the OHLC legend.
+  void drawLegends(Canvas canvas, int index, double x, {int startRow = 0}) {
     if (isLine) return;
 
     final rows = <String, List<InlineSpan>>{};
@@ -116,7 +175,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       }
     }
 
-    var row = 0;
+    var row = startRow;
     for (final spans in rows.values) {
       if (spans.isEmpty) continue;
       final tp = TextPainter(
@@ -182,11 +241,123 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     Size size,
     Canvas canvas,
   ) {
-    if (isLine) {
-      drawPolyline(lastPoint.close, curPoint.close, canvas, lastX, curX);
-    } else {
-      drawCandle(curPoint, canvas, curX);
+    switch (chartType) {
+      case ChartType.candles:
+        drawCandle(curPoint, canvas, curX);
+      case ChartType.bars:
+        drawBar(curPoint, canvas, curX);
+      case ChartType.line:
+        drawPolyline(
+          lastPoint.close,
+          curPoint.close,
+          canvas,
+          lastX,
+          curX,
+          fill: false,
+        );
+      case ChartType.area:
+        drawPolyline(lastPoint.close, curPoint.close, canvas, lastX, curX);
+      case ChartType.baseline:
+        drawBaselineSegment(
+          lastPoint.close,
+          curPoint.close,
+          canvas,
+          lastX,
+          curX,
+        );
     }
+  }
+
+  /// Draws one OHLC bar: the high-low range, with the open ticked left and the
+  /// close ticked right.
+  void drawBar(CandleEntity point, Canvas canvas, double curX) {
+    final high = getY(point.high);
+    final low = getY(point.low);
+    final open = getY(point.open);
+    final close = getY(point.close);
+    // In screen space a rising bar closes above where it opened.
+    final rising = open >= close;
+    final tick = mCandleWidth / 2;
+
+    chartPaint
+      ..color = rising ? chartColors.upColor : chartColors.dnColor
+      ..strokeWidth = mCandleLineWidth
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(
+      Rect.fromLTRB(
+        curX - mCandleLineWidth / 2,
+        high,
+        curX + mCandleLineWidth / 2,
+        low,
+      ),
+      chartPaint,
+    );
+    canvas.drawRect(
+      Rect.fromLTRB(
+        curX - tick,
+        open - mCandleLineWidth / 2,
+        curX,
+        open + mCandleLineWidth / 2,
+      ),
+      chartPaint,
+    );
+    canvas.drawRect(
+      Rect.fromLTRB(
+        curX,
+        close - mCandleLineWidth / 2,
+        curX + tick,
+        close + mCandleLineWidth / 2,
+      ),
+      chartPaint,
+    );
+  }
+
+  /// Draws one segment of a baseline chart: the stretch of line between two
+  /// closes, washed towards the baseline in the colour of the side it is on.
+  void drawBaselineSegment(
+    double lastPrice,
+    double curPrice,
+    Canvas canvas,
+    double lastXO,
+    double curX,
+  ) {
+    final baseline = baselinePrice;
+    if (baseline == null) {
+      drawPolyline(lastPrice, curPrice, canvas, lastXO, curX);
+      return;
+    }
+
+    final lastX = lastXO == curX ? 0.0 : lastXO;
+    final baseY = getY(baseline);
+    final lastY = getY(lastPrice);
+    final curY = getY(curPrice);
+
+    // Which side of the level this stretch sits on decides its colour; a
+    // stretch that straddles it takes the side it ends on.
+    final above = curPrice >= baseline;
+    final color = above ? chartColors.upColor : chartColors.dnColor;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(lastX, baseY)
+        ..lineTo(lastX, lastY)
+        ..lineTo(curX, curY)
+        ..lineTo(curX, baseY)
+        ..close(),
+      Paint()
+        ..color = color.withValues(alpha: 0.18)
+        ..style = PaintingStyle.fill
+        ..isAntiAlias = true,
+    );
+    canvas.drawLine(
+      Offset(lastX, lastY),
+      Offset(curX, curY),
+      Paint()
+        ..color = color
+        ..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0)
+        ..isAntiAlias = true,
+    );
   }
 
   Shader? mLineFillShader;
@@ -202,8 +373,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     double curPrice,
     Canvas canvas,
     double lastXO,
-    double curX,
-  ) {
+    double curX, {
+    bool fill = true,
+  }) {
     double lastX = lastXO;
     //    drawLine(lastPrice + 100, curPrice + 100, canvas, lastX, curX, ChartColors.kLineColor);
     mLinePath ??= Path();
@@ -225,6 +397,15 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       curX,
       getY(curPrice),
     );
+
+    if (!fill) {
+      canvas.drawPath(
+        mLinePath!,
+        mLinePaint..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0),
+      );
+      mLinePath!.reset();
+      return;
+    }
 
     // Draw shadows
     mLineFillShader ??=
@@ -322,8 +503,10 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     final double rowSpace = chartRect.height / gridRows;
     for (var i = 0; i <= gridRows; ++i) {
       if (i == gridRows && hasPanesBelow) continue;
-      final double value = (gridRows - i) * rowSpace / scaleY + minValue;
-      final TextSpan span = TextSpan(text: format(value), style: textStyle);
+      // Read the price off the grid line the label belongs to, so a
+      // logarithmic axis labels itself as correctly as a linear one.
+      final double value = getValue(chartRect.top + rowSpace * i);
+      final TextSpan span = TextSpan(text: formatAxis(value), style: textStyle);
       final TextPainter tp = TextPainter(
         text: span,
         textDirection: TextDirection.ltr,
@@ -376,10 +559,11 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     }
   }
 
+  /// The price at [y], the exact inverse of [getY].
   @override
-  double getValue(double y) {
-    return maxValue - (y - chartRect.top) / scaleY;
-  }
+  double getValue(double y) => _untransform(
+    _transformedMax - (y - _contentRect.top) / _transformedScaleY,
+  );
 
   @override
   String get name => 'Price';
@@ -388,7 +572,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   double getY(double y) {
     //For TrendLine
     updateTrendLineData();
-    return (maxValue - y) * scaleY + _contentRect.top;
+    return (_transformedMax - _transform(y)) * _transformedScaleY +
+        _contentRect.top;
   }
 
   void updateTrendLineData() {
