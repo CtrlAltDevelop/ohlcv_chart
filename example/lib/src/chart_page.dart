@@ -44,7 +44,27 @@ class ChartPage extends StatelessWidget {
               children: [
                 Expanded(child: chart),
                 const VerticalDivider(width: 1),
-                SizedBox(width: 320, child: Controls(state: state)),
+                // The drawing manager is a plain widget: here it sits in a
+                // side panel above the rest of the controls.
+                SizedBox(
+                  width: 320,
+                  child: Column(
+                    children: [
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: constraints.maxHeight * 0.4,
+                        ),
+                        child: DrawingManager(
+                          controller: state.drawings,
+                          style: state.drawingStyle,
+                          translations: state.translations.drawing,
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      Expanded(child: Controls(state: state)),
+                    ],
+                  ),
+                ),
               ],
             );
           },
@@ -75,7 +95,17 @@ class _Chart extends StatelessWidget {
       currentDrawingTool: state.tool,
       magnetMode: state.magnetMode,
       indicators: state.indicators,
-      isLine: state.isLine,
+      controller: state.chart,
+      drawingController: state.drawings,
+      chartType: state.chartType,
+      priceAxisScale: state.priceAxisScale,
+      showOhlcLegend: state.showOhlcLegend,
+      crosshairOnHover: state.crosshairOnHover,
+      timeZoneOffset: state.timeZoneOffset,
+      resizablePanes: state.resizablePanes,
+      reorderablePanes: state.reorderablePanes,
+      onReorderPane: state.reorderPane,
+      selectAfterDrawing: !state.keepToolArmed,
       hideGrid: state.hideGrid,
       volHidden: state.volHidden,
       showNowPrice: state.showNowPrice,
@@ -88,15 +118,11 @@ class _Chart extends StatelessWidget {
       fixedLength: state.fixedLength,
       timeFormat: TimeFormat.YEAR_MONTH_DAY_WITH_HOUR,
       signals: state.signals,
-      trendLines: state.trendLines,
-      horizontalLines: state.horizontalLines,
-      verticalLines: state.verticalLines,
-      onAddTrendLine: state.saveLine,
-      onAddHorizontalLine: state.saveLine,
-      onAddVerticalLine: state.saveLine,
-      onRemoveTrendLine: state.removeLine,
-      onRemoveHorizontalLine: state.removeLine,
-      onRemoveVerticalLine: state.removeLine,
+      // The drawings themselves live in the controller, so all that is left
+      // here is to hear about them.
+      onAddDrawing: state.noteSaved,
+      onRemoveDrawing: state.noteRemoved,
+      onAlertCrossed: state.noteAlert,
       onLoadMore: (isRight) {
         if (!isRight) state.loadOlder();
       },

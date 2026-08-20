@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
@@ -12,6 +14,18 @@ import 'market_data.dart';
 /// Mirrors `DrawingTool`, plus the package's own `none`.
 typedef Tool = DrawingTool;
 
+/// How the demo rewrites the candles before drawing them.
+enum Aggregation {
+  /// The candles as they came.
+  none,
+
+  /// Averaged with the candle before, through `CandleTransforms.heikinAshi`.
+  heikinAshi,
+
+  /// Laid out as bricks, through `CandleTransforms.renko`.
+  renko,
+}
+
 /// Every switch the demo exposes, in one listenable place.
 ///
 /// The demo mutates fields directly and calls [update], which keeps the widget
@@ -19,32 +33,99 @@ typedef Tool = DrawingTool;
 class DemoState extends ChangeNotifier {
   DemoState() {
     _candles = MarketData.candles();
-    horizontalLines.add(
+    drawings.save(
       HorizontalLine(
         price: _candles[_candles.length - 30].close,
         title: 'entry',
         color: const Color(0xFF4DABF7),
         style: LineStyle.dashed,
         showLabel: true,
+        alert: true,
       ),
     );
+    drawings.clearHistory();
+    drawings.addListener(notifyListeners);
   }
 
   late List<KLineEntity> _candles;
 
   /// The candles handed to the chart, oldest first.
-  List<KLineEntity> get candles => _candles;
+  ///
+  /// Heikin-Ashi and Renko are transforms of the data rather than ways of
+  /// drawing it, so they happen here — and the result is cached, because the
+  /// chart asks for it on every build.
+  List<KLineEntity> get candles {
+    if (aggregation == Aggregation.none) return _candles;
+    final cached = _aggregated;
+    if (cached != null &&
+        _aggregatedFrom == aggregation &&
+        _aggregatedLength == _candles.length &&
+        _aggregatedLast == _candles.last.close) {
+      return cached;
+    }
+
+    final transformed = switch (aggregation) {
+      Aggregation.none => _candles,
+      Aggregation.heikinAshi => CandleTransforms.heikinAshi(_candles),
+      Aggregation.renko => CandleTransforms.renko(
+        _candles,
+        brickSize:
+            CandleTransforms.atrBrickSize(_candles) ??
+            _candles.last.close * 0.005,
+      ),
+    };
+    // The transform hands back plain candles, so the indicators have to be
+    // computed over them again.
+    DataUtil.calculate(transformed);
+
+    _aggregated = transformed;
+    _aggregatedFrom = aggregation;
+    _aggregatedLength = _candles.length;
+    _aggregatedLast = _candles.last.close;
+    return transformed;
+  }
+
+  List<KLineEntity>? _aggregated;
+  Aggregation? _aggregatedFrom;
+  int? _aggregatedLength;
+  double? _aggregatedLast;
 
   // ── Appearance ──────────────────────────────────────────────────────────
   bool dark = true;
   bool hollowCandles = false;
-  bool isLine = false;
   bool hideGrid = false;
   bool volHidden = false;
   bool showNowPrice = true;
   bool axisOnRight = false;
   bool german = false;
   int fixedLength = 2;
+
+  /// What the candle area draws for each candle.
+  ChartType chartType = ChartType.candles;
+
+  /// How the price axis is spaced and read out.
+  PriceAxisScale priceAxisScale = PriceAxisScale.linear;
+
+  /// How the candles are rewritten before they are drawn.
+  Aggregation aggregation = Aggregation.none;
+
+  /// Whether the candle's values are read out above the chart.
+  bool showOhlcLegend = true;
+
+  /// Whether a resting mouse carries the crosshair.
+  bool crosshairOnHover = true;
+
+  /// Whether each day starts with a divider.
+  bool sessionDividers = false;
+
+  /// Which zone the chart shows its dates in.
+  Duration timeZoneOffset = Duration.zero;
+
+  /// Whether an indicator pane can be dragged taller or shorter.
+  bool resizablePanes = true;
+
+  /// Whether an indicator pane can be dragged up or down the stack.
+  bool reorderablePanes = true;
 
   // ── Indicators ──────────────────────────────────────────────────────────
 
@@ -74,9 +155,19 @@ class DemoState extends ChangeNotifier {
   DrawingTool tool = DrawingTool.none;
   bool magnetMode = false;
   bool brandedToolbar = false;
-  final List<TrendLine> trendLines = [];
-  final List<HorizontalLine> horizontalLines = [];
-  final List<VerticalLine> verticalLines = [];
+
+  /// Whether the palette stays armed after a drawing lands, so several of the
+  /// same kind can be placed one after another.
+  bool keepToolArmed = false;
+
+  /// Every drawing on the chart, and its undo history.
+  final ChartDrawingController drawings = ChartDrawingController();
+
+  /// Drives the chart itself: zoom, scroll and capture.
+  final KChartController chart = KChartController();
+
+  /// The last layout saved with [saveLayout].
+  String? savedLayout;
 
   // ── Markers and readouts ────────────────────────────────────────────────
   bool showSignals = true;
@@ -109,8 +200,11 @@ class DemoState extends ChangeNotifier {
   ChartColors get colors =>
       dark ? ChartTheme.darkColors() : ChartTheme.lightColors();
 
-  /// Geometry for the current candle style.
-  ChartStyle get style => hollowCandles ? ChartTheme.hollow : ChartTheme.filled;
+  /// Geometry for the current candle style, plus the session dividers.
+  ChartStyle get style {
+    final base = hollowCandles ? ChartTheme.hollow : ChartTheme.filled;
+    return base.copyWith(showSessionDividers: sessionDividers);
+  }
 
   /// The line editor's configuration.
   DrawingStyle get drawingStyle =>
@@ -133,6 +227,7 @@ class DemoState extends ChangeNotifier {
           changeLive: 'Änderung% live',
           amount: 'Umsatz',
           vol: 'Volumen',
+          jumpToNow: 'Zur letzten Kerze',
           drawing: DrawingTranslations(
             color: 'Farbe',
             opacity: 'Deckkraft',
@@ -147,9 +242,37 @@ class DemoState extends ChangeNotifier {
             hideLabel: 'Beschriftung ausblenden',
             lock: 'Sperren',
             unlock: 'Entsperren',
+            fill: 'Füllung',
+            alert: 'Alarm setzen',
+            clearAlert: 'Alarm entfernen',
             delete: 'Löschen',
             done: 'Fertig',
             move: 'Werkzeugleiste verschieben',
+            drawings: 'Zeichnungen',
+            noDrawings: 'Noch nichts gezeichnet',
+            undo: 'Zurück',
+            redo: 'Vor',
+            clearAll: 'Alle löschen',
+            show: 'Zeigen',
+            hide: 'Ausblenden',
+            horizontalLineName: 'Horizontale Linie',
+            horizontalRayName: 'Horizontaler Strahl',
+            verticalLineName: 'Vertikale Linie',
+            trendLineName: 'Trendlinie',
+            rayName: 'Strahl',
+            extendedLineName: 'Verlängerte Linie',
+            arrowName: 'Pfeil',
+            rectangleName: 'Rechteck',
+            ellipseName: 'Ellipse',
+            triangleName: 'Dreieck',
+            fibRetracementName: 'Fibonacci',
+            measureName: 'Messung',
+            channelName: 'Parallelkanal',
+            longPositionName: 'Long-Position',
+            shortPositionName: 'Short-Position',
+            textName: 'Notiz',
+            freehandName: 'Freihand',
+            drawingName: 'Zeichnung',
           ),
         )
       : const ChartTranslations();
@@ -162,7 +285,7 @@ class DemoState extends ChangeNotifier {
   /// Take-profit, stop-loss and liquidation markers over the candles.
   List<SignalEntity> get signals {
     if (!showSignals) return const [];
-    final last = _candles.last.close;
+    final last = candles.last.close;
     return [
       SignalEntity(title: 'TP', price: last * 1.045, color: colors.upColor),
       SignalEntity(
@@ -252,60 +375,85 @@ class DemoState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Stores a line the user just drew or edited, replacing any earlier copy.
-  void saveLine(ChartLine line) {
-    switch (line) {
-      case HorizontalLine():
-        horizontalLines
-          ..remove(line)
-          ..add(line);
-      case VerticalLine():
-        verticalLines
-          ..remove(line)
-          ..add(line);
-      case TrendLine():
-        trendLines
-          ..remove(line)
-          ..add(line);
-    }
-    // Most trading apps drop out of placement mode once a line lands.
-    tool = DrawingTool.none;
-    status = '${_name(line)} saved — tap it to restyle';
+  /// Moves the pane at [from] to [to], which is what the chart reports when one
+  /// is dragged up or down the stack.
+  void reorderPane(int from, int to) {
+    // The panes are the indicators that are not overlays, in order, so the
+    // move has to be mapped back onto the full list.
+    final paneIndices = [
+      for (var i = 0; i < indicators.length; i++)
+        if (indicators[i].placement != IndicatorPlacement.overlay) i,
+    ];
+    if (from >= paneIndices.length || to >= paneIndices.length) return;
+
+    final indicator = indicators.removeAt(paneIndices[from]);
+    indicators.insert(paneIndices[to], indicator);
+    status = '${indicator.label} moved';
     notifyListeners();
   }
 
-  /// Forgets a line the user deleted from the editing toolbar.
-  void removeLine(ChartLine line) {
-    trendLines.remove(line);
-    horizontalLines.remove(line);
-    verticalLines.remove(line);
-    status = '${_name(line)} removed';
+  // ── Drawings ────────────────────────────────────────────────────────────
+
+  /// Notes a drawing the user just placed or edited.
+  ///
+  /// The chart has already written it to [drawings]; all that is left is to say
+  /// so, and to put the palette away unless the user asked to keep drawing.
+  void noteSaved(ChartLine line) {
+    if (!keepToolArmed) tool = DrawingTool.none;
+    status = '${translations.drawing.nameOf(line)} saved — tap it to restyle';
     notifyListeners();
   }
 
-  /// Removes every drawn line.
-  void clearLines() {
-    trendLines.clear();
-    horizontalLines.clear();
-    verticalLines.clear();
-    status = 'Drawings cleared';
+  /// Notes a drawing the user deleted.
+  void noteRemoved(ChartLine line) {
+    status = '${translations.drawing.nameOf(line)} removed';
     notifyListeners();
   }
 
-  /// How many lines are currently drawn.
-  int get drawingCount =>
-      trendLines.length + horizontalLines.length + verticalLines.length;
+  /// Notes a level the market has just crossed.
+  void noteAlert(HorizontalLine line, KLineEntity candle) {
+    status =
+        'Alert: ${line.title ?? line.price.toStringAsFixed(fixedLength)} '
+        'crossed at ${candle.close.toStringAsFixed(fixedLength)}';
+    notifyListeners();
+  }
 
-  static String _name(ChartLine line) => switch (line) {
-    HorizontalLine() => 'Horizontal line',
-    VerticalLine() => 'Vertical line',
-    TrendLine() => 'Trend line',
-    _ => 'Line',
-  };
+  /// How many drawings are currently on the chart.
+  int get drawingCount => drawings.length;
+
+  /// Saves the layout as JSON, the way an app would put it in storage.
+  void saveLayout() {
+    savedLayout = jsonEncode(drawings.toJson());
+    status = 'Layout saved — ${savedLayout!.length} bytes of JSON';
+    notifyListeners();
+  }
+
+  /// Puts a saved layout back, as one undoable step.
+  void loadLayout() {
+    final saved = savedLayout;
+    if (saved == null) return;
+    drawings.load(jsonDecode(saved) as Map<String, dynamic>);
+    status = 'Layout restored from JSON';
+    notifyListeners();
+  }
+
+  /// The chart as a PNG, for sharing or saving.
+  Future<Uint8List?> capture() async {
+    final bytes = await chart.capture();
+    status = bytes == null
+        ? 'Nothing to capture yet'
+        : 'Captured ${(bytes.length / 1024).round()} KiB of PNG';
+    notifyListeners();
+    return bytes;
+  }
 
   @override
   void dispose() {
     _ticker?.cancel();
+    drawings
+      ..removeListener(notifyListeners)
+      ..dispose();
+    chart.dispose();
     super.dispose();
   }
 }

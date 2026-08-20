@@ -46,6 +46,12 @@ class Controls extends StatelessWidget {
               value: state.brandedToolbar,
               onChanged: (v) => state.update(() => state.brandedToolbar = v),
             ),
+            _Toggle(
+              label: 'Keep the tool armed',
+              subtitle: 'Draw several in a row; leaves the editor closed',
+              value: state.keepToolArmed,
+              onChanged: (v) => state.update(() => state.keepToolArmed = v),
+            ),
             Row(
               children: [
                 Expanded(
@@ -54,10 +60,46 @@ class Controls extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
+                IconButton(
+                  tooltip: 'Undo (⌘Z on the chart)',
+                  onPressed: state.drawings.canUndo
+                      ? () => state.drawings.undo()
+                      : null,
+                  icon: const Icon(Icons.undo_rounded, size: 18),
+                ),
+                IconButton(
+                  tooltip: 'Redo (⇧⌘Z)',
+                  onPressed: state.drawings.canRedo
+                      ? () => state.drawings.redo()
+                      : null,
+                  icon: const Icon(Icons.redo_rounded, size: 18),
+                ),
                 TextButton.icon(
-                  onPressed: state.drawingCount == 0 ? null : state.clearLines,
+                  onPressed: state.drawingCount == 0
+                      ? null
+                      : state.drawings.clear,
                   icon: const Icon(Icons.delete_sweep_outlined, size: 18),
                   label: const Text('Clear'),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Persist the layout as JSON',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                TextButton(
+                  onPressed: state.drawingCount == 0 ? null : state.saveLayout,
+                  child: const Text('Save'),
+                ),
+                TextButton(
+                  onPressed: state.savedLayout == null
+                      ? null
+                      : state.loadLayout,
+                  child: const Text('Restore'),
                 ),
               ],
             ),
@@ -89,11 +131,37 @@ class Controls extends StatelessWidget {
         _Section(
           title: 'Main chart',
           children: [
-            _Toggle(
-              label: 'Line mode',
-              subtitle: 'A filled close line instead of candles',
-              value: state.isLine,
-              onChanged: (v) => state.update(() => state.isLine = v),
+            _Choice<ChartType>(
+              label: 'Type',
+              value: state.chartType,
+              options: const {
+                ChartType.candles: 'candles',
+                ChartType.bars: 'bars',
+                ChartType.line: 'line',
+                ChartType.area: 'area',
+                ChartType.baseline: 'base',
+              },
+              onChanged: (v) => state.update(() => state.chartType = v),
+            ),
+            _Choice<Aggregation>(
+              label: 'Candles',
+              value: state.aggregation,
+              options: const {
+                Aggregation.none: 'raw',
+                Aggregation.heikinAshi: 'HA',
+                Aggregation.renko: 'renko',
+              },
+              onChanged: (v) => state.update(() => state.aggregation = v),
+            ),
+            _Choice<PriceAxisScale>(
+              label: 'Price axis',
+              value: state.priceAxisScale,
+              options: const {
+                PriceAxisScale.linear: 'linear',
+                PriceAxisScale.logarithmic: 'log',
+                PriceAxisScale.percentage: '%',
+              },
+              onChanged: (v) => state.update(() => state.priceAxisScale = v),
             ),
             _Toggle(
               label: 'Hollow rising candles',
@@ -104,6 +172,49 @@ class Controls extends StatelessWidget {
               label: 'Volume pane',
               value: !state.volHidden,
               onChanged: (v) => state.update(() => state.volHidden = !v),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Zoom and capture through KChartController',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Zoom out',
+                  onPressed: state.chart.zoomOut,
+                  icon: const Icon(Icons.zoom_out_rounded, size: 18),
+                ),
+                IconButton(
+                  tooltip: 'Zoom in',
+                  onPressed: state.chart.zoomIn,
+                  icon: const Icon(Icons.zoom_in_rounded, size: 18),
+                ),
+                IconButton(
+                  tooltip: 'Capture as PNG',
+                  onPressed: () => _showCapture(context, state),
+                  icon: const Icon(Icons.photo_camera_outlined, size: 18),
+                ),
+              ],
+            ),
+          ],
+        ),
+        _Section(
+          title: 'Panes',
+          subtitle:
+              'Drag a pane\'s lower edge to resize it, its legend to '
+              'move it',
+          children: [
+            _Toggle(
+              label: 'Resizable',
+              value: state.resizablePanes,
+              onChanged: (v) => state.update(() => state.resizablePanes = v),
+            ),
+            _Toggle(
+              label: 'Reorderable',
+              value: state.reorderablePanes,
+              onChanged: (v) => state.update(() => state.reorderablePanes = v),
             ),
           ],
         ),
@@ -130,6 +241,31 @@ class Controls extends StatelessWidget {
               subtitle: 'SignalEntity tags pinned to a price',
               value: state.showSignals,
               onChanged: (v) => state.update(() => state.showSignals = v),
+            ),
+            _Toggle(
+              label: 'OHLC legend',
+              subtitle: 'Reads out the candle under the crosshair',
+              value: state.showOhlcLegend,
+              onChanged: (v) => state.update(() => state.showOhlcLegend = v),
+            ),
+            _Toggle(
+              label: 'Crosshair follows the mouse',
+              subtitle: 'No long press needed on a desktop',
+              value: state.crosshairOnHover,
+              onChanged: (v) => state.update(() => state.crosshairOnHover = v),
+            ),
+            _Toggle(
+              label: 'Day dividers',
+              value: state.sessionDividers,
+              onChanged: (v) => state.update(() => state.sessionDividers = v),
+            ),
+            _Choice<int>(
+              label: 'Time zone',
+              value: state.timeZoneOffset.inMinutes,
+              options: const {0: 'UTC', 330: '+5:30', -300: '-5'},
+              onChanged: (v) => state.update(
+                () => state.timeZoneOffset = Duration(minutes: v),
+              ),
             ),
             _Choice<int>(
               label: 'Decimals',
@@ -203,11 +339,47 @@ class Controls extends StatelessWidget {
     );
   }
 
+  /// Captures the chart and shows the PNG the controller handed back.
+  static Future<void> _showCapture(
+    BuildContext context,
+    DemoState state,
+  ) async {
+    final bytes = await state.capture();
+    if (bytes == null || !context.mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('KChartController.capture()'),
+        content: SizedBox(width: 520, child: Image.memory(bytes)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   static String _toolName(DrawingTool tool) => switch (tool) {
     DrawingTool.none => 'select',
     DrawingTool.horizontal => 'horizontal',
+    DrawingTool.horizontalRay => 'h. ray',
     DrawingTool.vertical => 'vertical',
     DrawingTool.trend => 'trend',
+    DrawingTool.ray => 'ray',
+    DrawingTool.extendedLine => 'extended',
+    DrawingTool.arrow => 'arrow',
+    DrawingTool.rectangle => 'rectangle',
+    DrawingTool.ellipse => 'ellipse',
+    DrawingTool.triangle => 'triangle',
+    DrawingTool.fibRetracement => 'fib',
+    DrawingTool.measure => 'measure',
+    DrawingTool.channel => 'channel',
+    DrawingTool.position => 'position',
+    DrawingTool.text => 'note',
+    DrawingTool.brush => 'brush',
   };
 }
 
@@ -342,25 +514,26 @@ class _Choice<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The options wrap rather than sitting in a row of segments: the panel is
+    // narrow, and some of these have five of them.
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-          SegmentedButton<T>(
-            showSelectedIcon: false,
-            style: const ButtonStyle(
-              visualDensity: VisualDensity.compact,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            segments: [
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
               for (final entry in options.entries)
-                ButtonSegment(value: entry.key, label: Text(entry.value)),
+                ChoiceChip(
+                  label: Text(entry.value),
+                  selected: entry.key == value,
+                  onSelected: (_) => onChanged(entry.key),
+                ),
             ],
-            selected: {value},
-            onSelectionChanged: (selected) => onChanged(selected.first),
           ),
         ],
       ),

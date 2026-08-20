@@ -44,6 +44,11 @@ Directory resolveOutputDirectory() {
     final requested = Directory(requestedDirectory);
     try {
       requested.createSync(recursive: true);
+      // Creating a directory that already exists succeeds even when writing
+      // into it is refused, so the probe has to be an actual write.
+      File('${requested.path}/.probe')
+        ..writeAsStringSync('')
+        ..deleteSync();
       return requested;
     } on FileSystemException {
       stdout.writeln('$requestedDirectory is out of reach — sandboxed?');
@@ -210,6 +215,14 @@ List<Scene> buildScenes() {
     List<TrendLine> trendLines = const [],
     List<HorizontalLine> horizontalLines = const [],
     List<VerticalLine> verticalLines = const [],
+    List<RectangleDrawing> rectangles = const [],
+    List<FibRetracement> fibRetracements = const [],
+    List<ChartLine> drawings = const [],
+    List<KLineEntity>? data,
+    ChartType? chartType,
+    PriceAxisScale priceAxisScale = PriceAxisScale.linear,
+    bool showOhlcLegend = false,
+    bool sessionDividers = false,
     bool light = false,
     VerticalTextAlignment axis = VerticalTextAlignment.left,
   }) {
@@ -217,10 +230,22 @@ List<Scene> buildScenes() {
     return ColoredBox(
       color: colors.bgColor,
       child: KChartWidget(
-        candles,
+        data ?? candles,
         colors,
-        chartStyle: ChartTheme.filled,
-        isTrendLine: trendLines.isNotEmpty || horizontalLines.isNotEmpty,
+        chartStyle: ChartTheme.filled.copyWith(
+          showSessionDividers: sessionDividers,
+        ),
+        chartType: chartType,
+        priceAxisScale: priceAxisScale,
+        showOhlcLegend: showOhlcLegend,
+        showScrollToNowButton: false,
+        drawings: drawings,
+        isTrendLine:
+            trendLines.isNotEmpty ||
+            horizontalLines.isNotEmpty ||
+            rectangles.isNotEmpty ||
+            fibRetracements.isNotEmpty ||
+            drawings.isNotEmpty,
         watermarkAssetPath: 'assets/watermark.svg',
         timeFrame: MarketData.timeFrame,
         timeFormat: TimeFormat.YEAR_MONTH_DAY_WITH_HOUR,
@@ -229,6 +254,8 @@ List<Scene> buildScenes() {
         trendLines: trendLines,
         horizontalLines: horizontalLines,
         verticalLines: verticalLines,
+        rectangles: rectangles,
+        fibRetracements: fibRetracements,
         volHidden: volHidden,
         verticalTextAlignment: axis,
         fixedLength: 0,
@@ -362,6 +389,70 @@ List<Scene> buildScenes() {
       ),
     ),
     (
+      name: 'shapes',
+      size: wide,
+      act: null,
+      build: () => chart(
+        volHidden: true,
+        axis: VerticalTextAlignment.right,
+        indicators: [],
+        horizontalLines: [
+          HorizontalLine(
+            price: candles[candles.length - 60].high,
+            startTime: candles[candles.length - 60].dateTime,
+            title: 'broken',
+            color: const Color(0xFFEF5350),
+            style: LineStyle.dashed,
+            showLabel: true,
+          ),
+        ],
+        trendLines: [
+          TrendLine(
+            time1: candles[candles.length - 150].dateTime!,
+            price1: candles[candles.length - 150].low,
+            time2: candles[candles.length - 110].dateTime!,
+            price2: candles[candles.length - 110].high,
+            extend: LineExtension.right,
+            color: const Color(0xFFF5C26B),
+          ),
+          TrendLine(
+            time1: candles[candles.length - 95].dateTime!,
+            price1: candles[candles.length - 95].high,
+            time2: candles[candles.length - 75].dateTime!,
+            price2: candles[candles.length - 75].low,
+            arrow: true,
+            color: const Color(0xFFB197FC),
+          ),
+        ],
+        rectangles: [
+          RectangleDrawing(
+            time1: candles[candles.length - 58].dateTime!,
+            // The box covers the whole range the market held over that span,
+            // which is what a range box is for.
+            price1: candles
+                .sublist(candles.length - 58, candles.length - 38)
+                .map((candle) => candle.high)
+                .reduce(max),
+            time2: candles[candles.length - 38].dateTime!,
+            price2: candles
+                .sublist(candles.length - 58, candles.length - 38)
+                .map((candle) => candle.low)
+                .reduce(min),
+            label: 'range',
+            showLabel: true,
+          ),
+        ],
+        fibRetracements: [
+          FibRetracement(
+            time1: candles[candles.length - 30].dateTime!,
+            price1: candles[candles.length - 30].low,
+            time2: candles[candles.length - 12].dateTime!,
+            price2: candles[candles.length - 12].high,
+          ),
+        ],
+      ),
+    ),
+    (
       name: 'readout',
       size: wide,
       // Hold the chart still while the shutter goes: the readout only exists
@@ -397,6 +488,115 @@ List<Scene> buildScenes() {
             color: const Color(0xFFEF5350),
             style: LineStyle.dashed,
             showLabel: true,
+          ),
+        ],
+      ),
+    ),
+    (
+      name: 'chart-types',
+      size: wide,
+      act: null,
+      build: () => ColoredBox(
+        color: ChartTheme.darkColors().bgColor,
+        child: Row(
+          children: [
+            for (final type in [
+              ChartType.bars,
+              ChartType.baseline,
+              ChartType.area,
+            ])
+              Expanded(
+                child: chart(
+                  indicators: [],
+                  volHidden: true,
+                  chartType: type,
+                  showOhlcLegend: true,
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+    (
+      name: 'aggregations',
+      size: wide,
+      act: null,
+      build: () {
+        final ha = CandleTransforms.heikinAshi(candles);
+        DataUtil.calculate(ha);
+        final bricks = CandleTransforms.renko(
+          candles,
+          brickSize: CandleTransforms.atrBrickSize(candles)!,
+        );
+        DataUtil.calculate(bricks);
+
+        return ColoredBox(
+          color: ChartTheme.darkColors().bgColor,
+          child: Row(
+            children: [
+              Expanded(
+                child: chart(indicators: [], volHidden: true, data: ha),
+              ),
+              Expanded(
+                child: chart(indicators: [], volHidden: true, data: bricks),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+    (
+      name: 'log-axis',
+      size: wide,
+      act: null,
+      build: () => chart(
+        indicators: [EmaIndicator(period: 50)],
+        volHidden: true,
+        priceAxisScale: PriceAxisScale.logarithmic,
+        showOhlcLegend: true,
+        sessionDividers: true,
+      ),
+    ),
+    (
+      name: 'planning',
+      size: wide,
+      act: null,
+      build: () => chart(
+        indicators: [],
+        volHidden: true,
+        axis: VerticalTextAlignment.right,
+        showOhlcLegend: true,
+        drawings: [
+          PositionDrawing(
+            time1: candles[candles.length - 60].dateTime!,
+            price1: candles[candles.length - 60].close,
+            time2: candles[candles.length - 8].dateTime!,
+            price2: candles[candles.length - 60].close * 1.06,
+            time3: candles[candles.length - 8].dateTime!,
+            price3: candles[candles.length - 60].close * 0.98,
+            profitColor: const Color(0xFF26A69A),
+            lossColor: const Color(0xFFEF5350),
+          ),
+          ParallelChannel(
+            time1: candles[candles.length - 150].dateTime!,
+            price1: candles[candles.length - 150].low,
+            time2: candles[candles.length - 70].dateTime!,
+            price2: candles[candles.length - 70].low,
+            time3: candles[candles.length - 110].dateTime!,
+            price3: candles[candles.length - 110].high,
+            color: const Color(0xFF4DABF7),
+          ),
+          MeasureDrawing(
+            time1: candles[candles.length - 40].dateTime!,
+            price1: candles[candles.length - 40].low,
+            time2: candles[candles.length - 20].dateTime!,
+            price2: candles[candles.length - 20].high,
+          ),
+          TextAnnotation(
+            time: candles[candles.length - 30].dateTime!,
+            price: candles[candles.length - 30].high * 1.02,
+            text: 'CPI print',
+            color: const Color(0xFFF5C26B),
           ),
         ],
       ),
