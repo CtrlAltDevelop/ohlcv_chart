@@ -32,6 +32,229 @@
   `toggle`, `setInterval` and `stop` drive it, and it reports every move to its
   listeners so a transport bar can be built straight from it.
 
+### Sessions and per-bar colour
+
+- **New `KChartWidget.session` washes the extended hours.** A `TradingSession`
+  says when the regular session opens and closes and which days it is kept on,
+  read in the time zone the chart is showing, and the pre-market and after-hours
+  stretches are washed behind the candles. A `close` at or before its `open` runs
+  overnight, right down to Friday night belonging to Friday. Neighbouring candles
+  outside the session are washed as one band, so a long overnight is one
+  rectangle rather than a hundred. Coloured from
+  `ChartColors.extendedHoursColor`.
+- **New `KChartWidget.candleColor`** is asked about every candle, bar and column
+  drawn — return a colour to use it, or null for the up or down colour it would
+  have had. Anything the caller can work out can decide: a bar inside a session,
+  one above an average, one that completes a pattern.
+- `CandleEntity` is now exported, since a per-bar colour is asked about one.
+
+### Price scale
+
+- **New `PriceAxisScale.indexedTo100`** quotes the axis with the oldest candle
+  in view at 100 — the same information a percentage axis gives, said the way an
+  index is usually written. The axis marks round index levels and converts them
+  back to the prices they stand for.
+- **New `KChartWidget.invertPriceAxis`** runs the axis the other way, with higher
+  prices lower down. Everything follows: the candles, the drawings, the
+  crosshair, the orders and the comparisons all read off the same flipped axis,
+  and a logarithmic axis inverts and stays logarithmic.
+- **A candle's colour now comes from its prices rather than from its pixels**, so
+  an inverted axis does not paint a rising candle as a falling one. The wick and
+  the OHLC bar are drawn from sorted extents for the same reason.
+- **New `showAverageClose`** draws a dashed level at the mean close of the
+  visible window, coloured from `ChartColors.avgColor`, moving with the window
+  since it describes what is on screen.
+- **New `showHighLowOnAxis`** tags the window's high and low on the price axis,
+  in whatever units the axis reads in — the leader lines say which candle, this
+  says what level.
+
+### Orders and positions
+
+- **New `KChartWidget.orders` and `positions` draw what the account holds.** A
+  `ChartOrder` rests at a price and a `ChartPosition` sits at its average entry,
+  each drawn as a line the full width of the chart and tagged on the axis side —
+  `Buy 0.5`, `Stop 2`, `Long 1.5  +812.4`. These are not drawings: they come
+  from the venue, not the user, and are not saved with a layout.
+- **Drag an order's line to amend it.** The line follows the pointer,
+  `onOrderDragged` fires all the way so a readout can follow it, and
+  `onOrderMoved` fires once on release. The chart never amends the order itself:
+  it draws what it is handed, so the venue gets the last word.
+  `ChartOrder.draggable` pins a line down, and an order with no `onOrderMoved`
+  is not grabbable at all, so the gesture stays the chart's.
+- New `onOrderTapped` and `onPositionTapped`, for a sheet or a menu of your own.
+  A press that goes nowhere is reported as a tap rather than a move.
+- New `TradeSide`, `OrderKind` and `TradingStyle`, the last held on
+  `ChartStyle.trading`; new `ChartColors.buyColor`, `sellColor` and
+  `tradeColor`.
+
+### Indicator panes
+
+- **A pane can be spaced by ratio or read as a percentage.** New
+  `Indicator.scale` takes `IndicatorScale.linear` (the default),
+  `.logarithmic` — for a pane whose interesting range covers orders of
+  magnitude — or `.percentage`, which reads out the move away from the first
+  value in view. Both rule and label the pane in their own space, so a log
+  pane's marks land on 1, 2 and 5 times each power of ten, and a pane whose
+  values reach zero falls back to linear rather than drawing nothing.
+- **New `ChainedIndicator` computes one indicator over another's output.** The
+  source's chosen line is handed on as flat candles, so anything that reads
+  closes can be applied — an RSI of a MACD, a second smoothing of a signal
+  line. The two warm-ups add up rather than the second starting from a guess,
+  and the pane settings, guides, format and colours come from the applied
+  indicator. `flattenToCandles` is exported for doing the wrapping by hand.
+- **New `Indicator.alerts` and `KChartWidget.onIndicatorAlert`.** An indicator
+  declares the levels worth watching — `IndicatorAlert(level: 70)`,
+  `IndicatorAlert(level: 0, line: 2)` for a histogram — and the chart reports
+  when the newest value crosses one, once per crossing. Overlays and panes are
+  both watched.
+
+### Event marks
+
+- **New `KChartWidget.events` marks what happened to the instrument** under the
+  candle it happened on: a small badge below the candle area, so it says when
+  without covering the price. `ChartEventKind.earnings`, `.dividend`, `.split`,
+  `.news` and `.custom` each carry a letter and a colour, and a `ChartEvent`'s
+  own `label`, `color` and `icon` override any of it.
+- Each event is matched to the candle nearest its time, so one stamped mid-bar
+  marks the bar it fell in. `resolveEvents` is exported for working that out
+  without a chart in hand.
+- **New `onEventTapped`** reports a tapped badge, and a tap reaches the badges
+  before it is read as a selection or a drawing point — they are small targets.
+- New `ChartColors.eventColors` and `eventColor`, and
+  `ChartStyle.eventMarkRadius` and `eventMarkGap`. A radius of zero draws
+  nothing while leaving the events on the chart for a list of your own.
+
+### The visible window
+
+- **New `KChartController.visibleRange` says which candles are on screen**, as a
+  `ChartVisibleRange`: the first and last index, their instants, how many
+  candles and how long the window covers.
+- **New `KChartWidget.onVisibleRangeChanged`** reports it whenever it changes —
+  after the frame that changed it, and only when it is actually different, so
+  scrolling within one candle says nothing. What a "bars on screen" readout, a
+  linked second chart, or a feed that loads history on demand listens to.
+- **New `showRange`, `showTimeRange`, `goToIndex`, `goToDate` and `fitAll`** move
+  the window. `showRange` moves the zoom and the scroll together so the window
+  holds exactly what was asked for, as near as the zoom limits allow;
+  `goToIndex` and `goToDate` keep the zoom and only scroll, animated by default.
+  Each reports whether it could move at all.
+- `indexRangeCovering` and `indexNearest` are exported, for working out a window
+  from a list of candles without a chart in hand.
+
+### Chart types
+
+- **Three new ways of drawing the candle area.** `ChartType.stepLine` holds each
+  close flat until the next one, which is honest about a series only known at
+  those instants; `ChartType.hlcArea` washes the high-low range in and draws the
+  close through it; `ChartType.columns` draws a column per candle from the
+  baseline to the close, up-coloured above it and down-coloured below.
+- `ChartStyle.hlcAreaOpacity` sets how solid the HLC band is.
+- An HLC area and a column chart both say something per bar, so they keep their
+  indicator overlays, their legends and the high-low markers — where a line,
+  area, step or baseline chart does not.
+
+### Transformed candles
+
+- **Four new transforms in `CandleTransforms`**, alongside Heikin-Ashi and
+  Renko: `lineBreak` blocks price out by breaks, `kagi` runs a whole trend as
+  one segment and turns on a retracement, `pointAndFigure` files the highs and
+  lows into columns of boxes, and `rangeBars` cuts the move into equal
+  distances. Each hands back plain candles at their own times, so the chart, the
+  indicators and the drawing tools all work over them unchanged.
+- `kagi` takes its reversal in price or, with `asPercent`, as a fraction of the
+  extreme — which is the usual way to size one.
+- `atrBrickSize` now sizes a brick, a box, a reversal or a range: the same
+  average-true-range figure suits all of them.
+
+### Comparing instruments
+
+- **New `KChartWidget.comparisons` draws other instruments over the candles.**
+  Each `ComparisonSeries` is a line, rebased by default so it starts where the
+  main series does at the left edge of the window and diverges by how
+  differently it moved — relative performance rather than price. Panning moves
+  the pin with the window.
+- `ComparisonScale.price` draws a comparison at its own prices on the same axis
+  instead, for two instruments quoted in the same units.
+- Points are matched to candles by time, not by position, so a compared
+  instrument on a different bar lines up: each candle takes the last point at or
+  before its own time. A gap breaks the line; candles before the comparison
+  starts draw nothing.
+- The price scale opens up to hold whatever a comparison does, and each reads
+  out its own move as a percentage on a legend row of its own.
+- New `ChartColors.comparisonColors` and `getComparisonColor` — a palette kept
+  apart from the moving-average colours, so a compared line is never mistaken
+  for an overlay.
+- `ComparisonSeries.ofCandles` builds one from another instrument's candles, and
+  `alignComparison`, `comparisonAnchor`, `comparisonPriceAt` and
+  `resolveComparisons` are exported for a caller drawing its own.
+
+### The right-click menu
+
+- **New right-click menu, on the chart and on any drawing.** A drawing offers
+  its coordinates, duplicate, copy, bring-to-front, send-to-back, lock, hide,
+  its alert where it has one, and delete — applied to the whole selection where
+  there is one. Empty chart offers paste, select all, fit the price scale,
+  scroll to the newest candle, undo, redo and clear. Right-clicking a drawing
+  selects it first, so what the menu is about and what the chart highlights
+  agree.
+- `KChartWidget.showContextMenu` turns it off, and `contextMenuBuilder` is
+  handed the drawing, the candle, the price and the entries the chart would have
+  shown, so an item of your own is one line — or a menu entirely of your own.
+- New `ChartMenuItem`, `ChartMenuDivider`, `ChartMenuRequest`,
+  `ChartMenuBuilder` and `showChartMenu`, the last of which opens the same menu
+  from your own button.
+
+### Drawing UX
+
+- **Several drawings can be selected at once.** Shift- or ⌘-click adds to the
+  selection instead of replacing it, and ⌘A takes everything drawn. Dragging one
+  moves them all, Delete removes them in a single undoable step, and an edit made
+  through the line editor is copied onto the rest — which is what a user who
+  selected five lines to recolour meant. The editor says how many it is editing.
+- `ChartDrawingController` gained `selection`, `selectionLength`,
+  `hasMultipleSelected`, `isSelected`, `selectMany`, `selectAll`,
+  `addToSelection`, `removeFromSelection`, `toggleSelection`, `clearSelection`
+  and `removeAll`. `selected` still means the one the editor is open on, so
+  existing code is unaffected.
+- **Copy, paste and duplicate**: ⌘C, ⌘V and ⌘D, each landing the copy a few
+  candles clear of the original rather than exactly on top of it. New
+  `copyToClipboard`, `canPaste`, `clipboardLength`, `clearClipboard`, `paste`
+  and `duplicate` on the controller, and `copySelection`, `pasteDrawings` and
+  `duplicateSelection` on the chart.
+- **Stacking order**: ⌘] and ⌘[ walk the selection through the stack, ⇧⌘] and
+  ⇧⌘[ take it all the way. New `bringToFront`, `sendToBack`, `bringForward`,
+  `sendBackward` and `indexOf` on the controller, `moveToFront`, `moveToBack`,
+  `moveForward`, `moveBackward` and `indexOf` on `ChartDrawings`, and arrows on
+  each row of the drawing manager.
+- **Saving an edit no longer restacks the drawing it edited.**
+  `ChartDrawings.save` used to move a known drawing to the end of the list, so
+  recolouring a line quietly lifted it over everything drawn after it. It now
+  leaves it where it is.
+- **New `DrawingTemplate`** is one drawing's look — colour, thickness, stroke,
+  fill and label visibility — saved so it can be put on another, whatever kind
+  either of them is. The controller keeps them by name: `saveTemplate`,
+  `putTemplate`, `applyTemplate`, `removeTemplate`, `templates`,
+  `templatesToJson` and `loadTemplates`.
+- **New coordinates dialog.** The editor's ruler button opens a form over the
+  selected drawing's anchors — a price and a candle apiece — so a level placed by
+  hand can be typed in exactly. `KChartWidget.showDrawingCoordinates` turns the
+  button off, `showDrawingCoordinatesDialog` opens it from your own code, and
+  `drawingAnchors`, `setDrawingAnchor` and `drawingAnchorsAreEditable` read and
+  write any drawing's anchors generically.
+- **Alerts are no longer only for horizontal levels.** New `AlertingDrawing` is
+  mixed into `HorizontalLine`, `TrendLine`, `ParallelChannel` and
+  `FibRetracement`, each answering `alertLevelsAt` for the levels it has at one
+  instant — so a sloping line is watched where it is now, and a retracement at
+  every one of its steps. New `KChartWidget.onDrawingAlert` reports the drawing,
+  the candle and the price crossed; `onAlertCrossed` still fires for horizontal
+  levels, so existing code is unaffected. The editor's bell button now appears
+  for all of them.
+- `TwoPointDrawing.priceOnLineAt` carries the "where is the line at this
+  instant" arithmetic that a trend line, a channel and an alert all need.
+- The drawing manager's rows offer duplicate and restack buttons, and answer to
+  shift- and ⌘-click the same way the chart does. `showStackingControls` turns
+  the arrows off.
+
 ### Drawing tools
 
 - **Thirteen new tools, taking the set from 16 to 29.** `pitchfork`, `gannFan`,

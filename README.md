@@ -9,24 +9,34 @@ Named for the open-high-low-close-volume bars it renders.
 
 ## Features
 
-- **Five chart types** — candles, OHLC bars, a line, a filled area and a baseline chart — plus Heikin-Ashi and Renko as transforms of the candles themselves.
+- **Eight chart types** — candles, OHLC bars, a line, a step line, a filled area, an HLC area, a baseline chart and columns — plus Heikin-Ashi, Renko, three-line break, Kagi, point & figure and range bars as transforms of the candles themselves.
 - **29 indicators**, each a configured instance rather than a flag — so `ATR(8)`, `ATR(14)` and `ATR(20)` are three panes, with their own settings and colours.
 - **Main-chart overlays** — `MA`, `EMA`, `BOLL`, `SAR`, `VWAP` and anchored `VWAP`, Supertrend, Keltner and Donchian channels, the Ichimoku Cloud, pivot points and a volume profile.
 - **Swing readers** — a zigzag through the swing highs and lows, Fibonacci retracement of the last swing, and Elliott wave labels, all sized to the market by default.
 - **Sub-charts** — `MACD`, `KDJ`, `RSI`, `WR`, `CCI`, `ATR`, `OBV`, `MFI`, `DMI`, Stochastic RSI, `ROC`, `TRIX`, a volume average and the Awesome oscillator, each in its own stacked pane — resizable and reorderable by dragging.
-- **Linear, logarithmic or percentage price axis**, so a decade of compounding reads as well as an afternoon.
+- **Linear, logarithmic, percentage or indexed-to-100 price axis**, so a decade of compounding reads as well as an afternoon — invertible, with the window's high, low and average close markable on it.
 - **A price scale you can drag** — pull the labels to stretch or flatten the candles, drag the chart to slide the window, double-tap to fit it back; from code as well, through the controller.
 - **Axes that read as round numbers** — both axes choose their values first and are ruled where the labels fall, so a price scale steps `69000, 69500, 70000` and an intraday date axis lands on the hour, never on whatever value happened to fall on an evenly spaced pixel.
 - **29 drawing tools** — levels and rays, trend lines, arrows, extended lines, boxes, ellipses, triangles, parallel channels, pitchforks, Gann fans and boxes, four Fibonacci tools, a regression trend with its bands, XABCD patterns, multi-leg paths, price and date brackets, a measuring tool, planned positions with their risk-to-reward, notes, callouts, flags and freehand strokes; each placed by tap or drag, then dragged, locked, hidden and removed.
 - **A line editor** that opens on selection: colour, opacity, thickness, solid/dashed/dotted stroke, fill, label text and visibility, alerts, lock and delete — every option list, control and pixel of it configurable through `DrawingStyle`.
 - **Undo and redo**, through a `ChartDrawingController` that owns the drawings and their history, with ⌘Z, ⇧⌘Z and Delete on the chart itself.
+- **Select several and edit them together** — shift- or ⌘-click, or ⌘A; then drag, restyle or delete the lot in one step, with ⌘C/⌘V/⌘D to copy and ⌘]/⌘[ to restack.
+- **Exact coordinates** — a dialog over any drawing's anchors, each price and candle typed in rather than placed by eye.
+- **Style templates** — save one drawing's look and put it on the rest.
 - **A layout that persists** — every drawing serialises, so `jsonEncode(drawings.toJson())` and `ChartDrawings.fromJson` are the whole story.
 - **A drawing manager** — a ready-made panel listing what is drawn, with show/hide, lock, delete, undo, redo and clear.
-- **Price alerts** on a level, reported when the market crosses it.
+- **Price alerts** on a level, a trend line, either side of a channel or every step of a retracement, reported when the market crosses one.
+- **Indicator alerts** — an RSI over 70, a histogram turning positive — and panes that can be logarithmic or read as a percentage, with any indicator computable over another's output.
+- **A right-click menu** on the chart and on any drawing — coordinates, duplicate, restack, lock, hide, alert, delete; paste, select all, fit the scale, undo — with your own items added through one builder.
 - **Crosshair on hover** and an **OHLC legend** above the chart, which is how a chart reads on a desktop.
 - **Driven from your own code** — `KChartController` zooms, scrolls back to the live candle and hands you the chart as a PNG.
+- **The visible window, read and set** — which candles are on screen, go-to-date, fit-to-screen, and a callback whenever it moves.
+- **Compare a second instrument** — overlay any number of other series, rebased so relative performance reads off the same axis, matched to your candles by time.
 - **Bar replay** — rewind to any candle and step or play the market forward, with the indicators only knowing what has arrived.
 - **Buy/sell signal markers** pinned to candles.
+- **Event marks** — earnings, dividends, splits and news badged under the candle they happened on, and tappable.
+- **Orders and positions** — live lines from your venue, tagged with side, size and P&L, and draggable to amend.
+- **Extended-hours shading** — the pre-market and after-hours stretches washed behind the candles — and a per-bar colour of your own.
 - **Depth chart** — a separate `DepthChart` widget for the order book, drawn as the cumulative curve, a per-rung histogram, both at once, or a numeric ladder of price, size and running total, on a linear, log or percentage axis and zoomable to the levels around the mid.
 - **Info dialog** on long press, either the built-in Material popup or your own builder.
 - **"Now price" line** with a live countdown to the close of the current candle.
@@ -211,6 +221,134 @@ of `ProfileBin`s from `computeProfile` and the chart draws the bars, picks out
 the busiest band and shades the value area. A delta or time profile is the same
 shape of answer.
 
+### Comparing a second instrument
+
+Hand `comparisons` a list of `ComparisonSeries` and each is drawn as a line over
+the candles. By default it is *rebased*: pinned to the main series at the left
+edge of the visible window, so the two lines start together and diverge by how
+differently they moved. That is what comparing two instruments means — relative
+performance, not price — and panning the chart moves the pin along with the
+window, so what is read is always the move over what is on screen.
+
+```dart
+KChartWidget(
+  btcCandles,
+  ChartColors(),
+  comparisons: [
+    ComparisonSeries.ofCandles(label: 'ETH', candles: ethCandles),
+    ComparisonSeries(
+      label: 'DXY',
+      points: [for (final p in dollarIndex) (time: p.time, value: p.close)],
+      color: Colors.tealAccent,
+      style: LineStyle.dashed,
+    ),
+  ],
+);
+```
+
+`ComparisonScale.price` draws it at its own prices on the same axis instead,
+which is right where the two are quoted in the same units — a future against its
+spot, two tenors of one curve — and misleading where they are not.
+
+Points are matched to candles by time rather than by position, so a compared
+instrument on a different bar still lines up: each candle takes the last point
+at or before its own time, and holds it until the next one arrives. A gap breaks
+the line rather than drawing across it, and candles before the comparison starts
+draw nothing at all. The price scale opens up to hold whatever the comparison
+does, and each one reads out its own move as a percentage on a legend row of its
+own. Colours come from `ChartColors.comparisonColors`, taken in turn, unless the
+series names its own.
+
+The arithmetic is exported if you would rather do the drawing yourself:
+`alignComparison` lines a series up against a list of candles,
+`comparisonAnchor` works out where a rebased one is pinned over a window, and
+`comparisonPriceAt` maps one value to the price it draws at.
+
+#### Pane options
+
+An indicator's pane is fitted to its values and spaced evenly, which is right
+for almost everything. Two getters change that where it is not:
+
+```dart
+class LogObvIndicator extends ObvIndicator {
+  @override
+  IndicatorScale get scale => IndicatorScale.logarithmic;
+}
+```
+
+`IndicatorScale.logarithmic` steps by ratio, so a doubling takes the same room
+wherever it happens — what a volume or an on-balance-volume pane wants, where
+the interesting range covers orders of magnitude. A pane whose values reach zero
+or below has no logarithm to space by and quietly falls back to linear.
+`IndicatorScale.percentage` reads out the move away from the first value in
+view, so panning moves the base along with the window. Both rule and label the
+pane in their own space, so a log pane's marks land on 1, 2 and 5 times each
+power of ten.
+
+#### An indicator over an indicator
+
+`ChainedIndicator` computes one indicator over another's output instead of over
+the candles:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  indicators: [
+    MacdIndicator(),
+    ChainedIndicator(
+      source: MacdIndicator(),
+      applied: RsiIndicator(period: 14),
+    ),
+    // A second smoothing of the MACD's signal line.
+    ChainedIndicator(
+      source: MacdIndicator(),
+      applied: MaIndicator(period: 9),
+      sourceLine: 1,
+    ),
+  ],
+);
+```
+
+The source's chosen line is handed on as flat candles — open, high, low and
+close all the same value — which is what lets any indicator that reads closes be
+applied. One that reads the range or the volume instead (`ATR`, `OBV`, `MFI`)
+has nothing to read there and draws nothing; that is the caller's choice to
+make. The two warm-ups add up rather than the second starting from a guess, and
+the pane settings, guides, format and colours all come from the applied
+indicator. `flattenToCandles` is exported if you would rather do the wrapping
+yourself.
+
+#### Indicator alerts
+
+An indicator declares the levels worth watching, and the chart reports when the
+newest value crosses one:
+
+```dart
+class AlertingRsi extends RsiIndicator {
+  AlertingRsi() : super(period: 14);
+
+  @override
+  List<IndicatorAlert> get alerts => const [
+    IndicatorAlert(level: 70, label: 'overbought'),
+    IndicatorAlert(level: 30, label: 'oversold'),
+  ];
+}
+
+KChartWidget(
+  candles,
+  ChartColors(),
+  indicators: [AlertingRsi()],
+  onIndicatorAlert: (indicator, alert, candle, value) =>
+      notifier.push('${indicator.name} ${alert.label}: $value'),
+);
+```
+
+`line` picks which of the indicator's lines to watch — a MACD histogram turning
+positive is `IndicatorAlert(level: 0, line: 2)`. Each fires once per crossing:
+the value has to come back through the level before it fires again. Overlays and
+panes are both watched.
+
 #### Custom indicators
 
 Subclass `Indicator` — give it a `label`, its `lines`, the `settings` that make
@@ -313,15 +451,19 @@ KChartWidget(
 | `line` | a line through the closes |
 | `area` | the same line with the area beneath it washed in |
 | `baseline` | the line washed towards a level, up-coloured above it and down-coloured below |
+| `stepLine` | the same line, holding each close flat until the next one |
+| `hlcArea` | the high-low range washed in, with the close drawn through it |
+| `columns` | a column per candle, from the baseline to the close |
 
 `isLine: true` still means `ChartType.area`, so nothing written against the older
 API changes behaviour.
 
-#### Heikin-Ashi and Renko
+#### Transformed candles
 
-Both rewrite the candles rather than the way they are drawn, so they are
-transforms rather than chart types. Run the list through `CandleTransforms` and
-recompute the indicators over the result:
+Heikin-Ashi, Renko, three-line break, Kagi, point & figure and range bars all
+rewrite the candles rather than the way they are drawn, so they are transforms
+rather than chart types. Run the list through `CandleTransforms` and recompute
+the indicators over the result:
 
 ```dart
 final ha = CandleTransforms.heikinAshi(candles);
@@ -337,11 +479,33 @@ KChartWidget(ha, ChartColors(), /* … */);
 ```
 
 Heikin-Ashi keeps one candle per candle, at the same times, so anything drawn on
-the chart stays where it was. Renko throws time away between bricks: a brick is
-laid every whole `brickSize` beyond the last, a reversal costs two bricks, and
-each brick carries the volume of the candles it covers. `atrBrickSize` sizes a
-brick from the market's own average true range, which is the usual way to pick
-one.
+the chart stays where it was. The rest throw time away between bars, and each
+carries the volume of the candles it covers:
+
+| Transform | What draws a bar |
+| --- | --- |
+| `renko(brickSize:)` | price closing a whole brick beyond the last; a reversal costs two |
+| `lineBreak(lines: 3)` | a close beyond the last block, or beyond the extreme of the last `lines` blocks to turn round |
+| `kagi(reversal:, asPercent:)` | a retracement of `reversal` from the extreme; a whole trend is one segment |
+| `pointAndFigure(boxSize:, reversalBoxes: 3)` | a whole box of travel, read off the highs and lows; a new column takes `reversalBoxes` back |
+| `rangeBars(range:)` | price travelling `range` from where the bar opened |
+
+`atrBrickSize` sizes a brick, a box, a reversal or a range from the market's own
+average true range, which is the usual way to pick one:
+
+```dart
+final step = CandleTransforms.atrBrickSize(candles) ?? candles.last.close * 0.005;
+
+final blocks = CandleTransforms.lineBreak(candles);
+final segments = CandleTransforms.kagi(candles, reversal: step);
+final columns = CandleTransforms.pointAndFigure(candles, boxSize: step);
+final bars = CandleTransforms.rangeBars(candles, range: step);
+```
+
+Every one of them hands back plain candles at their own times, so the chart, the
+indicators and the drawing tools all work over them unchanged. What each bar
+means differs: a Kagi segment is a whole trend, a point-and-figure candle is a
+whole column of boxes, and a range bar is exactly `range` of travel.
 
 ### Price axis
 
@@ -363,8 +527,14 @@ KChartWidget(
   prices.
 - `percentage` — spaced linearly, but the axis, the crosshair's price label and
   the current-price tag read as the move away from the oldest candle in view.
+- `indexedTo100` — the same information said the other way about: the oldest
+  candle in view reads 100 and everything else is quoted against it, which is
+  how an index or a rebased performance series is usually written. The axis
+  marks round index levels — 100, 105, 110 — and converts them back to the
+  prices they stand for.
 
-The volume and indicator panes always stay linear.
+An indicator pane can be logarithmic or read as a percentage in its own right;
+see `Indicator.scale`. The volume pane always stays linear.
 
 The axis picks round values and the grid is ruled where they land, so a label
 and its line always agree. A linear axis steps by 1, 2, 2.5 or 5 times a power
@@ -390,6 +560,37 @@ KChartWidget(
 The same arithmetic is exported, for a caller drawing an axis of its own beside
 the chart: `niceStep`, `niceTicks` and `niceLogTicks` for values, `niceTimeStep`,
 `timeBucket` and `startsNewDay` for times.
+
+#### Reading it the other way, and other extras
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(days: 1),
+  invertPriceAxis: true,     // higher prices lower down
+  showAverageClose: true,    // a level at the mean close over the window
+  showHighLowOnAxis: true,   // the window's extremes tagged where they read
+);
+```
+
+`invertPriceAxis` flips the axis, which is what a chart of a yield or a spread
+wants — and what a trader who thinks in the other direction reaches for.
+Everything follows: the candles, the drawings, the crosshair, the orders and the
+comparisons all read off the same flipped axis, and a rising candle is still
+coloured as one, because the colour comes from the prices rather than from the
+pixels. A logarithmic axis inverts and stays logarithmic.
+
+`showAverageClose` draws a dashed level at the mean close of the visible window —
+the level a mean-reversion read is taken against — coloured from
+`ChartColors.avgColor`, and it moves as the chart is panned, since it describes
+the window rather than the whole history.
+
+`showHighLowOnAxis` tags the window's high and low on the axis, in whatever units
+the axis reads in. The leader lines already point at the candles that set them;
+this says what to read them off the axis as.
 
 #### Dragging the scale
 
@@ -756,9 +957,136 @@ a drawing in place and only reports it once the edit lands. `historyLimit`
 (50 by default) is how far back it goes; `clearHistory` keeps the drawings and
 drops the steps, which is what a fresh symbol wants.
 
-Delete removes the selected drawing, and Escape abandons one being placed. All of
+Delete removes the selection, and Escape abandons a drawing being placed. All of
 it can be turned off with `enableKeyboardShortcuts: false`. Without a controller
 the per-kind lists and callbacks work exactly as before — there is simply no undo.
+
+#### Selecting several, and what to do with them
+
+Shift- or ⌘-click a drawing and it joins the selection rather than replacing it;
+⌘A takes everything drawn. What follows applies to the lot: dragging one moves
+them all together, Delete removes them in a single undoable step, and an edit
+made through the line editor — colour, thickness, stroke, fill, label
+visibility — is copied onto the rest, which is what a user who selected five
+lines to recolour meant. The editor stays open on the last one picked and says
+how many it is editing.
+
+```dart
+drawings.selection;               // every selected drawing, primary last
+drawings.selected;                // the one the editor is open on
+drawings.addToSelection(line);
+drawings.toggleSelection(line);
+drawings.selectAll();
+drawings.clearSelection();
+drawings.removeAll(drawings.selection);   // one step
+```
+
+⌘C copies, ⌘V pastes and ⌘D duplicates, each nudged a few candles clear of the
+original so the copy can be seen and grabbed rather than hiding underneath.
+The clipboard holds copies, so editing or deleting the originals afterwards
+leaves what was copied alone.
+
+```dart
+drawings.copyToClipboard(drawings.selection);
+drawings.canPaste;
+drawings.paste();                  // returns what it added, and selects it
+drawings.duplicate(drawings.selection);
+```
+
+⌘] and ⌘[ walk the selection up and down the stack, ⇧⌘] and ⇧⌘[ take it all the
+way. Later is higher: the last drawing paints over the ones before it, and is
+the one a tap in an overlap picks up. Saving an edit no longer restacks the
+drawing it edited, so the order the user set is the order that keeps.
+
+```dart
+drawings.bringToFront(line);
+drawings.sendToBack(line);
+drawings.bringForward(line);
+drawings.sendBackward(line);
+drawings.indexOf(line);            // -1 when it is not there
+```
+
+#### Style templates
+
+`DrawingTemplate` is one drawing's look, saved so it can be put on another:
+colour, thickness, stroke style, fill opacity and label visibility — everything
+a drawing shares with every other drawing, and nothing that belongs to one kind
+in particular. Applying one to a rectangle and to a trend line gives them the
+same look without either having to know about the other.
+
+```dart
+final house = DrawingTemplate.of(drawings.selected!);
+house.applyTo(otherLine);
+
+// Or keep them on the controller, by name:
+drawings.saveTemplate('house', drawings.selected!);
+drawings.applyTemplate('house', drawings.selection);   // one undoable step
+drawings.templates;                                    // by name
+jsonEncode(drawings.templatesToJson());
+```
+
+Templates are kept apart from the layout — `templatesToJson` and
+`loadTemplates`, not `toJson` — because they outlive any one chart's drawings.
+
+#### Exact coordinates
+
+A drawing placed by hand lands on whichever candle the pointer was over, which
+is close enough to read a chart by and not close enough to hand to someone
+else. The editor's ruler button opens a dialog listing every anchor — a price
+and a candle apiece, named `Start`, `End`, `X` through `D`, `Point 3` — and each
+one can be typed in exactly. `showDrawingCoordinates: false` leaves the button
+out.
+
+The same anchors are readable from code, whatever kind of drawing it is:
+
+```dart
+for (final anchor in drawingAnchors(line)) {
+  print('${anchor.name}: ${anchor.price} at ${anchor.time}');
+}
+setDrawingAnchor(line, 1, price: 42_000);   // leaves the time alone
+```
+
+A freehand stroke is the one drawing whose anchors cannot be typed into — its
+shape is the hundreds of points it was drawn with — so it reads out its two ends
+and `drawingAnchorsAreEditable` answers false.
+
+#### The right-click menu
+
+A right-click opens a menu, and what it offers depends on what was clicked. On a
+drawing: its coordinates, duplicate, copy, restack, lock, hide, its alert where
+it has one, and delete — applied to the whole selection where there is one. On
+empty chart: paste, select all, fit the price scale, scroll to the newest
+candle, undo, redo and clear. Right-clicking a drawing selects it first, so what
+the menu is about and what the chart highlights always agree.
+
+`showContextMenu: false` turns it off. `contextMenuBuilder` is handed what was
+clicked — the drawing, the candle, the price, and the entries the chart would
+have shown — so an item of your own is one line:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: true,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 15),
+  contextMenuBuilder: (request) => [
+    ...request.defaults,
+    const ChartMenuDivider(),
+    ChartMenuItem(
+      label: 'Buy at ${request.price?.toStringAsFixed(2)}',
+      icon: Icons.shopping_cart_outlined,
+      onSelected: () => orders.buy(request.price!),
+    ),
+  ],
+);
+```
+
+Returning a list of your own replaces the menu; returning an empty one shows
+none. `ChartMenuItem` takes an `icon`, an `enabled` flag, a `checked` flag for a
+toggle and `destructive` for something that throws work away, and
+`ChartMenuDivider` rules between groups. `showChartMenu` opens the same menu
+from your own button.
 
 #### The drawing manager
 
@@ -798,6 +1126,39 @@ KChartWidget(
 
 It fires once per crossing — the market has to come back through the level before
 it fires again — and the editor's bell button is what arms one from the chart.
+
+Levels are not the only thing that can be crossed. Any drawing mixing in
+`AlertingDrawing` — `HorizontalLine`, `TrendLine`, `ParallelChannel` and
+`FibRetracement` — reports through `onDrawingAlert`, which carries the price
+that was crossed as well as the drawing and the candle, since a drawing may
+have several levels at once:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: true,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 15),
+  drawings: [
+    TrendLine(
+      time1: candles[10].dateTime!, price1: candles[10].low,
+      time2: candles[40].dateTime!, price2: candles[40].low,
+      extend: LineExtension.right,
+      alert: true,
+    ),
+  ],
+  onDrawingAlert: (line, candle, level) =>
+      notifier.push('crossed ${level.toStringAsFixed(2)}'),
+);
+```
+
+`alertLevelsAt` is what each drawing answers with, at the newest candle's
+instant, so a sloping line reports where it is now rather than where it was
+drawn. A segment can only be crossed between its anchors; a ray also counts
+rightwards of its second one, and an extended line everywhere. A horizontal
+level reports through both callbacks, so an app written against
+`onAlertCrossed` carries on working unchanged.
 
 ### Customising the line editor
 
@@ -878,6 +1239,96 @@ the axes, and a card of that candle's open, high, low, close, change and volume.
 `isTapShowInfoDialog` opens it on a tap as well, `infoDialogBuilder` replaces the
 card, and `ChartTranslations` names every row.
 
+### Orders and positions
+
+`orders` and `positions` draw what the account actually holds: a line the full
+width of the chart, tagged on the axis side. These are not drawings — they come
+from the venue rather than from the user, and they are not saved with a layout.
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 15),
+  positions: [
+    ChartPosition(
+      id: '4471',
+      entryPrice: 63_900,
+      side: TradeSide.buy,
+      quantity: 1.5,
+      unrealisedPnl: 812.40,
+    ),
+  ],
+  orders: [
+    ChartOrder(id: '17', price: 64_500, side: TradeSide.sell, quantity: 1.5,
+        kind: OrderKind.takeProfit),
+    ChartOrder(id: '18', price: 62_800, side: TradeSide.sell, quantity: 1.5,
+        kind: OrderKind.stop),
+  ],
+  onOrderDragged: (order, price) => setState(() => preview = price),
+  onOrderMoved: (order, price) => broker.amend(order.id, price),
+  onOrderTapped: (order) => showOrderSheet(order),
+  onPositionTapped: (position) => showPositionSheet(position),
+);
+```
+
+**Drag to modify.** Press an order's line and drag it: the line follows the
+pointer, `onOrderDragged` fires all the way so a readout can follow it, and
+`onOrderMoved` fires once on release with the price it landed at. The chart never
+amends the order itself — it draws what you hand it, so the line snaps back
+unless the new price comes round in the next build. That is what you want: the
+venue gets the last word. `draggable: false` pins a line down, and an order with
+no `onOrderMoved` is not grabbable at all, so the gesture stays the chart's.
+
+A tag reads itself from the side, the kind and the quantity — `Buy 0.5`,
+`Stop 2`, `Long 1.5  +812.4` — and `label` overrides the lot. `unrealisedPnl` is
+yours to work out: only you know the contract size, the fees and the currency.
+Colours come from `ChartColors.buyColor` and `sellColor` unless the order names
+its own, and `ChartStyle.trading` — a `TradingStyle` — sets the stroke, the
+dashes and how near a line a press has to land.
+
+### Event marks
+
+Something happened to the instrument — it reported, it went ex-dividend, it
+split, it was in the news. `events` marks each under the candle nearest its own
+time, as a small badge below the candle area, so it says *when* without covering
+the price it happened at:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(days: 1),
+  events: [
+    ChartEvent(time: reportedAt, kind: ChartEventKind.earnings),
+    ChartEvent(
+      time: exDate,
+      kind: ChartEventKind.dividend,
+      detail: r'$0.24 per share',
+    ),
+    ChartEvent(time: splitAt, kind: ChartEventKind.split, label: '4:1'),
+    ChartEvent(time: headlineAt, kind: ChartEventKind.news),
+  ],
+  onEventTapped: (event) => showAboutEvent(event),
+);
+```
+
+`ChartEventKind.earnings`, `.dividend`, `.split`, `.news` and `.custom` each
+carry a letter and a colour — `E`, `D`, `S`, `N`, `•`, coloured from
+`ChartColors.eventColors` — and `label`, `color` and `icon` override any of it.
+`detail` is for a panel or a tooltip of your own; nothing on the chart reads it.
+
+Tapping a badge reports through `onEventTapped`, and a tap gets to the badges
+before it is read as a selection or a drawing point, since they are small
+targets. `ChartStyle.eventMarkRadius` sizes them and `eventMarkGap` sets how far
+below the candles they sit; a radius of zero draws nothing while leaving the
+events on the chart for a list of your own. `resolveEvents` is exported for
+working out which candle each event falls on without a chart in hand.
+
 ### Driving the chart
 
 `KChartController` reaches into the chart from your own code: how far it is
@@ -907,6 +1358,55 @@ chart is attached, so a controller built before its widget, or kept after it, is
 harmless. The chart also shows its own button back to the live candle whenever it
 is scrolled away from one; `showScrollToNowButton: false` turns that off, and its
 tooltip comes from `ChartTranslations.jumpToNow`.
+
+#### The visible window
+
+Which candles are on screen is both readable and settable:
+
+```dart
+final range = chart.visibleRange;      // null until the first frame
+range?.firstIndex;                     // the oldest candle in view
+range?.lastIndex;                      // the newest
+range?.length;                         // how many — a "bars on screen" readout
+range?.firstTime;                      // and their instants
+range?.span;                           // how long the window covers
+
+chart.showRange(120, 180);             // zoom and scroll to those candles
+chart.showTimeRange(candles, from, to);// the same, by time
+chart.goToIndex(300);                  // centre that candle, keeping the zoom
+chart.goToDate(candles, when);         // the nearest candle to an instant
+chart.fitAll();                        // open the window as wide as it goes
+```
+
+`showRange` moves the zoom and the scroll together so the window holds exactly
+what was asked for, as near as the chart's zoom limits allow; `goToIndex` and
+`goToDate` keep the zoom and only scroll, animated by default. Each of them
+reports whether it could move at all, which is false for a chart that has not
+been laid out yet or one with no candles. `showTimeRange` widens outwards where
+the instants fall between candles, so the span asked for is always covered.
+
+`onVisibleRangeChanged` reports the window whenever it changes — after the frame
+that changed it, and only when it is actually different, so scrolling within one
+candle says nothing:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 15),
+  onVisibleRangeChanged: (range) {
+    setState(() => barsOnScreen = range.length);
+    // Load more history as the user reaches the start of it.
+    if (range.firstIndex < 20) feed.loadOlder();
+  },
+);
+```
+
+That is also how two charts are kept in step — hand the range from one to the
+other's `showRange`. `indexRangeCovering` and `indexNearest` are exported for
+working out either from a list of candles without a chart in hand.
 
 ### Panes
 
@@ -999,6 +1499,58 @@ in the crosshair, in the legend and when working out where a day starts. It
 changes what is displayed and never the data, so drawings stay anchored to the
 candles they were placed on. `showSessionDividers` then marks the first candle of
 each day, in `ChartColors.sessionDividerColor`.
+
+#### Extended hours
+
+`session` says what the regular session is, and the stretches outside it — the
+pre-market and the after-hours — are washed behind the candles:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 15),
+  timeZoneOffset: const Duration(hours: -5),
+  session: const TradingSession(
+    open: Duration(hours: 9, minutes: 30),
+    close: Duration(hours: 16),
+  ),
+);
+```
+
+Read in the time zone the chart is showing, so the bands land where the trader
+sees them rather than where UTC does. `weekdays` chooses the days it is kept on,
+and a `close` at or before its `open` runs overnight — which is how a market that
+opens in one day and closes in the next is described, right down to Friday night
+belonging to Friday. Neighbouring candles outside the session are washed as one
+band, so a long overnight is one rectangle rather than a hundred. The colour is
+`ChartColors.extendedHoursColor`.
+
+#### Colouring a bar yourself
+
+`candleColor` is asked about every candle, bar and column drawn. Return a colour
+to use it, or null to leave the up or down colour it would have had:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 15),
+  candleColor: (candle, index) {
+    final range = candle.high - candle.low;
+    return range > candle.close * 0.012 ? Colors.amber : null;
+  },
+);
+```
+
+Anything the caller can work out can decide: a bar inside a session, one above an
+average, one that completes a pattern, one belonging to a particular account.
+The `index` is into the list handed to the chart, so a precomputed answer can be
+looked up rather than recalculated.
 
 ### Depth chart
 
