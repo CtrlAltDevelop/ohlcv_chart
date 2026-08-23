@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 
 import 'chart_theme.dart';
+import 'custom_indicators.dart';
 import 'market_data.dart';
 
 /// Which line the drawing palette is currently placing.
@@ -24,6 +25,18 @@ enum Aggregation {
 
   /// Laid out as bricks, through `CandleTransforms.renko`.
   renko,
+
+  /// Blocked out by breaks, through `CandleTransforms.lineBreak`.
+  lineBreak,
+
+  /// Run as segments, through `CandleTransforms.kagi`.
+  kagi,
+
+  /// Filed into columns of boxes, through `CandleTransforms.pointAndFigure`.
+  pointAndFigure,
+
+  /// Cut into equal moves, through `CandleTransforms.rangeBars`.
+  rangeBars,
 }
 
 /// Every switch the demo exposes, in one listenable place.
@@ -68,11 +81,16 @@ class DemoState extends ChangeNotifier {
     final transformed = switch (aggregation) {
       Aggregation.none => _candles,
       Aggregation.heikinAshi => CandleTransforms.heikinAshi(_candles),
-      Aggregation.renko => CandleTransforms.renko(
+      Aggregation.renko => CandleTransforms.renko(_candles, brickSize: _step),
+      Aggregation.lineBreak => CandleTransforms.lineBreak(_candles),
+      Aggregation.kagi => CandleTransforms.kagi(_candles, reversal: _step),
+      Aggregation.pointAndFigure => CandleTransforms.pointAndFigure(
         _candles,
-        brickSize:
-            CandleTransforms.atrBrickSize(_candles) ??
-            _candles.last.close * 0.005,
+        boxSize: _step,
+      ),
+      Aggregation.rangeBars => CandleTransforms.rangeBars(
+        _candles,
+        range: _step,
       ),
     };
     // The transform hands back plain candles, so the indicators have to be
@@ -85,6 +103,13 @@ class DemoState extends ChangeNotifier {
     _aggregatedLast = _candles.last.close;
     return transformed;
   }
+
+  /// How big a move the box, brick, reversal or range transforms take.
+  ///
+  /// Sized from the market itself — the average true range — so the same switch
+  /// gives something sensible whatever the instrument is quoted in.
+  double get _step =>
+      CandleTransforms.atrBrickSize(_candles) ?? _candles.last.close * 0.005;
 
   List<KLineEntity>? _aggregated;
   Aggregation? _aggregatedFrom;
@@ -478,6 +503,285 @@ class DemoState extends ChangeNotifier {
 
   /// How many drawings are currently on the chart.
   int get drawingCount => drawings.length;
+
+  /// Whether the candles outside a regular session are washed.
+  bool showExtendedHours = false;
+
+  /// Whether an outsized bar is picked out in a colour of its own.
+  bool highlightBigBars = false;
+
+  /// A session shaped like a US equity market's, in the chart's own zone.
+  ///
+  /// The demo's candles are 15 minutes apart round the clock, so most of a day
+  /// falls outside it — which is what makes the shading visible.
+  static const session = TradingSession(
+    open: Duration(hours: 9, minutes: 30),
+    close: Duration(hours: 16),
+  );
+
+  /// The session handed to the chart, or nothing when the toggle is off.
+  TradingSession? get tradingSession => showExtendedHours ? session : null;
+
+  /// Picks out a bar that travelled much further than the ones around it.
+  ///
+  /// One line of the kind of thing a per-bar colour is for: the chart asks about
+  /// every bar it draws, and anything the caller can work out can decide.
+  Color? candleColor(CandleEntity candle, int index) {
+    if (!highlightBigBars) return null;
+    final range = candle.high - candle.low;
+    return range > candle.close * 0.012 ? const Color(0xFFFFD54F) : null;
+  }
+
+  /// Whether the price axis runs the other way about.
+  bool invertPriceAxis = false;
+
+  /// Whether the average close over the window is drawn as a level.
+  bool showAverageClose = false;
+
+  /// Whether the window's high and low are tagged on the axis.
+  bool showHighLowOnAxis = false;
+
+  /// Whether a working order and an open position are drawn on the chart.
+  bool showTrading = false;
+
+  /// Where the demo's one working order rests.
+  ///
+  /// Dragged on the chart, which is how an order is amended from one; the demo
+  /// simply believes the new price, the way an app would once its venue had
+  /// confirmed the amendment.
+  double? _orderPrice;
+
+  /// The working orders handed to the chart.
+  List<ChartOrder> get orders {
+    if (!showTrading || candles.isEmpty) return const [];
+    final price = _orderPrice ??= candles.last.close * 0.98;
+    return [
+      ChartOrder(
+        id: 'demo-order',
+        price: price,
+        side: TradeSide.buy,
+        quantity: 0.5,
+      ),
+    ];
+  }
+
+  /// The open positions handed to the chart.
+  List<ChartPosition> get positions {
+    if (!showTrading || candles.isEmpty) return const [];
+    final entry = candles[candles.length ~/ 2].close;
+    return [
+      ChartPosition(
+        id: 'demo-position',
+        entryPrice: entry,
+        side: TradeSide.buy,
+        quantity: 1,
+        unrealisedPnl: candles.last.close - entry,
+      ),
+    ];
+  }
+
+  /// Follows the order line while it is being dragged.
+  void onOrderDragged(ChartOrder order, double price) {
+    status = 'Amending to ${price.toStringAsFixed(2)}…';
+    notifyListeners();
+  }
+
+  /// Takes the amended price, as an app would once its venue confirmed it.
+  void onOrderMoved(ChartOrder order, double price) {
+    _orderPrice = price;
+    status = 'Order amended to ${price.toStringAsFixed(2)}';
+    notifyListeners();
+  }
+
+  /// Reports a tapped order.
+  void onOrderTapped(ChartOrder order) {
+    status = 'Tapped ${order.tagText}';
+    notifyListeners();
+  }
+
+  /// Reports a tapped position.
+  void onPositionTapped(ChartPosition position) {
+    status = 'Tapped ${position.tagText}';
+    notifyListeners();
+  }
+
+  /// Adds an RSI computed over the MACD, rather than over the candles.
+  void addChainedIndicator() {
+    addIndicator(
+      ChainedIndicator(
+        source: MacdIndicator(),
+        applied: RsiIndicator(period: 14),
+      ),
+    );
+  }
+
+  /// Adds an on-balance-volume pane spaced by ratio rather than evenly.
+  void addLogPane() => addIndicator(LogObvIndicator());
+
+  /// Adds an RSI that reports when it crosses 70 or 30.
+  void addAlertingIndicator() => addIndicator(AlertingRsiIndicator());
+
+  /// Reports a crossed indicator alert in the status line.
+  void onIndicatorAlert(
+    Indicator indicator,
+    IndicatorAlert alert,
+    KLineEntity candle,
+    double value,
+  ) {
+    status =
+        '${indicator.name} ${alert.label ?? alert.level} — '
+        '${value.toStringAsFixed(2)}';
+    notifyListeners();
+  }
+
+  /// Whether the earnings, dividend, split and news marks are shown.
+  bool showEvents = true;
+
+  /// The marks under the candles, or nothing when the toggle is off.
+  List<ChartEvent> get events =>
+      showEvents ? (_events ??= MarketData.events(_candles)) : const [];
+
+  List<ChartEvent>? _events;
+
+  /// Reports a tapped event in the status line.
+  void onEventTapped(ChartEvent event) {
+    status = '${event.kind.name}: ${event.detail ?? event.badgeText}';
+    notifyListeners();
+  }
+
+  /// What the chart last reported as being in view.
+  ChartVisibleRange? visibleRange;
+
+  /// Records the window the chart reports, for the panel to read out.
+  void onVisibleRangeChanged(ChartVisibleRange range) {
+    visibleRange = range;
+    notifyListeners();
+  }
+
+  /// The window, as a line of text.
+  String get windowSummary {
+    final range = visibleRange;
+    if (range == null) return 'Not laid out yet';
+    return '${range.length} candles, '
+        '${range.firstIndex}–${range.lastIndex}';
+  }
+
+  /// Opens the window as wide as the chart allows.
+  void fitAll() {
+    chart.fitAll();
+    status = 'Fitted every candle in view';
+    notifyListeners();
+  }
+
+  /// Puts the middle of the loaded history in the middle of the window.
+  void goToMiddle() {
+    chart.goToIndex(candles.length ~/ 2);
+    status = 'Scrolled to the middle of the history';
+    notifyListeners();
+  }
+
+  /// Shows the last [count] candles, zooming to fit them.
+  void showLast(int count) {
+    final data = candles;
+    if (data.isEmpty) return;
+    chart.showRange(
+      (data.length - count).clamp(0, data.length - 1),
+      data.length - 1,
+    );
+    status = 'Showing the last $count candles';
+    notifyListeners();
+  }
+
+  /// Whether a second instrument is drawn over the candles.
+  bool showComparison = false;
+
+  /// Whether the comparison is drawn at its own prices rather than rebased.
+  bool comparisonAtOwnPrices = false;
+
+  /// The compared instrument, or nothing when the toggle is off.
+  ///
+  /// Built once and kept, so toggling it on and off does not walk a different
+  /// random path each time.
+  List<ComparisonSeries> get comparisons {
+    if (!showComparison) return const [];
+    final built = _comparison ??= MarketData.comparison(candles);
+    return [
+      if (comparisonAtOwnPrices)
+        ComparisonSeries(
+          label: built.label,
+          points: built.points,
+          scale: ComparisonScale.price,
+        )
+      else
+        built,
+    ];
+  }
+
+  ComparisonSeries? _comparison;
+
+  /// The name the demo saves its one style template under.
+  static const templateName = 'house';
+
+  /// Whether anything is selected on the chart.
+  bool get hasSelection => drawings.selection.isNotEmpty;
+
+  /// Whether a template has been saved to apply.
+  bool get hasTemplate => drawings.templates.containsKey(templateName);
+
+  /// What is selected, for the panel to read out.
+  String get selectionSummary {
+    final selection = drawings.selection;
+    if (selection.isEmpty) return 'Nothing selected';
+    if (selection.length == 1) {
+      return '${translations.drawing.nameOf(selection.single)} selected';
+    }
+    return '${selection.length} drawings selected';
+  }
+
+  /// Copies the selection in place, nudged clear of the originals.
+  void duplicateSelection() {
+    final copies = drawings.duplicate(drawings.selection);
+    status = copies.isEmpty
+        ? 'Nothing to duplicate'
+        : '${copies.length} copied';
+    notifyListeners();
+  }
+
+  /// Moves the selection to the top of the stack.
+  void bringToFront() {
+    for (final line in drawings.selection) {
+      drawings.bringToFront(line);
+    }
+    status = 'Brought to front';
+    notifyListeners();
+  }
+
+  /// Moves the selection to the bottom of the stack.
+  ///
+  /// Walked in reverse so a selection of several keeps its own order.
+  void sendToBack() {
+    for (final line in drawings.selection.reversed) {
+      drawings.sendToBack(line);
+    }
+    status = 'Sent to back';
+    notifyListeners();
+  }
+
+  /// Saves the look of whatever the editor is open on as the house template.
+  void saveTemplate() {
+    final line = drawings.selected;
+    if (line == null) return;
+    drawings.saveTemplate(templateName, line);
+    status = 'Template saved from ${translations.drawing.nameOf(line)}';
+    notifyListeners();
+  }
+
+  /// Puts the house template on everything selected.
+  void applyTemplate() {
+    drawings.applyTemplate(templateName, drawings.selection);
+    status = 'Template applied to ${drawings.selection.length}';
+    notifyListeners();
+  }
 
   /// Saves the layout as JSON, the way an app would put it in storage.
   void saveLayout() {

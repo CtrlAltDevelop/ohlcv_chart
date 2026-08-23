@@ -106,12 +106,154 @@ class Controls extends StatelessWidget {
           ],
         ),
         _Section(
+          title: 'The window',
+          subtitle: 'Read it, and move it',
+          children: [
+            Text(
+              state.windowSummary,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                OutlinedButton(
+                  onPressed: () => state.showLast(50),
+                  child: const Text('Last 50'),
+                ),
+                OutlinedButton(
+                  onPressed: () => state.showLast(200),
+                  child: const Text('Last 200'),
+                ),
+                OutlinedButton(
+                  onPressed: state.goToMiddle,
+                  child: const Text('Go to the middle'),
+                ),
+                OutlinedButton(
+                  onPressed: state.fitAll,
+                  child: const Text('Fit everything'),
+                ),
+              ],
+            ),
+          ],
+        ),
+        _Section(
+          title: 'Compare',
+          subtitle: 'A second instrument over the same window',
+          children: [
+            _Toggle(
+              label: 'Show a second instrument',
+              subtitle: 'Rebased to the candles at the left of the window',
+              value: state.showComparison,
+              onChanged: (v) => state.update(() => state.showComparison = v),
+            ),
+            _Toggle(
+              label: 'At its own prices',
+              subtitle: 'Only right where the two are quoted in the same units',
+              value: state.comparisonAtOwnPrices,
+              onChanged: state.showComparison
+                  ? (v) => state.update(() => state.comparisonAtOwnPrices = v)
+                  : null,
+            ),
+            _Toggle(
+              label: 'Orders and positions',
+              subtitle: 'Drag the order line to amend it',
+              value: state.showTrading,
+              onChanged: (v) => state.update(() => state.showTrading = v),
+            ),
+            _Toggle(
+              label: 'Event marks',
+              subtitle: 'Earnings, dividends, splits and news — tap one',
+              value: state.showEvents,
+              onChanged: (v) => state.update(() => state.showEvents = v),
+            ),
+          ],
+        ),
+        _Section(
+          title: 'The selection',
+          subtitle:
+              'Shift- or ⌘-click the chart to select several; '
+              '⌘A takes the lot',
+          children: [
+            Text(
+              state.selectionSummary,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: state.hasSelection
+                      ? () => state.duplicateSelection()
+                      : null,
+                  icon: const Icon(Icons.content_copy_rounded, size: 16),
+                  label: const Text('Duplicate (⌘D)'),
+                ),
+                OutlinedButton(
+                  onPressed: state.hasSelection ? state.bringToFront : null,
+                  child: const Text('To front (⇧⌘])'),
+                ),
+                OutlinedButton(
+                  onPressed: state.hasSelection ? state.sendToBack : null,
+                  child: const Text('To back (⇧⌘[)'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Style templates',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: state.hasSelection ? state.saveTemplate : null,
+                  icon: const Icon(Icons.bookmark_add_outlined, size: 16),
+                  label: const Text('Save as “house”'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: state.hasTemplate && state.hasSelection
+                      ? state.applyTemplate
+                      : null,
+                  icon: const Icon(Icons.format_paint_outlined, size: 16),
+                  label: const Text('Apply to selection'),
+                ),
+              ],
+            ),
+          ],
+        ),
+        _Section(
           title: 'Indicators',
           subtitle:
               'Add as many as you like — ATR(8), ATR(14) and ATR(20) '
               'are three panes',
           children: [
             _IndicatorList(state: state),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                OutlinedButton(
+                  onPressed: state.addChainedIndicator,
+                  child: const Text('RSI over the MACD'),
+                ),
+                OutlinedButton(
+                  onPressed: state.addLogPane,
+                  child: const Text('OBV, log pane'),
+                ),
+                OutlinedButton(
+                  onPressed: state.addAlertingIndicator,
+                  child: const Text('RSI with alerts'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
             Align(
               alignment: Alignment.centerLeft,
               child: FilledButton.tonalIcon(
@@ -140,6 +282,9 @@ class Controls extends StatelessWidget {
                 ChartType.line: 'line',
                 ChartType.area: 'area',
                 ChartType.baseline: 'base',
+                ChartType.stepLine: 'step',
+                ChartType.hlcArea: 'HLC',
+                ChartType.columns: 'columns',
               },
               onChanged: (v) => state.update(() => state.chartType = v),
             ),
@@ -150,6 +295,10 @@ class Controls extends StatelessWidget {
                 Aggregation.none: 'raw',
                 Aggregation.heikinAshi: 'HA',
                 Aggregation.renko: 'renko',
+                Aggregation.lineBreak: 'break',
+                Aggregation.kagi: 'kagi',
+                Aggregation.pointAndFigure: 'P&F',
+                Aggregation.rangeBars: 'range',
               },
               onChanged: (v) => state.update(() => state.aggregation = v),
             ),
@@ -160,8 +309,39 @@ class Controls extends StatelessWidget {
                 PriceAxisScale.linear: 'linear',
                 PriceAxisScale.logarithmic: 'log',
                 PriceAxisScale.percentage: '%',
+                PriceAxisScale.indexedTo100: '=100',
               },
               onChanged: (v) => state.update(() => state.priceAxisScale = v),
+            ),
+            _Toggle(
+              label: 'Invert the price axis',
+              subtitle: 'Higher prices lower down',
+              value: state.invertPriceAxis,
+              onChanged: (v) => state.update(() => state.invertPriceAxis = v),
+            ),
+            _Toggle(
+              label: 'Average close',
+              subtitle: 'A level at the mean close over the window',
+              value: state.showAverageClose,
+              onChanged: (v) => state.update(() => state.showAverageClose = v),
+            ),
+            _Toggle(
+              label: 'High and low on the axis',
+              subtitle: "Tag the window's extremes where they read",
+              value: state.showHighLowOnAxis,
+              onChanged: (v) => state.update(() => state.showHighLowOnAxis = v),
+            ),
+            _Toggle(
+              label: 'Shade extended hours',
+              subtitle: 'Wash the candles outside 09:30–16:00 on weekdays',
+              value: state.showExtendedHours,
+              onChanged: (v) => state.update(() => state.showExtendedHours = v),
+            ),
+            _Toggle(
+              label: 'Pick out the big bars',
+              subtitle: 'A colour of your own, per bar',
+              value: state.highlightBigBars,
+              onChanged: (v) => state.update(() => state.highlightBigBars = v),
             ),
             _Toggle(
               label: 'Pin the baseline',
@@ -633,7 +813,9 @@ class _Toggle extends StatelessWidget {
   final String label;
   final String? subtitle;
   final bool value;
-  final ValueChanged<bool> onChanged;
+
+  /// Null leaves the switch greyed out, for a setting that does not apply yet.
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
