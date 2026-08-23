@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart' show Alignment, Color;
 
+import 'trading.dart';
+
 /// ChartColors
 ///
 /// Note:
@@ -223,6 +225,41 @@ class ChartColors {
   /// Null for [profileColor], and for a faint [dnColor] if that is null too.
   Color? profileDownColor;
 
+  /// Wash over the candles outside the regular session, or null for a faint
+  /// [defaultTextColor].
+  ///
+  /// Only drawn where `KChartWidget.session` says what the regular session is.
+  Color? extendedHoursColor;
+
+  /// The colour a buy order or a long position is drawn in.
+  Color buyColor = const Color(0xFF26A69A);
+
+  /// The colour a sell order or a short position is drawn in.
+  Color sellColor = const Color(0xFFEF5350);
+
+  /// The colour each kind of event mark takes when it names none of its own.
+  ///
+  /// Keyed by `ChartEventKind.name`, so a kind with no entry falls back to
+  /// [defaultTextColor].
+  Map<String, Color> eventColors = const {
+    'earnings': Color(0xFF42A5F5),
+    'dividend': Color(0xFF66BB6A),
+    'split': Color(0xFFAB47BC),
+    'news': Color(0xFFFFA726),
+    'custom': Color(0xFF90A4AE),
+  };
+
+  /// Colours the compared instruments are drawn in, taken in turn.
+  ///
+  /// Distinct from the moving-average palette, so a compared line reads as a
+  /// second instrument rather than as another overlay.
+  List<Color> comparisonColors = const [
+    Color(0xFF7E57C2),
+    Color(0xFF26A69A),
+    Color(0xFFEF6C00),
+    Color(0xFF42A5F5),
+  ];
+
   /// Colour of the profile's busiest band, or null for [vwapColor].
   Color? profilePocColor;
 
@@ -355,6 +392,28 @@ class ChartColors {
   /// period are drawn in the same colour.
   Color getEMAColor(int index) => getMAColor(index);
 
+  /// [extendedHoursColor], or a faint [defaultTextColor] if it was left null.
+  Color get effectiveExtendedHoursColor =>
+      extendedHoursColor ?? defaultTextColor.withValues(alpha: 0.07);
+
+  /// The colour a trade on [side] is drawn in.
+  Color tradeColor(TradeSide side) =>
+      side == TradeSide.buy ? buyColor : sellColor;
+
+  /// The colour an event of [kind] is marked in.
+  Color eventColor(String kind) => eventColors[kind] ?? defaultTextColor;
+
+  /// The colour of the compared instrument at [index].
+  ///
+  /// A palette of its own, kept away from the moving-average colours so a
+  /// compared line is never mistaken for an overlay. Set
+  /// [comparisonColors] to use your own.
+  Color getComparisonColor(int index) {
+    final palette = comparisonColors;
+    if (palette.isEmpty) return defaultTextColor;
+    return palette[index % palette.length];
+  }
+
   /// get MA color via index
   Color getMAColor(int index) {
     switch (index % 3) {
@@ -400,6 +459,10 @@ class ChartStyle {
     this.paneGrabHeight = 16.0,
     this.priceScaleGripWidth = 52.0,
     this.profileWidth = 0.28,
+    this.hlcAreaOpacity = 0.16,
+    this.eventMarkRadius = 8.0,
+    this.eventMarkGap = 4.0,
+    this.trading = const TradingStyle(),
     this.minPaneHeight = 40.0,
     this.maxPaneHeight = 400.0,
     this.axisLabelBackground = true,
@@ -494,6 +557,21 @@ class ChartStyle {
   /// reads it out.
   final double priceScaleGripWidth;
 
+  /// How solid the high-low band of a [ChartType.hlcArea] chart is.
+  final double hlcAreaOpacity;
+
+  /// How big an event mark's badge is, as its radius in logical pixels.
+  ///
+  /// Set it to zero to leave the marks undrawn while keeping the events on the
+  /// chart for a panel of your own to list.
+  final double eventMarkRadius;
+
+  /// How far below the candles the event marks sit.
+  final double eventMarkGap;
+
+  /// How the working-order and open-position lines are drawn.
+  final TradingStyle trading;
+
   /// How much of the chart's width a volume profile's busiest bar takes.
   ///
   /// A fraction, so the profile keeps its proportions whatever the chart is
@@ -568,6 +646,10 @@ class ChartStyle {
     double? paneGrabHeight,
     double? priceScaleGripWidth,
     double? profileWidth,
+    double? hlcAreaOpacity,
+    double? eventMarkRadius,
+    double? eventMarkGap,
+    TradingStyle? trading,
     double? minPaneHeight,
     double? maxPaneHeight,
     bool? axisLabelBackground,
@@ -607,6 +689,10 @@ class ChartStyle {
       paneGrabHeight: paneGrabHeight ?? this.paneGrabHeight,
       priceScaleGripWidth: priceScaleGripWidth ?? this.priceScaleGripWidth,
       profileWidth: profileWidth ?? this.profileWidth,
+      hlcAreaOpacity: hlcAreaOpacity ?? this.hlcAreaOpacity,
+      eventMarkRadius: eventMarkRadius ?? this.eventMarkRadius,
+      eventMarkGap: eventMarkGap ?? this.eventMarkGap,
+      trading: trading ?? this.trading,
       minPaneHeight: minPaneHeight ?? this.minPaneHeight,
       maxPaneHeight: maxPaneHeight ?? this.maxPaneHeight,
       axisLabelBackground: axisLabelBackground ?? this.axisLabelBackground,
