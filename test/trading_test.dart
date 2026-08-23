@@ -200,6 +200,40 @@ void main() {
       );
     });
 
+    test('a P&L that is not a round number is cut to two decimals', () {
+      // What an account actually reports: enough precision to be wrong on a
+      // tag, which is only as wide as the text in it.
+      expect(
+        const ChartPosition(
+          id: '1',
+          entryPrice: 100,
+          side: TradeSide.buy,
+          quantity: 1,
+          unrealisedPnl: 1415.882446718504,
+        ).tagText,
+        'Long 1  +1415.88',
+      );
+      // Nothing trailing: neither a zero nor the point itself.
+      expect(
+        const ChartPosition(
+          id: '1',
+          entryPrice: 100,
+          side: TradeSide.buy,
+          unrealisedPnl: 0.001,
+        ).tagText,
+        'Long  +0',
+      );
+      expect(
+        const ChartOrder(
+          id: '1',
+          price: 100,
+          side: TradeSide.buy,
+          quantity: 0.3333333333,
+        ).tagText,
+        'Buy 0.33',
+      );
+    });
+
     test('it says whether it is making money, or that it does not know', () {
       expect(
         const ChartPosition(

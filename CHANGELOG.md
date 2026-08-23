@@ -344,6 +344,9 @@
 
 - `NumberUtil.format` printed a whole number as `200.200`, reusing the integer
   digits as the fraction. It now pads, giving `200.00`.
+- An order or position tag printed a size or an unrealised P&L at a double's
+  full precision — `Long 1  +1415.882446718504` — which ran off the end of the
+  tag it was drawn in. It is cut to two decimals now, with nothing trailing.
 
 ### Theming
 

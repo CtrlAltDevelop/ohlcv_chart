@@ -256,8 +256,17 @@ class TradingStyle {
 }
 
 /// Writes 0.5 as `0.5` and 2.0 as `2`, so a tag reads `Buy 2`.
-String _trim(double value) =>
-    value == value.roundToDouble() ? value.toInt().toString() : '$value';
+String _trim(double value) {
+  if (value == value.roundToDouble()) return value.toInt().toString();
+  // A tag is a small label pinned to a line, and an unrealised P&L is rarely a
+  // round number: printed raw, `1415.882446718504` runs off the end of it. Two
+  // decimals, with nothing trailing.
+  var text = value.toStringAsFixed(2);
+  while (text.endsWith('0')) {
+    text = text.substring(0, text.length - 1);
+  }
+  return text.endsWith('.') ? text.substring(0, text.length - 1) : text;
+}
 
 /// The hours a market keeps, in the time zone the chart is showing.
 ///
