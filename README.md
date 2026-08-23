@@ -66,7 +66,7 @@ Named for the open-high-low-close-volume bars it renders.
 
 ```yaml
 dependencies:
-  ohlcv_chart: ^2.0.0
+  ohlcv_chart: ^2.1.0
 ```
 
 ## Usage
