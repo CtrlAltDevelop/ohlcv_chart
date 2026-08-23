@@ -117,6 +117,366 @@ abstract final class CandleTransforms {
     return bricks;
   }
 
+  /// Turns [candles] into three-line-break blocks.
+  ///
+  /// A block is drawn every time price closes beyond the last one, and time is
+  /// thrown away in between — so what is left is the sequence of moves that
+  /// were big enough to matter. Reversing takes a close beyond the extreme of
+  /// the last [lines] blocks, which is what stops a market going sideways from
+  /// drawing anything at all.
+  ///
+  /// Each block runs from where the last one ended to the close that drew it,
+  /// so the blocks are contiguous and read as one staircase. Blocks a single
+  /// candle draws are spaced [spacing] apart from that candle's own time, so
+  /// each has a time of its own for the axis. Volume is carried across from the
+  /// candles a block covers.
+  ///
+  /// Returns an empty list for a non-positive [lines].
+  static List<KLineEntity> lineBreak(
+    List<KLineEntity> candles, {
+    int lines = 3,
+    Duration spacing = const Duration(milliseconds: 1),
+  }) {
+    if (lines <= 0 || candles.isEmpty) return [];
+
+    final blocks = <KLineEntity>[];
+    // What each block spanned, kept alongside so the reversal threshold can be
+    // read off the last few without going back through the entities.
+    final spans = <({double low, double high, bool up})>[];
+    var volume = 0.0;
+    double? level;
+
+    for (final candle in candles) {
+      volume += candle.vol;
+      final time = candle.dateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+      var drawn = 0;
+
+      void draw(double open, double close) {
+        blocks.add(
+          KLineEntity.fromCustom(
+            open: open,
+            high: math.max(open, close),
+            low: math.min(open, close),
+            close: close,
+            vol: volume,
+            dateTime: time.add(spacing * drawn),
+          ),
+        );
+        spans.add((
+          low: math.min(open, close),
+          high: math.max(open, close),
+          up: close > open,
+        ));
+        drawn++;
+        volume = 0;
+        level = close;
+      }
+
+      final close = candle.close;
+      if (level == null) {
+        // The first candle only sets where the first block will start from;
+        // nothing is drawn until price has moved off it.
+        level = candle.open;
+        if (close != candle.open) draw(candle.open, close);
+        continue;
+      }
+      if (spans.isEmpty) {
+        if (close != level) draw(level!, close);
+        continue;
+      }
+
+      final recent = spans.length <= lines
+          ? spans
+          : spans.sublist(spans.length - lines);
+      var highest = recent.first.high;
+      var lowest = recent.first.low;
+      for (final span in recent) {
+        highest = math.max(highest, span.high);
+        lowest = math.min(lowest, span.low);
+      }
+
+      final last = spans.last;
+      if (last.up) {
+        // Carrying on takes one more tick beyond the last block; turning round
+        // takes a close under the whole run of them.
+        if (close > level!) {
+          draw(level!, close);
+        } else if (close < lowest) {
+          draw(level!, close);
+        }
+      } else {
+        if (close < level!) {
+          draw(level!, close);
+        } else if (close > highest) {
+          draw(level!, close);
+        }
+      }
+    }
+
+    return blocks;
+  }
+
+  /// Turns [candles] into Kagi segments, reversing on a move of [reversal].
+  ///
+  /// A Kagi line runs with the market and turns round only when price retraces
+  /// [reversal] from the extreme it reached — so a trend is one long segment
+  /// however many bars it took, and the chop inside it draws nothing. Set
+  /// [asPercent] to measure the reversal as a fraction of the extreme rather
+  /// than in price, which is the usual way to size one.
+  ///
+  /// Each segment is returned as a candle from where the turn happened to the
+  /// extreme it ran to, so the chart draws the line as a run of blocks. A
+  /// rising segment reads as an up candle and a falling one as a down candle;
+  /// the thick-and-thin yang and yin of a hand-drawn Kagi is not something a
+  /// candle can say.
+  ///
+  /// Returns an empty list for a non-positive [reversal].
+  static List<KLineEntity> kagi(
+    List<KLineEntity> candles, {
+    required double reversal,
+    bool asPercent = false,
+    Duration spacing = const Duration(milliseconds: 1),
+  }) {
+    if (reversal <= 0 || candles.isEmpty) return [];
+
+    final segments = <KLineEntity>[];
+    var start = candles.first.close;
+    var extreme = candles.first.close;
+    var direction = 0;
+    var volume = 0.0;
+
+    /// How far price has to come back from [from] to count as a turn.
+    double threshold(double from) =>
+        asPercent ? from.abs() * reversal : reversal;
+
+    for (final candle in candles) {
+      volume += candle.vol;
+      final time = candle.dateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final close = candle.close;
+
+      void turn() {
+        segments.add(
+          KLineEntity.fromCustom(
+            open: start,
+            high: math.max(start, extreme),
+            low: math.min(start, extreme),
+            close: extreme,
+            vol: volume,
+            dateTime: time.add(spacing * segments.length),
+          ),
+        );
+        volume = 0;
+        start = extreme;
+        extreme = close;
+      }
+
+      switch (direction) {
+        case 0:
+          // Which way the line runs is not known until price has moved far
+          // enough for a turn to mean anything.
+          if (close >= extreme + threshold(extreme)) {
+            direction = 1;
+            extreme = close;
+          } else if (close <= extreme - threshold(extreme)) {
+            direction = -1;
+            extreme = close;
+          }
+        case 1:
+          if (close > extreme) {
+            extreme = close;
+          } else if (close <= extreme - threshold(extreme)) {
+            turn();
+            direction = -1;
+          }
+        default:
+          if (close < extreme) {
+            extreme = close;
+          } else if (close >= extreme + threshold(extreme)) {
+            turn();
+            direction = 1;
+          }
+      }
+    }
+
+    // The segment still running when the data ran out is worth drawing: it is
+    // where the market is now.
+    if (direction != 0 && extreme != start) {
+      final time =
+          candles.last.dateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+      segments.add(
+        KLineEntity.fromCustom(
+          open: start,
+          high: math.max(start, extreme),
+          low: math.min(start, extreme),
+          close: extreme,
+          vol: volume,
+          dateTime: time.add(spacing * segments.length),
+        ),
+      );
+    }
+
+    return segments;
+  }
+
+  /// Turns [candles] into point-and-figure columns of [boxSize].
+  ///
+  /// Price is filed into boxes and only whole boxes are recorded, so noise
+  /// smaller than one box draws nothing at all. A column carries on while price
+  /// keeps making boxes its own way, and a new one starts when price comes back
+  /// [reversalBoxes] boxes against it — three, traditionally.
+  ///
+  /// Read from the highs and lows rather than the closes, which is how a
+  /// point-and-figure chart is built: what matters is how far price travelled,
+  /// not where it happened to settle. Each column is returned as a candle from
+  /// its first box to its last, so a rising column reads as an up candle.
+  ///
+  /// Returns an empty list for a non-positive [boxSize] or [reversalBoxes].
+  static List<KLineEntity> pointAndFigure(
+    List<KLineEntity> candles, {
+    required double boxSize,
+    int reversalBoxes = 3,
+    Duration spacing = const Duration(milliseconds: 1),
+  }) {
+    if (boxSize <= 0 || reversalBoxes <= 0 || candles.isEmpty) return [];
+
+    final columns = <KLineEntity>[];
+    // Boxes are counted off a grid, so the same data always files into the same
+    // boxes however much of it is fed in.
+    int boxOf(double price) => (price / boxSize).floor();
+
+    var direction = 0;
+    var start = boxOf(candles.first.close);
+    var end = start;
+    var volume = 0.0;
+    DateTime? openedAt;
+
+    void close(DateTime time) {
+      columns.add(
+        KLineEntity.fromCustom(
+          open: start * boxSize,
+          high: math.max(start, end) * boxSize,
+          low: math.min(start, end) * boxSize,
+          close: end * boxSize,
+          vol: volume,
+          dateTime: (openedAt ?? time).add(spacing * columns.length),
+        ),
+      );
+      volume = 0;
+      openedAt = time;
+    }
+
+    for (final candle in candles) {
+      volume += candle.vol;
+      final time = candle.dateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+      openedAt ??= time;
+
+      final high = boxOf(candle.high);
+      final low = boxOf(candle.low);
+
+      switch (direction) {
+        case 0:
+          if (high > start) {
+            direction = 1;
+            end = high;
+          } else if (low < start) {
+            direction = -1;
+            end = low;
+          }
+        case 1:
+          if (high > end) {
+            end = high;
+          } else if (low <= end - reversalBoxes) {
+            close(time);
+            direction = -1;
+            // The new column starts one box back from where the last ended,
+            // which is what keeps the two from overlapping.
+            start = end - 1;
+            end = low;
+          }
+        default:
+          if (low < end) {
+            end = low;
+          } else if (high >= end + reversalBoxes) {
+            close(time);
+            direction = 1;
+            start = end + 1;
+            end = high;
+          }
+      }
+    }
+
+    // The column still open when the data ran out is where the market is now.
+    if (direction != 0 && end != start) {
+      close(candles.last.dateTime ?? DateTime.fromMillisecondsSinceEpoch(0));
+    }
+
+    return columns;
+  }
+
+  /// Turns [candles] into bars that each cover [range] of price.
+  ///
+  /// A bar closes as soon as price has travelled [range] from where the bar
+  /// opened, and the next one opens exactly there — so every bar covers the
+  /// same distance and a busy stretch draws more of them than a quiet one. Time
+  /// is kept only as the instant each bar closed.
+  ///
+  /// Driven from the closes: a candle's high and low say where price reached but
+  /// not in what order, so which side of the bar was touched first is not
+  /// knowable from OHLC. What the highs and lows do decide is how tall each bar
+  /// is drawn — a bar is at least [range] tall, and taller where the candles it
+  /// covered reached further.
+  ///
+  /// Returns an empty list for a non-positive [range].
+  static List<KLineEntity> rangeBars(
+    List<KLineEntity> candles, {
+    required double range,
+    Duration spacing = const Duration(milliseconds: 1),
+  }) {
+    if (range <= 0 || candles.isEmpty) return [];
+
+    final bars = <KLineEntity>[];
+    var open = candles.first.open;
+    var high = open;
+    var low = open;
+    var volume = 0.0;
+
+    for (final candle in candles) {
+      volume += candle.vol;
+      high = math.max(high, candle.high);
+      low = math.min(low, candle.low);
+      final close = candle.close;
+      final time = candle.dateTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+      // One candle may carry price through several bars' worth of range, so the
+      // move is drained a bar at a time. Each pass moves the open a whole
+      // range towards the close, so the loop always gets shorter.
+      while ((close - open).abs() >= range) {
+        final up = close > open;
+        final end = up ? open + range : open - range;
+
+        bars.add(
+          KLineEntity.fromCustom(
+            open: open,
+            high: math.max(high, math.max(open, end)),
+            low: math.min(low, math.min(open, end)),
+            close: end,
+            vol: volume,
+            dateTime: time.add(spacing * bars.length),
+          ),
+        );
+
+        volume = 0;
+        open = end;
+        // The bar that just closed used up what the candles had reached; the
+        // next one starts fresh from where it opened.
+        high = open;
+        low = open;
+      }
+    }
+
+    return bars;
+  }
+
   /// A brick size taken from the market itself: the average true range over
   /// [period] candles.
   ///

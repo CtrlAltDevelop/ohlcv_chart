@@ -51,6 +51,52 @@ void main() {
 
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('a column chart takes the level it is given', (tester) async {
+      await tester.pumpWidget(_chart(type: ChartType.columns, baseline: 120));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the ones that show a range keep their overlays', (
+      tester,
+    ) async {
+      // An HLC area and a column chart both say something per bar, so an
+      // average over them still has something to sit on; a plain line chart
+      // does not draw one.
+      final data = candles(rampThenFall(60));
+      DataUtil.calculate(data);
+
+      Widget chart(ChartType type) => MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 500,
+            height: 600,
+            child: KChartWidget(
+              data,
+              ChartColors(),
+              isTrendLine: false,
+              watermarkAssetPath: 'assets/none.svg',
+              timeFrame: const Duration(minutes: 15),
+              chartType: type,
+              indicators: [MaIndicator(period: 5)],
+            ),
+          ),
+        ),
+      );
+
+      for (final type in [
+        ChartType.hlcArea,
+        ChartType.columns,
+        ChartType.stepLine,
+        ChartType.line,
+      ]) {
+        await tester.pumpWidget(chart(type));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: '$type');
+      }
+    });
   });
 
   group('Heikin-Ashi', () {
