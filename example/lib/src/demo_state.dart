@@ -513,10 +513,22 @@ class DemoState extends ChangeNotifier {
   /// A session shaped like a US equity market's, in the chart's own zone.
   ///
   /// The demo's candles are 15 minutes apart round the clock, so most of a day
-  /// falls outside it — which is what makes the shading visible.
+  /// falls outside it — which is what makes the shading visible. Every weekday
+  /// is kept, weekend included, which a real equity session would not do: the
+  /// demo's market never closes, and on a Saturday the default set would wash
+  /// the whole chart and make the toggle look broken.
   static const session = TradingSession(
     open: Duration(hours: 9, minutes: 30),
     close: Duration(hours: 16),
+    weekdays: {
+      DateTime.monday,
+      DateTime.tuesday,
+      DateTime.wednesday,
+      DateTime.thursday,
+      DateTime.friday,
+      DateTime.saturday,
+      DateTime.sunday,
+    },
   );
 
   /// The session handed to the chart, or nothing when the toggle is off.

@@ -14,6 +14,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
@@ -145,7 +146,43 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
         await act(_area, () => _capture(scene));
       }
     }
+    if (_stale.isNotEmpty) {
+      stdout.writeln('stale, and not written: ${_stale.join(', ')}');
+      exit(1);
+    }
     exit(0);
+  }
+
+  /// The digest of the last image written, so a stale frame can be spotted.
+  int _previous = 0;
+
+  /// Scenes that never produced a frame of their own.
+  final List<String> _stale = [];
+
+  /// Cheap digest of an image, enough to tell one scene from another.
+  int _digest(Uint8List bytes) {
+    var hash = 17;
+    for (var i = 0; i < bytes.length; i += 97) {
+      hash = (hash * 31 + bytes[i]) & 0x3FFFFFFF;
+    }
+    return hash * 31 + bytes.length;
+  }
+
+  /// Rasterises the boundary afresh.
+  ///
+  /// macOS throttles a window that is not in front, and `toImage` then hands
+  /// back whatever was last rasterised — which is how a run writes the same
+  /// picture into every file. Marking the boundary dirty and waiting for the
+  /// frame that schedules is what asks for a new one.
+  Future<Uint8List> _raster(RenderRepaintBoundary boundary) async {
+    boundary.markNeedsPaint();
+    WidgetsBinding.instance.scheduleFrame();
+    await WidgetsBinding.instance.endOfFrame;
+
+    final image = await boundary.toImage(pixelRatio: 2);
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    return data!.buffer.asUint8List();
   }
 
   /// Where the scene sits on screen, so a synthetic gesture can find it.
@@ -158,12 +195,27 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
   Future<void> _capture(Scene scene) async {
     final boundary =
         _boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 2);
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    image.dispose();
+
+    // A frame identical to the one before it is the last scene over again, not
+    // this one: ask for another, and give up loudly rather than write it.
+    var bytes = await _raster(boundary);
+    for (
+      var attempt = 0;
+      _digest(bytes) == _previous && attempt < 4;
+      attempt++
+    ) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      bytes = await _raster(boundary);
+    }
+    if (_digest(bytes) == _previous) {
+      stdout.writeln('${scene.name} came back stale — left alone');
+      _stale.add(scene.name);
+      return;
+    }
+    _previous = _digest(bytes);
 
     final file = File('${_output.path}/${scene.name}.png');
-    file.writeAsBytesSync(bytes!.buffer.asUint8List());
+    file.writeAsBytesSync(bytes);
     stdout.writeln(
       'wrote ${file.path} '
       '(${scene.size.width.round()}x${scene.size.height.round()} at 2x, '
@@ -225,8 +277,23 @@ List<Scene> buildScenes() {
     bool sessionDividers = false,
     bool light = false,
     VerticalTextAlignment axis = VerticalTextAlignment.left,
+    List<ComparisonSeries> comparisons = const [],
+    List<ChartEvent> events = const [],
+    List<ChartOrder> orders = const [],
+    List<ChartPosition> positions = const [],
+    TradingSession? session,
+    Color? Function(CandleEntity candle, int index)? candleColor,
+    bool invertPriceAxis = false,
+    bool showAverageClose = false,
+    bool showHighLowOnAxis = false,
+    Color? extendedHoursColor,
   }) {
     final colors = light ? ChartTheme.lightColors() : ChartTheme.darkColors();
+    // The default wash is 7% of the text colour — right on a chart being read,
+    // too faint to survive a screenshot.
+    if (extendedHoursColor != null) {
+      colors.extendedHoursColor = extendedHoursColor;
+    }
     return ColoredBox(
       color: colors.bgColor,
       child: KChartWidget(
@@ -258,6 +325,15 @@ List<Scene> buildScenes() {
         fibRetracements: fibRetracements,
         volHidden: volHidden,
         verticalTextAlignment: axis,
+        comparisons: comparisons,
+        events: events,
+        orders: orders,
+        positions: positions,
+        session: session,
+        candleColor: candleColor,
+        invertPriceAxis: invertPriceAxis,
+        showAverageClose: showAverageClose,
+        showHighLowOnAxis: showHighLowOnAxis,
         fixedLength: 0,
         showNowPrice: true,
       ),
@@ -279,6 +355,42 @@ List<Scene> buildScenes() {
       DepthEntity.asks([for (final rung in rungs) rung.ask]),
     );
   }
+
+  /// Names a panel in a scene that holds several of them side by side.
+  ///
+  /// [centred] moves the name off the top-left corner, for a panel whose chart
+  /// already draws a legend or an extreme's label there.
+  Widget titled(String text, Widget child, {bool centred = false}) => Stack(
+    children: [
+      Positioned.fill(child: child),
+      Positioned(
+        left: centred ? 0 : 10,
+        right: centred ? 0 : null,
+        top: 8,
+        // On a chip, because the chart draws its own labels in the same corner.
+        child: Align(
+          alignment: centred ? Alignment.topCenter : Alignment.topLeft,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF10141A).withValues(alpha: 0.82),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Color(0xFFB6C0CC),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
 
   return [
     (
@@ -498,19 +610,35 @@ List<Scene> buildScenes() {
       act: null,
       build: () => ColoredBox(
         color: ChartTheme.darkColors().bgColor,
-        child: Row(
+        child: Column(
           children: [
-            for (final type in [
-              ChartType.bars,
-              ChartType.baseline,
-              ChartType.area,
+            for (final row in const [
+              [
+                (ChartType.bars, 'bars'),
+                (ChartType.baseline, 'baseline'),
+                (ChartType.area, 'area'),
+              ],
+              [
+                (ChartType.stepLine, 'step line'),
+                (ChartType.hlcArea, 'HLC area'),
+                (ChartType.columns, 'columns'),
+              ],
             ])
               Expanded(
-                child: chart(
-                  indicators: [],
-                  volHidden: true,
-                  chartType: type,
-                  showOhlcLegend: true,
+                child: Row(
+                  children: [
+                    for (final (type, name) in row)
+                      Expanded(
+                        child: titled(
+                          name,
+                          chart(
+                            indicators: [],
+                            volHidden: true,
+                            chartType: type,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
           ],
@@ -599,6 +727,203 @@ List<Scene> buildScenes() {
             color: const Color(0xFFF5C26B),
           ),
         ],
+      ),
+    ),
+    (
+      name: 'comparison',
+      size: wide,
+      act: null,
+      build: () => chart(
+        indicators: [],
+        volHidden: true,
+        showOhlcLegend: true,
+        axis: VerticalTextAlignment.right,
+        comparisons: [MarketData.comparison(candles)],
+      ),
+    ),
+    (
+      name: 'trading',
+      size: wide,
+      act: null,
+      build: () => chart(
+        indicators: [EmaIndicator(period: 21)],
+        volHidden: true,
+        axis: VerticalTextAlignment.right,
+        orders: [
+          ChartOrder(
+            id: 'working',
+            price: last * 0.985,
+            side: TradeSide.buy,
+            quantity: 0.5,
+          ),
+          ChartOrder(
+            id: 'target',
+            price: last * 1.008,
+            side: TradeSide.sell,
+            quantity: 0.5,
+          ),
+        ],
+        positions: [
+          ChartPosition(
+            id: 'open',
+            entryPrice: candles[candles.length - 40].close,
+            side: TradeSide.buy,
+            quantity: 1,
+            unrealisedPnl: last - candles[candles.length - 40].close,
+          ),
+        ],
+      ),
+    ),
+    (
+      name: 'events',
+      size: wide,
+      act: null,
+      build: () => chart(
+        indicators: [MaIndicator(period: 20)],
+        showOhlcLegend: true,
+        // The demo's own events are spread over the whole history, and the
+        // window only holds the last half of it: these sit where they can be
+        // seen, one of each kind.
+        events: [
+          for (final (back, kind, detail) in [
+            (78, ChartEventKind.earnings, 'Q3 earnings, after the close'),
+            (56, ChartEventKind.dividend, r'$0.24 goes ex'),
+            (34, ChartEventKind.split, '2-for-1'),
+            (12, ChartEventKind.news, 'Added to the index'),
+          ])
+            ChartEvent(
+              time: candles[candles.length - back].dateTime!,
+              kind: kind,
+              detail: detail,
+            ),
+        ],
+      ),
+    ),
+    (
+      name: 'sessions',
+      size: wide,
+      act: null,
+      build: () => chart(
+        indicators: [],
+        showOhlcLegend: true,
+        // Kept every day, weekend included: the demo's market never closes,
+        // and a weekday-only set washes the whole picture when the data runs
+        // over a Saturday.
+        session: const TradingSession(
+          open: Duration(hours: 9, minutes: 30),
+          close: Duration(hours: 16),
+          weekdays: {
+            DateTime.monday,
+            DateTime.tuesday,
+            DateTime.wednesday,
+            DateTime.thursday,
+            DateTime.friday,
+            DateTime.saturday,
+            DateTime.sunday,
+          },
+        ),
+        extendedHoursColor: const Color(0x2494A9C0),
+        // The kind of thing a per-bar colour is for: pick out the handful of
+        // bars that travelled much further than the ones around them.
+        candleColor: (candle, index) =>
+            candle.high - candle.low > candle.close * 0.015
+            ? const Color(0xFFFFD54F)
+            : null,
+      ),
+    ),
+    (
+      name: 'profile',
+      size: wide,
+      act: null,
+      build: () => chart(
+        volHidden: true,
+        showOhlcLegend: true,
+        axis: VerticalTextAlignment.right,
+        indicators: [
+          VolumeProfileIndicator(bins: 28),
+          AnchoredVwapIndicator(anchor: candles.length - 90),
+        ],
+      ),
+    ),
+    (
+      name: 'bar-types',
+      size: wide,
+      act: null,
+      build: () {
+        final box = CandleTransforms.atrBrickSize(candles)!;
+        final panels = <(String, List<KLineEntity>)>[
+          ('line break', CandleTransforms.lineBreak(candles)),
+          ('Kagi', CandleTransforms.kagi(candles, reversal: box * 0.25)),
+          (
+            'point & figure',
+            CandleTransforms.pointAndFigure(candles, boxSize: box * 0.4),
+          ),
+          ('range bars', CandleTransforms.rangeBars(candles, range: box * 0.6)),
+        ];
+        for (final (_, data) in panels) {
+          DataUtil.calculate(data);
+        }
+
+        return ColoredBox(
+          color: ChartTheme.darkColors().bgColor,
+          child: Column(
+            children: [
+              for (final row in [panels.sublist(0, 2), panels.sublist(2)])
+                Expanded(
+                  child: Row(
+                    children: [
+                      for (final (name, data) in row)
+                        Expanded(
+                          child: titled(
+                            name,
+                            chart(indicators: [], volHidden: true, data: data),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    ),
+    (
+      name: 'price-scales',
+      size: wide,
+      act: null,
+      build: () => ColoredBox(
+        color: ChartTheme.darkColors().bgColor,
+        child: Row(
+          children: [
+            Expanded(
+              child: titled(
+                'indexed to 100',
+                centred: true,
+                chart(
+                  indicators: [],
+                  volHidden: true,
+                  axis: VerticalTextAlignment.right,
+                  priceAxisScale: PriceAxisScale.indexedTo100,
+                  comparisons: [MarketData.comparison(candles)],
+                ),
+              ),
+            ),
+            Expanded(
+              child: titled(
+                'inverted',
+                centred: true,
+                chart(
+                  indicators: [],
+                  volHidden: true,
+                  axis: VerticalTextAlignment.right,
+                  invertPriceAxis: true,
+                  showAverageClose: true,
+                  showHighLowOnAxis: true,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     ),
     (
