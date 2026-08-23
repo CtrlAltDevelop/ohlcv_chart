@@ -216,6 +216,8 @@ KChartWidget(
 );
 ```
 
+![A volume profile and an anchored VWAP over the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/profile.png)
+
 An indicator of your own can draw a profile too: return an `IndicatorProfile`
 of `ProfileBin`s from `computeProfile` and the chart draws the bars, picks out
 the busiest band and shades the value area. A delta or time profile is the same
@@ -245,6 +247,8 @@ KChartWidget(
   ],
 );
 ```
+
+![A second instrument rebased over the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/comparison.png)
 
 `ComparisonScale.price` draws it at its own prices on the same axis instead,
 which is right where the two are quoted in the same units — a future against its
@@ -444,6 +448,8 @@ KChartWidget(
 );
 ```
 
+![Bars, baseline, area, step line, HLC area and columns](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/chart-types.png)
+
 | `ChartType` | Draws |
 | --- | --- |
 | `candles` | a filled or hollow body with a wick — the default |
@@ -502,6 +508,8 @@ final columns = CandleTransforms.pointAndFigure(candles, boxSize: step);
 final bars = CandleTransforms.rangeBars(candles, range: step);
 ```
 
+![Line break, Kagi, point & figure and range bars](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-types.png)
+
 Every one of them hands back plain candles at their own times, so the chart, the
 indicators and the drawing tools all work over them unchanged. What each bar
 means differs: a Kagi segment is a whole trend, a point-and-figure candle is a
@@ -519,6 +527,8 @@ KChartWidget(
   priceAxisScale: PriceAxisScale.logarithmic,
 );
 ```
+
+![The same market indexed to 100, and with the axis inverted](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/price-scales.png)
 
 - `linear` — equal prices take equal space. The default.
 - `logarithmic` — equal *ratios* take equal space, so 10 → 20 covers as much of
@@ -1274,6 +1284,8 @@ KChartWidget(
 );
 ```
 
+![A working order and an open position, each tagged on the axis](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/trading.png)
+
 **Drag to modify.** Press an order's line and drag it: the line follows the
 pointer, `onOrderDragged` fires all the way so a readout can follow it, and
 `onOrderMoved` fires once on release with the price it landed at. The chart never
@@ -1316,6 +1328,8 @@ KChartWidget(
   onEventTapped: (event) => showAboutEvent(event),
 );
 ```
+
+![Earnings, a dividend, a split and a news mark under the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/events.png)
 
 `ChartEventKind.earnings`, `.dividend`, `.split`, `.news` and `.custom` each
 carry a letter and a colour — `E`, `D`, `S`, `N`, `•`, coloured from
@@ -1493,6 +1507,8 @@ KChartWidget(
   timeZoneOffset: const Duration(hours: -5),
 );
 ```
+
+![The pre-market and after-hours stretches washed behind the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sessions.png)
 
 `timeZoneOffset` is added to every candle's time before it is shown — on the axis,
 in the crosshair, in the legend and when working out where a day starts. It

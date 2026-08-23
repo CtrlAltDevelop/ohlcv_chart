@@ -26,31 +26,32 @@ screenshots:
       and the Awesome oscillator in their own panes.
     path: screenshots/overlays.png
   - description: >-
-      A zigzag through the swings, a Fibonacci retracement of the last one and
-      Elliott wave labels.
-    path: screenshots/swings.png
+      A volume profile drawn back from the axis, its point of control and
+      value area picked out, under an anchored VWAP.
+    path: screenshots/profile.png
   - description: >-
-      Three ATRs at different periods, each in a pane of its own, ruled and
-      labelled at round values.
-    path: screenshots/panes.png
+      A second instrument overlaid on the candles, rebased to the left of the
+      visible window so the two say relative performance.
+    path: screenshots/comparison.png
   - description: >-
-      The example app's add-indicator sheet, built from the indicator catalog.
-    path: screenshots/indicator-settings.png
+      A working order and an open position, each drawn the width of the chart
+      and tagged on the axis with its size and unrealised P&L.
+    path: screenshots/trading.png
   - description: >-
-      The line editor open on a selected drawing: colour, thickness, stroke,
-      label, lock and delete.
-    path: screenshots/line-editor.png
+      Earnings, a dividend, a split and a news mark, badged under the candles
+      they fell on.
+    path: screenshots/events.png
   - description: >-
-      Trend lines and horizontal levels drawn over the candles, each with its
-      own label.
-    path: screenshots/drawing.png
+      The pre-market and after-hours stretches washed behind the candles, with
+      the biggest bars picked out in a colour of their own.
+    path: screenshots/sessions.png
+  - description: >-
+      The same market as line break, Kagi, point & figure and range bars.
+    path: screenshots/bar-types.png
   - description: >-
       A ray, an arrow, a horizontal ray, a range box and a Fibonacci
       retracement.
     path: screenshots/shapes.png
-  - description: >-
-      The crosshair and its OHLC readout card while a candle is held.
-    path: screenshots/readout.png
   - description: >-
       A market-depth chart of cumulative bid and ask volume.
     path: screenshots/depth.png
