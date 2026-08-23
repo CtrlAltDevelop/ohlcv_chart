@@ -22,4 +22,11 @@ enum PriceAxisScale {
   /// The axis, the crosshair's price label and the current-price tag all show
   /// percentages, which is the comparison a performance chart is for.
   percentage,
+
+  /// Spaced like [linear], but read out with the first candle in view at 100.
+  ///
+  /// The same information as [percentage] said the other way about — 112 rather
+  /// than +12% — which is how an index or a rebased performance series is
+  /// usually quoted.
+  indexedTo100,
 }
