@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import 'entity/k_line_entity.dart';
+import 'visible_range.dart';
+
 /// What a [KChartController] needs the chart to be able to do.
 ///
 /// Implemented by `KChartWidget`'s state; there is nothing here for an app to
@@ -28,6 +31,21 @@ abstract interface class KChartHost {
 
   /// Fits the price axis back to the window.
   void resetChartPriceScale();
+
+  /// Which candles the chart is showing, or null when it is showing none.
+  ChartVisibleRange? get chartVisibleRange;
+
+  /// Shows the candles from [firstIndex] to [lastIndex], both inclusive.
+  ///
+  /// Reports whether it could: a chart that has not been laid out yet, or one
+  /// with no candles, cannot be moved anywhere.
+  bool showChartRange(int firstIndex, int lastIndex);
+
+  /// Puts the candle at [index] in the middle of the window, keeping the zoom.
+  bool scrollChartTo(int index, {required bool animated});
+
+  /// Zooms out until every candle fits, and scrolls to the newest.
+  bool fitChartToData();
 }
 
 /// Drives a chart from outside it: where it is scrolled, how far it is zoomed,
@@ -118,4 +136,108 @@ class KChartController extends ChangeNotifier {
   ///
   /// The same thing a double-tap on the axis does.
   void resetPriceScale() => _host?.resetChartPriceScale();
+
+  // ── The visible window ───────────────────────────────────────────────────
+
+  /// Which candles the chart is showing, or null when there is nothing to show.
+  ///
+  /// Null until the chart has been laid out, so read it after the first frame —
+  /// or listen for it through `KChartWidget.onVisibleRangeChanged`, which is
+  /// what a "bars on screen" readout or a linked second chart wants.
+  ChartVisibleRange? get visibleRange => _host?.chartVisibleRange;
+
+  /// Shows the candles from [firstIndex] to [lastIndex], both inclusive.
+  ///
+  /// Zooms and scrolls together, so the window ends up holding exactly those
+  /// candles — as near as the chart's zoom limits allow. Reports whether it
+  /// could move at all.
+  bool showRange(int firstIndex, int lastIndex) =>
+      _host?.showChartRange(firstIndex, lastIndex) ?? false;
+
+  /// Shows the candles between [from] and [to], by time.
+  ///
+  /// The window is widened to the candles either side where the two instants
+  /// fall between candles, so what was asked for is always covered. Reports
+  /// whether there were candles in that span to show.
+  bool showTimeRange(List<KLineEntity> candles, DateTime from, DateTime to) {
+    final range = indexRangeCovering(candles, from, to);
+    return range == null ? false : showRange(range.$1, range.$2);
+  }
+
+  /// Puts the candle at [index] in the middle of the window.
+  ///
+  /// Keeps the zoom, so this scrolls rather than resizing the window.
+  bool goToIndex(int index, {bool animated = true}) =>
+      _host?.scrollChartTo(index, animated: animated) ?? false;
+
+  /// Puts the candle at or nearest to [time] in the middle of the window.
+  ///
+  /// Reports whether there was a candle to go to.
+  bool goToDate(
+    List<KLineEntity> candles,
+    DateTime time, {
+    bool animated = true,
+  }) {
+    final index = indexNearest(candles, time);
+    return index == null ? false : goToIndex(index, animated: animated);
+  }
+
+  /// Zooms out until every candle fits, and scrolls to the newest.
+  ///
+  /// Stops at the chart's own zoom-out limit, so a very long history may still
+  /// not fit in one window.
+  bool fitAll() => _host?.fitChartToData() ?? false;
+}
+
+/// The candles in [candles] that cover [from] to [to], as an index pair.
+///
+/// Widened outwards where the instants fall between candles, so the span asked
+/// for is always covered. Null where there are no candles, or where the span
+/// falls entirely outside them.
+(int, int)? indexRangeCovering(
+  List<KLineEntity> candles,
+  DateTime from,
+  DateTime to,
+) {
+  if (candles.isEmpty) return null;
+  final start = from.isAfter(to) ? to : from;
+  final end = from.isAfter(to) ? from : to;
+
+  var first = -1;
+  var last = -1;
+  for (var i = 0; i < candles.length; i++) {
+    final time = candles[i].dateTime;
+    if (time == null) continue;
+    // The last candle at or before the start, widening outwards.
+    if (!time.isAfter(start)) first = i;
+    if (!time.isAfter(end)) last = i;
+    if (time.isAfter(end) && first == -1 && last == -1) break;
+  }
+
+  // A span that starts before the data still shows what there is of it.
+  if (first == -1 && last == -1) {
+    final firstTime = candles.first.dateTime;
+    if (firstTime == null || firstTime.isAfter(end)) return null;
+    return (0, candles.length - 1);
+  }
+  if (first == -1) first = 0;
+  if (last == -1) last = first;
+  return (first, last);
+}
+
+/// The candle in [candles] closest in time to [time], or null when there are
+/// none with a time at all.
+int? indexNearest(List<KLineEntity> candles, DateTime time) {
+  int? best;
+  Duration? closest;
+  for (var i = 0; i < candles.length; i++) {
+    final at = candles[i].dateTime;
+    if (at == null) continue;
+    final gap = at.difference(time).abs();
+    if (closest == null || gap < closest) {
+      closest = gap;
+      best = i;
+    }
+  }
+  return best;
 }
