@@ -208,6 +208,55 @@ enum PivotSession {
   }
 }
 
+/// How an indicator's pane spaces the values it draws.
+enum IndicatorScale {
+  /// Even steps: the default, and what an oscillator wants.
+  linear,
+
+  /// Steps by ratio, so a doubling takes the same room wherever it happens.
+  ///
+  /// What a volume or an on-balance-volume pane wants, where the interesting
+  /// range covers orders of magnitude. A pane whose values reach zero or below
+  /// has no logarithm to space by and falls back to linear.
+  logarithmic,
+
+  /// The move away from the first value in view, as a percentage.
+  ///
+  /// Panning moves the base along with the window, so what is read is always
+  /// the move over what is on screen.
+  percentage,
+}
+
+/// A level on an indicator that reports when the newest value crosses it.
+///
+/// Add them to an indicator's [Indicator.alerts] and the chart reports through
+/// `KChartWidget.onIndicatorAlert` whenever the newest candle's value moves from
+/// one side of [level] to the other — an RSI going over 70, a MACD histogram
+/// turning positive.
+class IndicatorAlert {
+  /// Creates an alert on [level] of [line].
+  const IndicatorAlert({required this.level, this.line = 0, this.label});
+
+  /// The value being crossed.
+  final double level;
+
+  /// Which of the indicator's lines to watch.
+  final int line;
+
+  /// What to call it in a notification, or null for the level itself.
+  final String? label;
+
+  @override
+  bool operator ==(Object other) =>
+      other is IndicatorAlert &&
+      other.level == level &&
+      other.line == line &&
+      other.label == label;
+
+  @override
+  int get hashCode => Object.hash(level, line, label);
+}
+
 /// One configured indicator: a type, its settings, and optionally its colours.
 ///
 /// Add as many as you like, including several of the same kind with different
@@ -299,6 +348,20 @@ abstract class Indicator {
 
   /// Whether the pane's scale must include zero, as a histogram needs.
   bool get includeZero => false;
+
+  /// How this indicator's pane spaces its values.
+  ///
+  /// Linear for almost everything; a pane whose interesting range covers orders
+  /// of magnitude reads better logarithmic, and one being compared against
+  /// itself over time reads better as a percentage. Ignored by an overlay,
+  /// which is drawn on the price scale.
+  IndicatorScale get scale => IndicatorScale.linear;
+
+  /// Levels that report when the newest value crosses them.
+  ///
+  /// Reported through `KChartWidget.onIndicatorAlert`, once per crossing — the
+  /// value has to come back through the level before it fires again.
+  List<IndicatorAlert> get alerts => const [];
 
   /// How values are written out.
   IndicatorFormat get format => IndicatorFormat.decimal;

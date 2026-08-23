@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../entity/k_line_entity.dart';
@@ -23,22 +25,23 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
     int fixedLength,
     this.chartStyle,
     this.chartColors,
-    this.resolved,
-  ) : super(
-        chartRect: rect,
-        maxValue: maxValue,
-        minValue: minValue,
-        topPadding: topPadding,
-        fixedLength: fixedLength,
-        gridColor: chartColors.gridColor,
-        separatorColor: chartColors.effectiveSeparatorColor,
-        gridColumnColor: chartColors.effectiveGridColumnColor,
-        gridStrokeWidth: chartStyle.gridStrokeWidth,
-        separatorWidth: chartStyle.separatorWidth,
-        labelCornerRadius: chartStyle.labelCornerRadius,
-        legendPadding: chartStyle.legendPadding,
-        legendBgColor: chartColors.effectiveLegendBgColor,
-      );
+    this.resolved, {
+    this.percentBase,
+  }) : super(
+         chartRect: rect,
+         maxValue: maxValue,
+         minValue: minValue,
+         topPadding: topPadding,
+         fixedLength: fixedLength,
+         gridColor: chartColors.gridColor,
+         separatorColor: chartColors.effectiveSeparatorColor,
+         gridColumnColor: chartColors.effectiveGridColumnColor,
+         gridStrokeWidth: chartStyle.gridStrokeWidth,
+         separatorWidth: chartStyle.separatorWidth,
+         labelCornerRadius: chartStyle.labelCornerRadius,
+         legendPadding: chartStyle.legendPadding,
+         legendBgColor: chartColors.effectiveLegendBgColor,
+       );
 
   /// Geometry.
   final ChartStyle chartStyle;
@@ -49,14 +52,48 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
   /// The indicator and its values.
   final ResolvedIndicator resolved;
 
+  /// The value an [IndicatorScale.percentage] pane measures against.
+  ///
+  /// The first value in view, so panning moves the base along with the window.
+  /// Null for any other scale, and where the window holds no value to measure
+  /// from.
+  final double? percentBase;
+
+  /// Whether values really are spaced by ratio.
+  ///
+  /// A pane whose values reach zero or below has no logarithm to space by, so it
+  /// falls back to a linear scale rather than drawing nothing.
+  bool get isLogarithmic =>
+      indicator.scale == IndicatorScale.logarithmic && minValue > 0;
+
+  double _transform(double value) =>
+      isLogarithmic ? math.log(value <= 0 ? _logFloor : value) : value;
+
+  double _untransform(double value) => isLogarithmic ? math.exp(value) : value;
+
+  /// Stands in for a value a logarithm cannot take.
+  static const double _logFloor = 1e-9;
+
+  late final double _transformedMax = _transform(maxValue);
+
+  late final double _transformedScaleY = () {
+    final span = _transformedMax - _transform(minValue);
+    return span <= 0 ? scaleY : chartRect.height / span;
+  }();
+
+  @override
+  double getY(double y) =>
+      (_transformedMax - _transform(y)) * _transformedScaleY + chartRect.top;
+
+  @override
+  double getValue(double y) =>
+      _untransform(_transformedMax - (y - chartRect.top) / _transformedScaleY);
+
   /// The indicator being drawn.
   Indicator get indicator => resolved.indicator;
 
   @override
   String get name => indicator.name;
-
-  @override
-  double getValue(double y) => maxValue - (y - chartRect.top) / scaleY;
 
   @override
   String format(double? n) => formatValue(n);
@@ -69,6 +106,22 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       IndicatorFormat.decimal => value.toStringAsFixed(2),
       IndicatorFormat.compact => NumberUtil.formatCompact(value),
     };
+  }
+
+  /// Writes [value] out the way the axis reads it.
+  ///
+  /// A percentage pane shows the move away from [percentBase]; every other pane
+  /// shows the value itself.
+  String formatAxis(double? value) {
+    final base = percentBase;
+    if (indicator.scale != IndicatorScale.percentage ||
+        base == null ||
+        base == 0 ||
+        value == null) {
+      return formatValue(value);
+    }
+    final move = (value / base - 1) * 100;
+    return '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
   }
 
   /// Draws every line of the indicator across the visible candles.
@@ -142,7 +195,12 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
   List<double> get valueTicks => _valueTicks ??= indicator.fixedRange != null
       ? [minValue, maxValue]
       : () {
-          final ticks = niceTicks(minValue, maxValue, target: 4);
+          // A log pane steps by ratio — 1, 2 and 5 times each power of ten —
+          // so its marks land where the eye expects them rather than where
+          // even pixel bands would put them.
+          final ticks = isLogarithmic
+              ? niceLogTicks(minValue, maxValue, target: 4)
+              : niceTicks(minValue, maxValue, target: 4);
           return ticks.isEmpty ? [minValue, maxValue] : ticks;
         }();
 
@@ -155,7 +213,7 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       if (!y.isFinite) continue;
 
       final tp = TextPainter(
-        text: TextSpan(text: formatValue(value), style: textStyle),
+        text: TextSpan(text: formatAxis(value), style: textStyle),
         textDirection: TextDirection.ltr,
       )..layout();
 
