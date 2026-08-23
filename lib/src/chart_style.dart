@@ -62,6 +62,11 @@ class ChartColors {
     this.nowPriceDnColor = const Color(0xFFD5405D),
     this.nowPriceTextColor = const Color(0xffffffff),
     this.sarColor = const Color(0xffE5B767),
+    this.profileColor,
+    this.profileUpColor,
+    this.profileDownColor,
+    this.profilePocColor,
+    this.profileValueAreaColor,
     this.avgColor = const Color(0xff82878e),
 
     /// trend color
@@ -201,6 +206,31 @@ class ChartColors {
   Color waveColor;
 
   Color sarColor;
+
+  /// One colour for the whole volume profile, or null for a faint [volColor].
+  ///
+  /// Setting this and leaving [profileUpColor] and [profileDownColor] null
+  /// draws every band whole, with no split between what rose and what fell.
+  Color? profileColor;
+
+  /// The part of a profile band that traded on rising candles.
+  ///
+  /// Null for [profileColor], and for a faint [upColor] if that is null too.
+  Color? profileUpColor;
+
+  /// The part of a profile band that traded on falling candles.
+  ///
+  /// Null for [profileColor], and for a faint [dnColor] if that is null too.
+  Color? profileDownColor;
+
+  /// Colour of the profile's busiest band, or null for [vwapColor].
+  Color? profilePocColor;
+
+  /// Wash over the value area, drawn the full width behind the candles.
+  ///
+  /// Null for a very faint [profilePocColor]. Set it fully transparent to
+  /// leave the value area unmarked.
+  Color? profileValueAreaColor;
   Color avgColor;
 
   /// default text color: apply for text at grid
@@ -298,6 +328,27 @@ class ChartColors {
   Color get effectiveWatermarkColor =>
       watermarkColor ?? defaultTextColor.withValues(alpha: 0.07);
 
+  /// [profileColor], or a faint [volColor] if it was left null.
+  Color get effectiveProfileColor =>
+      profileColor ?? volColor.withValues(alpha: 0.35);
+
+  /// [profileUpColor], falling back to [profileColor] and then a faint
+  /// [upColor].
+  Color get effectiveProfileUpColor =>
+      profileUpColor ?? profileColor ?? upColor.withValues(alpha: 0.35);
+
+  /// [profileDownColor], falling back to [profileColor] and then a faint
+  /// [dnColor].
+  Color get effectiveProfileDownColor =>
+      profileDownColor ?? profileColor ?? dnColor.withValues(alpha: 0.35);
+
+  /// [profilePocColor], or [vwapColor] if it was left null.
+  Color get effectiveProfilePocColor => profilePocColor ?? vwapColor;
+
+  /// [profileValueAreaColor], or a very faint [effectiveProfilePocColor].
+  Color get effectiveProfileValueAreaColor =>
+      profileValueAreaColor ?? effectiveProfilePocColor.withValues(alpha: 0.08);
+
   /// Colour of the exponential moving average at [index].
   ///
   /// Shares the moving-average palette, so an `MA` and an `EMA` of the same
@@ -347,6 +398,8 @@ class ChartStyle {
     this.showSessionDividers = false,
     this.paneResizeTolerance = 6.0,
     this.paneGrabHeight = 16.0,
+    this.priceScaleGripWidth = 52.0,
+    this.profileWidth = 0.28,
     this.minPaneHeight = 40.0,
     this.maxPaneHeight = 400.0,
     this.axisLabelBackground = true,
@@ -397,7 +450,20 @@ class ChartStyle {
   /// Draws the "now price" line dashed rather than solid.
   final bool nowPriceDashed;
 
+  /// How densely the price axis is labelled and ruled.
+  ///
+  /// Not a row count: the axis chooses round values first — see `niceTicks` —
+  /// and about `gridRows ~/ 2` of them land inside the window, so the labels
+  /// read `70000, 69500, 69000` rather than whatever fell on an evenly spaced
+  /// pixel. Raise it for a denser axis, lower it for a sparser one; the grid is
+  /// ruled wherever the labels end up.
   final int gridRows;
+
+  /// How densely the date axis is labelled and ruled.
+  ///
+  /// Read the same way as [gridRows]: the axis picks round times near this
+  /// many columns, drops any label that would crowd its neighbour, and rules a
+  /// vertical line at each one that survives.
   final int gridColumns;
 
   /// Stroke width of the grid's hairlines.
@@ -419,6 +485,20 @@ class ChartStyle {
   /// Only consulted when `KChartWidget.reorderablePanes` is on. It is the
   /// pane's legend row, which is why it is the part that picks the pane up.
   final double paneGrabHeight;
+
+  /// How wide the strip down the price axis is that drags the scale.
+  ///
+  /// Measured in from whichever side the price labels are on, and only
+  /// consulted when `KChartWidget.priceScaleDrag` is on. Wide enough to cover
+  /// the labels, so what stretches the scale is the part of the chart that
+  /// reads it out.
+  final double priceScaleGripWidth;
+
+  /// How much of the chart's width a volume profile's busiest bar takes.
+  ///
+  /// A fraction, so the profile keeps its proportions whatever the chart is
+  /// sized to. Every other bar is drawn relative to that one.
+  final double profileWidth;
 
   /// Shortest an indicator pane may be dragged.
   final double minPaneHeight;
@@ -486,6 +566,8 @@ class ChartStyle {
     bool? showSessionDividers,
     double? paneResizeTolerance,
     double? paneGrabHeight,
+    double? priceScaleGripWidth,
+    double? profileWidth,
     double? minPaneHeight,
     double? maxPaneHeight,
     bool? axisLabelBackground,
@@ -523,6 +605,8 @@ class ChartStyle {
       showSessionDividers: showSessionDividers ?? this.showSessionDividers,
       paneResizeTolerance: paneResizeTolerance ?? this.paneResizeTolerance,
       paneGrabHeight: paneGrabHeight ?? this.paneGrabHeight,
+      priceScaleGripWidth: priceScaleGripWidth ?? this.priceScaleGripWidth,
+      profileWidth: profileWidth ?? this.profileWidth,
       minPaneHeight: minPaneHeight ?? this.minPaneHeight,
       maxPaneHeight: maxPaneHeight ?? this.maxPaneHeight,
       axisLabelBackground: axisLabelBackground ?? this.axisLabelBackground,

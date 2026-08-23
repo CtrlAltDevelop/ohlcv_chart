@@ -269,6 +269,83 @@ final List<IndicatorType> indicatorCatalog = List.unmodifiable([
     builder: (values, colors) => VwapIndicator(color: colors?.firstOrNull),
   ),
   IndicatorType(
+    name: 'AVWAP',
+    description: 'VWAP measured from one candle onwards, not the whole series.',
+    placement: IndicatorPlacement.overlay,
+    settings: [
+      const IndicatorSetting(
+        key: 'anchor',
+        label: 'Anchor candle',
+        defaultValue: 0,
+        min: 0,
+        max: 100000,
+      ),
+    ],
+    builder: (values, colors) => AnchoredVwapIndicator(
+      anchor: values['anchor']!.toInt(),
+      color: colors?.firstOrNull,
+    ),
+  ),
+  IndicatorType(
+    name: 'PIVOT',
+    description: "The session's pivot, with three supports and resistances.",
+    placement: IndicatorPlacement.overlay,
+    settings: [],
+    builder: (values, colors) => PivotPointsIndicator(colors: colors),
+  ),
+  IndicatorType(
+    name: 'PIVOTFIB',
+    description: 'Pivots spaced at 38.2%, 61.8% and 100% of the range.',
+    placement: IndicatorPlacement.overlay,
+    settings: [],
+    builder: (values, colors) =>
+        PivotPointsIndicator(method: PivotMethod.fibonacci, colors: colors),
+  ),
+  IndicatorType(
+    name: 'PIVOTCAM',
+    description: 'Camarilla pivots, crowded close to the session close.',
+    placement: IndicatorPlacement.overlay,
+    settings: [],
+    builder: (values, colors) =>
+        PivotPointsIndicator(method: PivotMethod.camarilla, colors: colors),
+  ),
+  IndicatorType(
+    name: 'PIVOTW',
+    description: 'Standard pivots taken from the week rather than the day.',
+    placement: IndicatorPlacement.overlay,
+    settings: [],
+    builder: (values, colors) =>
+        PivotPointsIndicator(session: PivotSession.week, colors: colors),
+  ),
+  IndicatorType(
+    name: 'VP',
+    description: 'Volume gathered by price, drawn back from the axis.',
+    placement: IndicatorPlacement.overlay,
+    settings: [
+      const IndicatorSetting(
+        key: 'bins',
+        label: 'Bands',
+        defaultValue: 24,
+        min: 4,
+        max: 100,
+      ),
+      const IndicatorSetting(
+        key: 'valueArea',
+        label: 'Value area',
+        defaultValue: 0.7,
+        min: 0.5,
+        max: 0.95,
+        step: 0.05,
+        isInteger: false,
+      ),
+    ],
+    builder: (values, colors) => VolumeProfileIndicator(
+      bins: values['bins']!.toInt(),
+      valueArea: values['valueArea']!.toDouble(),
+      colors: colors,
+    ),
+  ),
+  IndicatorType(
     name: 'ST',
     description: 'Supertrend: an ATR stop that flips with the trend.',
     placement: IndicatorPlacement.overlay,

@@ -223,6 +223,203 @@ class VwapIndicator extends Indicator {
       theme.vwapColor;
 }
 
+/// Volume-weighted average price measured from one candle onwards.
+///
+/// The plain [VwapIndicator] averages the whole series; this one starts where
+/// it is anchored, which is what makes it a reading of what a position opened
+/// there has paid on average since. Anchors go on a swing high or low, a gap,
+/// or the open of a session.
+class AnchoredVwapIndicator extends Indicator {
+  /// Creates a VWAP anchored at the candle [anchor] counts in.
+  AnchoredVwapIndicator({this.anchor = 0, Color? color})
+    : super(colors: color == null ? null : [color]);
+
+  /// Which candle the average is measured from, as an index into the series.
+  ///
+  /// Out-of-range values are pulled back into it, so a chart that has since
+  /// scrolled past its anchor still draws.
+  final int anchor;
+
+  @override
+  IndicatorPlacement get placement => IndicatorPlacement.overlay;
+
+  @override
+  String get name => 'AVWAP';
+
+  @override
+  String get label => 'AVWAP($anchor)';
+
+  @override
+  String get group => 'AVWAP';
+
+  @override
+  List<IndicatorLine> get lines => [IndicatorLine('AVWAP')];
+
+  @override
+  List<Object?> get settings => [anchor];
+
+  @override
+  IndicatorFormat get format => IndicatorFormat.price;
+
+  @override
+  IndicatorSeries compute(List<KLineEntity> candles) =>
+      IndicatorSeries([anchoredVwapSeries(candles, anchor)]);
+
+  @override
+  Color defaultColor(int line, ChartColors theme, int ordinal) =>
+      theme.vwapColor;
+}
+
+/// The pivot of the session before, with its supports and resistances.
+///
+/// Each session takes its levels from the one that closed before it, so they
+/// are flat across the session and step at its boundary. The first session has
+/// none, having nothing behind it.
+class PivotPointsIndicator extends Indicator {
+  /// Creates pivot levels worked out by [method] over each [session].
+  PivotPointsIndicator({
+    this.method = PivotMethod.standard,
+    this.session = PivotSession.day,
+    super.colors,
+  });
+
+  /// How the levels are spaced out from the pivot.
+  final PivotMethod method;
+
+  /// The stretch of time one set of levels is worked out from.
+  final PivotSession session;
+
+  @override
+  IndicatorPlacement get placement => IndicatorPlacement.overlay;
+
+  @override
+  String get name {
+    final spacing = switch (method) {
+      PivotMethod.standard => 'PIVOT',
+      PivotMethod.fibonacci => 'PIVOTFIB',
+      PivotMethod.camarilla => 'PIVOTCAM',
+    };
+    // The session is part of the name, so a weekly pivot is a different
+    // indicator from a daily one and the catalog can tell them apart. The day
+    // is the usual session and keeps the plain name.
+    return switch (session) {
+      PivotSession.day => spacing,
+      PivotSession.week => '${spacing}W',
+      PivotSession.month => '${spacing}M',
+      PivotSession.year => '${spacing}Y',
+    };
+  }
+
+  @override
+  String get label {
+    final spacing = switch (method) {
+      PivotMethod.standard => 'Pivots',
+      PivotMethod.fibonacci => 'Pivots (fib)',
+      PivotMethod.camarilla => 'Pivots (camarilla)',
+    };
+    // The day is the usual session, so only an unusual one is worth the room.
+    return session == PivotSession.day ? spacing : '$spacing ${session.name}';
+  }
+
+  @override
+  List<IndicatorLine> get lines => const [
+    IndicatorLine('P'),
+    IndicatorLine('R1'),
+    IndicatorLine('R2'),
+    IndicatorLine('R3'),
+    IndicatorLine('S1'),
+    IndicatorLine('S2'),
+    IndicatorLine('S3'),
+  ];
+
+  @override
+  List<Object?> get settings => [method, session];
+
+  @override
+  IndicatorFormat get format => IndicatorFormat.price;
+
+  @override
+  IndicatorSeries compute(List<KLineEntity> candles) => IndicatorSeries(
+    pivotSeries(candles, method: method, sessionOf: session.keyOf),
+  );
+
+  @override
+  Color defaultColor(
+    int line,
+    ChartColors theme,
+    int ordinal,
+  ) => switch (line) {
+    // The pivot itself carries the session; the supports and resistances take
+    // the up and down colours, fading with how far out they are.
+    0 => theme.vwapColor,
+    1 || 2 || 3 => theme.dnColor.withValues(alpha: 1 - (line - 1) * 0.25),
+    _ => theme.upColor.withValues(alpha: 1 - (line - 4) * 0.25),
+  };
+}
+
+/// Volume gathered by price rather than by time, drawn across the candles.
+///
+/// The bars run from the far side of the chart back towards the candles, one
+/// per price band, so the prices the market actually traded at can be read off
+/// the same axis. The busiest band — the point of control — is picked out, and
+/// the value area around it shaded.
+///
+/// The volume of a candle is spread evenly over the bands its range covers,
+/// which is the usual approximation when all that is known is OHLCV.
+class VolumeProfileIndicator extends Indicator {
+  /// Creates a profile of [bins] bands covering [valueArea] of the volume.
+  VolumeProfileIndicator({this.bins = 24, this.valueArea = 0.7, super.colors});
+
+  /// How many price bands the range is cut into.
+  final int bins;
+
+  /// The share of the volume the value area holds, from 0 to 1.
+  final double valueArea;
+
+  @override
+  IndicatorPlacement get placement => IndicatorPlacement.overlay;
+
+  @override
+  String get name => 'VP';
+
+  @override
+  String get label => 'Volume profile($bins)';
+
+  @override
+  List<IndicatorLine> get lines => const [IndicatorLine('POC')];
+
+  @override
+  List<Object?> get settings => [bins, valueArea];
+
+  @override
+  IndicatorFormat get format => IndicatorFormat.price;
+
+  /// The point of control, held flat across every candle.
+  ///
+  /// The profile itself is drawn from [computeProfile]; this is the one value
+  /// worth reading out in a legend.
+  @override
+  IndicatorSeries compute(List<KLineEntity> candles) {
+    final profile = computeProfile(candles);
+    final poc = profile.pointOfControl;
+    if (poc < 0) {
+      return IndicatorSeries([List<double?>.filled(candles.length, null)]);
+    }
+
+    final bin = profile.bins[poc];
+    final middle = (bin.low + bin.high) / 2;
+    return IndicatorSeries([List<double?>.filled(candles.length, middle)]);
+  }
+
+  @override
+  IndicatorProfile computeProfile(List<KLineEntity> candles) =>
+      volumeProfile(candles, bins: bins, valueArea: valueArea);
+
+  @override
+  Color defaultColor(int line, ChartColors theme, int ordinal) =>
+      theme.effectiveProfilePocColor;
+}
+
 // ── Panes ──────────────────────────────────────────────────────────────────
 
 /// Moving average convergence divergence, with its histogram.

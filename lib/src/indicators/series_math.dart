@@ -11,6 +11,7 @@ library;
 import 'dart:math';
 
 import '../entity/k_line_entity.dart';
+import 'indicator.dart';
 
 /// Simple moving average of the close over [period] candles.
 List<double?> smaSeries(List<KLineEntity> candles, int period) {
@@ -143,6 +144,218 @@ List<double?> vwapSeries(List<KLineEntity> candles) {
     out[i] = volume == 0 ? typical : value / volume;
   }
   return out;
+}
+
+/// VWAP measured from [anchor] rather than from the start of the series.
+///
+/// The average is what a position opened at [anchor] has paid on average since,
+/// which is why the anchor is usually put on a swing, a gap or a session open.
+/// Candles before the anchor have no value.
+List<double?> anchoredVwapSeries(List<KLineEntity> candles, int anchor) {
+  final out = List<double?>.filled(candles.length, null);
+  if (candles.isEmpty) return out;
+
+  final from = anchor.clamp(0, candles.length - 1);
+  var value = 0.0;
+  var volume = 0.0;
+
+  for (var i = from; i < candles.length; i++) {
+    final typical = _typicalPrice(candles[i]);
+    value += typical * candles[i].vol;
+    volume += candles[i].vol;
+    out[i] = volume == 0 ? typical : value / volume;
+  }
+  return out;
+}
+
+/// Pivot levels for every candle, one list per level: `P, R1, R2, R3, S1, S2,
+/// S3`.
+///
+/// Each session's levels come from the session before it, so they are flat
+/// across the session and step at the boundary — and the first session has
+/// none, having nothing behind it. [sessionOf] says which session a candle
+/// belongs to; the default is the calendar day the candle is stamped with.
+List<List<double?>> pivotSeries(
+  List<KLineEntity> candles, {
+  PivotMethod method = PivotMethod.standard,
+  Object? Function(KLineEntity candle)? sessionOf,
+}) {
+  final levels = [
+    for (var i = 0; i < 7; i++) List<double?>.filled(candles.length, null),
+  ];
+  if (candles.isEmpty) return levels;
+
+  Object? sessionKey(KLineEntity candle) {
+    if (sessionOf != null) return sessionOf(candle);
+    final time = candle.dateTime;
+    return time == null ? null : (time.year, time.month, time.day);
+  }
+
+  // Walked once: each candle carries the levels worked out from the session
+  // that closed before it, while the running high, low and close of the
+  // session it is in are gathered for the session after.
+  Object? current;
+  double? high;
+  double? low;
+  double? close;
+  List<double?>? previous;
+
+  for (var i = 0; i < candles.length; i++) {
+    final candle = candles[i];
+    final key = sessionKey(candle);
+
+    if (i == 0 || key != current) {
+      if (high != null && low != null && close != null) {
+        previous = _pivotLevels(high, low, close, method);
+      }
+      current = key;
+      high = candle.high;
+      low = candle.low;
+    } else {
+      high = max(high!, candle.high);
+      low = min(low!, candle.low);
+    }
+    close = candle.close;
+
+    if (previous != null) {
+      for (var level = 0; level < levels.length; level++) {
+        levels[level][i] = previous[level];
+      }
+    }
+  }
+  return levels;
+}
+
+/// The seven levels a session of [high], [low] and [close] gives the next one.
+List<double?> _pivotLevels(
+  double high,
+  double low,
+  double close,
+  PivotMethod method,
+) {
+  final range = high - low;
+  final pivot = (high + low + close) / 3;
+
+  switch (method) {
+    case PivotMethod.standard:
+      return [
+        pivot,
+        2 * pivot - low,
+        pivot + range,
+        high + 2 * (pivot - low),
+        2 * pivot - high,
+        pivot - range,
+        low - 2 * (high - pivot),
+      ];
+    case PivotMethod.fibonacci:
+      return [
+        pivot,
+        pivot + 0.382 * range,
+        pivot + 0.618 * range,
+        pivot + range,
+        pivot - 0.382 * range,
+        pivot - 0.618 * range,
+        pivot - range,
+      ];
+    case PivotMethod.camarilla:
+      return [
+        pivot,
+        close + range * 1.1 / 12,
+        close + range * 1.1 / 6,
+        close + range * 1.1 / 4,
+        close - range * 1.1 / 12,
+        close - range * 1.1 / 6,
+        close - range * 1.1 / 4,
+      ];
+  }
+}
+
+/// Volume gathered into [bins] price bands across the candles given.
+///
+/// Each candle's volume is spread evenly over the bands its range covers,
+/// which is the usual approximation when only OHLCV is known — the ticks
+/// inside the candle are not. [valueArea] is the share of the volume the value
+/// area holds, grown outwards from the busiest band.
+IndicatorProfile volumeProfile(
+  List<KLineEntity> candles, {
+  int bins = 24,
+  double valueArea = 0.7,
+}) {
+  if (candles.isEmpty || bins <= 0) {
+    return const IndicatorProfile(bins: [], pointOfControl: -1);
+  }
+
+  var low = double.infinity;
+  var high = -double.infinity;
+  for (final candle in candles) {
+    low = min(low, candle.low);
+    high = max(high, candle.high);
+  }
+  if (!low.isFinite || !high.isFinite || high <= low) {
+    return const IndicatorProfile(bins: [], pointOfControl: -1);
+  }
+
+  final step = (high - low) / bins;
+  final volumes = List<double>.filled(bins, 0);
+  final upVolumes = List<double>.filled(bins, 0);
+
+  for (final candle in candles) {
+    final first = ((candle.low - low) / step).floor().clamp(0, bins - 1);
+    final last = ((candle.high - low) / step).ceil().clamp(1, bins) - 1;
+    final spread = last - first + 1;
+    final share = candle.vol / spread;
+    final rose = candle.close >= candle.open;
+
+    for (var bin = first; bin <= last; bin++) {
+      volumes[bin] += share;
+      if (rose) upVolumes[bin] += share;
+    }
+  }
+
+  final bands = [
+    for (var i = 0; i < bins; i++)
+      ProfileBin(
+        low: low + step * i,
+        high: low + step * (i + 1),
+        volume: volumes[i],
+        upVolume: upVolumes[i],
+      ),
+  ];
+
+  var poc = 0;
+  var total = 0.0;
+  for (var i = 0; i < bins; i++) {
+    total += volumes[i];
+    if (volumes[i] > volumes[poc]) poc = i;
+  }
+  if (total <= 0) {
+    return IndicatorProfile(bins: bands, pointOfControl: -1);
+  }
+
+  // The value area grows out from the busiest band, always taking whichever
+  // neighbour holds more, until it covers its share of the volume.
+  final target = total * valueArea.clamp(0.0, 1.0);
+  var lowEdge = poc;
+  var highEdge = poc;
+  var covered = volumes[poc];
+  while (covered < target && (lowEdge > 0 || highEdge < bins - 1)) {
+    final below = lowEdge > 0 ? volumes[lowEdge - 1] : -1;
+    final above = highEdge < bins - 1 ? volumes[highEdge + 1] : -1;
+    if (above >= below) {
+      highEdge++;
+      covered += above;
+    } else {
+      lowEdge--;
+      covered += below;
+    }
+  }
+
+  return IndicatorProfile(
+    bins: bands,
+    pointOfControl: poc,
+    valueAreaLow: bands[lowEdge].low,
+    valueAreaHigh: bands[highEdge].high,
+  );
 }
 
 /// MACD: the [fast] and [slow] average spread, its [signal] average, and twice

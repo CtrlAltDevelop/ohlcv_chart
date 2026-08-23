@@ -8,9 +8,10 @@ import 'line.dart';
 /// that instant as a horizontal ray. Useful for support and resistance levels,
 /// or for marking an order price.
 ///
-/// Set [alert] and the chart reports through `KChartWidget.onAlertCrossed`
-/// whenever the newest candle crosses the level.
-class HorizontalLine extends ChartLine implements LabelledDrawing {
+/// Set [alert] and the chart reports through `KChartWidget.onAlertCrossed`,
+/// and through `onDrawingAlert`, whenever the newest candle crosses the level.
+class HorizontalLine extends ChartLine
+    implements LabelledDrawing, AlertingDrawing {
   /// Creates a horizontal line at [price].
   HorizontalLine({
     required this.price,
@@ -57,7 +58,17 @@ class HorizontalLine extends ChartLine implements LabelledDrawing {
   String? title;
 
   /// Whether crossing this level fires `KChartWidget.onAlertCrossed`.
+  @override
   bool alert;
+
+  @override
+  List<double> alertLevelsAt(DateTime time) {
+    // A ray does not exist before the candle it starts at, so it cannot be
+    // crossed there either.
+    final start = startTime;
+    if (start != null && time.isBefore(start)) return const [];
+    return [price];
+  }
 
   @override
   String? get labelText => title;

@@ -54,6 +54,23 @@ abstract class TwoPointDrawing extends ChartLine {
   /// well as a base line.
   int get pointCount => 2;
 
+  /// Where the line through both anchors sits at [time], carried on past them.
+  ///
+  /// Useful to any shape whose geometry is "a sloping line and some offset from
+  /// it": a trend line's own price at a candle, a channel's base, a
+  /// regression's anchors. With only one anchor placed, or with both at the
+  /// same instant, the line is flat and this is simply [price1].
+  double priceOnLineAt(DateTime time) {
+    final endTime = time2;
+    final endPrice = price2;
+    if (endTime == null || endPrice == null) return price1;
+
+    final run = endTime.difference(time1).inMicroseconds;
+    if (run == 0) return price1;
+    final along = time.difference(time1).inMicroseconds / run;
+    return price1 + (endPrice - price1) * along;
+  }
+
   /// Both anchors, ready to be merged into a subclass's JSON map.
   @protected
   Map<String, dynamic> anchorsJson() => <String, dynamic>{

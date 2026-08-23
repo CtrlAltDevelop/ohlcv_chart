@@ -45,6 +45,7 @@ class DemoState extends ChangeNotifier {
     );
     drawings.clearHistory();
     drawings.addListener(notifyListeners);
+    replay.addListener(notifyListeners);
   }
 
   late List<KLineEntity> _candles;
@@ -127,6 +128,60 @@ class DemoState extends ChangeNotifier {
   /// Whether an indicator pane can be dragged up or down the stack.
   bool reorderablePanes = true;
 
+  /// Whether dragging the price labels stretches the axis.
+  bool priceScaleDrag = true;
+
+  /// Whether the button back to the newest candle appears once the chart is
+  /// scrolled away from it.
+  bool scrollToNowButton = true;
+
+  /// Whether the chart itself handles undo, redo and delete.
+  bool keyboardShortcuts = true;
+
+  /// Whether the baseline chart washes towards a fixed price rather than the
+  /// oldest close in view.
+  bool pinnedBaseline = false;
+
+  /// Whether the demo formats the date axis instead of the chart.
+  bool customDateFormat = false;
+
+  /// Empty space kept to the right of the newest candle.
+  double frontPadding = 80;
+
+  /// The level a [ChartType.baseline] chart is washed towards, or null to let
+  /// the chart use the oldest close in view.
+  double? get baselinePrice =>
+      pinnedBaseline && candles.isNotEmpty ? candles.first.close : null;
+
+  /// A date axis of the demo's own, wired to `KChartWidget.dateFormatter`.
+  ///
+  /// The chart hands over the candle and a flag marking the long form the
+  /// crosshair wants; the time zone is ours to apply, since the formatter is
+  /// given the candle as it came.
+  String formatDate(KLineEntity candle, bool longForm) {
+    final time = candle.dateTime?.add(timeZoneOffset);
+    if (time == null) return '';
+    final clock =
+        '${time.hour.toString().padLeft(2, '0')}:'
+        '${time.minute.toString().padLeft(2, '0')}';
+    if (!longForm) return clock;
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${time.day} ${months[time.month - 1]} $clock';
+  }
+
   // ── Indicators ──────────────────────────────────────────────────────────
 
   /// The configured indicators, in the order they were added.
@@ -165,6 +220,9 @@ class DemoState extends ChangeNotifier {
 
   /// Drives the chart itself: zoom, scroll and capture.
   final KChartController chart = KChartController();
+
+  /// Plays the candles back from a point in the past.
+  final ChartReplayController replay = ChartReplayController();
 
   /// The last layout saved with [saveLayout].
   String? savedLayout;
@@ -454,6 +512,9 @@ class DemoState extends ChangeNotifier {
       ..removeListener(notifyListeners)
       ..dispose();
     chart.dispose();
+    replay
+      ..removeListener(notifyListeners)
+      ..dispose();
     super.dispose();
   }
 }

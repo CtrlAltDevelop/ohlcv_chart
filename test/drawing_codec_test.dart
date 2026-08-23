@@ -181,7 +181,7 @@ void main() {
       expect(restored.toJson()['version'], ChartDrawings.formatVersion);
     });
 
-    test('save adds a new drawing and re-seats a known one', () {
+    test('save adds a new drawing and leaves a known one where it is', () {
       final drawings = ChartDrawings();
       final line = HorizontalLine(price: 1);
 
@@ -190,8 +190,52 @@ void main() {
         ..save(VerticalLine(time: _at(1)))
         ..save(line);
 
+      // Saving an edit must not restack the drawing over the one that was
+      // drawn after it.
       expect(drawings.length, 2);
-      expect(drawings.all.last, same(line));
+      expect(drawings.all.first, same(line));
+      expect(drawings.indexOf(line), 0);
+    });
+
+    test('a drawing can be moved up and down the stack', () {
+      final bottom = HorizontalLine(price: 1);
+      final middle = HorizontalLine(price: 2);
+      final top = HorizontalLine(price: 3);
+      final drawings = ChartDrawings([bottom, middle, top]);
+
+      expect(drawings.moveToFront(bottom), isTrue);
+      expect(drawings.all, [middle, top, bottom]);
+
+      expect(drawings.moveToBack(bottom), isTrue);
+      expect(drawings.all, [bottom, middle, top]);
+
+      expect(drawings.moveForward(bottom), isTrue);
+      expect(drawings.all, [middle, bottom, top]);
+
+      expect(drawings.moveBackward(bottom), isTrue);
+      expect(drawings.all, [bottom, middle, top]);
+    });
+
+    test('a drawing already at the end of the stack does not move', () {
+      final bottom = HorizontalLine(price: 1);
+      final top = HorizontalLine(price: 2);
+      final drawings = ChartDrawings([bottom, top]);
+
+      expect(drawings.moveBackward(bottom), isFalse);
+      expect(drawings.moveToBack(bottom), isFalse);
+      expect(drawings.moveForward(top), isFalse);
+      expect(drawings.moveToFront(top), isFalse);
+      expect(drawings.all, [bottom, top]);
+    });
+
+    test('a stranger cannot be restacked, and is nowhere in the stack', () {
+      final drawings = ChartDrawings([HorizontalLine(price: 1)]);
+      final stranger = HorizontalLine(price: 9);
+
+      expect(drawings.indexOf(stranger), -1);
+      expect(drawings.moveToFront(stranger), isFalse);
+      expect(drawings.moveForward(stranger), isFalse);
+      expect(drawings.moveBackward(stranger), isFalse);
     });
 
     test('an empty or malformed payload loads as an empty set', () {

@@ -99,6 +99,8 @@ class _Chart extends StatelessWidget {
       drawingController: state.drawings,
       chartType: state.chartType,
       priceAxisScale: state.priceAxisScale,
+      priceScaleDrag: state.priceScaleDrag,
+      replay: state.replay,
       showOhlcLegend: state.showOhlcLegend,
       crosshairOnHover: state.crosshairOnHover,
       timeZoneOffset: state.timeZoneOffset,
@@ -117,6 +119,11 @@ class _Chart extends StatelessWidget {
           : VerticalTextAlignment.left,
       fixedLength: state.fixedLength,
       timeFormat: TimeFormat.YEAR_MONTH_DAY_WITH_HOUR,
+      dateFormatter: state.customDateFormat ? state.formatDate : null,
+      baselinePrice: state.baselinePrice,
+      xFrontPadding: state.frontPadding,
+      showScrollToNowButton: state.scrollToNowButton,
+      enableKeyboardShortcuts: state.keyboardShortcuts,
       signals: state.signals,
       // The drawings themselves live in the controller, so all that is left
       // here is to hear about them.

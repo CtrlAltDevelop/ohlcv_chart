@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart' as vg;
 
 import '../drawing/line_painting.dart';
+import '../drawing/shape_geometry.dart';
 import '../entity/horizontal_line.dart';
 import '../entity/info_window_entity.dart';
 import '../export.dart';
-import '../utils/axis_ticks.dart';
 import '../utils/date_format_util.dart';
 import '../utils/number_util.dart';
 import 'base_chart_painter.dart';
@@ -39,10 +39,13 @@ class ChartPainter extends BaseChartPainter {
     required this.timeFrame,
     required this.draftLine,
     required this.selectedLine,
+    this.selectedLines = const [],
     this.drawingStyle = const DrawingStyle(),
     this.chartTranslations = const ChartTranslations(),
     this.showOhlcLegend = false,
     this.priceAxisScale = PriceAxisScale.linear,
+    this.priceZoom = 1.0,
+    this.pricePan = 0.0,
     this.chartType = ChartType.candles,
     this.baselinePrice,
     this.timeZoneOffset = Duration.zero,
@@ -92,6 +95,19 @@ class ChartPainter extends BaseChartPainter {
   late final List<PositionDrawing> positions = _of();
   late final List<TextAnnotation> texts = _of();
   late final List<FreehandDrawing> freehands = _of();
+  late final List<PitchforkDrawing> pitchforks = _of();
+  late final List<GannFan> gannFans = _of();
+  late final List<GannBox> gannBoxes = _of();
+  late final List<FibExtension> fibExtensions = _of();
+  late final List<FibFan> fibFans = _of();
+  late final List<FibTimeZones> fibTimeZones = _of();
+  late final List<RegressionChannel> regressions = _of();
+  late final List<XabcdDrawing> xabcds = _of();
+  late final List<PriceRangeDrawing> priceRanges = _of();
+  late final List<DateRangeDrawing> dateRanges = _of();
+  late final List<CalloutDrawing> callouts = _of();
+  late final List<PathDrawing> paths = _of();
+  late final List<FlagDrawing> flags = _of();
 
   final List<SignalEntity> signals;
   final bool isTrendLine;
@@ -110,9 +126,20 @@ class ChartPainter extends BaseChartPainter {
   /// It is not in any of the lists above until the user finishes it.
   final ChartLine? draftLine;
 
-  /// The drawing the editing toolbar is open on, which is the only one that
-  /// shows its drag handles.
+  /// The drawing the editing toolbar is open on.
   final ChartLine? selectedLine;
+
+  /// Every drawing the user has selected, [selectedLine] among them.
+  ///
+  /// All of them show their drag handles, so a selection of several reads as
+  /// one thing that can be moved or restyled together.
+  final List<ChartLine> selectedLines;
+
+  /// Whether [line] is one of the selected drawings.
+  bool isSelected(ChartLine? line) =>
+      line != null &&
+      (identical(line, selectedLine) ||
+          selectedLines.any((candidate) => identical(candidate, line)));
 
   /// Geometry and palette used for the user-drawn lines and their labels.
   final DrawingStyle drawingStyle;
@@ -125,6 +152,20 @@ class ChartPainter extends BaseChartPainter {
 
   /// How the candle area spaces and reads out its price axis.
   final PriceAxisScale priceAxisScale;
+
+  /// How far the price axis is stretched away from the window it would fit.
+  ///
+  /// 1 is the auto-fitted range — exactly the highs and lows in view. Above 1
+  /// the same prices take more room, so the candles are taller; below 1 the
+  /// window opens out and the candles flatten. The middle of the range stays
+  /// put, so stretching pulls both ends in evenly.
+  final double priceZoom;
+
+  /// How far the price axis is shifted, as a fraction of the range in view.
+  ///
+  /// Positive moves the window up — the candles slide down the chart. Zero
+  /// leaves the auto-fitted window where it is.
+  final double pricePan;
 
   /// What the candle area draws for each candle.
   final ChartType chartType;
@@ -178,12 +219,41 @@ class ChartPainter extends BaseChartPainter {
     return data[mStartIndex.clamp(0, data.length - 1)].close;
   }
 
+  /// The price range to draw, once the manual scale has been applied.
+  ///
+  /// Worked out in the same space the axis is spaced in — prices for a linear
+  /// axis, their logarithms for a logarithmic one — so a stretched log axis
+  /// stays a log axis.
+  (double, double) _scaledMainRange() {
+    if (priceZoom == 1 && pricePan == 0) return (mMainMaxValue, mMainMinValue);
+    if (!mMainMaxValue.isFinite || !mMainMinValue.isFinite) {
+      return (mMainMaxValue, mMainMinValue);
+    }
+
+    final logarithmic =
+        priceAxisScale == PriceAxisScale.logarithmic && mMainMinValue > 0;
+    double toAxis(double price) =>
+        logarithmic ? math.log(price) / math.ln10 : price;
+    double toPrice(double value) =>
+        logarithmic ? math.pow(10, value).toDouble() : value;
+
+    final top = toAxis(mMainMaxValue);
+    final bottom = toAxis(mMainMinValue);
+    final span = top - bottom;
+    if (span <= 0) return (mMainMaxValue, mMainMinValue);
+
+    final middle = (top + bottom) / 2 + span * pricePan;
+    final half = span / 2 / priceZoom;
+    return (toPrice(middle + half), toPrice(middle - half));
+  }
+
   @override
   void initChartRenderer() {
+    final (mainMax, mainMin) = _scaledMainRange();
     mMainRenderer = MainRenderer(
       mMainRect,
-      mMainMaxValue,
-      mMainMinValue,
+      mainMax,
+      mainMin,
       mTopPadding,
       overlays,
       isLine,
@@ -344,6 +414,11 @@ class ChartPainter extends BaseChartPainter {
 
   @override
   void drawChart(Canvas canvas, Size size) {
+    // Behind the candles, and in the chart's own coordinates rather than the
+    // scrolled and scaled ones the candles are drawn in: a profile is read
+    // against the price axis, not against time.
+    mMainRenderer.drawProfiles(canvas);
+
     canvas.save();
     canvas.translate(mTranslateX * scaleX, 0.0);
     canvas.scale(scaleX, 1.0);
@@ -396,15 +471,28 @@ class ChartPainter extends BaseChartPainter {
     drawRectangles(canvas, size);
     drawEllipses(canvas, size);
     drawTriangles(canvas, size);
+    drawGannBoxes(canvas, size);
     drawChannels(canvas, size);
+    drawRegressions(canvas, size);
+    drawPitchforks(canvas, size);
     drawFibRetracements(canvas, size);
+    drawFibExtensions(canvas, size);
+    drawFibFans(canvas, size);
+    drawGannFans(canvas, size);
+    drawFibTimeZones(canvas, size);
+    drawXabcds(canvas, size);
+    drawPaths(canvas, size);
     drawPositions(canvas, size);
     drawMeasures(canvas, size);
+    drawPriceRanges(canvas, size);
+    drawDateRanges(canvas, size);
     drawHorizontalLines(canvas, size);
     drawVerticalLines(canvas, size);
     drawTrendLines(canvas, size);
     drawFreehands(canvas, size);
     drawTextAnnotations(canvas, size);
+    drawCallouts(canvas, size);
+    drawFlags(canvas, size);
 
     drawHorizontalLineTitles(canvas, size);
     drawVerticalLineTitles(canvas, size);
@@ -503,7 +591,7 @@ class ChartPainter extends BaseChartPainter {
       if (startX > size.width) continue;
       strokeChartLine(canvas, Offset(startX, y), Offset(size.width, y), line);
 
-      if (line == selectedLine) {
+      if (isSelected(line)) {
         final radius = drawingStyle.handleRadius;
         final top = mMainRect.top + radius;
         final bottom = math.max(top, mMainRect.bottom - radius);
@@ -556,7 +644,7 @@ class ChartPainter extends BaseChartPainter {
         line,
       );
 
-      if (line == selectedLine) {
+      if (isSelected(line)) {
         drawLineHandle(canvas, Offset(x, mMainRect.center.dy), line);
       }
     }
@@ -610,7 +698,7 @@ class ChartPainter extends BaseChartPainter {
 
       if (line.arrow) drawArrowHead(canvas, start, end, line);
 
-      if (line == selectedLine) {
+      if (isSelected(line)) {
         drawLineHandle(canvas, start, line);
         drawLineHandle(canvas, end, line);
       }
@@ -677,7 +765,7 @@ class ChartPainter extends BaseChartPainter {
 
       if (box.showLabel) drawRectangleLabel(canvas, rect, box);
 
-      if (box == selectedLine) {
+      if (isSelected(box)) {
         drawLineHandle(canvas, corner1, box);
         drawLineHandle(canvas, corner2, box);
       }
@@ -737,7 +825,7 @@ class ChartPainter extends BaseChartPainter {
 
       if (fib.showLabel) drawFibLabels(canvas, fib, rows, left);
 
-      if (fib == selectedLine) {
+      if (isSelected(fib)) {
         drawLineHandle(canvas, start, fib);
         drawLineHandle(canvas, end, fib);
       }
@@ -889,7 +977,7 @@ class ChartPainter extends BaseChartPainter {
         );
       }
 
-      if (oval == selectedLine) {
+      if (isSelected(oval)) {
         drawLineHandle(canvas, corner1, oval);
         drawLineHandle(canvas, corner2, oval);
       }
@@ -932,7 +1020,7 @@ class ChartPainter extends BaseChartPainter {
         drawLineLabel(canvas, tp, a + const Offset(8, -8), triangle.color);
       }
 
-      if (triangle == selectedLine) {
+      if (isSelected(triangle)) {
         for (final corner in [a, b, c]) {
           drawLineHandle(canvas, corner, triangle);
         }
@@ -958,7 +1046,7 @@ class ChartPainter extends BaseChartPainter {
       final offset = channel.offset;
       if (offset == null) {
         // Only the base line has landed; the parallel comes with the next tap.
-        if (channel == selectedLine) {
+        if (isSelected(channel)) {
           drawLineHandle(canvas, start, channel);
           drawLineHandle(canvas, end, channel);
         }
@@ -986,7 +1074,7 @@ class ChartPainter extends BaseChartPainter {
       );
       strokeChartLine(canvas, parallelStart, parallelTo, channel);
 
-      if (channel == selectedLine) {
+      if (isSelected(channel)) {
         drawLineHandle(canvas, start, channel);
         drawLineHandle(canvas, end, channel);
         drawLineHandle(canvas, parallelEnd, channel);
@@ -1043,7 +1131,7 @@ class ChartPainter extends BaseChartPainter {
 
       if (position.showLabel) drawPositionLabel(canvas, position, left, right);
 
-      if (position == selectedLine) {
+      if (isSelected(position)) {
         drawLineHandle(canvas, entry, position);
         drawLineHandle(canvas, target, position);
         if (stopPrice != null) {
@@ -1134,7 +1222,7 @@ class ChartPainter extends BaseChartPainter {
 
       if (measure.showLabel) drawMeasureLabel(canvas, measure, rect, band);
 
-      if (measure == selectedLine) {
+      if (isSelected(measure)) {
         drawLineHandle(canvas, start, measure);
         drawLineHandle(canvas, end, measure);
       }
@@ -1189,6 +1277,737 @@ class ChartPainter extends BaseChartPainter {
     return '${span.inSeconds}s';
   }
 
+  // ── Fans, forks, boxes and brackets ──────────────────────────────────────
+
+  /// Runs a ray from [from] through [towards] to the edge of the chart.
+  ///
+  /// The fans all work this way: the second anchor sets a direction, not an
+  /// end, so what is drawn leaves the canvas rather than stopping.
+  void _strokeRay(
+    Canvas canvas,
+    Offset from,
+    Offset towards,
+    ChartLine line,
+    Size size,
+  ) {
+    if (from == towards) return;
+    strokeChartLine(canvas, from, extendPoint(from, towards, size), line);
+  }
+
+  /// Names a ray or a rule, at [at], in the line's own colour.
+  void _strokeTag(Canvas canvas, String text, Offset at, ChartLine line) {
+    final tp = getLabelPainter(text, line.color);
+    drawLineLabel(canvas, tp, at, line.color);
+  }
+
+  void drawGannFans(Canvas canvas, Size size) {
+    for (final fan in _withDraft(gannFans)) {
+      final pivot = _anchor(fan.time1, fan.price1);
+      if (pivot == null) continue;
+
+      final oneByOne = _anchor(fan.time2, fan.price2);
+      if (oneByOne == null) {
+        drawLineHandle(canvas, pivot, fan);
+        continue;
+      }
+
+      for (final ratio in fan.ratios) {
+        final through = gannRayThrough(pivot, oneByOne, ratio);
+        _strokeRay(canvas, pivot, through, fan, size);
+        if (!fan.showLabel) continue;
+
+        // The label sits a little way along the ray, where the fan has opened
+        // out enough for the names not to pile up on the pivot.
+        final along = pivot + (through - pivot) * 0.9;
+        _strokeTag(canvas, GannFan.labelFor(ratio), along, fan);
+      }
+
+      if (isSelected(fan)) {
+        drawLineHandle(canvas, pivot, fan);
+        drawLineHandle(canvas, oneByOne, fan);
+      }
+    }
+  }
+
+  void drawGannBoxes(Canvas canvas, Size size) {
+    for (final box in _withDraft(gannBoxes)) {
+      final corner1 = _anchor(box.time1, box.price1);
+      if (corner1 == null) continue;
+
+      final corner2 = _anchor(box.time2, box.price2);
+      if (corner2 == null) {
+        drawLineHandle(canvas, corner1, box);
+        continue;
+      }
+
+      final rect = Rect.fromPoints(corner1, corner2);
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..color = box.color.withValues(
+            alpha: box.color.a * box.fillOpacity.clamp(0.0, 1.0),
+          ),
+      );
+
+      final rules = gannBoxRules(rect, box.ratios);
+      for (final y in rules.horizontals) {
+        strokeChartLine(
+          canvas,
+          Offset(rect.left, y),
+          Offset(rect.right, y),
+          box,
+        );
+      }
+      for (final x in rules.verticals) {
+        strokeChartLine(
+          canvas,
+          Offset(x, rect.top),
+          Offset(x, rect.bottom),
+          box,
+        );
+      }
+      if (box.showDiagonals) {
+        strokeChartLine(canvas, rect.topLeft, rect.bottomRight, box);
+        strokeChartLine(canvas, rect.bottomLeft, rect.topRight, box);
+      }
+
+      if (box.showLabel) {
+        for (final (index, ratio) in box.ratios.indexed) {
+          final y = rules.horizontals[index];
+          _strokeTag(
+            canvas,
+            '${(ratio * 100).toStringAsFixed(0)}%',
+            Offset(rect.left + drawingStyle.labelPadding.left, y),
+            box,
+          );
+        }
+      }
+
+      if (isSelected(box)) {
+        drawLineHandle(canvas, corner1, box);
+        drawLineHandle(canvas, corner2, box);
+      }
+    }
+  }
+
+  void drawFibFans(Canvas canvas, Size size) {
+    for (final fan in _withDraft(fibFans)) {
+      final start = _anchor(fan.time1, fan.price1);
+      if (start == null) continue;
+
+      final end = _anchor(fan.time2, fan.price2);
+      if (end == null) {
+        drawLineHandle(canvas, start, fan);
+        continue;
+      }
+
+      for (final level in fan.levels) {
+        final through = fibFanRayThrough(start, end, level);
+        _strokeRay(canvas, start, through, fan, size);
+        if (!fan.showLabel) continue;
+        _strokeTag(
+          canvas,
+          '${(level * 100).toStringAsFixed(1)}%',
+          through,
+          fan,
+        );
+      }
+
+      if (isSelected(fan)) {
+        drawLineHandle(canvas, start, fan);
+        drawLineHandle(canvas, end, fan);
+      }
+    }
+  }
+
+  void drawFibTimeZones(Canvas canvas, Size size) {
+    for (final zones in _withDraft(fibTimeZones)) {
+      final start = _anchor(zones.time1, zones.price1);
+      if (start == null) continue;
+
+      final end = _anchor(zones.time2, zones.price2);
+      if (end == null) {
+        drawLineHandle(canvas, start, zones);
+        continue;
+      }
+
+      for (final level in zones.levels) {
+        final x = fibTimeZoneX(start, end, level);
+        // Off the canvas, so the rest of the run is too — the levels only
+        // grow.
+        if (x < 0 || x > size.width) continue;
+        strokeChartLine(
+          canvas,
+          Offset(x, mMainRect.top),
+          Offset(x, mMainRect.bottom),
+          zones,
+        );
+        if (!zones.showLabel) continue;
+        _strokeTag(
+          canvas,
+          level.toStringAsFixed(0),
+          Offset(x + drawingStyle.labelPadding.left, mMainRect.top + 4),
+          zones,
+        );
+      }
+
+      if (isSelected(zones)) {
+        drawLineHandle(canvas, start, zones);
+        drawLineHandle(canvas, end, zones);
+      }
+    }
+  }
+
+  void drawFibExtensions(Canvas canvas, Size size) {
+    for (final extension in _withDraft(fibExtensions)) {
+      final start = _anchor(extension.time1, extension.price1);
+      if (start == null) continue;
+
+      final end = _anchor(extension.time2, extension.price2);
+      if (end == null) {
+        drawLineHandle(canvas, start, extension);
+        continue;
+      }
+
+      // The impulse and the retracement, so the shape reads as the move it was
+      // taken from rather than as a set of loose levels.
+      strokeChartLine(canvas, start, end, extension);
+
+      final from = _anchor(extension.time3, extension.price3);
+      if (from == null) {
+        if (isSelected(extension)) {
+          drawLineHandle(canvas, start, extension);
+          drawLineHandle(canvas, end, extension);
+        }
+        continue;
+      }
+      strokeChartLine(canvas, end, from, extension);
+
+      final left = from.dx;
+      for (final ratio in extension.levels) {
+        final price = extension.priceAt(ratio);
+        if (price == null) continue;
+        final y = getMainY(price);
+        strokeChartLine(
+          canvas,
+          Offset(left, y),
+          Offset(size.width, y),
+          extension,
+        );
+        if (!extension.showLabel) continue;
+        _strokeTag(
+          canvas,
+          '${(ratio * 100).toStringAsFixed(1)}%  '
+          '${price.toStringAsFixed(fixedLength)}',
+          Offset(left + drawingStyle.labelPadding.left, y),
+          extension,
+        );
+      }
+
+      if (isSelected(extension)) {
+        drawLineHandle(canvas, start, extension);
+        drawLineHandle(canvas, end, extension);
+        drawLineHandle(canvas, from, extension);
+      }
+    }
+  }
+
+  void drawPitchforks(Canvas canvas, Size size) {
+    for (final fork in _withDraft(pitchforks)) {
+      final p1 = _anchor(fork.time1, fork.price1);
+      if (p1 == null) continue;
+
+      final p2 = _anchor(fork.time2, fork.price2);
+      if (p2 == null) {
+        drawLineHandle(canvas, p1, fork);
+        continue;
+      }
+      final p3 = _anchor(fork.time3, fork.price3);
+      if (p3 == null) {
+        // The swing so far, waiting for the third point that turns it into a
+        // fork.
+        strokeChartLine(canvas, p1, p2, fork);
+        if (isSelected(fork)) {
+          drawLineHandle(canvas, p1, fork);
+          drawLineHandle(canvas, p2, fork);
+        }
+        continue;
+      }
+
+      final geometry = pitchforkGeometry(p1, p2, p3, fork.kind, fork.levels);
+      final run = geometry.median - geometry.handle;
+
+      // The bar joining the two swings, which is what the tines are measured
+      // from.
+      strokeChartLine(canvas, p2, p3, fork);
+
+      final outermost = fork.levels.isEmpty
+          ? null
+          : fork.levels.reduce(math.max);
+      for (final tine in geometry.tines) {
+        for (final start in [tine.upper, tine.lower]) {
+          final from = tine.level == 0 ? geometry.handle : start;
+          final to = from + run;
+          if (from == to) continue;
+          _strokeRay(canvas, from, to, fork, size);
+          // The median is one line, not two, so the pair is drawn once.
+          if (tine.level == 0) break;
+        }
+
+        if (outermost != null && tine.level == outermost) {
+          canvas.drawPath(
+            Path()
+              ..moveTo(tine.upper.dx, tine.upper.dy)
+              ..lineTo(
+                extendPoint(tine.upper, tine.upper + run, size).dx,
+                extendPoint(tine.upper, tine.upper + run, size).dy,
+              )
+              ..lineTo(
+                extendPoint(tine.lower, tine.lower + run, size).dx,
+                extendPoint(tine.lower, tine.lower + run, size).dy,
+              )
+              ..lineTo(tine.lower.dx, tine.lower.dy)
+              ..close(),
+            Paint()
+              ..color = fork.color.withValues(
+                alpha: fork.color.a * fork.fillOpacity.clamp(0.0, 1.0),
+              ),
+          );
+        }
+      }
+
+      if (fork.showLabel) {
+        _strokeTag(canvas, _forkName(fork.kind), geometry.handle, fork);
+      }
+
+      if (isSelected(fork)) {
+        for (final corner in [p1, p2, p3]) {
+          drawLineHandle(canvas, corner, fork);
+        }
+      }
+    }
+  }
+
+  /// What a pitchfork of [kind] is called, for its label.
+  String _forkName(PitchforkKind kind) => switch (kind) {
+    PitchforkKind.andrews => 'Andrews',
+    PitchforkKind.schiff => 'Schiff',
+    PitchforkKind.modifiedSchiff => 'Mod. Schiff',
+  };
+
+  void drawRegressions(Canvas canvas, Size size) {
+    for (final regression in _withDraft(regressions)) {
+      final start = _anchor(regression.time1, regression.price1);
+      if (start == null) continue;
+
+      final end = _anchor(regression.time2, regression.price2);
+      if (end == null) {
+        drawLineHandle(canvas, start, regression);
+        continue;
+      }
+
+      final from = _indexOf(regression.time1);
+      final to = _indexOf(regression.time2);
+      final fit = from == null || to == null
+          ? null
+          : fitRegression(candles!, from, to);
+      if (fit == null) {
+        // Too little to fit, so the anchors are all there is to show.
+        strokeChartLine(canvas, start, end, regression);
+        if (isSelected(regression)) {
+          drawLineHandle(canvas, start, regression);
+          drawLineHandle(canvas, end, regression);
+        }
+        continue;
+      }
+
+      final left = math.min(start.dx, end.dx);
+      final right = math.max(start.dx, end.dx);
+      Offset at(double side, double multiple) => Offset(
+        side,
+        getMainY(
+          (side == left ? fit.startPrice : fit.endPrice) +
+              multiple * fit.deviation,
+        ),
+      );
+
+      final spread = regression.showBands ? regression.deviations : 0.0;
+      final fitFrom = at(left, 0);
+      final fitTo = at(right, 0);
+      final fitEnd = regression.extend
+          ? extendPoint(fitFrom, fitTo, size)
+          : fitTo;
+
+      if (spread != 0) {
+        final upperFrom = at(left, spread);
+        final upperTo = at(right, spread);
+        final lowerFrom = at(left, -spread);
+        final lowerTo = at(right, -spread);
+        final upperEnd = regression.extend
+            ? extendPoint(upperFrom, upperTo, size)
+            : upperTo;
+        final lowerEnd = regression.extend
+            ? extendPoint(lowerFrom, lowerTo, size)
+            : lowerTo;
+
+        canvas.drawPath(
+          Path()
+            ..moveTo(upperFrom.dx, upperFrom.dy)
+            ..lineTo(upperEnd.dx, upperEnd.dy)
+            ..lineTo(lowerEnd.dx, lowerEnd.dy)
+            ..lineTo(lowerFrom.dx, lowerFrom.dy)
+            ..close(),
+          Paint()
+            ..color = regression.color.withValues(
+              alpha:
+                  regression.color.a * regression.fillOpacity.clamp(0.0, 1.0),
+            ),
+        );
+        strokeChartLine(canvas, upperFrom, upperEnd, regression);
+        strokeChartLine(canvas, lowerFrom, lowerEnd, regression);
+      }
+      strokeChartLine(canvas, fitFrom, fitEnd, regression);
+
+      if (regression.showLabel) {
+        final slope = fit.endPrice - fit.startPrice;
+        _strokeTag(
+          canvas,
+          '${slope >= 0 ? '+' : ''}${slope.toStringAsFixed(fixedLength)}  '
+          '±${fit.deviation.toStringAsFixed(fixedLength)}',
+          fitFrom,
+          regression,
+        );
+      }
+
+      if (isSelected(regression)) {
+        drawLineHandle(canvas, start, regression);
+        drawLineHandle(canvas, end, regression);
+      }
+    }
+  }
+
+  void drawPriceRanges(Canvas canvas, Size size) {
+    for (final range in _withDraft(priceRanges)) {
+      final start = _anchor(range.time1, range.price1);
+      if (start == null) continue;
+
+      final end = _anchor(range.time2, range.price2);
+      if (end == null) {
+        drawLineHandle(canvas, start, range);
+        continue;
+      }
+
+      final rect = Rect.fromPoints(start, end);
+      final band = range.isUp
+          ? chartColors.nowPriceUpColor
+          : chartColors.nowPriceDnColor;
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..color = band.withValues(alpha: range.fillOpacity.clamp(0.0, 1.0)),
+      );
+
+      // The two levels and an arrow between them: price only, no time.
+      strokeChartLine(
+        canvas,
+        Offset(rect.left, rect.top),
+        Offset(rect.right, rect.top),
+        range,
+      );
+      strokeChartLine(
+        canvas,
+        Offset(rect.left, rect.bottom),
+        Offset(rect.right, rect.bottom),
+        range,
+      );
+      final tail = Offset(rect.center.dx, start.dy);
+      final tip = Offset(rect.center.dx, end.dy);
+      strokeChartLine(canvas, tail, tip, range);
+      drawArrowHead(canvas, tail, tip, range);
+
+      if (range.showLabel) {
+        final move = range.priceMove ?? 0;
+        final ratio = range.ratio;
+        final text = [
+          '${move >= 0 ? '+' : ''}${move.toStringAsFixed(fixedLength)}',
+          if (ratio != null)
+            '(${ratio >= 0 ? '+' : ''}${(ratio * 100).toStringAsFixed(2)}%)',
+        ].join('  ');
+        final tp = getLabelPainter(text, band);
+        drawLineLabel(
+          canvas,
+          tp,
+          Offset(rect.center.dx + 8, rect.center.dy - tp.height / 2),
+          band,
+        );
+      }
+
+      if (isSelected(range)) {
+        drawLineHandle(canvas, start, range);
+        drawLineHandle(canvas, end, range);
+      }
+    }
+  }
+
+  void drawDateRanges(Canvas canvas, Size size) {
+    for (final range in _withDraft(dateRanges)) {
+      final start = _anchor(range.time1, range.price1);
+      if (start == null) continue;
+
+      final end = _anchor(range.time2, range.price2);
+      if (end == null) {
+        drawLineHandle(canvas, start, range);
+        continue;
+      }
+
+      final rect = Rect.fromPoints(start, end);
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..color = range.color.withValues(
+            alpha: range.color.a * range.fillOpacity.clamp(0.0, 1.0),
+          ),
+      );
+
+      // The two edges and an arrow across: time only, no price.
+      strokeChartLine(
+        canvas,
+        Offset(rect.left, rect.top),
+        Offset(rect.left, rect.bottom),
+        range,
+      );
+      strokeChartLine(
+        canvas,
+        Offset(rect.right, rect.top),
+        Offset(rect.right, rect.bottom),
+        range,
+      );
+      final tail = Offset(rect.left, rect.center.dy);
+      final tip = Offset(rect.right, rect.center.dy);
+      strokeChartLine(canvas, tail, tip, range);
+      drawArrowHead(canvas, tail, tip, range);
+
+      if (range.showLabel) {
+        final from = _indexOf(range.time1);
+        final to = _indexOf(range.time2);
+        final bars = from == null || to == null ? null : (to - from).abs();
+        final span = range.span;
+        final text = [
+          if (bars != null) '$bars bars',
+          if (span != null && span > Duration.zero) formatSpan(span),
+        ].join('  ');
+        if (text.isNotEmpty) {
+          final tp = getLabelPainter(text, range.color);
+          drawLineLabel(
+            canvas,
+            tp,
+            Offset(rect.center.dx - tp.width / 2, rect.center.dy + 8),
+            range.color,
+          );
+        }
+      }
+
+      if (isSelected(range)) {
+        drawLineHandle(canvas, start, range);
+        drawLineHandle(canvas, end, range);
+      }
+    }
+  }
+
+  void drawCallouts(Canvas canvas, Size size) {
+    for (final callout in _withDraft(callouts)) {
+      final at = _anchor(callout.time1, callout.price1);
+      if (at == null) continue;
+
+      final box = _anchor(callout.time2, callout.price2);
+      if (box == null) {
+        drawLineHandle(canvas, at, callout);
+        continue;
+      }
+
+      // The tail first, so the box paints over where it meets it.
+      strokeChartLine(canvas, at, box, callout);
+
+      final text = callout.text;
+      final tp = getLabelPainter(
+        text == null || text.isEmpty ? '…' : text,
+        callout.color,
+      );
+      final padding = drawingStyle.labelPadding;
+      final rect = RRect.fromLTRBR(
+        box.dx - padding.left,
+        box.dy - tp.height / 2 - padding.top,
+        box.dx + tp.width + padding.right,
+        box.dy + tp.height / 2 + padding.bottom,
+        Radius.circular(drawingStyle.labelCornerRadius),
+      );
+
+      canvas.drawRRect(
+        rect,
+        Paint()
+          ..color = chartColors.bgColor.withValues(
+            alpha: callout.fillOpacity.clamp(0.0, 1.0),
+          ),
+      );
+      canvas.drawRRect(
+        rect,
+        Paint()
+          ..color = callout.color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = callout.thickness,
+      );
+      tp.paint(canvas, Offset(box.dx, box.dy - tp.height / 2));
+
+      if (isSelected(callout)) {
+        drawLineHandle(canvas, at, callout);
+        drawLineHandle(canvas, box, callout);
+      }
+    }
+  }
+
+  void drawFlags(Canvas canvas, Size size) {
+    for (final flag in _withDraft(flags)) {
+      final foot = _anchor(flag.time, flag.price);
+      if (foot == null) continue;
+
+      final top = foot.translate(0, -flag.staffHeight);
+      strokeChartLine(canvas, foot, top, flag);
+
+      // A pennant, hanging off the top of the staff towards the newer candles.
+      final width = flag.staffHeight * 0.6;
+      final height = flag.staffHeight * 0.45;
+      canvas.drawPath(
+        Path()
+          ..moveTo(top.dx, top.dy)
+          ..lineTo(top.dx + width, top.dy + height / 2)
+          ..lineTo(top.dx, top.dy + height)
+          ..close(),
+        Paint()
+          ..color = flag.color
+          ..isAntiAlias = true,
+      );
+
+      final text = flag.text;
+      if (flag.showLabel && text != null && text.isNotEmpty) {
+        final tp = getLabelPainter(text, flag.color);
+        drawLineLabel(
+          canvas,
+          tp,
+          Offset(top.dx + width + 6, top.dy),
+          flag.color,
+        );
+      }
+
+      if (isSelected(flag)) drawLineHandle(canvas, foot, flag);
+    }
+  }
+
+  void drawXabcds(Canvas canvas, Size size) {
+    for (final pattern in _withDraft(xabcds)) {
+      final points = [
+        for (final point in pattern.points) _anchor(point.time, point.price),
+      ];
+      if (points.isEmpty || points.first == null) continue;
+
+      // The two triangles the pattern is read as: X-A-B and B-C-D.
+      for (final corners in [
+        [0, 1, 2],
+        [2, 3, 4],
+      ]) {
+        if (corners.any((i) => i >= points.length || points[i] == null)) {
+          continue;
+        }
+        final path = Path()
+          ..moveTo(points[corners[0]]!.dx, points[corners[0]]!.dy);
+        for (final corner in corners.skip(1)) {
+          path.lineTo(points[corner]!.dx, points[corner]!.dy);
+        }
+        canvas.drawPath(
+          path..close(),
+          Paint()
+            ..color = pattern.color.withValues(
+              alpha: pattern.color.a * pattern.fillOpacity.clamp(0.0, 1.0),
+            ),
+        );
+      }
+
+      for (var i = 1; i < points.length; i++) {
+        final from = points[i - 1];
+        final to = points[i];
+        if (from == null || to == null) continue;
+        strokeChartLine(canvas, from, to, pattern);
+
+        if (!pattern.showLabel) continue;
+        final ratio = pattern.retracementAt(i);
+        if (ratio == null) continue;
+        final middle = Offset((from.dx + to.dx) / 2, (from.dy + to.dy) / 2);
+        _strokeTag(canvas, ratio.toStringAsFixed(3), middle, pattern);
+      }
+
+      if (pattern.showLabel) {
+        for (var i = 0; i < points.length; i++) {
+          final at = points[i];
+          if (at == null || i >= XabcdDrawing.pointNames.length) continue;
+          _strokeTag(
+            canvas,
+            XabcdDrawing.pointNames[i],
+            at.translate(4, -18),
+            pattern,
+          );
+        }
+      }
+
+      if (isSelected(pattern)) {
+        for (final at in points) {
+          if (at != null) drawLineHandle(canvas, at, pattern);
+        }
+      }
+    }
+  }
+
+  void drawPaths(Canvas canvas, Size size) {
+    for (final line in _withDraft(paths)) {
+      final points = [
+        for (final point in line.points) ?_anchor(point.time, point.price),
+      ];
+      if (points.isEmpty) continue;
+      if (points.length == 1) {
+        drawLineHandle(canvas, points.first, line);
+        continue;
+      }
+
+      if (line.closed && points.length > 2) {
+        final path = Path()..moveTo(points.first.dx, points.first.dy);
+        for (final at in points.skip(1)) {
+          path.lineTo(at.dx, at.dy);
+        }
+        canvas.drawPath(
+          path..close(),
+          Paint()
+            ..color = line.color.withValues(
+              alpha: line.color.a * line.fillOpacity.clamp(0.0, 1.0),
+            ),
+        );
+      }
+
+      for (var i = 1; i < points.length; i++) {
+        strokeChartLine(canvas, points[i - 1], points[i], line);
+      }
+      if (line.closed && points.length > 2) {
+        strokeChartLine(canvas, points.last, points.first, line);
+      }
+      if (line.arrow) {
+        drawArrowHead(canvas, points[points.length - 2], points.last, line);
+      }
+
+      if (isSelected(line)) {
+        for (final at in points) {
+          drawLineHandle(canvas, at, line);
+        }
+      }
+    }
+  }
+
   void drawFreehands(Canvas canvas, Size size) {
     for (final stroke in _withDraft(freehands)) {
       if (stroke.points.isEmpty) continue;
@@ -1218,7 +2037,7 @@ class ChartPainter extends BaseChartPainter {
           ..isAntiAlias = true,
       );
 
-      if (stroke == selectedLine) {
+      if (isSelected(stroke)) {
         final first = stroke.points.first;
         final at = _anchor(first.time, first.price);
         if (at != null) drawLineHandle(canvas, at, stroke);
@@ -1253,7 +2072,7 @@ class ChartPainter extends BaseChartPainter {
         note.color,
       );
 
-      if (note == selectedLine) drawLineHandle(canvas, at, note);
+      if (isSelected(note)) drawLineHandle(canvas, at, note);
     }
   }
 

@@ -19,6 +19,15 @@ abstract interface class KChartHost {
 
   /// The candle area as a PNG.
   Future<Uint8List?> captureChart({required double pixelRatio});
+
+  /// How far the price axis is stretched away from the window it would fit.
+  double get chartPriceZoom;
+
+  /// Stretches the price axis to [zoom], within the range the chart allows.
+  void setChartPriceZoom(double zoom);
+
+  /// Fits the price axis back to the window.
+  void resetChartPriceScale();
 }
 
 /// Drives a chart from outside it: where it is scrolled, how far it is zoomed,
@@ -88,4 +97,25 @@ class KChartController extends ChangeNotifier {
   /// the line editor or any other control floating over it.
   Future<Uint8List?> capture({double pixelRatio = 3}) async =>
       _host?.captureChart(pixelRatio: pixelRatio);
+
+  /// How far the price axis is stretched away from the window it would fit.
+  ///
+  /// 1 is the fitted range, which is where a chart starts and what
+  /// [resetPriceScale] returns it to. Above 1 the same prices take more room
+  /// and the candles are taller; below 1 the window opens out.
+  double get priceZoom => _host?.chartPriceZoom ?? 1.0;
+
+  /// Stretches the price axis to [value], within the range the chart allows.
+  void setPriceZoom(double value) => _host?.setChartPriceZoom(value);
+
+  /// Stretches the axis by [step], as dragging up its labels does.
+  void stretchPrice([double step = 0.2]) => setPriceZoom(priceZoom + step);
+
+  /// Compresses the axis by [step], as dragging down its labels does.
+  void compressPrice([double step = 0.2]) => setPriceZoom(priceZoom - step);
+
+  /// Fits the price axis back to the window, undoing any stretch or shift.
+  ///
+  /// The same thing a double-tap on the axis does.
+  void resetPriceScale() => _host?.resetChartPriceScale();
 }

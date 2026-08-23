@@ -1,12 +1,19 @@
+import 'callout_drawing.dart';
 import 'ellipse_drawing.dart';
+import 'fib_drawings.dart';
 import 'fib_retracement.dart';
 import 'freehand_drawing.dart';
+import 'gann_drawings.dart';
 import 'horizontal_line.dart';
 import 'line.dart';
 import 'measure_drawing.dart';
+import 'multi_point_drawing.dart';
 import 'parallel_channel.dart';
+import 'pitchfork_drawing.dart';
 import 'position_drawing.dart';
+import 'range_drawings.dart';
 import 'rectangle_drawing.dart';
+import 'regression_channel.dart';
 import 'text_annotation.dart';
 import 'trend_line.dart';
 import 'triangle_drawing.dart';
@@ -31,6 +38,19 @@ ChartLine? drawingFromJson(Map<String, dynamic> json) {
     'position' => PositionDrawing.fromJson(json),
     'text' => TextAnnotation.fromJson(json),
     'freehand' => FreehandDrawing.fromJson(json),
+    'pitchfork' => PitchforkDrawing.fromJson(json),
+    'gannFan' => GannFan.fromJson(json),
+    'gannBox' => GannBox.fromJson(json),
+    'fibExtension' => FibExtension.fromJson(json),
+    'fibFan' => FibFan.fromJson(json),
+    'fibTimeZones' => FibTimeZones.fromJson(json),
+    'regression' => RegressionChannel.fromJson(json),
+    'xabcd' => XabcdDrawing.fromJson(json),
+    'priceRange' => PriceRangeDrawing.fromJson(json),
+    'dateRange' => DateRangeDrawing.fromJson(json),
+    'callout' => CalloutDrawing.fromJson(json),
+    'path' => PathDrawing.fromJson(json),
+    'flag' => FlagDrawing.fromJson(json),
     _ => null,
   };
 }
@@ -118,6 +138,45 @@ class ChartDrawings {
   /// The parallel channels.
   List<ParallelChannel> get channels => ofType<ParallelChannel>();
 
+  /// The pitchforks.
+  List<PitchforkDrawing> get pitchforks => ofType<PitchforkDrawing>();
+
+  /// The Gann fans.
+  List<GannFan> get gannFans => ofType<GannFan>();
+
+  /// The Gann boxes.
+  List<GannBox> get gannBoxes => ofType<GannBox>();
+
+  /// The trend-based Fibonacci extensions.
+  List<FibExtension> get fibExtensions => ofType<FibExtension>();
+
+  /// The Fibonacci fans.
+  List<FibFan> get fibFans => ofType<FibFan>();
+
+  /// The Fibonacci time zones.
+  List<FibTimeZones> get fibTimeZones => ofType<FibTimeZones>();
+
+  /// The regression channels.
+  List<RegressionChannel> get regressions => ofType<RegressionChannel>();
+
+  /// The harmonic patterns.
+  List<XabcdDrawing> get xabcds => ofType<XabcdDrawing>();
+
+  /// The price brackets.
+  List<PriceRangeDrawing> get priceRanges => ofType<PriceRangeDrawing>();
+
+  /// The date brackets.
+  List<DateRangeDrawing> get dateRanges => ofType<DateRangeDrawing>();
+
+  /// The callouts.
+  List<CalloutDrawing> get callouts => ofType<CalloutDrawing>();
+
+  /// The multi-segment paths.
+  List<PathDrawing> get paths => ofType<PathDrawing>();
+
+  /// The flags.
+  List<FlagDrawing> get flags => ofType<FlagDrawing>();
+
   /// The planned positions.
   List<PositionDrawing> get positions => ofType<PositionDrawing>();
 
@@ -127,14 +186,14 @@ class ChartDrawings {
   /// The freehand strokes.
   List<FreehandDrawing> get freehands => ofType<FreehandDrawing>();
 
-  /// Adds [line], or moves it to the end if it is already here.
+  /// Adds [line], or leaves it where it is if it is already here.
   ///
   /// The chart reports an edit through the same callback as a first placement,
-  /// so this doubles as "save whatever just changed".
+  /// so this doubles as "save whatever just changed" — and an edit must not
+  /// quietly change what a drawing is stacked over, which is why an existing
+  /// one keeps its place rather than going to the end.
   void save(ChartLine line) {
-    all
-      ..remove(line)
-      ..add(line);
+    if (!all.contains(line)) all.add(line);
   }
 
   /// Removes [line]; returns whether it was there.
@@ -142,6 +201,43 @@ class ChartDrawings {
 
   /// Removes every drawing.
   void clear() => all.clear();
+
+  /// Where [line] sits in the stack, or -1 when it is not here.
+  ///
+  /// Later is higher: the last drawing paints over the ones before it, and is
+  /// the one a tap in an overlap picks up.
+  int indexOf(ChartLine line) =>
+      all.indexWhere((candidate) => identical(candidate, line));
+
+  /// Moves [line] to the top of the stack; returns whether it moved.
+  bool moveToFront(ChartLine line) => _moveTo(line, all.length - 1);
+
+  /// Moves [line] to the bottom of the stack; returns whether it moved.
+  bool moveToBack(ChartLine line) => _moveTo(line, 0);
+
+  /// Moves [line] one place up the stack; returns whether it moved.
+  bool moveForward(ChartLine line) {
+    final from = indexOf(line);
+    return from == -1 ? false : _moveTo(line, from + 1);
+  }
+
+  /// Moves [line] one place down the stack; returns whether it moved.
+  bool moveBackward(ChartLine line) {
+    final from = indexOf(line);
+    return from == -1 ? false : _moveTo(line, from - 1);
+  }
+
+  /// Puts [line] at [to], clamped to the stack; returns whether it moved.
+  bool _moveTo(ChartLine line, int to) {
+    final from = indexOf(line);
+    if (from == -1) return false;
+    final target = to.clamp(0, all.length - 1);
+    if (target == from) return false;
+    all
+      ..removeAt(from)
+      ..insert(target, line);
+    return true;
+  }
 
   /// A deep copy, sharing nothing with this set.
   ChartDrawings copy() =>

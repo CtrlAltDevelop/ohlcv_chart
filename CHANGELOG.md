@@ -20,7 +20,91 @@
 - Boundaries follow the clock the chart prints, not the underlying instant, so
   a `timeZoneOffset` of half an hour still labels round local times.
 - New `niceTicks`, `niceLogTicks`, `niceStep`, `niceTimeStep`, `timeBucket` and
-  `startsNewDay` in `src/utils/axis_ticks.dart` carry the arithmetic.
+  `startsNewDay` carry the arithmetic, and are exported for a caller drawing
+  an axis of its own alongside the chart.
+
+### Replay
+
+- **New `ChartReplayController` plays a chart back candle by candle.** Hand one
+  to `KChartWidget.replay` and the chart draws only as far as its `position`,
+  so the indicators, the now-price line and the legend know nothing the market
+  had not shown yet. `start`, `stepForward`, `stepBack`, `play`, `pause`,
+  `toggle`, `setInterval` and `stop` drive it, and it reports every move to its
+  listeners so a transport bar can be built straight from it.
+
+### Drawing tools
+
+- **Thirteen new tools, taking the set from 16 to 29.** `pitchfork`, `gannFan`,
+  `gannBox`, `fibExtension`, `fibFan`, `fibTimeZones`, `regressionTrend`,
+  `xabcd`, `priceRange`, `dateRange`, `callout`, `path` and `flag` join the
+  `DrawingTool` enum, each with its own drawing class, its hit test, its drag
+  handles and its place in the saved layout.
+- **New `MultiPointDrawing` holds its anchors in a list** rather than in
+  numbered fields, which is what a five-point harmonic pattern and an
+  as-many-as-you-tap path need. `XabcdDrawing` and `PathDrawing` are built on
+  it, and one of your own can be too.
+- A shape with no fixed number of points is finished by the user: tap twice in
+  the same place, or pick another tool — switching tools now finishes an open
+  path instead of throwing it away.
+- `RegressionChannel` fits a least-squares line through the closes of every
+  candle its anchors span, with a band at `deviations` standard deviations
+  either side, and refits whenever an anchor moves. The arithmetic is exported
+  as `fitRegression`.
+- `PitchforkDrawing` draws Andrews', Schiff and modified-Schiff forks, with a
+  tine per level. `GannFan` runs Gann's angles off a `1×1`, and `GannBox` rules
+  a range at the same fractions across and down. `FibFan`, `FibTimeZones` and
+  `FibExtension` cover the three Fibonacci tools that were missing.
+- `PriceRangeDrawing` and `DateRangeDrawing` read out one axis each, where a
+  measurement reads both. `CalloutDrawing` puts a note in a box with a tail
+  back to the candle it is about, and `FlagDrawing` plants a pennant on one
+  candle.
+- New `shape_geometry.dart` carries the fan, box and fork arithmetic, so the
+  painter and the hit test read the same geometry rather than each doing it
+  their own way.
+- `DrawingTranslations` gained a name for every new shape, and `ChartDrawings`
+  a getter — `pitchforks`, `gannFans`, `gannBoxes`, `fibExtensions`, `fibFans`,
+  `fibTimeZones`, `regressions`, `xabcds`, `priceRanges`, `dateRanges`,
+  `callouts`, `paths`, `flags`.
+
+### Indicators
+
+- **New `VolumeProfileIndicator` gathers volume by price rather than by time.**
+  The bars run back from the labelled side of the chart, one per price band, so
+  the prices the market actually traded at read off the same axis as the
+  candles. The busiest band — the point of control — is picked out, the value
+  area around it is shaded, and each band is split into the volume that rose
+  and the volume that fell. Colours come from `ChartColors.profileUpColor`,
+  `profileDownColor`, `profilePocColor` and `profileValueAreaColor`.
+- **New `PivotPointsIndicator` steps the previous session's pivot, three
+  supports and three resistances across the current one.** `PivotMethod.standard`,
+  `.fibonacci` and `.camarilla` space the levels differently, and new
+  `PivotSession.day`, `.week`, `.month` and `.year` say what counts as a
+  session.
+- **New `AnchoredVwapIndicator` measures VWAP from one candle onwards** instead
+  of over the whole series, so it can be anchored to a high, a low, an earnings
+  date or the start of a session. It says nothing before its anchor.
+- An indicator can now return an `IndicatorProfile` of `ProfileBin`s from
+  `computeProfile`, drawn as horizontal bars across the candles. Nothing but
+  the volume profile uses it yet, but a delta or time profile would draw the
+  same way.
+- The three of them are in `indicatorCatalog` as `VP`, `PIVOT`, `PIVOTFIB`,
+  `PIVOTCAM`, `PIVOTW` and `AVWAP`, so the demo's picker offers them with their
+  settings. A pivot indicator's name carries its session — `PIVOTW`, `PIVOTM`,
+  `PIVOTY` — so a weekly pivot and a daily one are told apart when a layout is
+  saved and restored.
+
+### Price scale
+
+- **The price axis can be dragged.** It fitted the window and nothing else
+  before, so there was no way to look closer at a quiet stretch. Dragging down
+  the strip the price labels sit in now stretches the range and makes the
+  candles taller, dragging up compresses it, a vertical drag on the candles
+  slides a held window, and a double-tap on the labels fits it back. New
+  `KChartWidget.priceScaleDrag` turns it off, and
+  `ChartStyle.priceScaleGripWidth` sets how far in from the labelled side the
+  strip reaches.
+- `KChartController` gained `priceZoom`, `setPriceZoom`, `stretchPrice`,
+  `compressPrice` and `resetPriceScale`, so a toolbar can do the same.
 
 ### Panes
 
@@ -49,6 +133,14 @@
 - `BaseChartRenderer.drawGrid` takes a new optional `columnXs`, the shared x of
   every time tick, so all the panes rule themselves on the same columns. Only
   code that subclasses a renderer directly is affected.
+
+### API
+
+- `DrawingToolbar` is exported. It was always documented as the editor a caller
+  could put over its own chart surface, but there was no way to import it.
+- `ChartStyle.gridRows` and `gridColumns` are documented. Neither is a count of
+  lines any more: each is how densely the axis is labelled, and about half as
+  many round values as `gridRows` land inside a window.
 
 ## 2.0.0
 

@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../entity/line.dart';
 import 'drawing_controller.dart';
@@ -33,6 +35,7 @@ class DrawingManager extends StatelessWidget {
     this.backgroundColor,
     this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
     this.showHistoryControls = true,
+    this.showStackingControls = true,
     this.newestFirst = true,
     this.onSelected,
     super.key,
@@ -58,6 +61,12 @@ class DrawingManager extends StatelessWidget {
 
   /// Whether the undo, redo and clear buttons are shown.
   final bool showHistoryControls;
+
+  /// Whether each row offers buttons that move it up and down the stack.
+  ///
+  /// Later is higher: the last drawing paints over the ones before it, and is
+  /// the one a tap in an overlap picks up.
+  final bool showStackingControls;
 
   /// Whether the most recently placed drawing is listed first.
   final bool newestFirst;
@@ -152,7 +161,7 @@ class DrawingManager extends StatelessWidget {
   }
 
   Widget _row(ChartLine line, Color color) {
-    final selected = identical(controller.selected, line);
+    final selected = controller.isSelected(line);
     final label = line is LabelledDrawing ? line.labelText : null;
     final name = translations.nameOf(line);
 
@@ -161,7 +170,13 @@ class DrawingManager extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: () {
-          controller.select(line);
+          // Shift or ⌘ adds to the selection rather than replacing it, the same
+          // as clicking on the chart itself.
+          if (_isSelectionModifierPressed) {
+            controller.toggleSelection(line);
+          } else {
+            controller.select(line);
+          }
           onSelected?.call(line);
         },
         child: Container(
@@ -220,6 +235,30 @@ class DrawingManager extends StatelessWidget {
                     controller.save(line);
                   },
                 ),
+              if (showStackingControls) ...[
+                _iconButton(
+                  icon: Icons.keyboard_arrow_up_rounded,
+                  tooltip: translations.bringForward,
+                  color: color,
+                  onPressed: controller.indexOf(line) == controller.length - 1
+                      ? null
+                      : () => controller.bringForward(line),
+                ),
+                _iconButton(
+                  icon: Icons.keyboard_arrow_down_rounded,
+                  tooltip: translations.sendBackward,
+                  color: color,
+                  onPressed: controller.indexOf(line) <= 0
+                      ? null
+                      : () => controller.sendBackward(line),
+                ),
+              ],
+              _iconButton(
+                icon: Icons.content_copy_rounded,
+                tooltip: translations.duplicate,
+                color: color,
+                onPressed: () => controller.duplicate([line]),
+              ),
               _iconButton(
                 icon: Icons.delete_outline_rounded,
                 tooltip: translations.delete,
@@ -231,6 +270,16 @@ class DrawingManager extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Whether a key that means "add to the selection" is down.
+  bool get _isSelectionModifierPressed {
+    final keyboard = HardwareKeyboard.instance;
+    final isApple =
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    return keyboard.isShiftPressed ||
+        (isApple ? keyboard.isMetaPressed : keyboard.isControlPressed);
   }
 
   Widget _iconButton({

@@ -21,6 +21,39 @@ screenshots:
       A candlestick chart with three moving averages, take-profit and
       stop-loss markers, the volume pane and a MACD sub-chart.
     path: screenshots/candles.png
+  - description: >-
+      The Ichimoku cloud and Supertrend over the candles, with Stochastic RSI
+      and the Awesome oscillator in their own panes.
+    path: screenshots/overlays.png
+  - description: >-
+      A zigzag through the swings, a Fibonacci retracement of the last one and
+      Elliott wave labels.
+    path: screenshots/swings.png
+  - description: >-
+      Three ATRs at different periods, each in a pane of its own, ruled and
+      labelled at round values.
+    path: screenshots/panes.png
+  - description: >-
+      The example app's add-indicator sheet, built from the indicator catalog.
+    path: screenshots/indicator-settings.png
+  - description: >-
+      The line editor open on a selected drawing: colour, thickness, stroke,
+      label, lock and delete.
+    path: screenshots/line-editor.png
+  - description: >-
+      Trend lines and horizontal levels drawn over the candles, each with its
+      own label.
+    path: screenshots/drawing.png
+  - description: >-
+      A ray, an arrow, a horizontal ray, a range box and a Fibonacci
+      retracement.
+    path: screenshots/shapes.png
+  - description: >-
+      The crosshair and its OHLC readout card while a candle is held.
+    path: screenshots/readout.png
+  - description: >-
+      A market-depth chart of cumulative bid and ask volume.
+    path: screenshots/depth.png
 
 environment:
   sdk: ^3.13.0

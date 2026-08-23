@@ -234,6 +234,95 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     canvas.restore();
   }
 
+  /// Draws every overlay's volume profile, behind the candles.
+  ///
+  /// The bars run in from the far side of the chart — the side the price
+  /// labels are not on — so they sit behind the newest candles rather than
+  /// over the ones being read. Each is as long as its share of the busiest
+  /// band, split into the volume that traded on rising candles and the volume
+  /// that traded on falling ones, with the point of control picked out and the
+  /// value area shaded across the whole width.
+  void drawProfiles(Canvas canvas) {
+    for (final overlay in overlays) {
+      final profile = overlay.profile;
+      if (profile == null || profile.isEmpty) continue;
+
+      final peak = profile.peakVolume;
+      final widest = chartRect.width * chartStyle.profileWidth.clamp(0.0, 1.0);
+      final fromLeft = verticalTextAlignment == VerticalTextAlignment.right;
+      final up = Paint()
+        ..isAntiAlias = true
+        ..color = chartColors.effectiveProfileUpColor;
+      final down = Paint()
+        ..isAntiAlias = true
+        ..color = chartColors.effectiveProfileDownColor;
+      final pocPaint = Paint()
+        ..isAntiAlias = true
+        ..color = overlay.colorFor(0, chartColors);
+
+      final areaTop = profile.valueAreaHigh;
+      final areaBottom = profile.valueAreaLow;
+      if (areaTop != null && areaBottom != null) {
+        canvas.drawRect(
+          Rect.fromLTRB(
+            chartRect.left,
+            getY(areaTop),
+            chartRect.right,
+            getY(areaBottom),
+          ),
+          Paint()..color = chartColors.effectiveProfileValueAreaColor,
+        );
+      }
+
+      for (var i = 0; i < profile.bins.length; i++) {
+        final bin = profile.bins[i];
+        if (bin.volume <= 0) continue;
+
+        final top = getY(bin.high);
+        final bottom = getY(bin.low);
+        // A hairline gap keeps neighbouring bands legible as bands.
+        final height = (bottom - top - 1).clamp(1.0, double.infinity);
+        final length = widest * bin.volume / peak;
+        // The busiest band is drawn whole in its own colour, so it reads as
+        // one level rather than as the widest of a run of split bars.
+        if (i == profile.pointOfControl) {
+          canvas.drawRect(
+            _profileBar(fromLeft, top, height, 0, length),
+            pocPaint,
+          );
+          continue;
+        }
+
+        // The rising share runs from the outside in, so the split sits at the
+        // same place on every band and the two colours read as one bar.
+        final rising = length * (bin.upVolume / bin.volume).clamp(0.0, 1.0);
+        if (rising > 0) {
+          canvas.drawRect(_profileBar(fromLeft, top, height, 0, rising), up);
+        }
+        if (length - rising > 0) {
+          canvas.drawRect(
+            _profileBar(fromLeft, top, height, rising, length),
+            down,
+          );
+        }
+      }
+    }
+  }
+
+  /// One slice of a profile bar, [from] to [to] pixels along its length.
+  ///
+  /// [fromLeft] measures the length from the left edge of the chart rather
+  /// than from the right, so the bars grow away from the price labels.
+  Rect _profileBar(
+    bool fromLeft,
+    double top,
+    double height,
+    double from,
+    double to,
+  ) => fromLeft
+      ? Rect.fromLTWH(chartRect.left + from, top, to - from, height)
+      : Rect.fromLTWH(chartRect.right - to, top, to - from, height);
+
   @override
   void drawChart(
     CandleEntity lastPoint,

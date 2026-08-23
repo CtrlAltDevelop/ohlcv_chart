@@ -10,12 +10,14 @@ Named for the open-high-low-close-volume bars it renders.
 ## Features
 
 - **Five chart types** — candles, OHLC bars, a line, a filled area and a baseline chart — plus Heikin-Ashi and Renko as transforms of the candles themselves.
-- **26 indicators**, each a configured instance rather than a flag — so `ATR(8)`, `ATR(14)` and `ATR(20)` are three panes, with their own settings and colours.
-- **Main-chart overlays** — `MA`, `EMA`, `BOLL`, `SAR`, `VWAP`, Supertrend, Keltner and Donchian channels, and the Ichimoku Cloud.
+- **29 indicators**, each a configured instance rather than a flag — so `ATR(8)`, `ATR(14)` and `ATR(20)` are three panes, with their own settings and colours.
+- **Main-chart overlays** — `MA`, `EMA`, `BOLL`, `SAR`, `VWAP` and anchored `VWAP`, Supertrend, Keltner and Donchian channels, the Ichimoku Cloud, pivot points and a volume profile.
 - **Swing readers** — a zigzag through the swing highs and lows, Fibonacci retracement of the last swing, and Elliott wave labels, all sized to the market by default.
 - **Sub-charts** — `MACD`, `KDJ`, `RSI`, `WR`, `CCI`, `ATR`, `OBV`, `MFI`, `DMI`, Stochastic RSI, `ROC`, `TRIX`, a volume average and the Awesome oscillator, each in its own stacked pane — resizable and reorderable by dragging.
 - **Linear, logarithmic or percentage price axis**, so a decade of compounding reads as well as an afternoon.
-- **17 drawing tools** — levels and rays, trend lines, arrows, extended lines, boxes, ellipses, triangles, Fibonacci retracements, a measuring tool, parallel channels, planned positions with their risk-to-reward, pinned notes and freehand strokes; each placed by tap or drag, then dragged, locked, hidden and removed.
+- **A price scale you can drag** — pull the labels to stretch or flatten the candles, drag the chart to slide the window, double-tap to fit it back; from code as well, through the controller.
+- **Axes that read as round numbers** — both axes choose their values first and are ruled where the labels fall, so a price scale steps `69000, 69500, 70000` and an intraday date axis lands on the hour, never on whatever value happened to fall on an evenly spaced pixel.
+- **29 drawing tools** — levels and rays, trend lines, arrows, extended lines, boxes, ellipses, triangles, parallel channels, pitchforks, Gann fans and boxes, four Fibonacci tools, a regression trend with its bands, XABCD patterns, multi-leg paths, price and date brackets, a measuring tool, planned positions with their risk-to-reward, notes, callouts, flags and freehand strokes; each placed by tap or drag, then dragged, locked, hidden and removed.
 - **A line editor** that opens on selection: colour, opacity, thickness, solid/dashed/dotted stroke, fill, label text and visibility, alerts, lock and delete — every option list, control and pixel of it configurable through `DrawingStyle`.
 - **Undo and redo**, through a `ChartDrawingController` that owns the drawings and their history, with ⌘Z, ⇧⌘Z and Delete on the chart itself.
 - **A layout that persists** — every drawing serialises, so `jsonEncode(drawings.toJson())` and `ChartDrawings.fromJson` are the whole story.
@@ -23,6 +25,7 @@ Named for the open-high-low-close-volume bars it renders.
 - **Price alerts** on a level, reported when the market crosses it.
 - **Crosshair on hover** and an **OHLC legend** above the chart, which is how a chart reads on a desktop.
 - **Driven from your own code** — `KChartController` zooms, scrolls back to the live candle and hands you the chart as a PNG.
+- **Bar replay** — rewind to any candle and step or play the market forward, with the indicators only knowing what has arrived.
 - **Buy/sell signal markers** pinned to candles.
 - **Depth chart** — a separate `DepthChart` widget for the order book, drawn as the cumulative curve, a per-rung histogram, both at once, or a numeric ladder of price, size and running total, on a linear, log or percentage axis and zoomable to the levels around the mid.
 - **Info dialog** on long press, either the built-in Material popup or your own builder.
@@ -36,6 +39,7 @@ Named for the open-high-low-close-volume bars it renders.
 
 - [Candlestick chart](#candlestick-chart) · [Indicators](#indicators)
 - [Chart types](#chart-types) · [Price axis](#price-axis) ·
+  [The date axis](#the-date-axis) ·
   [The legend and the crosshair](#the-legend-and-the-crosshair)
 - [Drawing tools](#drawing-tools) — [what can be drawn](#what-can-be-drawn),
   [persisting a layout](#persisting-a-layout),
@@ -44,7 +48,7 @@ Named for the open-high-low-close-volume bars it renders.
 - [Customising the line editor](#customising-the-line-editor) ·
   [The long-press readout](#the-long-press-readout)
 - [Driving the chart](#driving-the-chart) · [Panes](#panes) ·
-  [Sessions and time zones](#sessions-and-time-zones)
+  [Bar replay](#bar-replay) · [Sessions and time zones](#sessions-and-time-zones)
 - [Depth chart](#depth-chart) · [Theming](#theming) · [Sizing](#sizing)
 - [Migrating from 1.x](#migrating-from-1x)
 
@@ -118,6 +122,9 @@ KChartWidget(
 | `BollIndicator` | `period`, `deviations` |
 | `SarIndicator` | `start`, `step`, `maximum` |
 | `VwapIndicator` | — |
+| `AnchoredVwapIndicator` | `anchor` — the candle it measures from |
+| `PivotPointsIndicator` | `method`, `session`; the pivot with three supports and resistances |
+| `VolumeProfileIndicator` | `bins`, `valueArea`; volume by price, drawn back from the axis |
 | `SupertrendIndicator` | `period`, `multiplier`; flips colour with the trend |
 | `KeltnerIndicator` | `period`, `atrPeriod`, `multiplier` |
 | `DonchianIndicator` | `period` |
@@ -158,6 +165,51 @@ eye.
 `IchimokuIndicator` shifts its spans forward and its lagging line back as the
 indicator is drawn. The chart holds one value per candle, so the stretch of
 cloud that would project past the newest candle is not drawn.
+
+##### Levels and profiles
+
+Three overlays read price rather than a window of it.
+
+`VolumeProfileIndicator` gathers the visible volume into `bins` price bands and
+draws them as horizontal bars running in from the side the price labels are not
+on, so the prices the market actually traded at read off the same axis as the
+candles. The busiest band — the point of control — is drawn whole in its own
+colour, the `valueArea` around it is washed across the width, and every other
+band is split into the volume that traded on rising candles and the volume that
+traded on falling ones. A candle's volume is spread evenly over the bands its
+range covers, which is as much as OHLCV can say; the ticks inside the candle
+are not known. `ChartColors.profileUpColor`, `profileDownColor`,
+`profilePocColor` and `profileValueAreaColor` colour it, `profileColor` sets
+one colour for the lot, and `ChartStyle.profileWidth` — a fraction of the
+chart's width — sizes the busiest bar.
+
+`PivotPointsIndicator` works out the previous session's pivot and steps it,
+with three supports and three resistances, across the current one.
+`PivotMethod.standard`, `.fibonacci` and `.camarilla` space the levels
+differently, and `PivotSession.day`, `.week`, `.month` and `.year` say what
+counts as a session, so an intraday chart can pivot off the week instead of the
+day it opened in.
+
+`AnchoredVwapIndicator` is a VWAP measured from one candle onwards rather than
+over the whole series, so it can be anchored to a high, a low, an earnings date
+or the open of a session. It says nothing before its `anchor`.
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  indicators: [
+    VolumeProfileIndicator(bins: 32, valueArea: 0.7),
+    PivotPointsIndicator(method: PivotMethod.fibonacci),
+    AnchoredVwapIndicator(anchor: swingLow),
+  ],
+);
+```
+
+An indicator of your own can draw a profile too: return an `IndicatorProfile`
+of `ProfileBin`s from `computeProfile` and the chart draws the bars, picks out
+the busiest band and shades the value area. A delta or time profile is the same
+shape of answer.
 
 #### Custom indicators
 
@@ -314,6 +366,104 @@ KChartWidget(
 
 The volume and indicator panes always stay linear.
 
+The axis picks round values and the grid is ruled where they land, so a label
+and its line always agree. A linear axis steps by 1, 2, 2.5 or 5 times a power
+of ten; a logarithmic one steps by ratio — 1, 2 and 5 through each power of ten
+— falling back to linear steps over a range too narrow to hold a decade; a
+percentage axis chooses round percentages and converts them back to prices.
+
+`ChartStyle.gridRows` is how densely that happens. It is not a row count: about
+half as many round values as `gridRows` land inside the window, so raise it for
+a denser axis and lower it for a sparser one.
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(days: 1),
+  chartStyle: const ChartStyle(gridRows: 12),
+);
+```
+
+The same arithmetic is exported, for a caller drawing an axis of its own beside
+the chart: `niceStep`, `niceTicks` and `niceLogTicks` for values, `niceTimeStep`,
+`timeBucket` and `startsNewDay` for times.
+
+#### Dragging the scale
+
+The axis fits the window by default, so the candles always fill the height —
+which is what you want until you want to look closer. Dragging down the strip
+the price labels sit in stretches the range and makes the candles taller;
+dragging up compresses it. Once the scale is being held that way, a vertical
+drag anywhere on the candles slides the window up and down, and a double-tap on
+the labels hands the axis back to the chart.
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(days: 1),
+  controller: chart,
+  priceScaleDrag: true,
+  chartStyle: const ChartStyle(priceScaleGripWidth: 52),
+);
+```
+
+`priceScaleGripWidth` is how far in from the labelled side that strip reaches,
+and it is never more than half the chart. A drag through it still scrolls the
+chart sideways, a tap still selects what is under it, and while a drawing tool
+is armed it steps aside completely — so a line can still be placed against the
+axis.
+
+The same three moves are on the controller, for a chart driven from a toolbar:
+
+```dart
+chart.stretchPrice();     // taller candles, as dragging down does
+chart.compressPrice();    // flatter ones
+chart.setPriceZoom(2.5);  // or straight to a factor
+chart.resetPriceScale();  // back to fitting the window
+chart.priceZoom;          // 1 while the chart is fitting it itself
+```
+
+Set `priceScaleDrag: false` to keep the axis fitted to the window whatever the
+user does, which is the older behaviour.
+
+### The date axis
+
+The date axis is chosen the same way. Above a day it lands on round dates; below
+one it reads as a run of clock times — `06:00, 12:00, 18:00` — with the date
+promoted where the day turns over, so an intraday chart shows where one session
+ends and the next begins. Labels that would crowd into each other are dropped
+rather than printed over one another, and the boundaries follow the clock the
+chart prints: a `timeZoneOffset` of half an hour still labels round local times.
+
+`ChartStyle.gridColumns` sets the density, read like `gridRows`. Formatting can
+be taken over completely — `ChartStyle.dateTimeFormat` for a fixed pattern, or
+`dateFormatter` for full control, which is handed each candle along with a flag
+marking the long form the crosshair wants:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 15),
+  dateFormatter: (candle, longForm) => DateFormat(
+    longForm ? 'EEE d MMM HH:mm' : 'HH:mm',
+  ).format(DateTime.fromMillisecondsSinceEpoch(candle.time!)),
+  xFrontPadding: 120,
+);
+```
+
+`xFrontPadding` is the empty space kept to the right of the newest candle — room
+for the "now price" tag and its countdown, and for a level drawn just ahead of
+the market.
+
 ### The legend and the crosshair
 
 With a mouse, the crosshair follows the pointer without waiting for a press —
@@ -410,6 +560,19 @@ pointer is when nothing is that close.
 | `channel` | 3 | a base line and a parallel through the third point |
 | `position` | 3 | entry, target and stop, with the risk-to-reward worked out |
 | `brush` | drag | a freehand stroke |
+| `flag` | 1 | a pennant planted on one candle |
+| `gannFan` | 2 | rays at Gann's angles, `1×1` through `1×8` and `8×1` |
+| `gannBox` | 2 | a box ruled at the same fractions across and down |
+| `fibFan` | 2 | rays at the Fibonacci fractions of a swing |
+| `fibTimeZones` | 2 | verticals at Fibonacci multiples of a span |
+| `regressionTrend` | 2 | the least-squares fit through the candles between, with bands |
+| `priceRange` | 2 | a bracket over a price move, in price and percent |
+| `dateRange` | 2 | a bracket under a span, in candles and in time |
+| `callout` | 2 | a note in a box, with a tail pointing at a candle |
+| `pitchfork` | 3 | a median line and its tines, from three swings |
+| `fibExtension` | 3 | an impulse projected on from where the retracement ended |
+| `xabcd` | 5 | a harmonic pattern, each leg labelled with its retracement |
+| `path` | many | straight legs through as many points as are tapped |
 
 The three trend variants are all `TrendLine`s: `extend` (`LineExtension.none`,
 `.right`, `.both`) decides how far past its anchors the line runs, and `arrow`
@@ -423,6 +586,64 @@ passed in `rectangles` and `fibRetracements` and reported through
 Every two-point drawing shares one base, `TwoPointDrawing`: two (time, price)
 anchors, either of which can be dragged, plus `isComplete` — false while the
 second point is still following the pointer.
+
+`xabcd` and `path` are `MultiPointDrawing`s instead: their anchors live in a
+`points` list rather than in numbered fields, which is what lets a path take as
+many as it is given. Each tap lands a leg. A pattern finishes when its five
+points are in; a path has no count to finish on, so it ends when you tap twice
+in the same place, or when the tool is disarmed — switching tools finishes an
+open path rather than throwing it away.
+
+##### Fans, forks and fits
+
+`GannFan`'s second anchor places the `1×1` — one unit of price against one unit
+of time — and `ratios` multiplies that slope for the rest of the fan, so `2` is
+the `1×2` and `0.5` the `2×1`. `GannBox` divides a range by its own proportions
+instead: `ratios` are taken as fractions of the box both ways, so the
+horizontals mark those fractions of the price range and the verticals the same
+fractions of the span.
+
+`FibFan` spreads rays between the flat `0` and the diagonal `1` of a swing —
+support that slopes with time, where a retracement's is level.
+`FibTimeZones` reads the other axis: the two anchors set one unit of time and
+each level marks that many units on, so a swing that took ten candles projects
+lines at 10, 20, 30, 50 and 80. `FibExtension` is the trend-based one: the
+first two anchors are the impulse, the third is where the retracement ended,
+and the levels are projected on from there rather than drawn between the
+anchors.
+
+`PitchforkDrawing` takes a pivot and the swing either side of it. The median
+runs through the midpoint of the swing and each level draws a tine parallel to
+it — `1` being the tines through the anchors themselves, `0` the median.
+`PitchforkKind.andrews` leaves the handle on the pivot, `.schiff` lifts it
+halfway to the median in price, and `.modifiedSchiff` lifts it in time as well.
+
+`RegressionChannel` is the one drawing that reads the candles rather than only
+the anchors: `fitRegression` runs a least-squares fit through the closes of
+everything the two anchors span, and `deviations` places a band either side at
+that many standard deviations. Move an anchor and the fit is worked out again,
+so the line always describes the stretch it covers rather than the two points
+it was dropped on.
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  isTrendLine: true,
+  currentDrawingTool: DrawingTool.pitchfork,
+  drawings: [
+    RegressionChannel(
+      time1: candles[20].dateTime!, price1: candles[20].close,
+      time2: candles[60].dateTime!, price2: candles[60].close,
+      deviations: 2,
+    ),
+    XabcdDrawing(points: [
+      for (final i in [10, 20, 30, 40, 50])
+        (time: candles[i].dateTime!, price: candles[i].close),
+    ]),
+  ],
+);
+```
 
 ```dart
 RectangleDrawing(
@@ -708,11 +929,56 @@ KChartWidget(
 );
 ```
 
+Each pane is ruled and labelled at round values of its own, rather than showing
+only its highest and lowest — which is what lets three ATRs at three periods be
+read against each other instead of being three unlabelled squiggles. A pane with
+a range it already knows — RSI, KDJ, WR — keeps its guides instead. MACD and the
+Awesome oscillator draw their zero line, the axis their histogram changes colour
+across, and the volume pane marks a round level part-way up so a bar can be read
+against something.
+
 Heights live in the chart, between `ChartStyle.minPaneHeight` and
 `maxPaneHeight`, and are given up whenever the panes themselves change. The order
 does not: the indicators own that, so the chart reports where a pane was dropped
 and leaves the move to you. `ChartStyle.paneResizeTolerance` and `paneGrabHeight`
 decide how big each target is.
+
+### Bar replay
+
+Rewind the chart and let the market happen again. `ChartReplayController` holds
+the chart at a candle in the past: everything after it — the candles, the
+indicators computed from them, the now-price line and the legend — is as it was
+at that moment, so a setup can be studied without the answer already on screen.
+
+```dart
+final replay = ChartReplayController(interval: const Duration(milliseconds: 300));
+
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 15),
+  replay: replay,
+);
+
+replay.start(at: 200);   // draw the oldest 200 candles and hold there
+replay.stepForward();    // one more
+replay.stepBack();       // one fewer
+replay.play();           // or let them arrive on their own
+replay.pause();
+replay.stop();           // hand the whole series back
+```
+
+`play()` from cold starts halfway through, so a play button works without a
+candle having been picked first, and it gives up on its own at the newest one —
+`isPlaying`, `isActive`, `position`, `length` and `isAtEnd` are all there to
+drive a transport bar from. It is a `ChangeNotifier`, so those buttons rebuild
+themselves; dispose it with the widget that owns it.
+
+Nothing is thrown away while a replay runs: the candle list is untouched and
+the drawings stay where they were placed, including any on candles still to
+arrive.
 
 ### Sessions and time zones
 
@@ -841,8 +1107,11 @@ ChartTranslations(
 `DrawingTranslations.nameOf` is what turns a drawing into the name the manager
 shows, so a kind you have renamed reads the same everywhere.
 
-`ChartColors` gained `sessionDividerColor` for the day dividers, and `ChartStyle`
-now has a `copyWith`, so a house geometry can be varied a switch at a time:
+`ChartColors` gained `sessionDividerColor` for the day dividers and
+`gridColumnColor` for the vertical grid lines, which default to a lighter shade
+of `gridColor` — a chart is read across price far more than across time, so the
+time columns sit behind the price rows. `ChartStyle` now has a `copyWith`, so a
+house geometry can be varied a switch at a time:
 
 ```dart
 final style = ChartTheme.filled.copyWith(showSessionDividers: true);
@@ -902,6 +1171,16 @@ drawing manager is what turns it on.
 - The zoom slider renders only where there is no pinch gesture — web and desktop.
 - `watermarkAssetPath` must point at an SVG registered in your app's `pubspec.yaml`
   assets; a missing asset is ignored and the chart renders without a watermark.
+
+## Support
+
+This package is free to use in your own projects, and I keep it updated weekly —
+new indicators, drawing tools and fixes land as I use it myself.
+
+If it saves you some work, the only thing I ask in return is a ⭐ on the
+[repository](https://github.com/CtrlAltDevelop/ohlcv_chart) and a follow on
+[GitHub](https://github.com/CtrlAltDevelop). That is what keeps the weekly
+updates coming.
 
 ## Credits
 

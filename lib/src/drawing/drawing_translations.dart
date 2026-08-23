@@ -1,12 +1,19 @@
+import '../entity/callout_drawing.dart';
 import '../entity/ellipse_drawing.dart';
+import '../entity/fib_drawings.dart';
 import '../entity/fib_retracement.dart';
 import '../entity/freehand_drawing.dart';
+import '../entity/gann_drawings.dart';
 import '../entity/horizontal_line.dart';
 import '../entity/line.dart';
 import '../entity/measure_drawing.dart';
+import '../entity/multi_point_drawing.dart';
 import '../entity/parallel_channel.dart';
+import '../entity/pitchfork_drawing.dart';
 import '../entity/position_drawing.dart';
+import '../entity/range_drawings.dart';
 import '../entity/rectangle_drawing.dart';
+import '../entity/regression_channel.dart';
 import '../entity/text_annotation.dart';
 import '../entity/trend_line.dart';
 import '../entity/triangle_drawing.dart';
@@ -44,6 +51,17 @@ class DrawingTranslations {
     this.delete = 'Delete',
     this.done = 'Done',
     this.move = 'Move toolbar',
+    this.coordinates = 'Coordinates',
+    this.coordinatesTitle = 'Exact coordinates',
+    this.price = 'Price',
+    this.candle = 'Candle',
+    this.apply = 'Apply',
+    this.cancel = 'Cancel',
+    this.readOnlyAnchors = 'A freehand stroke has too many points to type in.',
+    this.selectedCount = 'selected',
+    this.duplicate = 'Duplicate',
+    this.bringForward = 'Bring forward',
+    this.sendBackward = 'Send backward',
     this.drawings = 'Drawings',
     this.noDrawings = 'Nothing drawn yet',
     this.undo = 'Undo',
@@ -68,6 +86,19 @@ class DrawingTranslations {
     this.shortPositionName = 'Short position',
     this.textName = 'Note',
     this.freehandName = 'Freehand',
+    this.pitchforkName = 'Pitchfork',
+    this.gannFanName = 'Gann fan',
+    this.gannBoxName = 'Gann box',
+    this.fibExtensionName = 'Fib extension',
+    this.fibFanName = 'Fib fan',
+    this.fibTimeZonesName = 'Fib time zones',
+    this.regressionName = 'Regression trend',
+    this.xabcdName = 'XABCD pattern',
+    this.priceRangeName = 'Price range',
+    this.dateRangeName = 'Date range',
+    this.calloutName = 'Callout',
+    this.pathName = 'Path',
+    this.flagName = 'Flag',
     this.drawingName = 'Drawing',
   });
 
@@ -127,6 +158,39 @@ class DrawingTranslations {
 
   /// Tooltip of the drag grip.
   final String move;
+
+  /// Tooltip of the button that opens the coordinates dialog.
+  final String coordinates;
+
+  /// Title of the coordinates dialog.
+  final String coordinatesTitle;
+
+  /// Label of a price field.
+  final String price;
+
+  /// Label of a candle field.
+  final String candle;
+
+  /// Label of the coordinates dialog's confirm button.
+  final String apply;
+
+  /// Label of the coordinates dialog's dismiss button.
+  final String cancel;
+
+  /// Shown in place of the fields for a drawing whose anchors cannot be typed.
+  final String readOnlyAnchors;
+
+  /// Follows the count when more than one drawing is selected: `3 selected`.
+  final String selectedCount;
+
+  /// Tooltip of the button that copies a drawing in place.
+  final String duplicate;
+
+  /// Tooltip of the button that moves a drawing up the stack.
+  final String bringForward;
+
+  /// Tooltip of the button that moves a drawing down the stack.
+  final String sendBackward;
 
   /// Title of the drawing manager.
   final String drawings;
@@ -200,6 +264,45 @@ class DrawingTranslations {
   /// Name of a freehand stroke.
   final String freehandName;
 
+  /// Name of a pitchfork.
+  final String pitchforkName;
+
+  /// Name of a Gann fan.
+  final String gannFanName;
+
+  /// Name of a Gann box.
+  final String gannBoxName;
+
+  /// Name of a trend-based Fibonacci extension.
+  final String fibExtensionName;
+
+  /// Name of a Fibonacci fan.
+  final String fibFanName;
+
+  /// Name of a set of Fibonacci time zones.
+  final String fibTimeZonesName;
+
+  /// Name of a regression channel.
+  final String regressionName;
+
+  /// Name of a harmonic pattern.
+  final String xabcdName;
+
+  /// Name of a price bracket.
+  final String priceRangeName;
+
+  /// Name of a date bracket.
+  final String dateRangeName;
+
+  /// Name of a callout.
+  final String calloutName;
+
+  /// Name of a multi-segment path.
+  final String pathName;
+
+  /// Name of a flag.
+  final String flagName;
+
   /// Name of a drawing of no particular kind.
   final String drawingName;
 
@@ -222,6 +325,19 @@ class DrawingTranslations {
     PositionDrawing() => shortPositionName,
     TextAnnotation() => textName,
     FreehandDrawing() => freehandName,
+    PitchforkDrawing() => pitchforkName,
+    GannFan() => gannFanName,
+    GannBox() => gannBoxName,
+    FibExtension() => fibExtensionName,
+    FibFan() => fibFanName,
+    FibTimeZones() => fibTimeZonesName,
+    RegressionChannel() => regressionName,
+    XabcdDrawing() => xabcdName,
+    PriceRangeDrawing() => priceRangeName,
+    DateRangeDrawing() => dateRangeName,
+    CalloutDrawing() => calloutName,
+    PathDrawing() => pathName,
+    FlagDrawing() => flagName,
     _ => drawingName,
   };
 }

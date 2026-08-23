@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../entity/drawing_codec.dart';
 import '../entity/line.dart';
+import 'drawing_template.dart';
 
 /// Owns a chart's drawings, and remembers what they looked like before the
 /// last few edits.
@@ -87,20 +88,96 @@ class ChartDrawingController extends ChangeNotifier {
 
   ChartLine? _selected;
 
+  final List<ChartLine> _alsoSelected = [];
+
   /// The drawing the chart has its editor open on, if any.
   ///
   /// Set it — from a drawing manager, say — and the chart selects that drawing;
   /// the chart writes back to it whenever the user selects one on the chart
-  /// itself.
+  /// itself. With several selected this is the one the editor is open on, which
+  /// is the last one picked.
   ChartLine? get selected => _selected;
 
-  /// Selects [line], or clears the selection when it is null.
+  /// Every selected drawing, in the order they were picked.
+  ///
+  /// One at most until something is added to the selection; the editor stays on
+  /// [selected], and an edit made through it is applied to the rest by the
+  /// chart.
+  List<ChartLine> get selection =>
+      List<ChartLine>.unmodifiable([..._alsoSelected, ?_selected]);
+
+  /// How many drawings are selected.
+  int get selectionLength => _alsoSelected.length + (_selected == null ? 0 : 1);
+
+  /// Whether more than one drawing is selected.
+  bool get hasMultipleSelected => selectionLength > 1;
+
+  /// Whether [line] is one of the selected drawings.
+  bool isSelected(ChartLine line) =>
+      identical(_selected, line) ||
+      _alsoSelected.any((candidate) => identical(candidate, line));
+
+  /// Selects [line] alone, or clears the selection when it is null.
   void select(ChartLine? line) {
-    if (identical(_selected, line)) return;
+    if (identical(_selected, line) && _alsoSelected.isEmpty) return;
     if (line != null && !contains(line)) return;
+    _alsoSelected.clear();
     _selected = line;
     notifyListeners();
   }
+
+  /// Selects every drawing in [lines], the last of them primary.
+  ///
+  /// Anything not among these drawings is skipped, and an empty list clears the
+  /// selection.
+  void selectMany(Iterable<ChartLine> lines) {
+    final held = [
+      for (final line in lines)
+        if (contains(line)) line,
+    ];
+    _alsoSelected
+      ..clear()
+      ..addAll(held.isEmpty ? const <ChartLine>[] : held.take(held.length - 1));
+    _selected = held.isEmpty ? null : held.last;
+    notifyListeners();
+  }
+
+  /// Selects every drawing on the chart.
+  void selectAll() => selectMany(_drawings.all);
+
+  /// Adds [line] to the selection and makes it the primary one.
+  void addToSelection(ChartLine line) {
+    if (!contains(line) || isSelected(line)) return;
+    final was = _selected;
+    if (was != null) _alsoSelected.add(was);
+    _selected = line;
+    notifyListeners();
+  }
+
+  /// Takes [line] out of the selection.
+  void removeFromSelection(ChartLine line) {
+    if (!isSelected(line)) return;
+    if (identical(_selected, line)) {
+      // The editor moves to whatever was picked before it, so a selection is
+      // never left with extras and no primary.
+      _selected = _alsoSelected.isEmpty ? null : _alsoSelected.removeLast();
+    } else {
+      _alsoSelected.removeWhere((candidate) => identical(candidate, line));
+    }
+    notifyListeners();
+  }
+
+  /// Adds [line] to the selection, or takes it out if it is already in.
+  void toggleSelection(ChartLine line) {
+    if (isSelected(line)) {
+      removeFromSelection(line);
+    } else {
+      addToSelection(line);
+    }
+  }
+
+  /// Clears the selection.
+  void clearSelection() => select(null);
 
   /// Whether there is an edit to undo.
   bool get canUndo => _past.isNotEmpty;
@@ -122,10 +199,196 @@ class ChartDrawingController extends ChangeNotifier {
     _commit(() => _drawings.remove(line));
   }
 
+  /// Forgets every drawing in [lines], as one undoable step.
+  void removeAll(Iterable<ChartLine> lines) {
+    final held = [
+      for (final line in lines)
+        if (contains(line)) line,
+    ];
+    if (held.isEmpty) return;
+    _commit(() {
+      for (final line in held) {
+        _drawings.remove(line);
+      }
+    });
+  }
+
   /// Forgets every drawing.
   void clear() {
     if (_drawings.isEmpty) return;
     _commit(() => _drawings.clear());
+  }
+
+  // ── Stacking order ───────────────────────────────────────────────────────
+
+  /// Where [line] sits in the stack, or -1 when it is not here.
+  ///
+  /// Later is higher: the last drawing paints over the ones before it, and is
+  /// the one a tap in an overlap picks up.
+  int indexOf(ChartLine line) => _drawings.indexOf(line);
+
+  /// Moves [line] to the top of the stack; returns whether it moved.
+  bool bringToFront(ChartLine line) =>
+      _restack(() => _drawings.moveToFront(line));
+
+  /// Moves [line] to the bottom of the stack; returns whether it moved.
+  bool sendToBack(ChartLine line) => _restack(() => _drawings.moveToBack(line));
+
+  /// Moves [line] one place up the stack; returns whether it moved.
+  bool bringForward(ChartLine line) =>
+      _restack(() => _drawings.moveForward(line));
+
+  /// Moves [line] one place down the stack; returns whether it moved.
+  bool sendBackward(ChartLine line) =>
+      _restack(() => _drawings.moveBackward(line));
+
+  /// Runs [move] as one undoable step, unless it changes nothing.
+  bool _restack(bool Function() move) {
+    // Filed before the move so undo has the old order to go back to, and only
+    // filed at all when there is a move to undo.
+    final before = _baseline;
+    var moved = false;
+    _commit(() => moved = move());
+    if (!moved) {
+      // Nothing happened, so the history step is taken back out again.
+      _past.remove(before);
+      _baseline = before;
+    }
+    return moved;
+  }
+
+  // ── Copying, pasting and duplicating ─────────────────────────────────────
+
+  List<ChartLine> _clipboard = const [];
+
+  /// How many drawings are on the clipboard.
+  int get clipboardLength => _clipboard.length;
+
+  /// Whether there is anything to [paste].
+  bool get canPaste => _clipboard.isNotEmpty;
+
+  /// Puts a copy of [lines] on the clipboard.
+  ///
+  /// Copies, so editing or deleting the originals afterwards leaves what was
+  /// copied alone. Nothing is committed and nothing is notified: the drawings
+  /// have not changed.
+  void copyToClipboard(Iterable<ChartLine> lines) {
+    _clipboard = [for (final line in lines) copyDrawing(line)];
+  }
+
+  /// Empties the clipboard.
+  void clearClipboard() {
+    _clipboard = const [];
+  }
+
+  /// Adds a copy of everything on the clipboard, and returns what was added.
+  ///
+  /// One undoable step, however many were pasted, and the pasted drawings end
+  /// up selected. They land exactly where they were copied from; nudging them
+  /// somewhere visible is the chart's job, since only it knows how wide a
+  /// candle is.
+  List<ChartLine> paste() {
+    if (_clipboard.isEmpty) return const [];
+    final pasted = [for (final line in _clipboard) copyDrawing(line)];
+    _commit(() {
+      for (final line in pasted) {
+        _drawings.save(line);
+      }
+    });
+    selectMany(pasted);
+    return pasted;
+  }
+
+  /// Adds a copy of each of [lines], and returns the copies.
+  ///
+  /// One undoable step, and the copies end up selected — the same as copying
+  /// and pasting, without disturbing the clipboard.
+  List<ChartLine> duplicate(Iterable<ChartLine> lines) {
+    final held = [
+      for (final line in lines)
+        if (contains(line)) line,
+    ];
+    if (held.isEmpty) return const [];
+
+    final copies = [for (final line in held) copyDrawing(line)];
+    _commit(() {
+      for (final line in copies) {
+        _drawings.save(line);
+      }
+    });
+    selectMany(copies);
+    return copies;
+  }
+
+  // ── Style templates ──────────────────────────────────────────────────────
+
+  final Map<String, DrawingTemplate> _templates = {};
+
+  /// The saved style templates, by name.
+  Map<String, DrawingTemplate> get templates =>
+      Map<String, DrawingTemplate>.unmodifiable(_templates);
+
+  /// Saves [line]'s look under [name], replacing any template of that name.
+  ///
+  /// Templates are the controller's own, not the drawings': saving one is not
+  /// an undoable edit and does not change the chart.
+  void saveTemplate(String name, ChartLine line) {
+    _templates[name] = DrawingTemplate.of(line);
+    notifyListeners();
+  }
+
+  /// Stores [template] under [name].
+  void putTemplate(String name, DrawingTemplate template) {
+    _templates[name] = template;
+    notifyListeners();
+  }
+
+  /// Forgets the template called [name]; returns whether there was one.
+  bool removeTemplate(String name) {
+    if (_templates.remove(name) == null) return false;
+    notifyListeners();
+    return true;
+  }
+
+  /// Puts the template called [name] on each of [lines], as one undoable step.
+  ///
+  /// Returns whether there is a template of that name to apply.
+  bool applyTemplate(String name, Iterable<ChartLine> lines) {
+    final template = _templates[name];
+    if (template == null) return false;
+
+    final held = [
+      for (final line in lines)
+        if (contains(line)) line,
+    ];
+    if (held.isEmpty) return true;
+
+    _commit(() {
+      for (final line in held) {
+        template.applyTo(line);
+      }
+    });
+    return true;
+  }
+
+  /// The saved templates as a JSON-encodable map.
+  ///
+  /// Kept apart from [toJson], which is the drawings themselves: templates
+  /// outlive any one chart's layout, so they are usually stored on their own.
+  Map<String, dynamic> templatesToJson() => <String, dynamic>{
+    for (final entry in _templates.entries) entry.key: entry.value.toJson(),
+  };
+
+  /// Replaces the saved templates with those in [json].
+  void loadTemplates(Map<String, dynamic> json) {
+    _templates.clear();
+    for (final entry in json.entries) {
+      final value = entry.value;
+      if (value is Map<String, dynamic>) {
+        _templates[entry.key] = DrawingTemplate.fromJson(value);
+      }
+    }
+    notifyListeners();
   }
 
   /// Replaces every drawing with [drawings].
@@ -193,10 +456,15 @@ class ChartDrawingController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Clears a selection whose drawing is no longer here — what a deletion, an
+  /// Drops from the selection anything no longer here — what a deletion, an
   /// undo or a fresh layout leaves behind.
   void _forgetLostSelection() {
+    _alsoSelected.removeWhere((line) => !contains(line));
     final selected = _selected;
-    if (selected != null && !contains(selected)) _selected = null;
+    if (selected != null && !contains(selected)) {
+      // Something else may still be selected, so the editor moves to it rather
+      // than closing.
+      _selected = _alsoSelected.isEmpty ? null : _alsoSelected.removeLast();
+    }
   }
 }

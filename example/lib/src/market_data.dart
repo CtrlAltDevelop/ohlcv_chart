@@ -24,9 +24,7 @@ class MarketData {
   /// Builds [count] candles ending now, as a seeded random walk.
   static List<KLineEntity> candles({int count = 240}) {
     final random = Random(42);
-    final start = alignToTimeFrame(
-      DateTime.now().subtract(timeFrame * count),
-    );
+    final start = alignToTimeFrame(DateTime.now().subtract(timeFrame * count));
     var price = 64000.0;
 
     final candles = <KLineEntity>[];

@@ -25,6 +25,10 @@ enum LineStyle {
 /// `TextAnnotation` and `FreehandDrawing`. What the user may change, and which
 /// values the editing toolbar offers, is configured with `DrawingStyle`.
 ///
+/// A drawing that can be alerted on mixes in `AlertingDrawing`, and one whose
+/// interior is washed `FilledDrawing`; a drawing the user can name mixes in
+/// `LabelledDrawing`.
+///
 /// Every drawing serialises: [toJson] round-trips through `drawingFromJson`,
 /// which is how a chart's drawings are persisted and restored.
 abstract class ChartLine {
@@ -205,6 +209,29 @@ abstract mixin class LabelledDrawing implements ChartLine {
   String? get labelText;
 
   set labelText(String? value);
+}
+
+/// A drawing whose levels the market can cross, and be reported for.
+///
+/// Set [alert] and the chart watches every level the drawing has at the newest
+/// candle, reporting through `KChartWidget.onDrawingAlert` whenever the close
+/// moves from one side of one of them to the other. A horizontal level has one
+/// level and it never moves; a trend line's moves with time; a retracement or a
+/// channel has several at once.
+///
+/// [alertLevelsAt] is asked for the levels at one instant, so a sloping line
+/// answers for where it is at that candle rather than where it was drawn.
+abstract mixin class AlertingDrawing implements ChartLine {
+  /// Whether crossing one of this drawing's levels fires an alert.
+  bool get alert;
+
+  set alert(bool value);
+
+  /// The prices this drawing sits at, at [time].
+  ///
+  /// Empty where the drawing has nothing to cross there: a half-placed shape,
+  /// or a ray at a candle before it starts.
+  List<double> alertLevelsAt(DateTime time);
 }
 
 /// A drawing with an interior washed in its own colour.

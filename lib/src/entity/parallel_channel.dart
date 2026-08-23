@@ -8,7 +8,8 @@ import 'two_point_drawing.dart';
 ///
 /// The channel every trend is read in. Place the base line along the swings on
 /// one side, then one more tap puts the parallel through the swing on the other.
-class ParallelChannel extends ThreePointDrawing implements FilledDrawing {
+class ParallelChannel extends ThreePointDrawing
+    implements FilledDrawing, AlertingDrawing {
   /// Creates a channel whose base line starts at ([time1], [price1]).
   ParallelChannel({
     required super.time1,
@@ -19,6 +20,7 @@ class ParallelChannel extends ThreePointDrawing implements FilledDrawing {
     super.price3,
     this.fillOpacity = 0.08,
     this.extend = false,
+    this.alert = false,
     super.color = const Color(0xFF00C853),
     super.thickness = 1.5,
     super.style,
@@ -40,6 +42,7 @@ class ParallelChannel extends ThreePointDrawing implements FilledDrawing {
       price3: LineJson.maybeNumber(json, 'price3'),
       fillOpacity: LineJson.number(json, 'fillOpacity', 0.08),
       extend: LineJson.flag(json, 'extend'),
+      alert: LineJson.flag(json, 'alert'),
       color: LineJson.color(json, const Color(0xFF00C853)),
       thickness: LineJson.number(json, 'thickness', 1.5),
       style: LineJson.style(json),
@@ -56,6 +59,10 @@ class ParallelChannel extends ThreePointDrawing implements FilledDrawing {
   /// Whether both lines carry on to the right edge of the chart.
   bool extend;
 
+  /// Whether the market crossing either line fires an alert.
+  @override
+  bool alert;
+
   /// How far the parallel sits from the base line, in price.
   ///
   /// Null until the third anchor lands.
@@ -71,15 +78,23 @@ class ParallelChannel extends ThreePointDrawing implements FilledDrawing {
   ///
   /// With only one anchor placed, or with both at the same instant, the base
   /// line is flat and this is simply its first price.
-  double priceOnBaseLineAt(DateTime time) {
-    final endTime = time2;
-    final endPrice = price2;
-    if (endTime == null || endPrice == null) return price1;
+  double priceOnBaseLineAt(DateTime time) => priceOnLineAt(time);
 
-    final run = endTime.difference(time1).inMicroseconds;
-    if (run == 0) return price1;
-    final along = time.difference(time1).inMicroseconds / run;
-    return price1 + (endPrice - price1) * along;
+  @override
+  List<double> alertLevelsAt(DateTime time) {
+    final away = offset;
+    if (away == null) return const [];
+    // Only where the channel is drawn, unless it has been extended right.
+    if (!extend) {
+      final from = time1.isBefore(time2!) ? time1 : time2!;
+      final to = time1.isBefore(time2!) ? time2! : time1;
+      if (time.isBefore(from) || time.isAfter(to)) return const [];
+    } else if (time.isBefore(time1.isBefore(time2!) ? time1 : time2!)) {
+      return const [];
+    }
+
+    final base = priceOnBaseLineAt(time);
+    return [base, base + away];
   }
 
   @override

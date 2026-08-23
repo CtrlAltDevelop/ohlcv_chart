@@ -91,6 +91,123 @@ class IndicatorSeries {
   }
 }
 
+/// One price band of a volume profile: how much traded between two prices.
+class ProfileBin {
+  /// Creates a band running from [low] to [high].
+  const ProfileBin({
+    required this.low,
+    required this.high,
+    required this.volume,
+    this.upVolume = 0,
+  });
+
+  /// Bottom of the band.
+  final double low;
+
+  /// Top of the band.
+  final double high;
+
+  /// Everything that traded inside it.
+  final double volume;
+
+  /// The part of [volume] that traded on candles that closed up.
+  ///
+  /// What splits a bin into its buying and selling halves. Never more than
+  /// [volume].
+  final double upVolume;
+
+  /// The part of [volume] that traded on candles that closed down.
+  double get downVolume => volume - upVolume;
+}
+
+/// Volume gathered by price rather than by time: what a volume profile draws.
+///
+/// Returned by [Indicator.computeProfile] and drawn as horizontal bars across
+/// the candles, so the prices the market spent its volume at can be read off
+/// the same axis as the candles themselves.
+class IndicatorProfile {
+  /// Creates a profile over [bins], lowest first.
+  const IndicatorProfile({
+    required this.bins,
+    required this.pointOfControl,
+    this.valueAreaHigh,
+    this.valueAreaLow,
+  });
+
+  /// The bands, from the lowest price up.
+  final List<ProfileBin> bins;
+
+  /// Index into [bins] of the band that traded most — the point of control.
+  ///
+  /// -1 when there is nothing to draw.
+  final int pointOfControl;
+
+  /// Top of the band that holds the value area, if one was worked out.
+  final double? valueAreaHigh;
+
+  /// Bottom of it.
+  final double? valueAreaLow;
+
+  /// The busiest band's volume, which every other bar is drawn relative to.
+  double get peakVolume => bins.isEmpty
+      ? 0
+      : bins.map((bin) => bin.volume).reduce((a, b) => a > b ? a : b);
+
+  /// Whether there is anything to draw.
+  bool get isEmpty => bins.isEmpty || peakVolume <= 0;
+}
+
+/// How a session's pivot levels are worked out from the session before it.
+enum PivotMethod {
+  /// The classic pivot: `(H + L + C) / 3`, with the supports and resistances
+  /// stepped out by the session's range.
+  standard,
+
+  /// The same pivot, with the levels placed at 38.2%, 61.8% and 100% of the
+  /// range instead.
+  fibonacci,
+
+  /// Levels crowded much closer to the close, which is what a mean-reverting
+  /// day is read with.
+  camarilla,
+}
+
+/// The stretch of time one set of pivot levels is worked out from.
+enum PivotSession {
+  /// A calendar day, which is what an intraday chart is usually pivoted off.
+  day,
+
+  /// A calendar week, running from the Monday.
+  week,
+
+  /// A calendar month.
+  month,
+
+  /// A calendar year.
+  year;
+
+  /// What marks [candle] out as belonging to one session rather than another.
+  ///
+  /// Two candles in the same session answer equal, so the series can be split
+  /// by walking it once. A candle with no timestamp answers null and is left
+  /// out of every session.
+  Object? keyOf(KLineEntity candle) {
+    final time = candle.dateTime;
+    if (time == null) return null;
+    return switch (this) {
+      PivotSession.day => (time.year, time.month, time.day),
+      // The Monday of the week the candle falls in, so a week that straddles
+      // a month or a year still reads as one session.
+      PivotSession.week => () {
+        final monday = time.subtract(Duration(days: time.weekday - 1));
+        return (monday.year, monday.month, monday.day);
+      }(),
+      PivotSession.month => (time.year, time.month),
+      PivotSession.year => time.year,
+    };
+  }
+}
+
 /// One configured indicator: a type, its settings, and optionally its colours.
 ///
 /// Add as many as you like, including several of the same kind with different
@@ -147,6 +264,13 @@ abstract class Indicator {
 
   /// Computes one value per candle for each of [lines].
   IndicatorSeries compute(List<KLineEntity> candles);
+
+  /// Volume gathered by price, for an indicator that draws a profile.
+  ///
+  /// Null for all but a handful: most indicators have one value per candle and
+  /// nothing to say about the prices in between. An overlay that returns one
+  /// has it drawn as horizontal bars over the candles, on the same axis.
+  IndicatorProfile? computeProfile(List<KLineEntity> candles) => null;
 
   /// Areas shaded between two lines, drawn under them.
   List<IndicatorFill> get fills => const [];

@@ -3,30 +3,43 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'chart_controller.dart';
+import 'replay_controller.dart';
 import 'chart_style.dart';
 import 'chart_translations.dart';
 import 'chart_type.dart';
 import 'components/popup_info_view.dart';
 import 'drawing/drawing_controller.dart';
+import 'drawing/drawing_coordinates.dart';
 import 'drawing/drawing_style.dart';
+import 'drawing/drawing_template.dart';
 import 'drawing/drawing_toolbar.dart';
+import 'drawing/shape_geometry.dart';
+import 'entity/callout_drawing.dart';
+import 'entity/drawing_codec.dart';
 import 'entity/ellipse_drawing.dart';
+import 'entity/fib_drawings.dart';
 import 'entity/fib_retracement.dart';
 import 'entity/freehand_drawing.dart';
+import 'entity/gann_drawings.dart';
 import 'entity/horizontal_line.dart';
 import 'entity/info_window_entity.dart';
 import 'entity/k_line_entity.dart';
 import 'entity/line.dart';
 import 'entity/measure_drawing.dart';
+import 'entity/multi_point_drawing.dart';
 import 'entity/parallel_channel.dart';
+import 'entity/pitchfork_drawing.dart';
 import 'entity/position_drawing.dart';
+import 'entity/range_drawings.dart';
 import 'entity/rectangle_drawing.dart';
+import 'entity/regression_channel.dart';
 import 'entity/signal_entity.dart';
 import 'entity/text_annotation.dart';
 import 'entity/trend_line.dart';
@@ -100,6 +113,49 @@ enum DrawingTool {
 
   /// A drag lays down a [FreehandDrawing].
   brush,
+
+  /// The next three taps place a [PitchforkDrawing]: the pivot, then the swing
+  /// either side of it.
+  pitchfork,
+
+  /// The next two taps place a [GannFan]: the pivot, then the `1×1`.
+  gannFan,
+
+  /// The next two taps place opposite corners of a [GannBox].
+  gannBox,
+
+  /// The next three taps place a [FibExtension]: the impulse, then where the
+  /// retracement ended.
+  fibExtension,
+
+  /// The next two taps place the swing a [FibFan] spreads over.
+  fibFan,
+
+  /// The next two taps place the unit span of a [FibTimeZones].
+  fibTimeZones,
+
+  /// The next two taps place the stretch a [RegressionChannel] is fitted over.
+  regressionTrend,
+
+  /// The next five taps place the X, A, B, C and D of an [XabcdDrawing].
+  xabcd,
+
+  /// The next two taps place the levels a [PriceRangeDrawing] brackets.
+  priceRange,
+
+  /// The next two taps place the span a [DateRangeDrawing] brackets.
+  dateRange,
+
+  /// The next two taps place a [CalloutDrawing]: what it points at, then where
+  /// the box sits.
+  callout,
+
+  /// Taps lay down the legs of a [PathDrawing], one after another, until it is
+  /// finished with a double-tap or by disarming the tool.
+  path,
+
+  /// The next tap plants a [FlagDrawing].
+  flag,
 }
 
 /// Ready-made date patterns for [KChartWidget.timeFormat].
@@ -165,6 +221,8 @@ class KChartWidget extends StatefulWidget {
     this.drawingController,
     this.currentDrawingTool = DrawingTool.none,
     this.magnetMode = false,
+    this.priceScaleDrag = true,
+    this.replay,
     this.enableKeyboardShortcuts = true,
     this.crosshairOnHover = true,
     this.showOhlcLegend = false,
@@ -190,6 +248,8 @@ class KChartWidget extends StatefulWidget {
     this.onAddDrawing,
     this.onRemoveDrawing,
     this.onAlertCrossed,
+    this.onDrawingAlert,
+    this.showDrawingCoordinates = true,
     this.selectAfterDrawing = true,
     this.volHidden = false,
     this.isLine = false,
@@ -329,11 +389,31 @@ class KChartWidget extends StatefulWidget {
   /// Called when the user deletes a drawing of any kind.
   final ValueChanged<ChartLine>? onRemoveDrawing;
 
-  /// Called when the newest candle crosses a level with `alert` set.
+  /// Called when the newest candle crosses a horizontal level with `alert` set.
   ///
   /// Fires once per crossing — the level's own side of the market has to change
-  /// before it fires again — and carries the candle that did the crossing.
+  /// before it fires again — and carries the candle that did the crossing. For
+  /// the other shapes that can be alerted on, use [onDrawingAlert].
   final void Function(HorizontalLine line, KLineEntity candle)? onAlertCrossed;
+
+  /// Called when the newest candle crosses any alerting drawing's level.
+  ///
+  /// Every `AlertingDrawing` with `alert` set is watched — a horizontal level, a
+  /// trend line, either side of a channel, each level of a retracement — and the
+  /// price that was crossed comes along with the drawing and the candle, since a
+  /// drawing may have several. Fires once per crossing per level.
+  ///
+  /// A horizontal level reports through both this and [onAlertCrossed], so an
+  /// app written against the older callback carries on working.
+  final void Function(ChartLine line, KLineEntity candle, double level)?
+  onDrawingAlert;
+
+  /// Whether the line editor offers a button that opens the coordinates dialog.
+  ///
+  /// The dialog reads out every anchor of the selected drawing and lets each
+  /// one be typed in exactly, which is how a level placed by hand is tidied up
+  /// afterwards.
+  final bool showDrawingCoordinates;
 
   /// Whether a drawing the user has just finished is left selected, with the
   /// editor open on it.
@@ -496,6 +576,31 @@ class KChartWidget extends StatefulWidget {
   /// See [PriceAxisScale]. The volume and indicator panes stay linear.
   final PriceAxisScale priceAxisScale;
 
+  /// Whether dragging the price axis stretches it.
+  ///
+  /// The axis fits the window by default, so the candles always fill the
+  /// height. Dragging up the strip the price labels sit in — its width is
+  /// [ChartStyle.priceScaleGripWidth] — compresses the range and flattens the
+  /// candles; dragging down stretches it. Once the scale is being held that
+  /// way, a vertical drag anywhere on the candles slides the window up and
+  /// down, and a double-tap on the axis hands it back to the chart. It is the
+  /// [controller] that can do all three from code.
+  ///
+  /// Off, the axis always fits the window and a drag on the labels pans the
+  /// chart like any other.
+  final bool priceScaleDrag;
+
+  /// Plays the candles back from a point in the past, one at a time.
+  ///
+  /// While one is replaying the chart draws only as far as
+  /// [ChartReplayController.position] — candles, indicators, the now-price
+  /// line and everything read out of them — so what is on screen is what was
+  /// known at that moment. Drawings are left alone: a line placed on a candle
+  /// still to arrive simply waits for it.
+  ///
+  /// Left null the chart always shows the whole series.
+  final ChartReplayController? replay;
+
   /// Reads the candle out above the chart: date, open, high, low, close, the
   /// move over it and its volume.
   ///
@@ -539,6 +644,12 @@ class _KChartWidgetState extends State<KChartWidget>
   /// so a drawing manager and the chart agree on what is selected.
   ChartLine? _localSelection;
 
+  /// The drawings selected alongside [_selected], when there is no controller.
+  final List<ChartLine> _localAlsoSelected = [];
+
+  /// What the last copy put on the clipboard, when there is no controller.
+  List<ChartLine> _localClipboard = const [];
+
   /// The drawing the editing toolbar is open on.
   ///
   /// The controller is the authority when there is one, so the chart and a
@@ -552,9 +663,60 @@ class _KChartWidgetState extends State<KChartWidget>
     final controller = widget.drawingController;
     if (controller == null) {
       _localSelection = line;
+      _localAlsoSelected.clear();
       return;
     }
     controller.select(line);
+  }
+
+  /// Every selected drawing, the one the editor is open on last.
+  List<ChartLine> get _selection {
+    final controller = widget.drawingController;
+    if (controller != null) return controller.selection;
+    return [..._localAlsoSelected, ?_localSelection];
+  }
+
+  /// Adds [line] to the selection, or takes it out if it is already in.
+  ///
+  /// What a shift- or ⌘-click does, so several drawings can be moved, restyled
+  /// or deleted at once.
+  void _toggleSelection(ChartLine line) {
+    final controller = widget.drawingController;
+    if (controller != null) {
+      controller.toggleSelection(line);
+      return;
+    }
+
+    if (identical(_localSelection, line)) {
+      _localSelection = _localAlsoSelected.isEmpty
+          ? null
+          : _localAlsoSelected.removeLast();
+      return;
+    }
+    if (_localAlsoSelected.any((candidate) => identical(candidate, line))) {
+      _localAlsoSelected.removeWhere((candidate) => identical(candidate, line));
+      return;
+    }
+    final was = _localSelection;
+    if (was != null) _localAlsoSelected.add(was);
+    _localSelection = line;
+  }
+
+  /// Selects every drawing on the chart.
+  void _selectAll() {
+    final drawings = _drawings.where((line) => !line.hidden).toList();
+    if (drawings.isEmpty) return;
+
+    final controller = widget.drawingController;
+    if (controller != null) {
+      controller.selectMany(drawings);
+    } else {
+      _localSelection = drawings.last;
+      _localAlsoSelected
+        ..clear()
+        ..addAll(drawings.take(drawings.length - 1));
+    }
+    setState(() {});
   }
 
   /// The drawing being placed, before the user has finished it.
@@ -593,6 +755,14 @@ class _KChartWidgetState extends State<KChartWidget>
 
   double mScaleX = 1.0;
   double mScrollX = 0.0;
+
+  /// How far the price axis is stretched away from the window it would fit,
+  /// and how far it is shifted; 1 and 0 hand the axis back to the chart.
+  double _priceZoom = 1.0;
+  double _pricePan = 0.0;
+
+  /// Whether the price axis is being held where the user put it.
+  bool get _priceScaleIsManual => _priceZoom != 1.0 || _pricePan != 0.0;
   double mSelectX = 0.0;
   double mSelectY = 0.0;
   double mHeight = 0;
@@ -610,6 +780,16 @@ class _KChartWidgetState extends State<KChartWidget>
   /// indicator never inherits a height meant for a different one.
   List<double> _paneHeights = const [];
 
+  /// True while a drag that began on the price labels is stretching the axis.
+  bool _scalingPrice = false;
+
+  /// When the price scale was last tapped, for spotting a double-tap.
+  DateTime? _lastPriceScaleTap;
+
+  /// When and where a drawing tap last landed, for spotting the double-tap
+  /// that finishes an open-ended shape.
+  ({DateTime at, Offset pos})? _lastDrawingTap;
+
   /// The pane whose lower edge is being dragged, if any.
   int? _resizingPane;
 
@@ -622,6 +802,10 @@ class _KChartWidgetState extends State<KChartWidget>
   /// selected drawing began. Lets a two-point shape move as a whole.
   ({int index, double price})? _dragStart;
   List<({int index, double price})>? _dragOrigin;
+
+  /// Where everything else in the selection started, so dragging one drawing
+  /// of several carries the rest along with it.
+  Map<ChartLine, List<({int index, double price})>> _dragOthers = const {};
 
   late ChartPainter painter;
   double _lastScale = 1.0;
@@ -643,6 +827,7 @@ class _KChartWidgetState extends State<KChartWidget>
     _syncCountdownTimer();
     _resolveIndicators();
     widget.drawingController?.addListener(_onDrawingsChanged);
+    widget.replay?.addListener(_onReplayChanged);
     widget.controller?.attach(this);
     HardwareKeyboard.instance.addHandler(_handleKey);
   }
@@ -657,6 +842,7 @@ class _KChartWidgetState extends State<KChartWidget>
       draggingAnchor = null;
       _dragStart = null;
       _dragOrigin = null;
+      _dragOthers = const {};
     }
     if (mounted) setState(() {});
   }
@@ -681,19 +867,36 @@ class _KChartWidgetState extends State<KChartWidget>
 
     if (event.logicalKey == LogicalKeyboardKey.delete ||
         event.logicalKey == LogicalKeyboardKey.backspace) {
-      final selected = _selected;
-      if (selected == null || selected.locked) return false;
+      if (_selection.every((line) => line.locked)) return false;
       _deleteSelected();
       return true;
     }
 
-    final controller = widget.drawingController;
-    if (controller == null || !_isCommandPressed) return false;
+    if (!_isCommandPressed) return false;
 
     final keys = HardwareKeyboard.instance.logicalKeysPressed;
     final shift =
         keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight);
+
+    // ⌘A selects everything drawn, and works with or without a controller.
+    if (event.logicalKey == LogicalKeyboardKey.keyA) {
+      if (_drawings.every((line) => line.hidden)) return false;
+      _selectAll();
+      return true;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyC) {
+      return copySelection();
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyV) {
+      return pasteDrawings();
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyD) {
+      return duplicateSelection();
+    }
+
+    final controller = widget.drawingController;
+    if (controller == null) return false;
 
     if (event.logicalKey == LogicalKeyboardKey.keyZ) {
       return shift ? controller.redo() : controller.undo();
@@ -701,7 +904,159 @@ class _KChartWidgetState extends State<KChartWidget>
     if (event.logicalKey == LogicalKeyboardKey.keyY) {
       return controller.redo();
     }
+    // ⌘] and ⌘[ walk the stack, with shift going all the way.
+    if (event.logicalKey == LogicalKeyboardKey.bracketRight) {
+      return shift ? bringSelectionToFront() : bringSelectionForward();
+    }
+    if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
+      return shift ? sendSelectionToBack() : sendSelectionBackward();
+    }
     return false;
+  }
+
+  // ── Copying, pasting and restacking a selection ──────────────────────────
+
+  /// Whether there is anything to [pasteDrawings].
+  bool get canPasteDrawings =>
+      widget.drawingController?.canPaste ?? _localClipboard.isNotEmpty;
+
+  /// Copies every selected drawing, and reports whether there was one.
+  ///
+  /// With a controller the copies live on it, so a paste survives this chart
+  /// being rebuilt; without one they are kept here.
+  bool copySelection() {
+    final selection = _selection;
+    if (selection.isEmpty) return false;
+
+    final controller = widget.drawingController;
+    if (controller != null) {
+      controller.copyToClipboard(selection);
+    } else {
+      _localClipboard = [for (final line in selection) copyDrawing(line)];
+    }
+    return true;
+  }
+
+  /// Pastes whatever was copied, nudged clear of the original, and reports
+  /// whether there was anything to paste.
+  bool pasteDrawings() {
+    final controller = widget.drawingController;
+    final pasted = controller != null
+        ? controller.paste()
+        : [for (final line in _localClipboard) copyDrawing(line)];
+    if (pasted.isEmpty) return false;
+
+    _nudge(pasted);
+    if (controller == null) {
+      _localAlsoSelected
+        ..clear()
+        ..addAll(pasted.take(pasted.length - 1));
+      _localSelection = pasted.last;
+    }
+    for (final line in pasted) {
+      _notifyLineChanged(line);
+    }
+    setState(() {});
+    return true;
+  }
+
+  /// Copies every selected drawing in place, nudged clear of the original.
+  ///
+  /// The copies end up selected, so the next drag moves them rather than what
+  /// they were copied from. Reports whether there was anything to duplicate.
+  bool duplicateSelection() {
+    final selection = _selection;
+    if (selection.isEmpty) return false;
+
+    final controller = widget.drawingController;
+    final copies = controller != null
+        ? controller.duplicate(selection)
+        : [for (final line in selection) copyDrawing(line)];
+    if (copies.isEmpty) return false;
+
+    _nudge(copies);
+    if (controller == null) {
+      _localAlsoSelected
+        ..clear()
+        ..addAll(copies.take(copies.length - 1));
+      _localSelection = copies.last;
+    }
+    for (final line in copies) {
+      _notifyLineChanged(line);
+    }
+    setState(() {});
+    return true;
+  }
+
+  /// Shifts [lines] a few candles on and a little down, so a copy lands beside
+  /// what it was copied from rather than exactly on top of it.
+  void _nudge(Iterable<ChartLine> lines) {
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty) return;
+
+    // A few candles across and a fraction of the visible range down: enough to
+    // see and to grab, without moving the copy somewhere meaningless.
+    const across = 3;
+    final down =
+        (painter.mMainRenderer.maxValue - painter.mMainRenderer.minValue) *
+        0.03;
+
+    for (final line in lines) {
+      final anchors = _anchorsOf(line);
+      if (anchors == null || anchors.isEmpty) continue;
+
+      var highest = anchors.first.index;
+      for (final anchor in anchors) {
+        highest = math.max(highest, anchor.index);
+      }
+      // Nowhere to move to at the right-hand edge, so the copy goes left.
+      final shift = highest + across < candles.length ? across : -across;
+
+      _writeAnchors(line, [
+        for (final anchor in anchors)
+          (
+            index: (anchor.index + shift).clamp(0, candles.length - 1),
+            price: anchor.price - down,
+          ),
+      ], candles);
+    }
+  }
+
+  /// Moves the selection to the top of the stack; reports whether it moved.
+  bool bringSelectionToFront() =>
+      _restackSelection((c, l) => c.bringToFront(l));
+
+  /// Moves the selection to the bottom of the stack; reports whether it moved.
+  ///
+  /// Walked in reverse so a selection of several keeps its own order.
+  bool sendSelectionToBack() =>
+      _restackSelection((c, l) => c.sendToBack(l), reverse: true);
+
+  /// Moves the selection one place up the stack; reports whether it moved.
+  bool bringSelectionForward() =>
+      _restackSelection((c, l) => c.bringForward(l), reverse: true);
+
+  /// Moves the selection one place down the stack; reports whether it moved.
+  bool sendSelectionBackward() =>
+      _restackSelection((c, l) => c.sendBackward(l));
+
+  /// Applies [move] to every selected drawing, and reports whether any moved.
+  bool _restackSelection(
+    bool Function(ChartDrawingController controller, ChartLine line) move, {
+    bool reverse = false,
+  }) {
+    final controller = widget.drawingController;
+    if (controller == null) return false;
+
+    final selection = reverse ? _selection.reversed.toList() : _selection;
+    if (selection.isEmpty) return false;
+
+    var moved = false;
+    for (final line in selection) {
+      if (move(controller, line)) moved = true;
+    }
+    if (moved) setState(() {});
+    return moved;
   }
 
   /// Whether the platform's shortcut modifier is held: ⌘ on Apple platforms,
@@ -728,8 +1083,39 @@ class _KChartWidgetState extends State<KChartWidget>
   /// still has to be redrawn.
   List<Indicator> _resolvedIndicators = const [];
 
+  /// The candles the chart is actually drawing.
+  ///
+  /// The whole series, unless a replay is holding it at an earlier candle. The
+  /// slice is cached: it is asked for several times a frame, and copying the
+  /// list each time would cost more than the replay itself.
+  List<KLineEntity>? get _candlesInPlay {
+    final all = widget.candles;
+    final replay = widget.replay;
+    if (replay != null) replay.reportLength(all?.length ?? 0);
+    if (all == null || replay == null || !replay.isActive) return all;
+
+    final count = replay.position!.clamp(1, all.length);
+    if (count >= all.length) return all;
+    if (identical(_replaySource, all) && _replayCount == count) {
+      return _replayView;
+    }
+
+    _replaySource = all;
+    _replayCount = count;
+    return _replayView = all.sublist(0, count);
+  }
+
+  List<KLineEntity>? _replaySource;
+  List<KLineEntity>? _replayView;
+  int? _replayCount;
+
+  /// Repaints when the replay moves, and keeps it told how long the series is.
+  void _onReplayChanged() {
+    if (mounted) setState(() {});
+  }
+
   ({int length, Object? last, DateTime? time}) get _candleFingerprint {
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     final last = candles == null || candles.isEmpty ? null : candles.last;
     return (
       length: candles?.length ?? 0,
@@ -739,7 +1125,7 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   void _resolveIndicators() {
-    _resolved = resolveIndicators(widget.indicators, widget.candles);
+    _resolved = resolveIndicators(widget.indicators, _candlesInPlay);
     _resolvedFrom = _candleFingerprint;
     _resolvedIndicators = List<Indicator>.of(widget.indicators);
   }
@@ -806,11 +1192,21 @@ class _KChartWidgetState extends State<KChartWidget>
       oldWidget.drawingController?.removeListener(_onDrawingsChanged);
       widget.drawingController?.addListener(_onDrawingsChanged);
     }
+    if (oldWidget.replay != widget.replay) {
+      oldWidget.replay?.removeListener(_onReplayChanged);
+      widget.replay?.addListener(_onReplayChanged);
+    }
     if (!identical(oldWidget.candles, widget.candles)) _resolveIndicators();
     if (oldWidget.currentDrawingTool != widget.currentDrawingTool) {
-      // Picking a different tool abandons whatever the last one had started.
-      // The rebuild is already under way, so no setState here.
-      _resetDraft();
+      // Picking a different tool abandons whatever the last one had started —
+      // except an open-ended shape, which is finished rather than lost, since
+      // disarming the tool is one of the two ways to say it is done. The
+      // rebuild is already under way, so no setState here.
+      if (_draft case MultiPointDrawing(pointCount: null)) {
+        _finishOpenDraft();
+      } else {
+        _resetDraft();
+      }
     }
   }
 
@@ -818,6 +1214,7 @@ class _KChartWidgetState extends State<KChartWidget>
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKey);
     widget.drawingController?.removeListener(_onDrawingsChanged);
+    widget.replay?.removeListener(_onReplayChanged);
     widget.controller?.detach(this);
     _countdownTimer?.cancel();
     mInfoWindowStream.close();
@@ -829,25 +1226,36 @@ class _KChartWidgetState extends State<KChartWidget>
 
   void _deselectAll() {
     setState(() {
+      _localAlsoSelected.clear();
       _selected = null;
       isDraggingHandle = false;
       draggingAnchor = null;
       _dragStart = null;
       _dragOrigin = null;
+      _dragOthers = const {};
     });
   }
 
+  /// Deletes every selected drawing, reporting each one.
+  ///
+  /// One undoable step when there is a controller, however many were selected,
+  /// so undo puts the whole selection back rather than one drawing at a time.
   void _deleteSelected() {
-    final line = _getSelectedLine();
-    if (line != null) {
-      widget.drawingController?.remove(line);
+    final selection = [
+      for (final line in _selection)
+        if (!line.locked) line,
+    ];
+    if (selection.isEmpty) return;
+
+    widget.drawingController?.removeAll(selection);
+    for (final line in selection) {
       widget.onRemoveDrawing?.call(line);
+      if (line is HorizontalLine) widget.onRemoveHorizontalLine?.call(line);
+      if (line is VerticalLine) widget.onRemoveVerticalLine?.call(line);
+      if (line is TrendLine) widget.onRemoveTrendLine?.call(line);
+      if (line is RectangleDrawing) widget.onRemoveRectangle?.call(line);
+      if (line is FibRetracement) widget.onRemoveFibRetracement?.call(line);
     }
-    if (line is HorizontalLine) widget.onRemoveHorizontalLine?.call(line);
-    if (line is VerticalLine) widget.onRemoveVerticalLine?.call(line);
-    if (line is TrendLine) widget.onRemoveTrendLine?.call(line);
-    if (line is RectangleDrawing) widget.onRemoveRectangle?.call(line);
-    if (line is FibRetracement) widget.onRemoveFibRetracement?.call(line);
     _deselectAll();
   }
 
@@ -939,39 +1347,58 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Which side of each alerting level the market was last seen on, so one
   /// crossing is reported once.
-  final Map<HorizontalLine, bool> _alertSides = <HorizontalLine, bool>{};
+  ///
+  /// Keyed by the drawing and the level within it, because a retracement or a
+  /// channel has several levels at once and each is crossed on its own.
+  final Map<(AlertingDrawing, int), bool> _alertSides =
+      <(AlertingDrawing, int), bool>{};
 
   /// Reports any alerting level the newest candle has crossed.
   ///
   /// Called from build, so the report itself is left until the frame is done: a
   /// host that rebuilds in answer to it must not be asked to do so mid-build.
   void _checkAlerts() {
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     if (candles == null || candles.isEmpty) return;
 
     final last = candles.last;
-    final crossed = <HorizontalLine>[];
-    final seen = <HorizontalLine>{};
+    final at = last.dateTime;
+    if (at == null) return;
 
-    for (final line in _drawings.whereType<HorizontalLine>()) {
+    final crossed = <(AlertingDrawing, double)>[];
+    final seen = <(AlertingDrawing, int)>{};
+
+    for (final line in _drawings.whereType<AlertingDrawing>()) {
       if (!line.alert) continue;
-      seen.add(line);
 
-      final above = last.close >= line.price;
-      final before = _alertSides[line];
-      _alertSides[line] = above;
-      // The first sighting sets the side; only a change from it is a crossing.
-      if (before != null && before != above) crossed.add(line);
+      final levels = line.alertLevelsAt(at);
+      for (final (index, level) in levels.indexed) {
+        final key = (line, index);
+        seen.add(key);
+
+        final above = last.close >= level;
+        final before = _alertSides[key];
+        _alertSides[key] = above;
+        // The first sighting sets the side; only a change from it is a
+        // crossing.
+        if (before != null && before != above) crossed.add((line, level));
+      }
     }
 
-    _alertSides.removeWhere((line, _) => !seen.contains(line));
+    _alertSides.removeWhere((key, _) => !seen.contains(key));
 
-    final report = widget.onAlertCrossed;
-    if (report == null || crossed.isEmpty) return;
+    final reportLevel = widget.onAlertCrossed;
+    final reportDrawing = widget.onDrawingAlert;
+    if (crossed.isEmpty) return;
+    if (reportLevel == null && reportDrawing == null) return;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      for (final line in crossed) {
-        report(line, last);
+      for (final (line, level) in crossed) {
+        // A horizontal level reports through both, so an app written against
+        // the older callback carries on working unchanged.
+        if (line is HorizontalLine) reportLevel?.call(line, last);
+        reportDrawing?.call(line, last, level);
       }
     });
   }
@@ -1000,7 +1427,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.candles != null && widget.candles!.isEmpty) {
+    if (_candlesInPlay != null && _candlesInPlay!.isEmpty) {
       mScrollX = mSelectX = 0.0;
       mScaleX = 1.0;
     }
@@ -1033,7 +1460,7 @@ class _KChartWidgetState extends State<KChartWidget>
           xFrontPadding: widget.xFrontPadding,
           isTrendLine: widget.isTrendLine,
           selectY: mSelectY,
-          candles: widget.candles,
+          candles: _candlesInPlay,
           scaleX: mScaleX,
           scrollX: mScrollX,
           selectX: mSelectX,
@@ -1059,10 +1486,13 @@ class _KChartWidgetState extends State<KChartWidget>
           watermarkPicture: _watermarkPicture,
           draftLine: _draft,
           selectedLine: _selected,
+          selectedLines: _selection,
           drawingStyle: widget.drawingStyle,
           chartTranslations: widget.chartTranslations,
           showOhlcLegend: widget.showOhlcLegend,
           priceAxisScale: widget.priceAxisScale,
+          priceZoom: _priceZoom,
+          pricePan: _pricePan,
         );
 
         return Stack(
@@ -1100,6 +1530,11 @@ class _KChartWidgetState extends State<KChartWidget>
                     if (!_isInChartArea(pos)) {
                       _closeInfoWindow();
                       _cancelDrawing();
+                      return;
+                    }
+
+                    if (_handlePriceScaleTap(pos)) {
+                      notifyChanged();
                       return;
                     }
 
@@ -1163,6 +1598,12 @@ class _KChartWidgetState extends State<KChartWidget>
                         notifyChanged();
                         return;
                       }
+                      // A drag that begins on the price labels stretches the
+                      // axis instead of scrolling the chart.
+                      if (_isOnPriceScale(pressed)) {
+                        _scalingPrice = true;
+                        return;
+                      }
                     }
 
                     if (widget.currentDrawingTool != DrawingTool.none) {
@@ -1192,6 +1633,10 @@ class _KChartWidgetState extends State<KChartWidget>
                       notifyChanged();
                       return;
                     }
+                    if (_scalingPrice) {
+                      _zoomPriceScale(details.focalPointDelta.dy);
+                      return;
+                    }
 
                     if (details.scale != 1.0) {
                       // Zoom
@@ -1212,10 +1657,19 @@ class _KChartWidgetState extends State<KChartWidget>
                         0.0,
                         BaseChartPainter.maxScrollX,
                       );
+                      // Only once the axis is already being held: while it
+                      // fits the window there is nothing to slide.
+                      if (widget.priceScaleDrag && _priceScaleIsManual) {
+                        _panPriceScale(details.focalPointDelta.dy);
+                      }
                       notifyChanged();
                     }
                   },
                   onScaleEnd: (details) {
+                    if (_scalingPrice) {
+                      _scalingPrice = false;
+                      return;
+                    }
                     if (_resizingPane != null) {
                       _resizingPane = null;
                       notifyChanged();
@@ -1368,6 +1822,7 @@ class _KChartWidgetState extends State<KChartWidget>
     if (at == null) return MouseCursor.defer;
     if (_paneEdgeAt(at) != null) return SystemMouseCursors.resizeUpDown;
     if (_paneGrabAt(at) != null) return SystemMouseCursors.grab;
+    if (_isOnPriceScale(at)) return SystemMouseCursors.resizeUpDown;
     return MouseCursor.defer;
   }
 
@@ -1425,6 +1880,43 @@ class _KChartWidgetState extends State<KChartWidget>
     _isDrawing = false;
     _awaitingSecondPoint = false;
     _isPreviewing = false;
+    _lastDrawingTap = null;
+  }
+
+  /// Whether the tap at [pos] repeats the last one — same place, soon after.
+  ///
+  /// Recognised by hand rather than with [GestureDetector.onDoubleTap], which
+  /// would hold every other tap on the chart back until it knew no second one
+  /// was coming. Place matters as much as timing: tapping along a path lands
+  /// leg after leg however fast it is done, and only tapping twice in the one
+  /// spot says the shape is finished — within a finger's width of it, which is
+  /// what [kDoubleTapTouchSlop] measures.
+  bool _isRepeatTap(Offset pos) {
+    final last = _lastDrawingTap;
+    _lastDrawingTap = (at: DateTime.now(), pos: pos);
+    if (last == null) return false;
+    if ((pos - last.pos).distance > kDoubleTapTouchSlop) return false;
+    if (DateTime.now().difference(last.at) > kDoubleTapTimeout) return false;
+    _lastDrawingTap = null;
+    return true;
+  }
+
+  /// Finishes a shape that takes as many points as it is given.
+  ///
+  /// The last anchor is the one that was following the pointer, so it is
+  /// dropped rather than kept: it lands where the finishing tap did, on top of
+  /// the leg just placed. A shape left with too little to draw is thrown away.
+  void _finishOpenDraft() {
+    if (_draft case MultiPointDrawing shape) {
+      if (shape.points.length > shape.minimumPoints) shape.points.removeLast();
+      if (!shape.isComplete) {
+        _cancelDrawing();
+        return;
+      }
+      _commitDraft();
+      return;
+    }
+    _cancelDrawing();
   }
 
   // ── Placing a new line ───────────────────────────────────────────────────
@@ -1436,7 +1928,7 @@ class _KChartWidgetState extends State<KChartWidget>
   /// tomorrow. With [KChartWidget.magnetMode] on, the price snaps to a nearby
   /// open, high, low or close as well.
   ({DateTime time, double price})? _anchorAt(Offset pos) {
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     if (candles == null || candles.isEmpty) return null;
     final index = painter.calculateSelectedX(pos.dx);
     if (index < 0 || index >= candles.length) return null;
@@ -1496,6 +1988,7 @@ class _KChartWidgetState extends State<KChartWidget>
         time: anchor.time,
         title: painter.getDate(anchor.time),
       ),
+      DrawingTool.flag => FlagDrawing(time: anchor.time, price: anchor.price),
       _ when preview => null,
       DrawingTool.trend => TrendLine(time1: anchor.time, price1: anchor.price),
       DrawingTool.ray => TrendLine(
@@ -1557,6 +2050,61 @@ class _KChartWidgetState extends State<KChartWidget>
       DrawingTool.brush => FreehandDrawing(
         points: [(time: anchor.time, price: anchor.price)],
       ),
+      DrawingTool.pitchfork => PitchforkDrawing(
+        time1: anchor.time,
+        price1: anchor.price,
+        fillOpacity: style.channelFillOpacity,
+      ),
+      DrawingTool.gannFan => GannFan(time1: anchor.time, price1: anchor.price),
+      DrawingTool.gannBox => GannBox(
+        time1: anchor.time,
+        price1: anchor.price,
+        fillOpacity: style.shapeFillOpacity / 2,
+      ),
+      DrawingTool.fibExtension => FibExtension(
+        time1: anchor.time,
+        price1: anchor.price,
+      ),
+      DrawingTool.fibFan => FibFan(time1: anchor.time, price1: anchor.price),
+      DrawingTool.fibTimeZones => FibTimeZones(
+        time1: anchor.time,
+        price1: anchor.price,
+      ),
+      DrawingTool.regressionTrend => RegressionChannel(
+        time1: anchor.time,
+        price1: anchor.price,
+        fillOpacity: style.channelFillOpacity,
+      ),
+      DrawingTool.priceRange => PriceRangeDrawing(
+        time1: anchor.time,
+        price1: anchor.price,
+        fillOpacity: style.measureFillOpacity,
+      ),
+      DrawingTool.dateRange => DateRangeDrawing(
+        time1: anchor.time,
+        price1: anchor.price,
+        fillOpacity: style.measureFillOpacity,
+      ),
+      DrawingTool.callout => CalloutDrawing(
+        time1: anchor.time,
+        price1: anchor.price,
+      ),
+      // A multi-point shape starts with its first anchor landed and a second
+      // one following the pointer, so it rubber-bands like every other shape.
+      DrawingTool.xabcd => XabcdDrawing(
+        points: [
+          (time: anchor.time, price: anchor.price),
+          (time: anchor.time, price: anchor.price),
+        ],
+        fillOpacity: style.shapeFillOpacity,
+      ),
+      DrawingTool.path => PathDrawing(
+        points: [
+          (time: anchor.time, price: anchor.price),
+          (time: anchor.time, price: anchor.price),
+        ],
+        fillOpacity: style.shapeFillOpacity,
+      ),
     };
     if (draft == null) return false;
 
@@ -1592,6 +2140,10 @@ class _KChartWidgetState extends State<KChartWidget>
           ..price = anchor.price;
       case FreehandDrawing stroke:
         stroke.extendTo((time: anchor.time, price: anchor.price));
+      case MultiPointDrawing shape:
+        // Only the last anchor follows the pointer; the ones already tapped
+        // stay where they were put.
+        shape.moveLastTo((time: anchor.time, price: anchor.price));
       case ThreePointDrawing shape when shape.hasSecondPoint:
         // The base line has landed, so this is the point that finishes the
         // shape: the parallel, the stop, the last corner.
@@ -1611,6 +2163,11 @@ class _KChartWidgetState extends State<KChartWidget>
     final draft = _draft;
     if (draft is TwoPointDrawing) return !draft.isComplete;
     if (draft is FreehandDrawing) return !draft.isComplete;
+    // A path is complete from its second point on but still takes more, so it
+    // is finished by the user rather than by counting.
+    if (draft is MultiPointDrawing) {
+      return !draft.isComplete || draft.pointCount == null;
+    }
     return false;
   }
 
@@ -1618,7 +2175,14 @@ class _KChartWidgetState extends State<KChartWidget>
   /// the editing toolbar expects to find it.
   void _commitDraft() {
     final draft = _draft;
-    if (draft == null || _draftIsIncomplete) return;
+    if (draft == null) return;
+    // An open-ended shape is never "not incomplete", so it is judged on
+    // whether it has enough points instead.
+    if (draft is MultiPointDrawing) {
+      if (!draft.isComplete) return;
+    } else if (_draftIsIncomplete) {
+      return;
+    }
 
     _draft = null;
     _isDrawing = false;
@@ -1636,7 +2200,25 @@ class _KChartWidgetState extends State<KChartWidget>
   /// first tap as its anchor and the next one as its far end.
   void _handleDrawingTap(Offset pos) {
     if (_awaitingSecondPoint) {
+      // A second tap in the same place finishes an open-ended shape, which is
+      // the only way a path knows it has all the legs it is getting.
+      if (_draft case MultiPointDrawing(pointCount: null)
+          when _isRepeatTap(pos)) {
+        _finishOpenDraft();
+        return;
+      }
       _extendDraft(pos);
+      // A multi-point shape lands the anchor the pointer was carrying and
+      // starts another one, rather than finishing on the second tap.
+      if (_draft case MultiPointDrawing shape) {
+        if (shape.acceptsMorePoints) {
+          shape.addPoint(shape.points.last);
+          notifyChanged();
+          return;
+        }
+        _commitDraft();
+        return;
+      }
       if (!_draftIsIncomplete) _commitDraft();
       return;
     }
@@ -1710,7 +2292,7 @@ class _KChartWidgetState extends State<KChartWidget>
     isDraggingHandle = false;
     draggingAnchor = null;
 
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     if (candles == null || candles.isEmpty) {
       _deselectAll();
       return;
@@ -1722,11 +2304,27 @@ class _KChartWidgetState extends State<KChartWidget>
       if (line.hidden) continue;
       final anchor = _hitDrawing(pos, line);
       if (anchor == null) continue;
+      // Shift or ⌘ adds to the selection instead of replacing it, so several
+      // drawings can be moved, restyled or deleted together.
+      if (_isSelectionModifierPressed) {
+        setState(() => _toggleSelection(line));
+        return;
+      }
       _select(pos, line, anchor: anchor);
       return;
     }
 
-    _deselectAll();
+    // A modifier-click on empty space keeps whatever was selected: it was
+    // meant to add to a selection, not to throw one away.
+    if (!_isSelectionModifierPressed) _deselectAll();
+  }
+
+  /// Whether a key that means "add to the selection" is down.
+  bool get _isSelectionModifierPressed {
+    final keys = HardwareKeyboard.instance.logicalKeysPressed;
+    return keys.contains(LogicalKeyboardKey.shiftLeft) ||
+        keys.contains(LogicalKeyboardKey.shiftRight) ||
+        _isCommandPressed;
   }
 
   /// Which part of [line] is under [pos]: 1, 2 or 3 for one of its anchors, 0
@@ -1756,8 +2354,22 @@ class _KChartWidgetState extends State<KChartWidget>
         final reach = math.max(tolerance, handleTolerance);
         return at != null && (pos - at).distance < reach ? 0 : null;
 
+      case FlagDrawing():
+        // The flag flies above the point it is planted on, so the whole staff
+        // and pennant answer, not just the foot.
+        final foot = _canvasPoint(line.time, line.price);
+        if (foot == null) return null;
+        final top = foot.translate(0, -line.staffHeight);
+        return _distanceToSegment(pos, foot, top) <
+                math.max(tolerance, handleTolerance)
+            ? 0
+            : null;
+
       case FreehandDrawing():
         return _hitFreehand(pos, line, tolerance) ? 0 : null;
+
+      case MultiPointDrawing():
+        return _hitMultiPoint(pos, line);
 
       case TwoPointDrawing():
         return _hitTwoPoint(pos, line);
@@ -1780,6 +2392,67 @@ class _KChartWidgetState extends State<KChartWidget>
       previous = at;
     }
     return false;
+  }
+
+  /// Which part of [shape] is under [pos]: the anchor's place in the list
+  /// counting from one, 0 for one of its legs, or null when the tap missed it.
+  int? _hitMultiPoint(Offset pos, MultiPointDrawing shape) {
+    final tolerance = widget.drawingStyle.hitTestTolerance;
+    final handleTolerance = widget.drawingStyle.handleHitTestTolerance;
+
+    final points = <Offset?>[
+      for (final point in shape.points) _canvasPoint(point.time, point.price),
+    ];
+
+    ({int anchor, double distance})? nearest;
+    for (var i = 0; i < points.length; i++) {
+      final at = points[i];
+      if (at == null) continue;
+      final distance = (pos - at).distance;
+      if (distance >= handleTolerance) continue;
+      if (nearest == null || distance < nearest.distance) {
+        nearest = (anchor: i + 1, distance: distance);
+      }
+    }
+    if (nearest != null) return nearest.anchor;
+
+    // Every leg in turn, and the closing one where the shape is closed: a tap
+    // inside a polygon does not pick it up, only one on an edge.
+    final legs = <(Offset, Offset)>[];
+    for (var i = 1; i < points.length; i++) {
+      final from = points[i - 1];
+      final to = points[i];
+      if (from != null && to != null) legs.add((from, to));
+    }
+    final closes = switch (shape) {
+      PathDrawing(:final closed) => closed,
+      XabcdDrawing() => true,
+      _ => false,
+    };
+    if (closes && points.length > 2) {
+      final first = points.first;
+      final last = points.last;
+      if (first != null && last != null) legs.add((last, first));
+    }
+    // A harmonic pattern is read as the two triangles XAB and BCD, so those
+    // chords are part of it too.
+    if (shape is XabcdDrawing && points.length >= 3) {
+      void chord(int from, int to) {
+        if (from >= points.length || to >= points.length) return;
+        final a = points[from];
+        final b = points[to];
+        if (a != null && b != null) legs.add((a, b));
+      }
+
+      chord(0, 2);
+      chord(2, 4);
+    }
+
+    return legs.any(
+          (leg) => _distanceToSegment(pos, leg.$1, leg.$2) < tolerance,
+        )
+        ? 0
+        : null;
   }
 
   /// Which part of [shape] is under [pos]: 1, 2 or 3 for an anchor, 0 for the
@@ -1906,9 +2579,146 @@ class _KChartWidgetState extends State<KChartWidget>
               (pos.dy - painter.getMainY(price)).abs() < tolerance;
         });
 
+      case GannBox box:
+        final rect = Rect.fromPoints(p1, p2);
+        if (_hitRectEdges(pos, rect, tolerance)) return true;
+        final rules = gannBoxRules(rect, box.ratios);
+        if (rules.horizontals.any((y) => (pos.dy - y).abs() < tolerance)) {
+          return rect.left - tolerance <= pos.dx &&
+              pos.dx <= rect.right + tolerance;
+        }
+        if (rules.verticals.any((x) => (pos.dx - x).abs() < tolerance)) {
+          return rect.top - tolerance <= pos.dy &&
+              pos.dy <= rect.bottom + tolerance;
+        }
+        return box.showDiagonals &&
+            (_distanceToSegment(pos, rect.topLeft, rect.bottomRight) <
+                    tolerance ||
+                _distanceToSegment(pos, rect.bottomLeft, rect.topRight) <
+                    tolerance);
+
+      case GannFan fan:
+        final size = Size(mWidth, mHeight);
+        return fan.ratios.any((ratio) {
+          final through = gannRayThrough(p1, p2, ratio);
+          if (through == p1) return false;
+          return _distanceToSegment(
+                pos,
+                p1,
+                painter.extendPoint(p1, through, size),
+              ) <
+              tolerance;
+        });
+
+      case FibFan fan:
+        final size = Size(mWidth, mHeight);
+        return fan.levels.any((level) {
+          final through = fibFanRayThrough(p1, p2, level);
+          if (through == p1) return false;
+          return _distanceToSegment(
+                pos,
+                p1,
+                painter.extendPoint(p1, through, size),
+              ) <
+              tolerance;
+        });
+
+      case FibTimeZones zones:
+        return zones.levels.any(
+          (level) => (pos.dx - fibTimeZoneX(p1, p2, level)).abs() < tolerance,
+        );
+
+      case FibExtension extension:
+        if (p3 == null) return _distanceToSegment(pos, p1, p2) < tolerance;
+        if (pos.dx < math.min(p1.dx, p3.dx) - tolerance) return false;
+        return extension.levels.any((ratio) {
+          final price = extension.priceAt(ratio);
+          return price != null &&
+              (pos.dy - painter.getMainY(price)).abs() < tolerance;
+        });
+
+      case PitchforkDrawing fork:
+        if (p3 == null) return _distanceToSegment(pos, p1, p2) < tolerance;
+        final size = Size(mWidth, mHeight);
+        final geometry = pitchforkGeometry(p1, p2, p3, fork.kind, fork.levels);
+        final run = geometry.median - geometry.handle;
+        for (final tine in geometry.tines) {
+          for (final start in [tine.upper, tine.lower]) {
+            final from = tine.level == 0 ? geometry.handle : start;
+            final to = from + run;
+            if (from == to) continue;
+            if (_distanceToSegment(
+                  pos,
+                  from,
+                  painter.extendPoint(from, to, size),
+                ) <
+                tolerance) {
+              return true;
+            }
+          }
+        }
+        return false;
+
+      case RegressionChannel regression:
+        final fit = _regressionFit(regression);
+        if (fit == null) return _distanceToSegment(pos, p1, p2) < tolerance;
+        final size = Size(mWidth, mHeight);
+        final left = Offset(p1.dx, painter.getMainY(fit.startPrice));
+        final right = Offset(p2.dx, painter.getMainY(fit.endPrice));
+        final band = regression.showBands
+            ? [-regression.deviations, 0.0, regression.deviations]
+            : [0.0];
+        return band.any((multiple) {
+          final shift = multiple * fit.deviation;
+          final from = Offset(
+            left.dx,
+            painter.getMainY(fit.startPrice + shift),
+          );
+          final to = Offset(right.dx, painter.getMainY(fit.endPrice + shift));
+          final end = regression.extend
+              ? painter.extendPoint(from, to, size)
+              : to;
+          return _distanceToSegment(pos, from, end) < tolerance;
+        });
+
+      case PriceRangeDrawing():
+        final rect = Rect.fromPoints(p1, p2);
+        return (pos.dy - rect.top).abs() < tolerance ||
+            (pos.dy - rect.bottom).abs() < tolerance ||
+            _distanceToSegment(
+                  pos,
+                  Offset(rect.center.dx, rect.top),
+                  Offset(rect.center.dx, rect.bottom),
+                ) <
+                tolerance;
+
+      case DateRangeDrawing():
+        final rect = Rect.fromPoints(p1, p2);
+        return (pos.dx - rect.left).abs() < tolerance ||
+            (pos.dx - rect.right).abs() < tolerance ||
+            _distanceToSegment(
+                  pos,
+                  Offset(rect.left, rect.center.dy),
+                  Offset(rect.right, rect.center.dy),
+                ) <
+                tolerance;
+
       case TwoPointDrawing():
         return _distanceToSegment(pos, p1, p2) < tolerance;
     }
+  }
+
+  /// The least-squares fit [regression] describes, or null when its anchors no
+  /// longer sit on candles that are loaded.
+  RegressionFit? _regressionFit(RegressionChannel regression) {
+    final candles = _candlesInPlay;
+    final end = regression.time2;
+    if (candles == null || end == null) return null;
+
+    final from = candles.indexWhere((e) => e.dateTime == regression.time1);
+    final to = candles.indexWhere((e) => e.dateTime == end);
+    if (from == -1 || to == -1) return null;
+    return fitRegression(candles, from, to);
   }
 
   /// Whether [pos] lands on one of [rect]'s four edges.
@@ -1939,7 +2749,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Where a candle sits on the canvas, or null when it is not in the data.
   double? _canvasX(DateTime time) {
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     if (candles == null) return null;
     final index = candles.indexWhere((e) => e.dateTime == time);
     if (index == -1) return null;
@@ -1948,7 +2758,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Where an anchor sits on the canvas, or null when its candle is gone.
   Offset? _canvasPoint(DateTime? time, double? price) {
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     if (candles == null || time == null || price == null) return null;
     final index = candles.indexWhere((e) => e.dateTime == time);
     if (index == -1) return null;
@@ -1983,7 +2793,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Remembers where a drag began, so a whole drawing can be shifted.
   void _beginHandleDrag(Offset pos) {
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     if (candles == null || candles.isEmpty) return;
 
     _dragStart = (
@@ -1991,6 +2801,15 @@ class _KChartWidgetState extends State<KChartWidget>
       price: painter.calculatePrice(pos.dy),
     );
     _dragOrigin = _anchorsOf(_selected);
+    // Where every other selected drawing started, so dragging one of a
+    // selection carries the rest along with it.
+    final others = <ChartLine, List<({int index, double price})>>{};
+    for (final line in _selection) {
+      if (identical(line, _selected) || line.locked) continue;
+      final anchors = _anchorsOf(line);
+      if (anchors != null && anchors.isNotEmpty) others[line] = anchors;
+    }
+    _dragOthers = others;
   }
 
   /// Every anchor of [line], as candle indices and prices.
@@ -1998,7 +2817,7 @@ class _KChartWidgetState extends State<KChartWidget>
   /// This is what a whole-shape drag shifts: one list, whether the drawing has
   /// two anchors, three, or a hundred points of freehand.
   List<({int index, double price})>? _anchorsOf(ChartLine? line) {
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     if (candles == null || line == null) return null;
 
     int? indexOf(DateTime? time) {
@@ -2011,6 +2830,14 @@ class _KChartWidgetState extends State<KChartWidget>
       case FreehandDrawing stroke:
         final anchors = <({int index, double price})>[];
         for (final point in stroke.points) {
+          final index = indexOf(point.time);
+          if (index == null) return null;
+          anchors.add((index: index, price: point.price));
+        }
+        return anchors;
+      case MultiPointDrawing shape:
+        final anchors = <({int index, double price})>[];
+        for (final point in shape.points) {
           final index = indexOf(point.time);
           if (index == null) return null;
           anchors.add((index: index, price: point.price));
@@ -2054,6 +2881,14 @@ class _KChartWidgetState extends State<KChartWidget>
           moved.add((time: time, price: anchor.price));
         }
         stroke.points = moved;
+      case MultiPointDrawing shape:
+        final moved = <DrawingPoint>[];
+        for (final anchor in anchors) {
+          final time = timeAt(anchor.index);
+          if (time == null) return;
+          moved.add((time: time, price: anchor.price));
+        }
+        shape.points = moved;
       case TwoPointDrawing shape:
         final time1 = timeAt(anchors[0].index);
         if (time1 == null) return;
@@ -2081,7 +2916,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Moves the selected drawing to follow the pointer at [pos].
   void _applyHandleDrag(Offset pos) {
-    final candles = widget.candles;
+    final candles = _candlesInPlay;
     final line = _getSelectedLine();
     if (candles == null || candles.isEmpty || line == null || line.locked) {
       return;
@@ -2113,6 +2948,15 @@ class _KChartWidgetState extends State<KChartWidget>
           ..price = price;
       case FreehandDrawing():
         _dragWholeDrawing(line, candles, index, price);
+      case MultiPointDrawing shape:
+        // Anchors are numbered from one, so anchor 0 means the body was
+        // grabbed and the whole shape moves.
+        final anchor = draggingAnchor;
+        if (anchor == null || anchor == 0 || anchor > shape.points.length) {
+          _dragWholeDrawing(line, candles, index, price);
+        } else {
+          shape.points[anchor - 1] = (time: time, price: price);
+        }
       case TwoPointDrawing():
         _dragShape(line, candles, index, time, price);
     }
@@ -2147,8 +2991,11 @@ class _KChartWidgetState extends State<KChartWidget>
     }
   }
 
-  /// Shifts every anchor of [line] by the same number of candles and the same
-  /// amount of price, stopping once either end reaches the edge of the data.
+  /// Shifts every anchor of [line] — and of anything else selected with it — by
+  /// the same number of candles and the same amount of price.
+  ///
+  /// Stops once any of them reaches the edge of the data, so a selection keeps
+  /// its shape rather than bunching up against the end.
   void _dragWholeDrawing(
     ChartLine line,
     List<KLineEntity> candles,
@@ -2159,11 +3006,18 @@ class _KChartWidgetState extends State<KChartWidget>
     final origin = _dragOrigin;
     if (start == null || origin == null || origin.isEmpty) return;
 
+    final moving = <ChartLine, List<({int index, double price})>>{
+      line: origin,
+      ..._dragOthers,
+    };
+
     var lowest = origin.first.index;
     var highest = origin.first.index;
-    for (final anchor in origin) {
-      lowest = math.min(lowest, anchor.index);
-      highest = math.max(highest, anchor.index);
+    for (final anchors in moving.values) {
+      for (final anchor in anchors) {
+        lowest = math.min(lowest, anchor.index);
+        highest = math.max(highest, anchor.index);
+      }
     }
 
     final shift = (index - start.index).clamp(
@@ -2172,10 +3026,12 @@ class _KChartWidgetState extends State<KChartWidget>
     );
     final priceShift = price - start.price;
 
-    _writeAnchors(line, [
-      for (final anchor in origin)
-        (index: anchor.index + shift, price: anchor.price + priceShift),
-    ], candles);
+    for (final entry in moving.entries) {
+      _writeAnchors(entry.key, [
+        for (final anchor in entry.value)
+          (index: anchor.index + shift, price: anchor.price + priceShift),
+      ], candles);
+    }
   }
 
   void _stopAnimation({bool needNotify = true}) {
@@ -2272,6 +3128,23 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   @override
+  double get chartPriceZoom => _priceZoom;
+
+  @override
+  void setChartPriceZoom(double zoom) {
+    final clamped = zoom.clamp(0.2, 10.0);
+    if (clamped == _priceZoom) return;
+    setState(() => _priceZoom = clamped);
+    widget.controller?.hostChanged();
+  }
+
+  @override
+  void resetChartPriceScale() {
+    resetPriceScale();
+    widget.controller?.hostChanged();
+  }
+
+  @override
   Future<Uint8List?> captureChart({double pixelRatio = 3}) async {
     final boundary =
         _paintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
@@ -2320,7 +3193,7 @@ class _KChartWidgetState extends State<KChartWidget>
                 materialInfoDialog: widget.materialInfoDialog,
                 timeFormat: widget.timeFormat,
                 fixedLength: widget.fixedLength,
-                livePrice: widget.candles?.last.close,
+                livePrice: _candlesInPlay?.last.close,
               ),
         );
       },
@@ -2348,6 +3221,87 @@ class _KChartWidgetState extends State<KChartWidget>
         ),
       ),
     );
+  }
+
+  // ── The price scale ──────────────────────────────────────────────────────
+
+  /// Stretches or compresses the price axis by a drag of [delta] pixels.
+  ///
+  /// Dragging down stretches the range, which makes the candles taller;
+  /// dragging up compresses it. The step is a fraction of the candle area's
+  /// height, so the same drag does the same thing on a phone and a desktop.
+  void _zoomPriceScale(double delta) {
+    final height = painter.mMainRect.height;
+    if (height <= 0) return;
+
+    setState(() {
+      _priceZoom = (_priceZoom * (1 + delta / height)).clamp(0.2, 10.0);
+    });
+    widget.controller?.hostChanged();
+  }
+
+  /// Slides the price window by a drag of [delta] pixels.
+  void _panPriceScale(double delta) {
+    final height = painter.mMainRect.height;
+    if (height <= 0 || delta == 0) return;
+
+    // The window is measured in fractions of the range on show, and the range
+    // itself shrinks as the axis is stretched, so the shift has to be scaled
+    // by the zoom to keep a drag tracking the pointer.
+    _pricePan = (_pricePan + delta / height / _priceZoom).clamp(-5.0, 5.0);
+  }
+
+  /// Hands the price axis back to the chart, which fits it to the window.
+  void resetPriceScale() {
+    if (!_priceScaleIsManual) return;
+    setState(() {
+      _priceZoom = 1.0;
+      _pricePan = 0.0;
+    });
+    widget.controller?.hostChanged();
+  }
+
+  /// Whether [pos] landed on the strip of the candle area the price labels
+  /// sit in, which is the part that drags the scale.
+  ///
+  /// Measured in from whichever side the labels are on, and never wider than
+  /// half the chart, so a narrow chart is still mostly candles.
+  bool _isOnPriceScale(Offset pos) {
+    if (!widget.priceScaleDrag || !painter.hasLayout) return false;
+    if (widget.currentDrawingTool != DrawingTool.none) return false;
+
+    final rect = painter.mMainRect;
+    if (!rect.contains(pos)) return false;
+
+    final width = widget.chartStyle.priceScaleGripWidth.clamp(
+      0.0,
+      rect.width / 2,
+    );
+    if (width <= 0) return false;
+
+    return widget.verticalTextAlignment == VerticalTextAlignment.left
+        ? pos.dx <= rect.left + width
+        : pos.dx >= rect.right - width;
+  }
+
+  /// Handles a tap on the price scale, and reports whether it was one.
+  ///
+  /// A second tap in the same place fits the axis back to the window, which is
+  /// what a double-click on the axis does elsewhere. Recognised by hand rather
+  /// than with a [GestureDetector.onDoubleTap], which would hold every other
+  /// tap on the chart back until it knew no second one was coming.
+  bool _handlePriceScaleTap(Offset pos) {
+    if (!_isOnPriceScale(pos)) return false;
+
+    final last = _lastPriceScaleTap;
+    final now = DateTime.now();
+    _lastPriceScaleTap = now;
+
+    if (last != null && now.difference(last) <= kDoubleTapTimeout) {
+      _lastPriceScaleTap = null;
+      resetPriceScale();
+    }
+    return true;
   }
 
   /// The button that jumps back to the live candle, shown only while the chart
@@ -2384,6 +3338,7 @@ class _KChartWidgetState extends State<KChartWidget>
     final selected = _getSelectedLine();
     if (selected == null) return const SizedBox.shrink();
 
+    final selection = _selection;
     return Positioned(
       left: _toolbarOffset.dx,
       top: _toolbarOffset.dy,
@@ -2392,12 +3347,57 @@ class _KChartWidgetState extends State<KChartWidget>
         style: widget.drawingStyle,
         translations: widget.chartTranslations.drawing,
         chartColors: widget.chartColors,
-        onChanged: notifyChanged,
-        onCommitted: () => _notifyLineChanged(selected),
+        selectionLength: selection.length,
+        onChanged: () {
+          _shareStyleAcrossSelection(selected);
+          notifyChanged();
+        },
+        onCommitted: () {
+          for (final line in selection) {
+            _notifyLineChanged(line);
+          }
+        },
         onDelete: _deleteSelected,
         onDone: _deselectAll,
         onMoved: widget.drawingStyle.toolbarDraggable ? _moveToolbar : null,
+        onEditCoordinates: widget.showDrawingCoordinates
+            ? () => _openCoordinates(selected)
+            : null,
       ),
     );
+  }
+
+  /// Puts the edited drawing's look on everything else selected with it.
+  ///
+  /// The editor is open on one drawing but the selection may be several, and a
+  /// user who selected five lines to recolour means all five. Only the shared
+  /// look travels — a retracement's levels and a channel's offset stay its own.
+  void _shareStyleAcrossSelection(ChartLine edited) {
+    final selection = _selection;
+    if (selection.length < 2) return;
+
+    final template = DrawingTemplate.of(edited);
+    for (final line in selection) {
+      if (identical(line, edited) || line.locked) continue;
+      template.applyTo(line);
+    }
+  }
+
+  /// Opens the dialog that shows and edits [line]'s exact anchors.
+  Future<void> _openCoordinates(ChartLine line) async {
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty) return;
+
+    final changed = await showDrawingCoordinatesDialog(
+      context: context,
+      line: line,
+      candles: candles,
+      translations: widget.chartTranslations.drawing,
+      fixedLength: widget.fixedLength,
+    );
+    if (!changed || !mounted) return;
+
+    _notifyLineChanged(line);
+    setState(() {});
   }
 }

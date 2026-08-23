@@ -11,6 +11,7 @@ class ResolvedIndicator {
     required this.indicator,
     required this.series,
     this.ordinal = 0,
+    this.profile,
   });
 
   /// The configured indicator.
@@ -23,6 +24,9 @@ class ResolvedIndicator {
   ///
   /// Lets repeated moving averages take different colours from the theme.
   final int ordinal;
+
+  /// Volume gathered by price, for the few indicators that draw a profile.
+  final IndicatorProfile? profile;
 
   /// Colour of [line], from the indicator or the theme.
   Color colorFor(int line, ChartColors theme) =>
@@ -102,6 +106,7 @@ ResolvedIndicators resolveIndicators(
       indicator: indicator,
       series: indicator.compute(data),
       ordinal: ordinal,
+      profile: indicator.computeProfile(data),
     );
     if (indicator.placement == IndicatorPlacement.overlay) {
       overlays.add(resolved);

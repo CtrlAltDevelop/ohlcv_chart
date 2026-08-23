@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../chart_style.dart';
-import '../entity/horizontal_line.dart';
 import '../entity/line.dart';
 import 'drawing_style.dart';
 import 'drawing_translations.dart';
@@ -28,6 +27,8 @@ class DrawingToolbar extends StatelessWidget {
     required this.onDelete,
     required this.onDone,
     this.onMoved,
+    this.onEditCoordinates,
+    this.selectionLength = 1,
     super.key,
   });
 
@@ -58,6 +59,15 @@ class DrawingToolbar extends StatelessWidget {
   /// Called with the drag delta while the grip is dragged.
   final ValueChanged<Offset>? onMoved;
 
+  /// Called when the coordinates button is pressed, or null to leave it out.
+  final VoidCallback? onEditCoordinates;
+
+  /// How many drawings are selected, [line] among them.
+  ///
+  /// More than one and the bar says so, since every edit made through it is
+  /// applied to the lot.
+  final int selectionLength;
+
   Color get _iconColor => style.iconColor ?? chartColors.defaultTextColor;
 
   Color get _background =>
@@ -74,17 +84,28 @@ class DrawingToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final canEditLabel = style.showLabelTextControl && line is LabelledDrawing;
     final canFill = style.showFillControl && line is FilledDrawing;
-    final canAlert = style.showAlertControl && line is HorizontalLine;
+    final canAlert = style.showAlertControl && line is AlertingDrawing;
 
     final controls = <Widget>[
       if (style.toolbarDraggable && onMoved != null) _buildGrip(),
+      // A count, not a control: every edit below applies to the whole
+      // selection, which is worth saying before one is made.
+      if (selectionLength > 1) _buildSelectionCount(),
       if (style.showColorControl) _buildColorControl(),
       if (style.showThicknessControl) _buildThicknessControl(),
       if (style.showLineStyleControl) _buildLineStyleControl(),
       if (canFill) _buildFillControl(line as FilledDrawing),
       if (canEditLabel) _buildLabelTextControl(),
       if (style.showLabelControl) _buildLabelToggle(),
-      if (canAlert) _buildAlertToggle(line as HorizontalLine),
+      if (canAlert) _buildAlertToggle(line as AlertingDrawing),
+      if (onEditCoordinates != null)
+        _ToolbarButton(
+          icon: Icons.straighten_rounded,
+          tooltip: translations.coordinates,
+          style: style,
+          color: _iconColor,
+          onPressed: onEditCoordinates!,
+        ),
       if (style.showLockControl) _buildLockToggle(),
       if (style.showDeleteControl || style.showDoneControl) _buildSeparator(),
       if (style.showDeleteControl)
@@ -160,6 +181,21 @@ class DrawingToolbar extends StatelessWidget {
               color: _iconColor.withValues(alpha: .7),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// How many drawings the bar is editing, when it is more than one.
+  Widget _buildSelectionCount() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Text(
+        '$selectionLength ${translations.selectedCount}',
+        style: TextStyle(
+          color: _iconColor,
+          fontSize: style.iconSize * 0.7,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -292,7 +328,7 @@ class DrawingToolbar extends StatelessWidget {
     );
   }
 
-  Widget _buildAlertToggle(HorizontalLine level) {
+  Widget _buildAlertToggle(AlertingDrawing level) {
     return _ToolbarButton(
       icon: level.alert
           ? Icons.notifications_active_rounded

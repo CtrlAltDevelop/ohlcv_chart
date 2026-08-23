@@ -9,7 +9,7 @@ import 'two_point_drawing.dart';
 /// a labelled horizontal line between them, so 0.618 sits 61.8% of the way
 /// from the first anchor's price to the second's. Ratios outside 0–1 are
 /// allowed and draw as extensions beyond the anchors.
-class FibRetracement extends TwoPointDrawing {
+class FibRetracement extends TwoPointDrawing implements AlertingDrawing {
   /// Creates a retracement anchored at ([time1], [price1]).
   FibRetracement({
     required super.time1,
@@ -18,6 +18,7 @@ class FibRetracement extends TwoPointDrawing {
     super.price2,
     List<double>? levels,
     this.fillLevels = true,
+    this.alert = false,
     super.color = const Color(0xFFFFC107),
     super.thickness = 1.0,
     super.style,
@@ -37,6 +38,7 @@ class FibRetracement extends TwoPointDrawing {
       price2: LineJson.maybeNumber(json, 'price2'),
       levels: LineJson.numbers(json, 'levels'),
       fillLevels: LineJson.flag(json, 'fillLevels', true),
+      alert: LineJson.flag(json, 'alert'),
       color: LineJson.color(json, const Color(0xFFFFC107)),
       thickness: LineJson.number(json, 'thickness', 1),
       style: LineJson.style(json),
@@ -63,6 +65,20 @@ class FibRetracement extends TwoPointDrawing {
   /// Whether the bands between neighbouring levels are washed in.
   bool fillLevels;
 
+  /// Whether the market crossing any of the levels fires an alert.
+  @override
+  bool alert;
+
+  @override
+  List<double> alertLevelsAt(DateTime time) {
+    if (!hasSecondPoint) return const [];
+    // The levels are read from the swing rightwards, the way a retracement is
+    // used: what matters is where price goes after the move, not during it.
+    final from = time1.isBefore(time2!) ? time1 : time2!;
+    if (time.isBefore(from)) return const [];
+    return [for (final ratio in levels) ?priceAt(ratio)];
+  }
+
   /// The price at [ratio] of the way from the first anchor to the second.
   ///
   /// Null until both anchors have landed.
@@ -78,5 +94,6 @@ class FibRetracement extends TwoPointDrawing {
     ...anchorsJson(),
     'levels': levels,
     'fillLevels': fillLevels,
+    'alert': alert,
   };
 }

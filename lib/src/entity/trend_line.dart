@@ -24,7 +24,7 @@ enum LineExtension {
 ///
 /// [extend] turns the same two anchors into a ray or an extended line, and
 /// [arrow] puts an arrowhead on the far end.
-class TrendLine extends TwoPointDrawing {
+class TrendLine extends TwoPointDrawing implements AlertingDrawing {
   /// Creates a trend line anchored at ([time1], [price1]).
   TrendLine({
     required super.time1,
@@ -35,6 +35,7 @@ class TrendLine extends TwoPointDrawing {
     this.label2,
     this.extend = LineExtension.none,
     this.arrow = false,
+    this.alert = false,
     super.color = Colors.yellow,
     super.thickness = 2.0,
     super.style,
@@ -61,6 +62,7 @@ class TrendLine extends TwoPointDrawing {
         LineExtension.none,
       ),
       arrow: LineJson.flag(json, 'arrow'),
+      alert: LineJson.flag(json, 'alert'),
       color: LineJson.color(json, Colors.yellow),
       thickness: LineJson.number(json, 'thickness', 2),
       style: LineJson.style(json),
@@ -82,6 +84,29 @@ class TrendLine extends TwoPointDrawing {
   /// Whether an arrowhead is painted at the second anchor.
   bool arrow;
 
+  /// Whether the market crossing this line fires an alert.
+  @override
+  bool alert;
+
+  @override
+  List<double> alertLevelsAt(DateTime time) {
+    if (!hasSecondPoint) return const [];
+
+    // A segment can only be crossed where it is drawn; a ray also counts
+    // rightwards of its second anchor, and an extended line everywhere.
+    final from = time1.isBefore(time2!) ? time1 : time2!;
+    final to = time1.isBefore(time2!) ? time2! : time1;
+    switch (extend) {
+      case LineExtension.none:
+        if (time.isBefore(from) || time.isAfter(to)) return const [];
+      case LineExtension.right:
+        if (time.isBefore(from)) return const [];
+      case LineExtension.both:
+        break;
+    }
+    return [priceOnLineAt(time)];
+  }
+
   @override
   Map<String, dynamic> toJson() => {
     ...baseJson('trend'),
@@ -90,5 +115,6 @@ class TrendLine extends TwoPointDrawing {
     if (label2 != null) 'label2': label2,
     'extend': extend.name,
     'arrow': arrow,
+    'alert': alert,
   };
 }

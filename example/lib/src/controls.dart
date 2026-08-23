@@ -164,6 +164,12 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.priceAxisScale = v),
             ),
             _Toggle(
+              label: 'Pin the baseline',
+              subtitle: 'baselinePrice, instead of the oldest close in view',
+              value: state.pinnedBaseline,
+              onChanged: (v) => state.update(() => state.pinnedBaseline = v),
+            ),
+            _Toggle(
               label: 'Hollow rising candles',
               value: state.hollowCandles,
               onChanged: (v) => state.update(() => state.hollowCandles = v),
@@ -273,6 +279,62 @@ class Controls extends StatelessWidget {
               options: const {0: '0', 2: '2', 4: '4'},
               onChanged: (v) => state.update(() => state.fixedLength = v),
             ),
+            _Toggle(
+              label: 'Drag the price axis',
+              subtitle: 'Drag the labels to stretch it, double-tap to refit',
+              value: state.priceScaleDrag,
+              onChanged: (v) => state.update(() => state.priceScaleDrag = v),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Stretch the price scale from code',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Compress',
+                  onPressed: state.chart.compressPrice,
+                  icon: const Icon(Icons.unfold_less_rounded, size: 18),
+                ),
+                IconButton(
+                  tooltip: 'Stretch',
+                  onPressed: state.chart.stretchPrice,
+                  icon: const Icon(Icons.unfold_more_rounded, size: 18),
+                ),
+                IconButton(
+                  tooltip: 'Fit to the window',
+                  onPressed: state.chart.resetPriceScale,
+                  icon: const Icon(Icons.fit_screen_outlined, size: 18),
+                ),
+              ],
+            ),
+            _Toggle(
+              label: 'Format dates here',
+              subtitle: 'dateFormatter takes the axis over completely',
+              value: state.customDateFormat,
+              onChanged: (v) => state.update(() => state.customDateFormat = v),
+            ),
+            _Choice<int>(
+              label: 'Front padding',
+              value: state.frontPadding.round(),
+              options: const {40: '40', 80: '80', 160: '160'},
+              onChanged: (v) =>
+                  state.update(() => state.frontPadding = v.toDouble()),
+            ),
+            _Toggle(
+              label: 'Scroll-to-now button',
+              subtitle: 'Appears once the chart is scrolled back',
+              value: state.scrollToNowButton,
+              onChanged: (v) => state.update(() => state.scrollToNowButton = v),
+            ),
+            _Toggle(
+              label: 'Keyboard shortcuts',
+              subtitle: '⌘Z, ⇧⌘Z and Delete on the chart',
+              value: state.keyboardShortcuts,
+              onChanged: (v) => state.update(() => state.keyboardShortcuts = v),
+            ),
           ],
         ),
         _Section(
@@ -302,6 +364,11 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.customInfoDialog = v),
             ),
           ],
+        ),
+        _Section(
+          title: 'Replay',
+          subtitle: 'Rewind the chart and let the candles arrive again',
+          children: [_ReplayBar(state: state)],
         ),
         _Section(
           title: 'Feed',
@@ -380,6 +447,19 @@ class Controls extends StatelessWidget {
     DrawingTool.position => 'position',
     DrawingTool.text => 'note',
     DrawingTool.brush => 'brush',
+    DrawingTool.pitchfork => 'pitchfork',
+    DrawingTool.gannFan => 'gann fan',
+    DrawingTool.gannBox => 'gann box',
+    DrawingTool.fibExtension => 'fib ext',
+    DrawingTool.fibFan => 'fib fan',
+    DrawingTool.fibTimeZones => 'fib time',
+    DrawingTool.regressionTrend => 'regression',
+    DrawingTool.xabcd => 'xabcd',
+    DrawingTool.priceRange => 'price range',
+    DrawingTool.dateRange => 'date range',
+    DrawingTool.callout => 'callout',
+    DrawingTool.path => 'path',
+    DrawingTool.flag => 'flag',
   };
 }
 
@@ -466,6 +546,78 @@ class _Section extends StatelessWidget {
           ...children,
         ],
       ),
+    );
+  }
+}
+
+/// The replay transport: rewind, step, play and back to the live chart.
+class _ReplayBar extends StatelessWidget {
+  const _ReplayBar({required this.state});
+
+  final DemoState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final replay = state.replay;
+    final position = replay.position;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'Rewind to halfway',
+              onPressed: () => replay.start(at: (replay.length / 2).round()),
+              icon: const Icon(Icons.fast_rewind_rounded, size: 18),
+            ),
+            IconButton(
+              tooltip: 'Back one candle',
+              onPressed: replay.isActive ? replay.stepBack : null,
+              icon: const Icon(Icons.skip_previous_rounded, size: 18),
+            ),
+            IconButton(
+              tooltip: replay.isPlaying ? 'Pause' : 'Play',
+              onPressed: replay.toggle,
+              icon: Icon(
+                replay.isPlaying
+                    ? Icons.pause_rounded
+                    : Icons.play_arrow_rounded,
+                size: 18,
+              ),
+            ),
+            IconButton(
+              tooltip: 'On one candle',
+              onPressed: replay.isActive ? replay.stepForward : null,
+              icon: const Icon(Icons.skip_next_rounded, size: 18),
+            ),
+            IconButton(
+              tooltip: 'Back to the live chart',
+              onPressed: replay.isActive ? replay.stop : null,
+              icon: const Icon(Icons.stop_rounded, size: 18),
+            ),
+          ],
+        ),
+        if (position != null)
+          Slider(
+            value: position.toDouble().clamp(1, replay.length.toDouble()),
+            min: 1,
+            max: replay.length.toDouble(),
+            onChanged: (v) => replay.jumpTo(v.round()),
+          ),
+        Text(
+          position == null
+              ? 'Live — all ${replay.length} candles'
+              : 'Candle $position of ${replay.length}',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        _Choice<int>(
+          label: 'Speed',
+          value: replay.interval.inMilliseconds,
+          options: const {1000: 'slow', 500: 'normal', 150: 'fast'},
+          onChanged: (v) => replay.setInterval(Duration(milliseconds: v)),
+        ),
+      ],
     );
   }
 }

@@ -86,6 +86,13 @@ abstract class BaseChartPainter extends CustomPainter {
   /// Rectangle box of main chart
   late Rect mMainRect;
 
+  /// Whether the rects have been worked out yet.
+  ///
+  /// They are laid out as the chart paints, so anything asking about the
+  /// chart's geometry while it is still being built has to check first.
+  bool get hasLayout => _hasLayout;
+  bool _hasLayout = false;
+
   /// Rectangle box of the vol chart
   Rect? mVolRect;
 
@@ -251,6 +258,7 @@ abstract class BaseChartPainter extends CustomPainter {
     }
 
     mMainRect = Rect.fromLTRB(0, mTopPadding, mWidth, mTopPadding + mainHeight);
+    _hasLayout = true;
 
     if (volHidden != true) {
       mVolRect = Rect.fromLTRB(
