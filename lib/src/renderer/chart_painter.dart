@@ -48,6 +48,11 @@ class ChartPainter extends BaseChartPainter {
     this.pricePan = 0.0,
     this.chartType = ChartType.candles,
     this.baselinePrice,
+    this.session,
+    this.candleColor,
+    this.invertPriceAxis = false,
+    this.showAverageClose = false,
+    this.showHighLowOnAxis = false,
     this.timeZoneOffset = Duration.zero,
     this.highlightedPane,
     super.isHovering,
@@ -56,6 +61,10 @@ class ChartPainter extends BaseChartPainter {
     super.isTapShowInfoDialog,
     super.overlays,
     super.panes,
+    super.comparisons,
+    this.events = const <ResolvedEvent>[],
+    this.orders = const <ChartOrder>[],
+    this.openPositions = const <ChartPosition>[],
     super.volHidden,
     super.isLine = false,
     this.hideGrid = false,
@@ -76,6 +85,39 @@ class ChartPainter extends BaseChartPainter {
       ..strokeWidth = chartStyle.nowPriceLineWidth
       ..isAntiAlias = true;
   }
+
+  /// Events marked under the candles, lined up with them.
+  final List<ResolvedEvent> events;
+
+  /// The regular session, in the zone the chart is showing.
+  ///
+  /// Null leaves every candle drawn the same; set it and the ones outside the
+  /// session are washed.
+  final TradingSession? session;
+
+  /// A colour of your own for the bar at an index, or null for the usual one.
+  final Color? Function(CandleEntity candle, int index)? candleColor;
+
+  /// Whether the price axis runs the other way, with higher prices lower down.
+  final bool invertPriceAxis;
+
+  /// Whether the average close over the window is drawn as a level.
+  final bool showAverageClose;
+
+  /// Whether the window's high and low are tagged on the price axis.
+  final bool showHighLowOnAxis;
+
+  /// Working orders drawn across the candles.
+  ///
+  /// One being dragged is already at the price the pointer is holding it at, so
+  /// the line follows the finger before the host has said anything.
+  final List<ChartOrder> orders;
+
+  /// Open positions drawn across the candles.
+  ///
+  /// Named apart from [positions], which is the drawing tool for a *planned*
+  /// trade; these are what the account actually holds.
+  final List<ChartPosition> openPositions;
 
   /// Every drawing on the chart, in the order they were placed.
   final List<ChartLine> drawings;
@@ -213,7 +255,12 @@ class ChartPainter extends BaseChartPainter {
 
   /// The close a percentage axis measures against: the oldest candle in view.
   double? get _percentBase {
-    if (priceAxisScale != PriceAxisScale.percentage) return null;
+    // Both readouts measure from the same place: a percentage says how far the
+    // market has moved from it, an index says the same thing with it at 100.
+    if (priceAxisScale != PriceAxisScale.percentage &&
+        priceAxisScale != PriceAxisScale.indexedTo100) {
+      return null;
+    }
     final data = candles;
     if (data == null || data.isEmpty) return null;
     return data[mStartIndex.clamp(0, data.length - 1)].close;
@@ -263,12 +310,17 @@ class ChartPainter extends BaseChartPainter {
       scaleX,
       verticalTextAlignment,
       mVolRect != null || mSecondaryRectList.isNotEmpty,
+      comparisons: comparisons,
+      comparisonAnchors: comparisonAnchors,
       priceScale: priceAxisScale,
       // A percentage axis measures from the oldest candle in view, so panning
       // moves the zero line along with the window.
       percentBase: _percentBase,
       chartType: chartType,
       baselinePrice: baselinePrice ?? _oldestCloseInView,
+      inverted: invertPriceAxis,
+      averageClose: showAverageClose ? _averageCloseInView : null,
+      candleColor: candleColor,
     );
     if (mVolRect != null) {
       mVolRenderer = VolRenderer(
@@ -292,8 +344,37 @@ class ChartPainter extends BaseChartPainter {
           chartStyle,
           chartColors,
           panes[i],
+          percentBase: _paneBase(panes[i]),
         ),
     ];
+  }
+
+  /// The mean close over the visible window, or null when there is none.
+  double? get _averageCloseInView {
+    final data = candles;
+    if (data == null || data.isEmpty) return null;
+
+    var sum = 0.0;
+    var count = 0;
+    for (var i = mStartIndex; i <= mStopIndex; i++) {
+      if (i < 0 || i >= data.length) continue;
+      sum += data[i].close;
+      count++;
+    }
+    return count == 0 ? null : sum / count;
+  }
+
+  /// The value a percentage pane measures against: the first one in view.
+  ///
+  /// Null for a pane on any other scale, and for a window holding no value to
+  /// measure from — a pane whose indicator has not warmed up yet.
+  double? _paneBase(ResolvedIndicator pane) {
+    if (pane.indicator.scale != IndicatorScale.percentage) return null;
+    for (var i = mStartIndex; i <= mStopIndex; i++) {
+      final value = pane.valueAt(0, i);
+      if (value != null && value.isFinite && value != 0) return value;
+    }
+    return null;
   }
 
   @override
@@ -417,6 +498,7 @@ class ChartPainter extends BaseChartPainter {
     // Behind the candles, and in the chart's own coordinates rather than the
     // scrolled and scaled ones the candles are drawn in: a profile is read
     // against the price axis, not against time.
+    drawExtendedHours(canvas, size);
     mMainRenderer.drawProfiles(canvas);
 
     canvas.save();
@@ -430,8 +512,24 @@ class ChartPainter extends BaseChartPainter {
       final curX = getX(i);
       final lastX = i == 0 ? curX : getX(i - 1);
 
-      mMainRenderer.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
-      mVolRenderer?.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
+      mMainRenderer.drawChart(
+        lastPoint,
+        curPoint,
+        lastX,
+        curX,
+        size,
+        canvas,
+        index: i,
+      );
+      mVolRenderer?.drawChart(
+        lastPoint,
+        curPoint,
+        lastX,
+        curX,
+        size,
+        canvas,
+        index: i,
+      );
     }
 
     if (showCrosshair) {
@@ -451,6 +549,14 @@ class ChartPainter extends BaseChartPainter {
         stop: mStopIndex,
         xOf: xOf,
       );
+      // Over the indicators: a compared instrument is a second reading of the
+      // same window, not another line about this one.
+      mMainRenderer.drawComparisons(
+        canvas,
+        start: mStartIndex,
+        stop: mStopIndex,
+        xOf: xOf,
+      );
       for (final pane in mIndicatorPaneList) {
         pane.drawSeries(
           canvas,
@@ -463,6 +569,7 @@ class ChartPainter extends BaseChartPainter {
     }
 
     drawSessionDividers(canvas, size);
+    drawEventMarks(canvas);
     drawPaneHighlight(canvas);
 
     // User-drawn lines paint in view space, once the horizontal scale is
@@ -494,9 +601,190 @@ class ChartPainter extends BaseChartPainter {
     drawCallouts(canvas, size);
     drawFlags(canvas, size);
 
+    mMainRenderer.drawAverageClose(canvas, size);
+    drawTradingLines(canvas, size);
+
     drawHorizontalLineTitles(canvas, size);
     drawVerticalLineTitles(canvas, size);
     drawTrendLineLabels(canvas, size);
+  }
+
+  /// Draws the open positions and the working orders across the candles.
+  ///
+  /// Over the drawings, because these are what the account actually holds and a
+  /// line drawn by hand must not hide one.
+  void drawTradingLines(Canvas canvas, Size size) {
+    final trading = chartStyle.trading;
+
+    for (final position in openPositions) {
+      final color = position.color ?? chartColors.tradeColor(position.side);
+      _strokeTradingLine(
+        canvas,
+        size,
+        position.entryPrice,
+        color,
+        trading.positionStyle,
+      );
+      drawPriceTag(
+        canvas,
+        getTextPainter(position.tagText, chartColors.nowPriceTextColor),
+        getMainY(position.entryPrice),
+        color,
+      );
+    }
+
+    for (final order in orders) {
+      final color = order.color ?? chartColors.tradeColor(order.side);
+      _strokeTradingLine(canvas, size, order.price, color, trading.orderStyle);
+      drawPriceTag(
+        canvas,
+        getTextPainter(order.tagText, chartColors.nowPriceTextColor),
+        getMainY(order.price),
+        color,
+      );
+    }
+  }
+
+  /// One trading line at [price], clipped to the candle area.
+  void _strokeTradingLine(
+    Canvas canvas,
+    Size size,
+    double price,
+    Color color,
+    LineStyle style,
+  ) {
+    final y = getMainY(price);
+    // A line at a price the window does not reach would be drawn over another
+    // pane, so it is left out rather than drawn in the wrong place.
+    if (y < mMainRect.top || y > mMainRect.bottom) return;
+
+    final trading = chartStyle.trading;
+    paintStyledLine(
+      canvas,
+      Offset(0, y),
+      Offset(size.width, y),
+      Paint()
+        ..color = color
+        ..strokeWidth = trading.lineWidth
+        ..isAntiAlias = true,
+      style: style,
+      dashLength: trading.dashLength,
+      dashGap: trading.dashGap,
+    );
+  }
+
+  /// The order whose line is within reach of [pos], or null when none is.
+  ///
+  /// Only a draggable one: a line that cannot be moved is not worth grabbing.
+  /// The nearest is taken, so two orders close together each answer for their
+  /// own half of the gap.
+  ChartOrder? orderAt(Offset pos) {
+    if (orders.isEmpty || !mMainRect.contains(pos)) return null;
+
+    final tolerance = chartStyle.trading.grabTolerance;
+    ChartOrder? nearest;
+    var closest = double.infinity;
+    for (final order in orders) {
+      if (!order.draggable) continue;
+      final distance = (pos.dy - getMainY(order.price)).abs();
+      if (distance < tolerance && distance < closest) {
+        closest = distance;
+        nearest = order;
+      }
+    }
+    return nearest;
+  }
+
+  /// The position whose line is within reach of [pos], or null when none is.
+  ChartPosition? positionAt(Offset pos) {
+    if (openPositions.isEmpty || !mMainRect.contains(pos)) return null;
+
+    final tolerance = chartStyle.trading.grabTolerance;
+    for (final position in openPositions) {
+      if ((pos.dy - getMainY(position.entryPrice)).abs() < tolerance) {
+        return position;
+      }
+    }
+    return null;
+  }
+
+  /// Marks each event under the candle it happened on.
+  ///
+  /// A small badge just below the candle area, so it says when something
+  /// happened without covering the price it happened at. Marks that would land
+  /// on top of each other are drawn anyway — a busy week is worth seeing as a
+  /// cluster — but one off the side of the chart is skipped.
+  void drawEventMarks(Canvas canvas) {
+    final radius = chartStyle.eventMarkRadius;
+    if (events.isEmpty || radius <= 0) return;
+
+    final y = mMainRect.bottom - radius - chartStyle.eventMarkGap;
+    for (final mark in events) {
+      final x = translateXtoX(getX(mark.index));
+      if (x < -radius || x > mWidth + radius) continue;
+
+      final color =
+          mark.event.color ?? chartColors.eventColor(mark.event.kind.name);
+      canvas.drawCircle(
+        Offset(x, y),
+        radius,
+        Paint()
+          ..isAntiAlias = true
+          ..color = color,
+      );
+
+      // A stalk up to the candles, so the badge reads as belonging to one bar
+      // rather than floating below the lot.
+      canvas.drawLine(
+        Offset(x, y - radius),
+        Offset(x, mMainRect.bottom),
+        Paint()
+          ..isAntiAlias = true
+          ..strokeWidth = 1
+          ..color = color.withValues(alpha: color.a * 0.6),
+      );
+
+      final icon = mark.event.icon;
+      if (icon != null) {
+        final tp = TextPainter(
+          text: TextSpan(
+            text: String.fromCharCode(icon.codePoint),
+            style: TextStyle(
+              fontSize: radius * 1.5,
+              fontFamily: icon.fontFamily,
+              package: icon.fontPackage,
+              color: chartColors.nowPriceTextColor,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(canvas, Offset(x - tp.width / 2, y - tp.height / 2));
+        continue;
+      }
+
+      final tp = getTextPainter(
+        mark.event.badgeText,
+        chartColors.nowPriceTextColor,
+        fontSize: radius * 1.1,
+      );
+      tp.paint(canvas, Offset(x - tp.width / 2, y - tp.height / 2));
+    }
+  }
+
+  /// The event whose badge is under [pos], or null when none is.
+  ///
+  /// The newest first, so the one drawn on top of a cluster is the one a tap
+  /// picks up.
+  ChartEvent? eventAt(Offset pos) {
+    final radius = chartStyle.eventMarkRadius;
+    if (events.isEmpty || radius <= 0) return null;
+
+    final y = mMainRect.bottom - radius - chartStyle.eventMarkGap;
+    for (final mark in events.reversed) {
+      final x = translateXtoX(getX(mark.index));
+      if ((pos - Offset(x, y)).distance <= radius) return mark.event;
+    }
+    return null;
   }
 
   /// Washes the pane the user is dragging to a new place in the stack.
@@ -524,6 +812,56 @@ class ChartPainter extends BaseChartPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
+  }
+
+  /// Washes the stretches of chart outside the regular session.
+  ///
+  /// Read in the time zone the chart is showing, so the pre-market and
+  /// after-hours bands land where the trader sees them rather than where UTC
+  /// does. Neighbouring candles outside the session are washed as one band, so
+  /// a long overnight is one rectangle rather than a hundred.
+  void drawExtendedHours(Canvas canvas, Size size) {
+    final hours = session;
+    final data = candles;
+    if (hours == null || data == null || data.isEmpty) return;
+
+    final paint = Paint()
+      ..color = chartColors.effectiveExtendedHoursColor
+      ..isAntiAlias = true;
+    final bottom = size.height - mBottomPadding;
+    final half = mPointWidth / 2 * scaleX;
+
+    double? bandFrom;
+    double? bandTo;
+
+    void flush() {
+      if (bandFrom == null || bandTo == null) return;
+      canvas.drawRect(
+        Rect.fromLTRB(bandFrom!, mMainRect.top, bandTo!, bottom),
+        paint,
+      );
+      bandFrom = null;
+      bandTo = null;
+    }
+
+    for (var i = mStartIndex; i <= mStopIndex && i < data.length; i++) {
+      final time = displayTime(data[i].dateTime);
+      if (time == null || hours.contains(time)) {
+        flush();
+        continue;
+      }
+
+      final centre = translateXtoX(getX(i));
+      final left = centre - half;
+      final right = centre + half;
+      if (bandFrom == null) {
+        bandFrom = left;
+        bandTo = right;
+      } else {
+        bandTo = right;
+      }
+    }
+    flush();
   }
 
   /// Marks the first candle of each day with a vertical line.
@@ -2485,9 +2823,38 @@ class ChartPainter extends BaseChartPainter {
 
   @override
   void drawMaxAndMin(Canvas canvas) {
+    if (showHighLowOnAxis) drawHighLowTags(canvas);
     if (isLine) return;
     drawExtreme(canvas, mMainMinIndex, mMainLowMinValue, chartColors.minColor);
     drawExtreme(canvas, mMainMaxIndex, mMainHighMaxValue, chartColors.maxColor);
+  }
+
+  /// Tags the window's high and low on the price axis.
+  ///
+  /// The leader lines mark which candle set each extreme; these say what to read
+  /// them off the axis as, which is what a trader reaching for a level wants.
+  /// Drawn whatever the chart type, since a line chart has extremes too.
+  void drawHighLowTags(Canvas canvas) {
+    final data = candles;
+    if (data == null || data.isEmpty) return;
+
+    for (final (value, color) in [
+      (mMainHighMaxValue, chartColors.maxColor),
+      (mMainLowMinValue, chartColors.minColor),
+    ]) {
+      if (!value.isFinite) continue;
+      final y = getMainY(value);
+      if (y < mMainRect.top || y > mMainRect.bottom) continue;
+      drawPriceTag(
+        canvas,
+        getTextPainter(
+          mMainRenderer.formatAxis(value),
+          chartColors.nowPriceTextColor,
+        ),
+        y,
+        color,
+      );
+    }
   }
 
   /// Labels one extreme of the visible range with a short leader line pointing

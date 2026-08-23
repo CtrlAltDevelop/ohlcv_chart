@@ -119,8 +119,9 @@ abstract class BaseChartRenderer<T> {
     double lastX,
     double curX,
     Size size,
-    Canvas canvas,
-  ) {}
+    Canvas canvas, {
+    int index = 0,
+  }) {}
 
   void drawLine(
     double? lastPrice,

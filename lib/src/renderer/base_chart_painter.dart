@@ -4,6 +4,7 @@ import 'package:flutter/material.dart'
     show Color, TextStyle, Rect, Canvas, Size, CustomPainter;
 
 import '../chart_style.dart' show ChartStyle;
+import '../comparison.dart';
 import '../entity/k_line_entity.dart';
 import '../indicators/resolved_indicator.dart';
 import '../utils/date_format_util.dart';
@@ -30,6 +31,7 @@ abstract class BaseChartPainter extends CustomPainter {
     this.suppressCrosshair = false,
     this.overlays = const <ResolvedIndicator>[],
     this.panes = const <ResolvedIndicator>[],
+    this.comparisons = const <ResolvedComparison>[],
     this.volHidden = false,
     this.isTapShowInfoDialog = false,
     this.isLine = false,
@@ -53,6 +55,16 @@ abstract class BaseChartPainter extends CustomPainter {
 
   /// Indicators drawn in their own panes, with their values.
   List<ResolvedIndicator> panes;
+
+  /// Compared instruments drawn over the candles, lined up with them.
+  List<ResolvedComparison> comparisons;
+
+  /// Where each comparison is pinned to the main series, in the same order.
+  ///
+  /// Worked out once the window is known, since a rebased comparison starts
+  /// from the left edge of what is on screen. Null for one with nothing to pin
+  /// to, and for one drawn on its own prices.
+  List<ComparisonAnchor?> comparisonAnchors = const <ComparisonAnchor?>[];
 
   bool volHidden;
   bool isTapShowInfoDialog;
@@ -290,6 +302,13 @@ abstract class BaseChartPainter extends CustomPainter {
     setTranslateXFromScrollX(scrollX);
     mStartIndex = indexOfTranslateX(xToTranslateX(0));
     mStopIndex = indexOfTranslateX(xToTranslateX(mWidth));
+    // Pinned before the range is measured: a rebased comparison starts from the
+    // left edge of the window, so where it sits depends on the window and what
+    // it contributes to the range depends on where it sits.
+    comparisonAnchors = [
+      for (final comparison in comparisons)
+        comparisonAnchor(comparison, candles!, mStartIndex, mStopIndex),
+    ];
     for (int i = mStartIndex; i <= mStopIndex; i++) {
       final item = candles![i];
       getMainMaxMinValue(item, i);
@@ -342,6 +361,19 @@ abstract class BaseChartPainter extends CustomPainter {
         maxPrice = max(maxPrice, value);
         minPrice = min(minPrice, value);
       }
+    }
+
+    // A compared instrument shares the scale, so the scale has to hold it: two
+    // instruments that moved differently is the whole point of drawing them
+    // together.
+    for (final (ordinal, comparison) in comparisons.indexed) {
+      final anchor = ordinal < comparisonAnchors.length
+          ? comparisonAnchors[ordinal]
+          : null;
+      final price = comparisonPriceAt(comparison, i, anchor);
+      if (price == null || !price.isFinite) continue;
+      maxPrice = max(maxPrice, price);
+      minPrice = min(minPrice, price);
     }
 
     mMainMaxValue = max(mMainMaxValue, maxPrice);

@@ -46,8 +46,9 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     double lastX,
     double curX,
     Size size,
-    Canvas canvas,
-  ) {
+    Canvas canvas, {
+    int index = 0,
+  }) {
     final r = mVolWidth / 2;
     final bottom = chartRect.bottom;
     final top = math.min(getVolY(curPoint.vol), bottom - 1);

@@ -3,8 +3,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../chart_type.dart';
+import '../comparison.dart';
+import '../drawing/line_painting.dart';
 import '../entity/candle_entity.dart';
 import '../entity/k_line_entity.dart';
+import '../entity/line.dart';
 import '../indicators/resolved_indicator.dart';
 import '../price_axis_scale.dart';
 import '../utils/axis_ticks.dart';
@@ -39,10 +42,15 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     this.scaleX,
     this.verticalTextAlignment,
     this.hasPanesBelow, {
+    this.comparisons = const <ResolvedComparison>[],
+    this.comparisonAnchors = const <ComparisonAnchor?>[],
     this.priceScale = PriceAxisScale.linear,
     this.percentBase,
     this.chartType = ChartType.candles,
     this.baselinePrice,
+    this.inverted = false,
+    this.averageClose,
+    this.candleColor,
   }) : super(
          chartRect: mainRect,
          maxValue: maxValue,
@@ -84,6 +92,12 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     _transformedScaleY = span <= 0 ? scaleY : _contentRect.height / span;
   }
 
+  /// Compared instruments drawn over the candles, lined up with them.
+  final List<ResolvedComparison> comparisons;
+
+  /// Where each comparison is pinned to the main series, in the same order.
+  final List<ComparisonAnchor?> comparisonAnchors;
+
   /// What the candle area draws for each candle.
   final ChartType chartType;
 
@@ -96,6 +110,21 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   /// The close a [PriceAxisScale.percentage] axis measures against, which is
   /// the first candle in view.
   final double? percentBase;
+
+  /// A colour of your own for the bar at an index, or null for the usual one.
+  ///
+  /// Asked about every candle, bar and column drawn, so a bar can be picked out
+  /// for whatever reason the caller has — inside a session, above an average,
+  /// part of a pattern.
+  final Color? Function(CandleEntity candle, int index)? candleColor;
+
+  /// Whether the axis runs the other way, with higher prices lower down.
+  final bool inverted;
+
+  /// The average close over the visible window, drawn as a level.
+  ///
+  /// Null when the chart is not showing one.
+  final double? averageClose;
 
   late final double _transformedMax;
   late final double _transformedScaleY;
@@ -117,15 +146,20 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
   /// Formats [price] the way the axis reads it.
   ///
-  /// A percentage axis shows the move away from [percentBase]; every other
-  /// axis shows the price itself.
+  /// A percentage axis shows the move away from [percentBase] and an indexed one
+  /// shows it with that base at 100; every other axis shows the price itself.
   String formatAxis(double price) {
     final base = percentBase;
-    if (priceScale != PriceAxisScale.percentage || base == null || base == 0) {
-      return format(price);
-    }
-    final move = (price / base - 1) * 100;
-    return '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
+    if (base == null || base == 0) return format(price);
+
+    return switch (priceScale) {
+      PriceAxisScale.percentage => () {
+        final move = (price / base - 1) * 100;
+        return '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
+      }(),
+      PriceAxisScale.indexedTo100 => (price / base * 100).toStringAsFixed(2),
+      _ => format(price),
+    };
   }
 
   late double mCandleWidth;
@@ -158,6 +192,12 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   /// a different indicator starts a new one. [startRow] leaves room above for
   /// rows someone else has already taken, such as the OHLC legend.
   void drawLegends(Canvas canvas, int index, double x, {int startRow = 0}) {
+    // The comparisons take a row of their own, above the indicators, and are
+    // read out whether or not the main series is drawn as a line.
+    if (comparisons.isNotEmpty) {
+      drawComparisonLegend(canvas, index, x, startRow);
+      startRow++;
+    }
     if (isLine) return;
 
     final rows = <String, List<InlineSpan>>{};
@@ -196,6 +236,145 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       );
       row++;
     }
+  }
+
+  /// Draws the average close over the window, as a level across the chart.
+  ///
+  /// What the market has been worth on average over what is on screen, which is
+  /// the level a mean-reversion read is taken against. Panning moves it, since
+  /// it describes the window rather than the whole history.
+  void drawAverageClose(Canvas canvas, Size size) {
+    final average = averageClose;
+    if (average == null) return;
+
+    final y = getY(average);
+    if (y < chartRect.top || y > chartRect.bottom) return;
+
+    paintStyledLine(
+      canvas,
+      Offset(chartRect.left, y),
+      Offset(size.width, y),
+      Paint()
+        ..color = chartColors.avgColor
+        ..strokeWidth = chartStyle.gridStrokeWidth * 2
+        ..isAntiAlias = true,
+      style: LineStyle.dashed,
+      dashLength: 4,
+      dashGap: 4,
+    );
+  }
+
+  /// Draws each compared instrument as a line across the visible candles.
+  ///
+  /// A rebased comparison is pinned to the main series at the left edge of the
+  /// window, so the two lines start together and diverge by how differently
+  /// they moved. One on its own price scale is simply drawn where its prices
+  /// fall.
+  void drawComparisons(
+    Canvas canvas, {
+    required int start,
+    required int stop,
+    required double Function(int index) xOf,
+  }) {
+    if (comparisons.isEmpty) return;
+
+    canvas.save();
+    canvas.clipRect(
+      Rect.fromLTRB(
+        chartRect.left,
+        chartRect.top - topPadding,
+        chartRect.right,
+        chartRect.bottom,
+      ),
+    );
+
+    for (final (ordinal, comparison) in comparisons.indexed) {
+      final anchor = ordinal < comparisonAnchors.length
+          ? comparisonAnchors[ordinal]
+          : null;
+      final paint = Paint()
+        ..isAntiAlias = true
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = comparison.series.thickness
+        ..color = colorOfComparison(comparison);
+
+      Offset? previous;
+      for (var i = start; i <= stop; i++) {
+        final price = comparisonPriceAt(comparison, i, anchor);
+        if (price == null) {
+          // A gap in the compared series breaks the line rather than joining
+          // across it.
+          previous = null;
+          continue;
+        }
+        final at = Offset(xOf(i), getY(price));
+        if (previous != null) {
+          paintStyledLine(
+            canvas,
+            previous,
+            at,
+            paint,
+            style: comparison.series.style,
+          );
+        }
+        previous = at;
+      }
+    }
+    canvas.restore();
+  }
+
+  /// The colour [comparison] is drawn in.
+  ///
+  /// Its own where it was given one, and otherwise the next of the chart's
+  /// comparison palette, so two comparisons never come out the same colour by
+  /// accident.
+  Color colorOfComparison(ResolvedComparison comparison) =>
+      comparison.series.color ??
+      chartColors.getComparisonColor(comparison.ordinal);
+
+  /// Reads out each compared instrument: its name and how far it has moved.
+  ///
+  /// The move is measured from where the comparison is pinned, which is the left
+  /// edge of the window — so it says what a reader of the two lines can see.
+  void drawComparisonLegend(Canvas canvas, int index, double x, int row) {
+    if (comparisons.isEmpty) return;
+
+    final spans = <InlineSpan>[];
+    for (final (ordinal, comparison) in comparisons.indexed) {
+      final anchor = ordinal < comparisonAnchors.length
+          ? comparisonAnchors[ordinal]
+          : null;
+      final value = comparison.valueAt(index);
+      if (value == null || !value.isFinite) continue;
+
+      final move = anchor == null ? null : (value / anchor.value - 1) * 100;
+      final text = move == null
+          ? '${comparison.series.label}:${format(value)}'
+          : '${comparison.series.label}:'
+                '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
+      spans.add(
+        TextSpan(
+          text: '$text    ',
+          style: getTextStyle(colorOfComparison(comparison)),
+        ),
+      );
+    }
+    if (spans.isEmpty) return;
+
+    final tp = TextPainter(
+      text: TextSpan(children: spans),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    paintLegend(
+      canvas,
+      tp,
+      Offset(
+        x,
+        chartRect.top -
+            topPadding +
+            row * (tp.height + chartStyle.legendSpacing),
+      ),
+    );
   }
 
   /// Draws every overlay's lines and dots across the visible candles.
@@ -330,13 +509,14 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     double lastX,
     double curX,
     Size size,
-    Canvas canvas,
-  ) {
+    Canvas canvas, {
+    int index = 0,
+  }) {
     switch (chartType) {
       case ChartType.candles:
-        drawCandle(curPoint, canvas, curX);
+        drawCandle(curPoint, canvas, curX, index);
       case ChartType.bars:
-        drawBar(curPoint, canvas, curX);
+        drawBar(curPoint, canvas, curX, index);
       case ChartType.line:
         drawPolyline(
           lastPoint.close,
@@ -356,31 +536,137 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
           lastX,
           curX,
         );
+      case ChartType.stepLine:
+        drawStepSegment(lastPoint.close, curPoint.close, canvas, lastX, curX);
+      case ChartType.hlcArea:
+        drawHlcSegment(lastPoint, curPoint, canvas, lastX, curX);
+      case ChartType.columns:
+        drawColumn(curPoint, canvas, curX, index);
     }
+  }
+
+  /// Draws one step of a step line: flat from the last close, then up or down
+  /// to this one.
+  ///
+  /// The value only changes where a candle closed, which is the whole point of
+  /// drawing it this way rather than sloping between the two.
+  void drawStepSegment(
+    double lastPrice,
+    double curPrice,
+    Canvas canvas,
+    double lastXO,
+    double curX,
+  ) {
+    final lastX = lastXO == curX ? 0.0 : lastXO;
+    final lastY = getY(lastPrice);
+    final curY = getY(curPrice);
+
+    final paint = mLinePaint
+      ..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0);
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(lastX, lastY)
+        ..lineTo(curX, lastY)
+        ..lineTo(curX, curY),
+      paint,
+    );
+  }
+
+  /// Draws one stretch of an HLC area: the high-low band washed in, with the
+  /// close drawn through it.
+  void drawHlcSegment(
+    CandleEntity lastPoint,
+    CandleEntity curPoint,
+    Canvas canvas,
+    double lastXO,
+    double curX,
+  ) {
+    final lastX = lastXO == curX ? 0.0 : lastXO;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(lastX, getY(lastPoint.high))
+        ..lineTo(curX, getY(curPoint.high))
+        ..lineTo(curX, getY(curPoint.low))
+        ..lineTo(lastX, getY(lastPoint.low))
+        ..close(),
+      Paint()
+        ..isAntiAlias = true
+        ..color = chartColors.kLineColor.withValues(
+          alpha: chartStyle.hlcAreaOpacity.clamp(0.0, 1.0),
+        ),
+    );
+
+    canvas.drawLine(
+      Offset(lastX, getY(lastPoint.close)),
+      Offset(curX, getY(curPoint.close)),
+      mLinePaint..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0),
+    );
+  }
+
+  /// Draws one column: from the baseline to the close, in the colour of the
+  /// side it ends on.
+  void drawColumn(
+    CandleEntity point,
+    Canvas canvas,
+    double curX, [
+    int index = 0,
+  ]) {
+    // With no level to measure from, a column has no length; the chart hands
+    // one down from `baselinePrice` or the oldest close in view.
+    final baseline = baselinePrice;
+    if (baseline == null) return;
+
+    final baseY = getY(baseline);
+    final closeY = getY(point.close);
+    final above = point.close >= baseline;
+    final half = mCandleWidth / 2;
+
+    canvas.drawRect(
+      Rect.fromLTRB(
+        curX - half,
+        math.min(baseY, closeY),
+        curX + half,
+        math.max(baseY, closeY),
+      ),
+      chartPaint
+        ..style = PaintingStyle.fill
+        ..color =
+            candleColor?.call(point, index) ??
+            (above ? chartColors.upColor : chartColors.dnColor),
+    );
   }
 
   /// Draws one OHLC bar: the high-low range, with the open ticked left and the
   /// close ticked right.
-  void drawBar(CandleEntity point, Canvas canvas, double curX) {
+  void drawBar(
+    CandleEntity point,
+    Canvas canvas,
+    double curX, [
+    int index = 0,
+  ]) {
     final high = getY(point.high);
     final low = getY(point.low);
     final open = getY(point.open);
     final close = getY(point.close);
-    // In screen space a rising bar closes above where it opened.
-    final rising = open >= close;
+    // Read from the prices, so an inverted axis does not recolour the bar.
+    final rising = point.close >= point.open;
     final tick = mCandleWidth / 2;
 
     chartPaint
-      ..color = rising ? chartColors.upColor : chartColors.dnColor
+      ..color =
+          candleColor?.call(point, index) ??
+          (rising ? chartColors.upColor : chartColors.dnColor)
       ..strokeWidth = mCandleLineWidth
       ..style = PaintingStyle.fill;
 
     canvas.drawRect(
       Rect.fromLTRB(
         curX - mCandleLineWidth / 2,
-        high,
+        math.min(high, low),
         curX + mCandleLineWidth / 2,
-        low,
+        math.max(high, low),
       ),
       chartPaint,
     );
@@ -540,7 +826,12 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     mLinePath!.reset();
   }
 
-  void drawCandle(CandleEntity curPoint, Canvas canvas, double curX) {
+  void drawCandle(
+    CandleEntity curPoint,
+    Canvas canvas,
+    double curX, [
+    int index = 0,
+  ]) {
     final high = getY(curPoint.high);
     final low = getY(curPoint.low);
     final open = getY(curPoint.open);
@@ -548,11 +839,11 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     final double r = mCandleWidth / 2;
     final double lineR = mCandleLineWidth / 2;
 
-    // In screen space a rising candle closes above where it opened, so its
-    // close carries the smaller y.
-    final isRising = open >= close;
-    var bodyTop = isRising ? close : open;
-    var bodyBottom = isRising ? open : close;
+    // Read from the prices, not from the pixels: an inverted axis puts a
+    // rising candle's close lower down the screen, and it is still rising.
+    final isRising = curPoint.close >= curPoint.open;
+    var bodyTop = math.min(open, close);
+    var bodyBottom = math.max(open, close);
 
     // A doji would otherwise vanish; keep it one stroke tall.
     if (bodyBottom - bodyTop < mCandleLineWidth) {
@@ -562,12 +853,20 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     }
 
     chartPaint
-      ..color = isRising ? chartColors.upColor : chartColors.dnColor
+      ..color =
+          candleColor?.call(curPoint, index) ??
+          (isRising ? chartColors.upColor : chartColors.dnColor)
       ..style = PaintingStyle.fill;
 
-    // The wick spans the whole high-low range, behind the body.
+    // The wick spans the whole high-low range, behind the body. Sorted rather
+    // than assumed, since an inverted axis puts the high below the low.
     canvas.drawRect(
-      Rect.fromLTRB(curX - lineR, high, curX + lineR, low),
+      Rect.fromLTRB(
+        curX - lineR,
+        math.min(high, low),
+        curX + lineR,
+        math.max(high, low),
+      ),
       chartPaint,
     );
 
@@ -595,8 +894,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   ///
   /// Round numbers chosen first, then placed wherever they fall — so the axis
   /// reads `69000, 69500, 70000` rather than whatever prices happen to land on
-  /// evenly spaced pixels. A logarithmic axis steps by ratio, a percentage one
-  /// picks round percentages and converts them back to prices.
+  /// evenly spaced pixels. A logarithmic axis steps by ratio, and a percentage
+  /// or indexed one picks round percentages or index levels and converts them
+  /// back to the prices they stand for.
   List<double> priceTicks(int gridRows) {
     final cached = _priceTicks;
     if (cached != null) return cached;
@@ -610,6 +910,17 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       ticks = [
         for (final move in niceTicks(low, high, target: target))
           base * (1 + move / 100),
+      ];
+    } else if (priceScale == PriceAxisScale.indexedTo100 &&
+        base != null &&
+        base != 0) {
+      // Round index levels — 100, 105, 110 — converted back to the prices they
+      // stand for, so the labels read as round numbers.
+      final low = minValue / base * 100;
+      final high = maxValue / base * 100;
+      ticks = [
+        for (final level in niceTicks(low, high, target: target))
+          base * level / 100,
       ];
     } else if (isLogarithmic) {
       ticks = niceLogTicks(minValue, maxValue, target: target);
@@ -700,9 +1011,14 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
   /// The price at [y], the exact inverse of [getY].
   @override
-  double getValue(double y) => _untransform(
-    _transformedMax - (y - _contentRect.top) / _transformedScaleY,
-  );
+  double getValue(double y) {
+    final along = (y - _contentRect.top) / _transformedScaleY;
+    return _untransform(
+      inverted ? _transformedMin + along : _transformedMax - along,
+    );
+  }
+
+  late final double _transformedMin = _transform(minValue);
 
   @override
   String get name => 'Price';
@@ -711,8 +1027,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   double getY(double y) {
     //For TrendLine
     updateTrendLineData();
-    return (_transformedMax - _transform(y)) * _transformedScaleY +
-        _contentRect.top;
+    final value = _transform(y);
+    final along = inverted ? value - _transformedMin : _transformedMax - value;
+    return along * _transformedScaleY + _contentRect.top;
   }
 
   void updateTrendLineData() {

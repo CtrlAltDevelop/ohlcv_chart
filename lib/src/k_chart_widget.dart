@@ -10,7 +10,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'chart_controller.dart';
+import 'chart_event.dart';
+import 'chart_menu.dart';
+import 'visible_range.dart';
+import 'comparison.dart';
 import 'replay_controller.dart';
+import 'trading.dart';
 import 'chart_style.dart';
 import 'chart_translations.dart';
 import 'chart_type.dart';
@@ -22,6 +27,7 @@ import 'drawing/drawing_template.dart';
 import 'drawing/drawing_toolbar.dart';
 import 'drawing/shape_geometry.dart';
 import 'entity/callout_drawing.dart';
+import 'entity/candle_entity.dart';
 import 'entity/drawing_codec.dart';
 import 'entity/ellipse_drawing.dart';
 import 'entity/fib_drawings.dart';
@@ -249,6 +255,24 @@ class KChartWidget extends StatefulWidget {
     this.onRemoveDrawing,
     this.onAlertCrossed,
     this.onDrawingAlert,
+    this.comparisons = const [],
+    this.session,
+    this.candleColor,
+    this.invertPriceAxis = false,
+    this.showAverageClose = false,
+    this.showHighLowOnAxis = false,
+    this.orders = const [],
+    this.positions = const [],
+    this.onOrderDragged,
+    this.onOrderMoved,
+    this.onOrderTapped,
+    this.onPositionTapped,
+    this.onIndicatorAlert,
+    this.events = const [],
+    this.onEventTapped,
+    this.onVisibleRangeChanged,
+    this.showContextMenu = true,
+    this.contextMenuBuilder,
     this.showDrawingCoordinates = true,
     this.selectAfterDrawing = true,
     this.volHidden = false,
@@ -407,6 +431,129 @@ class KChartWidget extends StatefulWidget {
   /// app written against the older callback carries on working.
   final void Function(ChartLine line, KLineEntity candle, double level)?
   onDrawingAlert;
+
+  /// The regular trading session, in the zone the chart is showing.
+  ///
+  /// Set it and the candles outside it — the pre-market and after-hours
+  /// stretches — are washed behind, so what is on screen says which of it is the
+  /// regular session and which is not. Coloured from
+  /// `ChartColors.extendedHoursColor`.
+  final TradingSession? session;
+
+  /// A colour of your own for the bar at an index, or null for the usual one.
+  ///
+  /// Asked about every candle, bar and column drawn, so a bar can be picked out
+  /// for whatever reason: inside a session, above an average, part of a pattern.
+  /// Returning null leaves the up or down colour it would have had.
+  final Color? Function(CandleEntity candle, int index)? candleColor;
+
+  /// Whether the price axis runs the other way, with higher prices lower down.
+  ///
+  /// What a chart of a yield, a spread or anything else read inversely wants —
+  /// and what a trader who thinks in the other direction reaches for. Everything
+  /// on the chart follows: the candles, the drawings, the crosshair and the
+  /// orders all read off the same flipped axis, and a rising candle is still
+  /// coloured as one.
+  final bool invertPriceAxis;
+
+  /// Whether the average close over the visible window is drawn as a level.
+  ///
+  /// Panning moves it, since it describes the window rather than the whole
+  /// history. Coloured from `ChartColors.avgColor`.
+  final bool showAverageClose;
+
+  /// Whether the window's high and low are tagged on the price axis.
+  ///
+  /// The leader lines already mark which candle set each extreme; this says what
+  /// to read them off the axis as.
+  final bool showHighLowOnAxis;
+
+  /// Working orders drawn across the candles.
+  ///
+  /// Each is a line the full width of the chart, tagged on the axis side. Where
+  /// `ChartOrder.draggable` is set and [onOrderMoved] is given, the line can be
+  /// dragged to a new price — which is how an order is modified from the chart.
+  final List<ChartOrder> orders;
+
+  /// Open positions drawn at their average entry.
+  final List<ChartPosition> positions;
+
+  /// Called while an order's line is being dragged.
+  ///
+  /// Fires on every move with the price the line is currently being held at, so
+  /// a readout can follow it. The move is not final until [onOrderMoved].
+  final void Function(ChartOrder order, double price)? onOrderDragged;
+
+  /// Called when an order's line is let go at a new price.
+  ///
+  /// Where the amendment goes. The chart does not change the order itself: hand
+  /// back a new list with the new price and it will be drawn there.
+  final void Function(ChartOrder order, double price)? onOrderMoved;
+
+  /// Called when an order's line is tapped rather than dragged.
+  final ValueChanged<ChartOrder>? onOrderTapped;
+
+  /// Called when a position's line is tapped.
+  final ValueChanged<ChartPosition>? onPositionTapped;
+
+  /// Called when the newest candle's indicator value crosses one of its alerts.
+  ///
+  /// Every `IndicatorAlert` on every indicator is watched — an RSI going over
+  /// 70, a MACD histogram turning positive — and reported once per crossing,
+  /// with the value that did the crossing. The value has to come back through
+  /// the level before it fires again.
+  final void Function(
+    Indicator indicator,
+    IndicatorAlert alert,
+    KLineEntity candle,
+    double value,
+  )?
+  onIndicatorAlert;
+
+  /// Things that happened to the instrument, marked under the candles.
+  ///
+  /// Each is drawn as a small badge below the candle area, at the candle nearest
+  /// its own time — so it says when something happened without covering the
+  /// price it happened at. `ChartStyle.eventMarkRadius` sizes the badges, and
+  /// setting it to zero leaves the events on the chart for a panel of your own
+  /// to list without drawing anything.
+  final List<ChartEvent> events;
+
+  /// Called when the user taps an event's badge.
+  ///
+  /// Where a panel, a tooltip or a link to the filing goes.
+  final ValueChanged<ChartEvent>? onEventTapped;
+
+  /// Called whenever the candles in view change.
+  ///
+  /// Fires after the frame that changed them, so a host that rebuilds in answer
+  /// is not asked to do so mid-build, and only when the range is actually
+  /// different — scrolling within one candle reports nothing. What a "bars on
+  /// screen" readout, a linked second chart, or a feed that loads history on
+  /// demand listens to.
+  final ValueChanged<ChartVisibleRange>? onVisibleRangeChanged;
+
+  /// Instruments drawn over the candles for comparison.
+  ///
+  /// Each is drawn as a line, rebased by default so it starts where the main
+  /// series does at the left edge of the window — which is how relative
+  /// performance is read. Points are matched to candles by time, so a compared
+  /// instrument on a different bar still lines up.
+  final List<ComparisonSeries> comparisons;
+
+  /// Whether a right-click opens a menu on the chart.
+  ///
+  /// The menu offered depends on what was clicked: a drawing gets its own
+  /// actions — coordinates, duplicate, restack, lock, hide, alert, delete —
+  /// and empty chart gets the ones that apply to the chart itself.
+  final bool showContextMenu;
+
+  /// Builds the right-click menu, given what was clicked.
+  ///
+  /// The request carries what the chart would have shown as `defaults`, so
+  /// returning them with something appended adds an item and returning a list
+  /// of your own replaces the menu. An empty list shows no menu at all.
+  final ChartMenuBuilder? contextMenuBuilder;
 
   /// Whether the line editor offers a button that opens the coordinates dialog.
   ///
@@ -1083,6 +1230,20 @@ class _KChartWidgetState extends State<KChartWidget>
   /// still has to be redrawn.
   List<Indicator> _resolvedIndicators = const [];
 
+  /// The compared instruments, lined up against the candles.
+  List<ResolvedComparison> _resolvedComparisons = const [];
+
+  /// The comparisons the last alignment was built from, compared by value so a
+  /// host that rebuilds its list every frame is not realigned every frame.
+  List<ComparisonSeries> _resolvedComparisonsFrom = const [];
+
+  /// The events, lined up against the candles they mark.
+  List<ResolvedEvent> _resolvedEvents = const [];
+
+  /// The events the last alignment was built from, compared by value for the
+  /// same reason.
+  List<ChartEvent> _resolvedEventsFrom = const [];
+
   /// The candles the chart is actually drawing.
   ///
   /// The whole series, unless a replay is holding it at an earlier candle. The
@@ -1126,8 +1287,18 @@ class _KChartWidgetState extends State<KChartWidget>
 
   void _resolveIndicators() {
     _resolved = resolveIndicators(widget.indicators, _candlesInPlay);
+    _resolvedComparisons = resolveComparisons(
+      _candlesInPlay ?? const [],
+      widget.comparisons,
+    );
+    _resolvedEvents = resolveEvents([
+      for (final candle in _candlesInPlay ?? const <KLineEntity>[])
+        candle.dateTime,
+    ], widget.events);
+    _resolvedEventsFrom = List<ChartEvent>.of(widget.events);
     _resolvedFrom = _candleFingerprint;
     _resolvedIndicators = List<Indicator>.of(widget.indicators);
+    _resolvedComparisonsFrom = List<ComparisonSeries>.of(widget.comparisons);
   }
 
   bool get _indicatorsAreStale {
@@ -1135,6 +1306,26 @@ class _KChartWidgetState extends State<KChartWidget>
     if (current.length != _resolvedIndicators.length) return true;
     for (var i = 0; i < current.length; i++) {
       if (!identical(current[i], _resolvedIndicators[i])) return true;
+    }
+    return _comparisonsAreStale;
+  }
+
+  bool get _comparisonsAreStale {
+    final current = widget.comparisons;
+    if (current.length != _resolvedComparisonsFrom.length) return true;
+    for (var i = 0; i < current.length; i++) {
+      // Compared by value, not by identity: a host that rebuilds its list every
+      // frame would otherwise realign the whole series every frame too.
+      if (current[i] != _resolvedComparisonsFrom[i]) return true;
+    }
+    return _eventsAreStale;
+  }
+
+  bool get _eventsAreStale {
+    final current = widget.events;
+    if (current.length != _resolvedEventsFrom.length) return true;
+    for (var i = 0; i < current.length; i++) {
+      if (current[i] != _resolvedEventsFrom[i]) return true;
     }
     return false;
   }
@@ -1343,7 +1534,10 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   int get _legendRowCount =>
-      _resolved.legendRowCount + (widget.showOhlcLegend ? 1 : 0);
+      _resolved.legendRowCount +
+      (widget.showOhlcLegend ? 1 : 0) +
+      // The comparisons read out on a row of their own.
+      (widget.comparisons.isEmpty ? 0 : 1);
 
   /// Which side of each alerting level the market was last seen on, so one
   /// crossing is reported once.
@@ -1352,6 +1546,156 @@ class _KChartWidgetState extends State<KChartWidget>
   /// channel has several levels at once and each is crossed on its own.
   final Map<(AlertingDrawing, int), bool> _alertSides =
       <(AlertingDrawing, int), bool>{};
+
+  /// The order being dragged, and the price the pointer is holding it at.
+  ({ChartOrder order, double price})? _draggingOrder;
+
+  /// The orders as drawn: the one being dragged moved to where it is held.
+  ///
+  /// So the line follows the finger before the host has said anything about the
+  /// move, and snaps back if the host declines it.
+  List<ChartOrder> get _ordersInPlay {
+    final dragging = _draggingOrder;
+    if (dragging == null) return widget.orders;
+    return [
+      for (final order in widget.orders)
+        if (order.id == dragging.order.id)
+          order.movedTo(dragging.price)
+        else
+          order,
+    ];
+  }
+
+  /// Picks up the order under [pos], and reports whether there was one.
+  bool _grabOrder(Offset pos) {
+    if (widget.onOrderMoved == null || !painter.hasLayout) return false;
+
+    final order = painter.orderAt(pos);
+    if (order == null) return false;
+    setState(() {
+      _draggingOrder = (order: order, price: order.price);
+    });
+    return true;
+  }
+
+  /// Moves the order being dragged to the price under [pos].
+  void _dragOrder(Offset pos) {
+    final dragging = _draggingOrder;
+    if (dragging == null) return;
+
+    final price = painter.calculatePrice(pos.dy);
+    setState(() {
+      _draggingOrder = (order: dragging.order, price: price);
+    });
+    widget.onOrderDragged?.call(dragging.order, price);
+  }
+
+  /// Lets the dragged order go, reporting where it landed.
+  void _releaseOrder() {
+    final dragging = _draggingOrder;
+    if (dragging == null) return;
+
+    setState(() => _draggingOrder = null);
+    // Only a move worth reporting: a press that went nowhere is a tap, and is
+    // reported as one.
+    if (dragging.price == dragging.order.price) {
+      widget.onOrderTapped?.call(dragging.order);
+      return;
+    }
+    widget.onOrderMoved?.call(dragging.order, dragging.price);
+  }
+
+  /// Reports a tap on an order or a position line, and whether there was one.
+  bool _handleTradingTap(Offset pos) {
+    if (!painter.hasLayout) return false;
+
+    final order = painter.orderAt(pos);
+    if (order != null && widget.onOrderTapped != null) {
+      widget.onOrderTapped!.call(order);
+      return true;
+    }
+    final position = painter.positionAt(pos);
+    if (position != null && widget.onPositionTapped != null) {
+      widget.onPositionTapped!.call(position);
+      return true;
+    }
+    return false;
+  }
+
+  /// The window last reported through `onVisibleRangeChanged`.
+  ChartVisibleRange? _reportedRange;
+
+  /// Whether a report is already waiting for this frame to finish.
+  bool _rangeReportPending = false;
+
+  /// Which side of each indicator alert the value was last seen on.
+  ///
+  /// Keyed by the indicator and the alert, so several alerts on one indicator
+  /// are each crossed on their own.
+  final Map<(Indicator, IndicatorAlert), bool> _indicatorAlertSides =
+      <(Indicator, IndicatorAlert), bool>{};
+
+  /// Reports any indicator alert [last] has crossed.
+  void _checkIndicatorAlerts(KLineEntity last) {
+    final report = widget.onIndicatorAlert;
+    final index = (_candlesInPlay?.length ?? 0) - 1;
+    if (index < 0) return;
+
+    final crossed = <(Indicator, IndicatorAlert, double)>[];
+    final seen = <(Indicator, IndicatorAlert)>{};
+
+    for (final resolved in [..._resolved.overlays, ..._resolved.panes]) {
+      for (final alert in resolved.indicator.alerts) {
+        final value = resolved.valueAt(alert.line, index);
+        if (value == null || !value.isFinite) continue;
+
+        final key = (resolved.indicator, alert);
+        seen.add(key);
+        final above = value >= alert.level;
+        final before = _indicatorAlertSides[key];
+        _indicatorAlertSides[key] = above;
+        // The first sighting sets the side; only a change from it is a
+        // crossing.
+        if (before != null && before != above) {
+          crossed.add((resolved.indicator, alert, value));
+        }
+      }
+    }
+
+    _indicatorAlertSides.removeWhere((key, _) => !seen.contains(key));
+    if (report == null || crossed.isEmpty) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final (indicator, alert, value) in crossed) {
+        report(indicator, alert, last, value);
+      }
+    });
+  }
+
+  /// Arranges for the window to be reported once this frame is painted.
+  ///
+  /// Which candles are in view is worked out while painting, so the range is not
+  /// known until the frame is done — and a host that rebuilds in answer must not
+  /// be asked to do so mid-build either. Both of which the post-frame callback
+  /// takes care of.
+  void _reportVisibleRange() {
+    if (widget.onVisibleRangeChanged == null || _rangeReportPending) return;
+    _rangeReportPending = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _rangeReportPending = false;
+      if (!mounted) return;
+
+      final report = widget.onVisibleRangeChanged;
+      final range = chartVisibleRange;
+      // Only a range that is actually different: scrolling within one candle
+      // moves the chart without changing what is on it.
+      if (report == null || range == null || range == _reportedRange) return;
+      _reportedRange = range;
+      report(range);
+    });
+  }
 
   /// Reports any alerting level the newest candle has crossed.
   ///
@@ -1386,6 +1730,7 @@ class _KChartWidgetState extends State<KChartWidget>
     }
 
     _alertSides.removeWhere((key, _) => !seen.contains(key));
+    _checkIndicatorAlerts(last);
 
     final reportLevel = widget.onAlertCrossed;
     final reportDrawing = widget.onDrawingAlert;
@@ -1435,6 +1780,7 @@ class _KChartWidgetState extends State<KChartWidget>
     _refreshIndicatorsIfStale();
     _collectDrawings();
     _checkAlerts();
+    _reportVisibleRange();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1471,11 +1817,32 @@ class _KChartWidgetState extends State<KChartWidget>
           isTapShowInfoDialog: widget.isTapShowInfoDialog,
           overlays: _resolved.overlays,
           panes: _resolved.panes,
+          comparisons: _resolvedComparisons,
+          events: _resolvedEvents,
+          orders: _ordersInPlay,
+          openPositions: widget.positions,
           volHidden: widget.volHidden,
-          isLine:
-              _chartType != ChartType.candles && _chartType != ChartType.bars,
+          // "Drawn as a line" is what this decides — whether the high-low
+          // extremes are marked, and whether the overlays and their legends
+          // have anything to sit over. An HLC area and a column chart both
+          // show a range per bar, so they are not lines for that purpose.
+          isLine: switch (_chartType) {
+            ChartType.line ||
+            ChartType.area ||
+            ChartType.baseline ||
+            ChartType.stepLine => true,
+            ChartType.candles ||
+            ChartType.bars ||
+            ChartType.hlcArea ||
+            ChartType.columns => false,
+          },
           chartType: _chartType,
           baselinePrice: widget.baselinePrice,
+          session: widget.session,
+          candleColor: widget.candleColor,
+          invertPriceAxis: widget.invertPriceAxis,
+          showAverageClose: widget.showAverageClose,
+          showHighLowOnAxis: widget.showHighLowOnAxis,
           timeZoneOffset: widget.timeZoneOffset,
           highlightedPane: _reorderingPane,
           hideGrid: widget.hideGrid,
@@ -1519,6 +1886,10 @@ class _KChartWidgetState extends State<KChartWidget>
                 },
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
+                  onSecondaryTapUp: (details) => _openContextMenu(
+                    details.localPosition,
+                    details.globalPosition,
+                  ),
                   onTapUp: (details) {
                     if (isLongPress) {
                       isLongPress = false;
@@ -1535,6 +1906,15 @@ class _KChartWidgetState extends State<KChartWidget>
 
                     if (_handlePriceScaleTap(pos)) {
                       notifyChanged();
+                      return;
+                    }
+
+                    // An event badge sits below the candles and is a small
+                    // target, so it is offered the tap before anything else
+                    // reads it as a selection or a drawing point.
+                    if (_handleEventTap(pos)) return;
+                    if (widget.currentDrawingTool == DrawingTool.none &&
+                        _handleTradingTap(pos)) {
                       return;
                     }
 
@@ -1604,6 +1984,9 @@ class _KChartWidgetState extends State<KChartWidget>
                         _scalingPrice = true;
                         return;
                       }
+                      // One that begins on a working order's line moves the
+                      // order, which is how it is amended from the chart.
+                      if (_grabOrder(pressed)) return;
                     }
 
                     if (widget.currentDrawingTool != DrawingTool.none) {
@@ -1637,6 +2020,10 @@ class _KChartWidgetState extends State<KChartWidget>
                       _zoomPriceScale(details.focalPointDelta.dy);
                       return;
                     }
+                    if (_draggingOrder != null) {
+                      _dragOrder(details.localFocalPoint);
+                      return;
+                    }
 
                     if (details.scale != 1.0) {
                       // Zoom
@@ -1668,6 +2055,10 @@ class _KChartWidgetState extends State<KChartWidget>
                   onScaleEnd: (details) {
                     if (_scalingPrice) {
                       _scalingPrice = false;
+                      return;
+                    }
+                    if (_draggingOrder != null) {
+                      _releaseOrder();
                       return;
                     }
                     if (_resizingPane != null) {
@@ -3144,6 +3535,108 @@ class _KChartWidgetState extends State<KChartWidget>
     widget.controller?.hostChanged();
   }
 
+  // ── The visible window ───────────────────────────────────────────────────
+
+  @override
+  ChartVisibleRange? get chartVisibleRange {
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty || !painter.hasLayout) return null;
+    return ChartVisibleRange.of(
+      candles,
+      painter.mStartIndex,
+      painter.mStopIndex,
+    );
+  }
+
+  /// How far the chart could be scrolled at [scale], in data units.
+  ///
+  /// Worked out here rather than read off the painter, because moving the window
+  /// means choosing a scale and a scroll together and the painter only knows
+  /// about the scale it last painted at.
+  double _maxScrollAt(double scale) {
+    final reach =
+        -painter.mDataLen +
+        painter.mWidth / scale -
+        painter.mPointWidth / 2 -
+        widget.xFrontPadding;
+    return reach >= 0 ? 0.0 : -reach;
+  }
+
+  @override
+  bool showChartRange(int firstIndex, int lastIndex) {
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty || !painter.hasLayout) return false;
+
+    final from = math.min(firstIndex, lastIndex).clamp(0, candles.length - 1);
+    final to = math.max(firstIndex, lastIndex).clamp(0, candles.length - 1);
+    final wanted = (to - from + 1) * painter.mPointWidth;
+    if (wanted <= 0) return false;
+
+    // The window is as wide as the candles asked for, within the zoom the chart
+    // allows — so a range too narrow or too wide to reach is shown as near as
+    // it can be.
+    final scale = (painter.mWidth / wanted).clamp(0.1, 3.0);
+    final scroll =
+        (_maxScrollAt(scale) -
+                (from * painter.mPointWidth + painter.mPointWidth / 2))
+            .clamp(0.0, _maxScrollAt(scale));
+
+    _stopAnimation(needNotify: false);
+    mScaleX = scale;
+    _lastScale = scale;
+    mScrollX = scroll;
+    notifyChanged();
+    return true;
+  }
+
+  @override
+  bool scrollChartTo(int index, {bool animated = true}) {
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty || !painter.hasLayout) return false;
+
+    final target = index.clamp(0, candles.length - 1);
+    // Centred, so the candle asked for is the middle of the window rather than
+    // its left edge.
+    final half = painter.mWidth / mScaleX / 2;
+    final centre = target * painter.mPointWidth + painter.mPointWidth / 2;
+    final max = _maxScrollAt(mScaleX);
+    final scroll = (max - centre + half).clamp(0.0, max);
+
+    _stopAnimation(needNotify: false);
+    if (!animated) {
+      mScrollX = scroll;
+      notifyChanged();
+      return true;
+    }
+    _animateScrollTo(scroll);
+    return true;
+  }
+
+  @override
+  bool fitChartToData() {
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty || !painter.hasLayout) return false;
+    return showChartRange(0, candles.length - 1);
+  }
+
+  /// Slides the window to [scroll] over the fling duration.
+  void _animateScrollTo(double scroll) {
+    final controller = AnimationController(
+      duration: Duration(milliseconds: widget.flingTime),
+      vsync: this,
+    );
+    _controller = controller;
+    final animation = Tween<double>(begin: mScrollX, end: scroll).animate(
+      CurvedAnimation(parent: controller.view, curve: widget.flingCurve),
+    );
+    aniX = animation;
+    animation.addListener(() {
+      mScrollX = animation.value.clamp(0.0, BaseChartPainter.maxScrollX);
+      notifyChanged();
+    });
+    controller.forward();
+  }
+
   @override
   Future<Uint8List?> captureChart({double pixelRatio = 3}) async {
     final boundary =
@@ -3381,6 +3874,225 @@ class _KChartWidgetState extends State<KChartWidget>
       if (identical(line, edited) || line.locked) continue;
       template.applyTo(line);
     }
+  }
+
+  /// Reports an event whose badge is under [pos], and whether one was.
+  ///
+  /// Only when the host is listening: without a callback there is nothing for a
+  /// tap on a badge to do, so it falls through to whatever else wanted it.
+  bool _handleEventTap(Offset pos) {
+    final report = widget.onEventTapped;
+    if (report == null || !painter.hasLayout) return false;
+
+    final event = painter.eventAt(pos);
+    if (event == null) return false;
+    report(event);
+    return true;
+  }
+
+  // ── The right-click menu ─────────────────────────────────────────────────
+
+  /// Opens the right-click menu for a click at [local], on screen at [global].
+  Future<void> _openContextMenu(Offset local, Offset global) async {
+    if (!widget.showContextMenu && widget.contextMenuBuilder == null) return;
+    if (!_isInChartArea(local)) return;
+
+    // A right-click on a drawing selects it first, so the menu's actions and
+    // what is highlighted on the chart agree. One already selected is left as
+    // it is, so a menu opened on a selection of several acts on all of them.
+    final drawing = _drawingAt(local);
+    if (drawing != null && !_selection.any((l) => identical(l, drawing))) {
+      setState(() => _selected = drawing);
+    } else if (drawing == null) {
+      // Cancels a half-placed drawing rather than leaving it hanging behind
+      // the menu.
+      if (_isDrawing || _isPreviewing) _cancelDrawing();
+    }
+
+    final candles = _candlesInPlay;
+    final index = candles == null || candles.isEmpty
+        ? -1
+        : painter.calculateSelectedX(local.dx);
+    final candle = index < 0 || index >= (candles?.length ?? 0)
+        ? null
+        : candles![index];
+
+    final defaults = drawing == null
+        ? _chartMenuEntries()
+        : _drawingMenuEntries(drawing);
+    final entries =
+        widget.contextMenuBuilder?.call((
+          position: local,
+          drawing: drawing,
+          candle: candle,
+          price: candles == null ? null : painter.calculatePrice(local.dy),
+          defaults: defaults,
+        )) ??
+        (widget.showContextMenu ? defaults : const <ChartMenuEntry>[]);
+
+    if (!mounted) return;
+    await showChartMenu(context: context, position: global, entries: entries);
+  }
+
+  /// The drawing under [pos], or null when the click landed on empty chart.
+  ChartLine? _drawingAt(Offset pos) {
+    // Newest first, so the one painted on top is the one the menu is about.
+    for (final line in _drawings.reversed) {
+      if (line.hidden) continue;
+      if (_hitDrawing(pos, line) != null) return line;
+    }
+    return null;
+  }
+
+  /// What the menu offers for a click on empty chart.
+  List<ChartMenuEntry> _chartMenuEntries() {
+    final text = widget.chartTranslations.drawing;
+    final drawn = _drawings.where((line) => !line.hidden).isNotEmpty;
+
+    return [
+      ChartMenuItem(
+        label: text.paste,
+        icon: Icons.content_paste_rounded,
+        enabled: canPasteDrawings,
+        onSelected: pasteDrawings,
+      ),
+      ChartMenuItem(
+        label: text.selectAllDrawings,
+        icon: Icons.select_all_rounded,
+        enabled: drawn,
+        onSelected: _selectAll,
+      ),
+      const ChartMenuDivider(),
+      ChartMenuItem(
+        label: text.resetPriceScale,
+        icon: Icons.height_rounded,
+        enabled: _priceZoom != 1 || _pricePan != 0,
+        onSelected: resetPriceScale,
+      ),
+      ChartMenuItem(
+        label: text.scrollToNow,
+        icon: Icons.last_page_rounded,
+        enabled: !isChartAtRightEdge,
+        onSelected: scrollChartToNow,
+      ),
+      const ChartMenuDivider(),
+      ChartMenuItem(
+        label: text.undo,
+        icon: Icons.undo_rounded,
+        enabled: widget.drawingController?.canUndo ?? false,
+        onSelected: () => widget.drawingController?.undo(),
+      ),
+      ChartMenuItem(
+        label: text.redo,
+        icon: Icons.redo_rounded,
+        enabled: widget.drawingController?.canRedo ?? false,
+        onSelected: () => widget.drawingController?.redo(),
+      ),
+      ChartMenuItem(
+        label: text.clearAll,
+        icon: Icons.delete_sweep_outlined,
+        enabled: drawn,
+        destructive: true,
+        onSelected: _clearAllDrawings,
+      ),
+    ];
+  }
+
+  /// What the menu offers for a click on [line].
+  ///
+  /// The actions apply to the whole selection where there is one, so a menu
+  /// opened on one of several restacks or deletes them all.
+  List<ChartMenuEntry> _drawingMenuEntries(ChartLine line) {
+    final text = widget.chartTranslations.drawing;
+    final controller = widget.drawingController;
+    final selection = _selection;
+    final several = selection.length > 1;
+
+    return [
+      ChartMenuItem(
+        label: text.editCoordinates,
+        icon: Icons.straighten_rounded,
+        // One drawing's anchors at a time: there is no sensible form over
+        // several drawings' worth of them.
+        enabled: !several && !line.locked,
+        onSelected: () => _openCoordinates(line),
+      ),
+      ChartMenuItem(
+        label: text.duplicate,
+        icon: Icons.content_copy_rounded,
+        onSelected: duplicateSelection,
+      ),
+      ChartMenuItem(
+        label: text.copy,
+        icon: Icons.copy_all_rounded,
+        onSelected: copySelection,
+      ),
+      const ChartMenuDivider(),
+      ChartMenuItem(
+        label: text.bringToFront,
+        icon: Icons.flip_to_front_rounded,
+        enabled: controller != null,
+        onSelected: bringSelectionToFront,
+      ),
+      ChartMenuItem(
+        label: text.sendToBack,
+        icon: Icons.flip_to_back_rounded,
+        enabled: controller != null,
+        onSelected: sendSelectionToBack,
+      ),
+      const ChartMenuDivider(),
+      if (line is AlertingDrawing)
+        ChartMenuItem(
+          label: line.alert ? text.clearAlert : text.alert,
+          checked: line.alert,
+          onSelected: () => _setForSelection(
+            (target) =>
+                target is AlertingDrawing ? target.alert = !line.alert : null,
+          ),
+        ),
+      ChartMenuItem(
+        label: line.locked ? text.unlock : text.lock,
+        checked: line.locked,
+        onSelected: () =>
+            _setForSelection((target) => target.locked = !line.locked),
+      ),
+      ChartMenuItem(
+        label: line.hidden ? text.show : text.hide,
+        checked: line.hidden,
+        onSelected: () =>
+            _setForSelection((target) => target.hidden = !line.hidden),
+      ),
+      const ChartMenuDivider(),
+      ChartMenuItem(
+        label: text.delete,
+        icon: Icons.delete_outline_rounded,
+        destructive: true,
+        onSelected: _deleteSelected,
+      ),
+    ];
+  }
+
+  /// Runs [change] over every selected drawing, then saves and repaints.
+  ///
+  /// The new value is taken from the drawing the menu was opened on, so a
+  /// selection of several ends up agreeing rather than each one flipping to
+  /// whatever it was not.
+  void _setForSelection(void Function(ChartLine line) change) {
+    for (final line in _selection) {
+      change(line);
+      _notifyLineChanged(line);
+    }
+    setState(() {});
+  }
+
+  /// Removes every drawing, reporting each one.
+  void _clearAllDrawings() {
+    final drawn = [..._drawings];
+    widget.drawingController?.clear();
+    for (final line in drawn) {
+      widget.onRemoveDrawing?.call(line);
+    }
+    _deselectAll();
   }
 
   /// Opens the dialog that shows and edits [line]'s exact anchors.

@@ -48,25 +48,26 @@ List<KLineEntity> candles0() {
   return data;
 }
 
-/// Presses [key] with the platform's shortcut modifier held.
+/// Presses [key] with the shortcut modifier held.
+///
+/// Both ⌘ and Ctrl go down, so the same press works whichever platform the
+/// test happens to be running as.
 Future<void> _shortcut(
   WidgetTester tester,
   LogicalKeyboardKey key, {
   bool shift = false,
 }) async {
   await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+  await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
   if (shift) await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
   await tester.sendKeyEvent(key);
   if (shift) await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+  await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
   await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
   await tester.pumpAndSettle();
 }
 
 void main() {
-  // The shortcuts use the Apple modifier, so the tests run as macOS.
-  setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.macOS);
-  tearDown(() => debugDefaultTargetPlatformOverride = null);
-
   group('multi-select', () {
     test('a second selection joins the first rather than replacing it', () {
       final a = HorizontalLine(price: 1);
@@ -213,22 +214,21 @@ void main() {
     testWidgets('an edit made through the toolbar reaches the rest', (
       tester,
     ) async {
-      final a = HorizontalLine(price: 105, thickness: 2);
-      final b = HorizontalLine(price: 110, thickness: 2);
+      final a = HorizontalLine(price: 105);
+      final b = HorizontalLine(price: 110);
       final controller = ChartDrawingController(drawings: [a, b]);
       await tester.pumpWidget(_chart(controller).widget);
 
       await _shortcut(tester, LogicalKeyboardKey.keyA);
       expect(controller.selected, same(b));
 
-      // Through the thickness popover, which is what a user reaches for.
-      await tester.tap(find.byTooltip('Thickness'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('4').last);
+      // The label toggle, which is one tap and no popover.
+      expect(a.showLabel, isFalse);
+      await tester.tap(find.byTooltip('Show label'));
       await tester.pumpAndSettle();
 
-      expect(b.thickness, 4);
-      expect(a.thickness, 4, reason: 'the other selected line follows');
+      expect(b.showLabel, isTrue);
+      expect(a.showLabel, isTrue, reason: 'the other selected line follows');
     });
   });
 
@@ -265,7 +265,12 @@ void main() {
     });
 
     test('duplicating leaves the copies selected', () {
-      final line = TrendLine(time1: _at(0), price1: 1, time2: _at(5), price2: 2);
+      final line = TrendLine(
+        time1: _at(0),
+        price1: 1,
+        time2: _at(5),
+        price2: 2,
+      );
       final controller = ChartDrawingController(drawings: [line]);
 
       final copies = controller.duplicate([line]);
@@ -579,8 +584,10 @@ void main() {
     });
 
     test('a half-placed trend line has nothing to cross', () {
-      expect(TrendLine(time1: _at(0), price1: 100).alertLevelsAt(_at(5)),
-          isEmpty);
+      expect(
+        TrendLine(time1: _at(0), price1: 100).alertLevelsAt(_at(5)),
+        isEmpty,
+      );
     });
 
     test('a channel answers both of its lines', () {
@@ -616,8 +623,13 @@ void main() {
     test('alerts survive a save and a load', () {
       for (final line in <ChartLine>[
         HorizontalLine(price: 1, alert: true),
-        TrendLine(time1: _at(0), price1: 1, time2: _at(5), price2: 2,
-            alert: true),
+        TrendLine(
+          time1: _at(0),
+          price1: 1,
+          time2: _at(5),
+          price2: 2,
+          alert: true,
+        ),
         ParallelChannel(time1: _at(0), price1: 1, alert: true),
         FibRetracement(time1: _at(0), price1: 1, alert: true),
       ]) {

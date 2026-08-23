@@ -103,5 +103,6 @@ class ParallelChannel extends ThreePointDrawing
     ...threeAnchorsJson(),
     'fillOpacity': fillOpacity,
     'extend': extend,
+    'alert': alert,
   };
 }

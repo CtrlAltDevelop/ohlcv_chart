@@ -62,6 +62,14 @@ class DrawingTranslations {
     this.duplicate = 'Duplicate',
     this.bringForward = 'Bring forward',
     this.sendBackward = 'Send backward',
+    this.bringToFront = 'Bring to front',
+    this.sendToBack = 'Send to back',
+    this.copy = 'Copy',
+    this.paste = 'Paste',
+    this.selectAllDrawings = 'Select all drawings',
+    this.editCoordinates = 'Edit coordinates…',
+    this.resetPriceScale = 'Fit the price scale',
+    this.scrollToNow = 'Scroll to the latest candle',
     this.drawings = 'Drawings',
     this.noDrawings = 'Nothing drawn yet',
     this.undo = 'Undo',
@@ -191,6 +199,30 @@ class DrawingTranslations {
 
   /// Tooltip of the button that moves a drawing down the stack.
   final String sendBackward;
+
+  /// Menu item that moves a drawing to the top of the stack.
+  final String bringToFront;
+
+  /// Menu item that moves a drawing to the bottom of the stack.
+  final String sendToBack;
+
+  /// Menu item that copies the selection.
+  final String copy;
+
+  /// Menu item that pastes what was copied.
+  final String paste;
+
+  /// Menu item that selects every drawing.
+  final String selectAllDrawings;
+
+  /// Menu item that opens the coordinates dialog.
+  final String editCoordinates;
+
+  /// Menu item that fits the price scale back to the window.
+  final String resetPriceScale;
+
+  /// Menu item that scrolls back to the newest candle.
+  final String scrollToNow;
 
   /// Title of the drawing manager.
   final String drawings;
