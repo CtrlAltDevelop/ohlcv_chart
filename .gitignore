@@ -30,3 +30,6 @@ example/pubspec.lock
 .flutter-plugins-dependencies
 /build/
 /coverage/
+
+# Golden-test failure output, written by `flutter test`.
+test/failures/

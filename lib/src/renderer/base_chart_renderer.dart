@@ -11,6 +11,7 @@ abstract class BaseChartRenderer<T> {
     required this.fixedLength,
     required Color gridColor,
     Color? separatorColor,
+    Color? gridColumnColor,
     double gridStrokeWidth = 0.5,
     double separatorWidth = 1.0,
     this.labelCornerRadius = 3.0,
@@ -28,6 +29,9 @@ abstract class BaseChartRenderer<T> {
     separatedPaint
       ..color = separatorColor ?? gridColor
       ..strokeWidth = separatorWidth;
+    columnGridPaint
+      ..color = gridColumnColor ?? gridColor
+      ..strokeWidth = gridStrokeWidth;
   }
 
   /// Corner radius of the legend pill.
@@ -55,6 +59,16 @@ abstract class BaseChartRenderer<T> {
     ..filterQuality = FilterQuality.high
     ..strokeWidth = 0.5
     ..color = const Color(0xff4c5c74);
+
+  /// Paints the vertical grid lines, which mark time rather than price.
+  ///
+  /// Kept apart from [gridPaint] so the time columns can sit behind the price
+  /// rows, the way a chart is actually read.
+  Paint columnGridPaint = Paint()
+    ..isAntiAlias = true
+    ..filterQuality = FilterQuality.high
+    ..strokeWidth = 0.5
+    ..color = const Color(0xff4c5c74);
   Paint separatedPaint = Paint()
     ..isAntiAlias = true
     ..filterQuality = FilterQuality.high
@@ -75,7 +89,17 @@ abstract class BaseChartRenderer<T> {
     }
   }
 
-  void drawGrid(Canvas canvas, int gridRows, int gridColumns);
+  /// Rules the pane.
+  ///
+  /// [columnXs] carries the x of every time tick, shared by every pane so the
+  /// columns line up down the whole stack and meet their date labels. A null
+  /// list falls back to [gridColumns] evenly spaced bands.
+  void drawGrid(
+    Canvas canvas,
+    int gridRows,
+    int gridColumns, {
+    List<double>? columnXs,
+  });
 
   void drawVerticalText(Canvas canvas, TextStyle textStyle, int gridRows);
 

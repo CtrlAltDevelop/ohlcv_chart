@@ -260,6 +260,11 @@ class MacdIndicator extends Indicator {
     IndicatorLine('DEA'),
   ];
 
+  /// The histogram flips sign about zero, so the pane has to show where zero
+  /// is; without it the bars change colour across an invisible axis.
+  @override
+  List<double> get guides => const [0];
+
   @override
   List<Object?> get settings => [fast, slow, signal];
 
@@ -1241,6 +1246,10 @@ class AwesomeIndicator extends Indicator {
 
   @override
   bool get includeZero => true;
+
+  /// Like the MACD histogram, the oscillator is read against zero.
+  @override
+  List<double> get guides => const [0];
 
   /// Whether each bar grew on the one before it, filled in by [compute].
   List<bool> _rising = const [];

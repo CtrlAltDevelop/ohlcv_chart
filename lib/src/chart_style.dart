@@ -93,6 +93,9 @@ class ChartColors {
     this.separatorColor,
     this.sessionDividerColor,
 
+    ///vertical grid lines; null derives a lighter shade of gridColor
+    this.gridColumnColor,
+
     ///pill painted behind the price axis labels; null derives it from bgColor
     this.axisLabelBgColor,
 
@@ -262,6 +265,17 @@ class ChartColors {
 
   /// [separatorColor], or [gridColor] if it was left null.
   Color get effectiveSeparatorColor => separatorColor ?? gridColor;
+
+  /// Colour of the vertical grid lines, which mark time.
+  ///
+  /// Defaults to a lighter [gridColor] when null. A chart is read across price
+  /// far more than across time, so the convention is for the time columns to
+  /// sit behind the price rows rather than compete with them.
+  Color? gridColumnColor;
+
+  /// [gridColumnColor], or a lighter [gridColor] if it was left null.
+  Color get effectiveGridColumnColor =>
+      gridColumnColor ?? gridColor.withValues(alpha: gridColor.a * 0.55);
 
   /// Colour of the lines marking the start of each day.
   ///

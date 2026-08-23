@@ -7,6 +7,7 @@ import '../entity/candle_entity.dart';
 import '../entity/k_line_entity.dart';
 import '../indicators/resolved_indicator.dart';
 import '../price_axis_scale.dart';
+import '../utils/axis_ticks.dart';
 import 'base_chart_renderer.dart';
 import 'series_painter.dart';
 
@@ -50,6 +51,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
          fixedLength: fixedLength,
          gridColor: chartColors.gridColor,
          separatorColor: chartColors.effectiveSeparatorColor,
+         gridColumnColor: chartColors.effectiveGridColumnColor,
          gridStrokeWidth: chartStyle.gridStrokeWidth,
          separatorWidth: chartStyle.separatorWidth,
          labelCornerRadius: chartStyle.labelCornerRadius,
@@ -498,29 +500,69 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     }
   }
 
+  List<double>? _priceTicks;
+
+  /// The prices this axis rules and labels itself by.
+  ///
+  /// Round numbers chosen first, then placed wherever they fall — so the axis
+  /// reads `69000, 69500, 70000` rather than whatever prices happen to land on
+  /// evenly spaced pixels. A logarithmic axis steps by ratio, a percentage one
+  /// picks round percentages and converts them back to prices.
+  List<double> priceTicks(int gridRows) {
+    final cached = _priceTicks;
+    if (cached != null) return cached;
+
+    final target = math.max(2, gridRows ~/ 2);
+    final base = percentBase;
+    final List<double> ticks;
+    if (priceScale == PriceAxisScale.percentage && base != null && base != 0) {
+      final low = (minValue / base - 1) * 100;
+      final high = (maxValue / base - 1) * 100;
+      ticks = [
+        for (final move in niceTicks(low, high, target: target))
+          base * (1 + move / 100),
+      ];
+    } else if (isLogarithmic) {
+      ticks = niceLogTicks(minValue, maxValue, target: target);
+    } else {
+      ticks = niceTicks(minValue, maxValue, target: target);
+    }
+
+    // A range too flat to divide would otherwise leave the axis blank; fall
+    // back to the two ends it does have.
+    return _priceTicks = ticks.isEmpty ? [minValue, maxValue] : ticks;
+  }
+
   @override
   void drawVerticalText(Canvas canvas, TextStyle textStyle, int gridRows) {
-    final double rowSpace = chartRect.height / gridRows;
-    for (var i = 0; i <= gridRows; ++i) {
-      if (i == gridRows && hasPanesBelow) continue;
-      // Read the price off the grid line the label belongs to, so a
-      // logarithmic axis labels itself as correctly as a linear one.
-      final double value = getValue(chartRect.top + rowSpace * i);
+    final padding = chartStyle.axisLabelPadding;
+
+    for (final value in priceTicks(gridRows)) {
+      final y = getY(value);
+      if (!y.isFinite) continue;
+
       final TextSpan span = TextSpan(text: formatAxis(value), style: textStyle);
       final TextPainter tp = TextPainter(
         text: span,
         textDirection: TextDirection.ltr,
-      );
-      tp.layout();
+      )..layout();
 
-      final padding = chartStyle.axisLabelPadding;
+      // The label sits above its own line, and is nudged back inside the pane
+      // at either end so the top one clears the legend and the bottom one is
+      // not clipped away.
+      final offsetY = (y - tp.height).clamp(
+        chartRect.top - topPadding,
+        chartRect.bottom - tp.height,
+      );
+
+      // With a pane stacked underneath, a label near the bottom edge would
+      // print over that pane's legend.
+      if (hasPanesBelow && chartRect.bottom - y < tp.height) continue;
+
       final double offsetX = switch (verticalTextAlignment) {
         VerticalTextAlignment.left => padding,
         VerticalTextAlignment.right => chartRect.width - tp.width - padding,
       };
-      final double offsetY = i == 0
-          ? topPadding
-          : rowSpace * i - tp.height + topPadding;
 
       if (chartStyle.axisLabelBackground) {
         canvas.drawRRect(
@@ -539,22 +581,30 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   }
 
   @override
-  void drawGrid(Canvas canvas, int gridRows, int gridColumns) {
-    // final int gridRows = 4, gridColumns = 4;
-    final double rowSpace = chartRect.height / gridRows;
-    for (int i = 0; i <= gridRows; i++) {
-      canvas.drawLine(
-        Offset(0, rowSpace * i + topPadding),
-        Offset(chartRect.width, rowSpace * i + topPadding),
-        gridPaint,
-      );
+  void drawGrid(
+    Canvas canvas,
+    int gridRows,
+    int gridColumns, {
+    List<double>? columnXs,
+  }) {
+    // Rule the pane where the labels are, not on evenly spaced pixels.
+    for (final value in priceTicks(gridRows)) {
+      final y = getY(value);
+      if (!y.isFinite || y < chartRect.top || y > chartRect.bottom) continue;
+      canvas.drawLine(Offset(0, y), Offset(chartRect.width, y), gridPaint);
     }
-    final double columnSpace = chartRect.width / gridColumns;
-    for (int i = 0; i <= gridColumns; i++) {
+
+    final columns =
+        columnXs ??
+        [
+          for (int i = 0; i <= gridColumns; i++)
+            chartRect.width / gridColumns * i,
+        ];
+    for (final x in columns) {
       canvas.drawLine(
-        Offset(columnSpace * i, 0),
-        Offset(columnSpace * i, chartRect.bottom),
-        gridPaint,
+        Offset(x, 0),
+        Offset(x, chartRect.bottom),
+        columnGridPaint,
       );
     }
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../entity/k_line_entity.dart';
 import '../indicators/indicator.dart';
 import '../indicators/resolved_indicator.dart';
+import '../utils/axis_ticks.dart';
 import '../utils/number_util.dart';
 import 'base_chart_renderer.dart';
 import 'series_painter.dart';
@@ -31,6 +32,7 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
         fixedLength: fixedLength,
         gridColor: chartColors.gridColor,
         separatorColor: chartColors.effectiveSeparatorColor,
+        gridColumnColor: chartColors.effectiveGridColumnColor,
         gridStrokeWidth: chartStyle.gridStrokeWidth,
         separatorWidth: chartStyle.separatorWidth,
         labelCornerRadius: chartStyle.labelCornerRadius,
@@ -128,37 +130,53 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
     paintLegend(canvas, tp, Offset(x, chartRect.top - topPadding));
   }
 
+  List<double>? _valueTicks;
+
+  /// The values this pane rules and labels itself by.
+  ///
+  /// An indicator pinned to a range of its own — RSI to 0..100, say — is
+  /// already marked by its guides, and a second set of numbers next to them
+  /// only crowds a pane this short, so it keeps the two ends it always had.
+  /// Everything else gets round marks, which is what makes three ATRs at three
+  /// periods comparable instead of three unlabelled squiggles.
+  List<double> get valueTicks => _valueTicks ??= indicator.fixedRange != null
+      ? [minValue, maxValue]
+      : () {
+          final ticks = niceTicks(minValue, maxValue, target: 4);
+          return ticks.isEmpty ? [minValue, maxValue] : ticks;
+        }();
+
   @override
   void drawVerticalText(Canvas canvas, TextStyle textStyle, int gridRows) {
     final padding = chartStyle.axisLabelPadding;
 
-    final maxTp = TextPainter(
-      text: TextSpan(text: formatValue(maxValue), style: textStyle),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    final minTp = TextPainter(
-      text: TextSpan(text: formatValue(minValue), style: textStyle),
-      textDirection: TextDirection.ltr,
-    )..layout();
+    for (final value in valueTicks) {
+      final y = getY(value);
+      if (!y.isFinite) continue;
 
-    maxTp.paint(
-      canvas,
-      Offset(
-        chartRect.width - maxTp.width - padding,
+      final tp = TextPainter(
+        text: TextSpan(text: formatValue(value), style: textStyle),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      // The pane is short, so a label is pulled inside its own box rather than
+      // being allowed to run over the pane above or below.
+      final offsetY = (y - tp.height).clamp(
         chartRect.top - topPadding,
-      ),
-    );
-    minTp.paint(
-      canvas,
-      Offset(
-        chartRect.width - minTp.width - padding,
-        chartRect.bottom - minTp.height,
-      ),
-    );
+        chartRect.bottom - tp.height,
+      );
+
+      tp.paint(canvas, Offset(chartRect.width - tp.width - padding, offsetY));
+    }
   }
 
   @override
-  void drawGrid(Canvas canvas, int gridRows, int gridColumns) {
+  void drawGrid(
+    Canvas canvas,
+    int gridRows,
+    int gridColumns, {
+    List<double>? columnXs,
+  }) {
     canvas.drawLine(
       Offset(0, chartRect.top - topPadding + 2),
       Offset(chartRect.width, chartRect.top - topPadding + 2),
@@ -170,12 +188,27 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       gridPaint,
     );
 
-    final columnSpace = chartRect.width / gridColumns;
-    for (var i = 0; i <= gridColumns; i++) {
+    if (indicator.fixedRange == null) {
+      for (final value in valueTicks) {
+        final y = getY(value);
+        if (!y.isFinite || y <= chartRect.top || y >= chartRect.bottom) {
+          continue;
+        }
+        canvas.drawLine(Offset(0, y), Offset(chartRect.width, y), gridPaint);
+      }
+    }
+
+    final columns =
+        columnXs ??
+        [
+          for (var i = 0; i <= gridColumns; i++)
+            chartRect.width / gridColumns * i,
+        ];
+    for (final x in columns) {
       canvas.drawLine(
-        Offset(columnSpace * i, chartRect.top - topPadding),
-        Offset(columnSpace * i, chartRect.bottom),
-        gridPaint,
+        Offset(x, chartRect.top - topPadding),
+        Offset(x, chartRect.bottom),
+        columnGridPaint,
       );
     }
 

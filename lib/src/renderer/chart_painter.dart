@@ -7,6 +7,7 @@ import '../drawing/line_painting.dart';
 import '../entity/horizontal_line.dart';
 import '../entity/info_window_entity.dart';
 import '../export.dart';
+import '../utils/axis_ticks.dart';
 import '../utils/date_format_util.dart';
 import '../utils/number_util.dart';
 import 'base_chart_painter.dart';
@@ -269,12 +270,76 @@ class ChartPainter extends BaseChartPainter {
   @override
   void drawGrid(Canvas canvas) {
     if (!hideGrid) {
-      mMainRenderer.drawGrid(canvas, mGridRows, mGridColumns);
-      mVolRenderer?.drawGrid(canvas, mGridRows, mGridColumns);
+      // Every pane rules itself on the same columns, so they line up down the
+      // stack and each one meets its own date label at the bottom.
+      final columnXs = [
+        for (final index in dateTickIndices()) translateXtoX(getX(index)),
+      ];
+      mMainRenderer.drawGrid(
+        canvas,
+        mGridRows,
+        mGridColumns,
+        columnXs: columnXs,
+      );
+      mVolRenderer?.drawGrid(
+        canvas,
+        mGridRows,
+        mGridColumns,
+        columnXs: columnXs,
+      );
       for (final pane in mIndicatorPaneList) {
-        pane.drawGrid(canvas, mGridRows, mGridColumns);
+        pane.drawGrid(canvas, mGridRows, mGridColumns, columnXs: columnXs);
       }
     }
+  }
+
+  /// The candles the date axis marks.
+  ///
+  /// A step is chosen from the span on screen — five minutes, an hour, a day —
+  /// and a candle is marked wherever it crosses one, so the labels read
+  /// `06:00, 12:00, 18:00` rather than whatever times happen to fall on evenly
+  /// spaced pixels.
+  List<int> dateTickIndices() {
+    final data = candles;
+    if (data == null || data.isEmpty) return const [];
+
+    final start = mStartIndex.clamp(0, data.length - 1);
+    final stop = mStopIndex.clamp(0, data.length - 1);
+    if (stop <= start) return const [];
+
+    final first = displayTime(data[start].dateTime);
+    final last = displayTime(data[stop].dateTime);
+    if (first == null || last == null) return const [];
+
+    final step = niceTimeStep(last.difference(first), target: mGridColumns);
+
+    final indices = <int>[];
+    int? previousBucket;
+    for (var i = start; i <= stop; i++) {
+      final time = displayTime(data[i].dateTime);
+      if (time == null) continue;
+      final bucket = timeBucket(time, step);
+      if (bucket == previousBucket) continue;
+      // The first candle in view is where the window happens to start, not a
+      // boundary the market crossed, so it is not marked.
+      if (previousBucket != null) indices.add(i);
+      previousBucket = bucket;
+    }
+    return indices;
+  }
+
+  /// The step the date axis is currently using, or null when there is nothing
+  /// on screen to measure.
+  Duration? dateTickStep() {
+    final data = candles;
+    if (data == null || data.isEmpty) return null;
+    final start = mStartIndex.clamp(0, data.length - 1);
+    final stop = mStopIndex.clamp(0, data.length - 1);
+    if (stop <= start) return null;
+    final first = displayTime(data[start].dateTime);
+    final last = displayTime(data[stop].dateTime);
+    if (first == null || last == null) return null;
+    return niceTimeStep(last.difference(first), target: mGridColumns);
   }
 
   @override
@@ -1303,31 +1368,47 @@ class ChartPainter extends BaseChartPainter {
 
   @override
   void drawDate(Canvas canvas, Size size) {
-    if (candles == null) return;
+    final data = candles;
+    if (data == null) return;
 
-    final columnSpace = size.width / mGridColumns;
-    final startX = getX(mStartIndex) - mPointWidth / 2;
-    final stopX = getX(mStopIndex) + mPointWidth / 2;
+    final step = dateTickStep();
+    // Below a day, the axis reads as a run of clock times with the date
+    // promoted where the day turns over — which is how a trader tells one
+    // session from the next.
+    final promoteDates =
+        step != null &&
+        step < const Duration(days: 1) &&
+        dateFormatter == null &&
+        chartStyle.dateTimeFormat == null;
 
-    for (var i = 0; i <= mGridColumns; ++i) {
-      final translateX = xToTranslateX(columnSpace * i);
+    DateTime? previousTick;
+    double? previousRight;
 
-      if (translateX >= startX && translateX <= stopX) {
-        final index = indexOfTranslateX(translateX);
-        if (candles?[index] == null) continue;
+    for (final index in dateTickIndices()) {
+      final candle = data[index];
+      final time = displayTime(candle.dateTime);
 
-        final tp = getTextPainter(
-          dateFormatter?.call(candles![index], false) ??
-              getDate(candles![index].dateTime),
-          null,
-        );
-        final y = size.height - (mBottomPadding - tp.height) / 2 - tp.height;
-        var x = columnSpace * i - tp.width / 2;
-        if (x < 0) x = 0;
-        if (x > size.width - tp.width) x = size.width - tp.width;
-
-        tp.paint(canvas, Offset(x, y));
+      final String label;
+      if (!promoteDates || time == null) {
+        label = dateFormatter?.call(candle, false) ?? getDate(candle.dateTime);
+      } else {
+        label = startsNewDay(time, previousTick)
+            ? dateFormat(time, const [mm, '-', dd])
+            : dateFormat(time, const [HH, ':', nn]);
       }
+      previousTick = time;
+
+      final tp = getTextPainter(label, null);
+      final y = size.height - (mBottomPadding - tp.height) / 2 - tp.height;
+      var x = translateXtoX(getX(index)) - tp.width / 2;
+      x = x.clamp(0.0, math.max(0.0, size.width - tp.width));
+
+      // Two labels crowding into each other read as one long number, so the
+      // later one gives way.
+      if (previousRight != null && x < previousRight + 4) continue;
+      previousRight = x + tp.width;
+
+      tp.paint(canvas, Offset(x, y));
     }
   }
 

@@ -78,10 +78,15 @@ class NumberUtil {
         pattern,
         'en_US',
       ).format(num.parse(parts.first));
-      if (precision == 0 && parts.length == 1) {
+      if (precision == 0) {
         return integerPart;
       }
-      final fractionalPart = parts.last;
+      // A whole number splits into one part, and reusing that part as the
+      // fraction printed 200 as `200.200`.
+      final fractionalPart = (parts.length <= 1 ? '' : parts.last).padRight(
+        precision,
+        '0',
+      );
       return '$integerPart.$fractionalPart';
     } catch (e) {
       return null;

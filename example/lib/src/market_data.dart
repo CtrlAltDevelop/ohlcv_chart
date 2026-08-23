@@ -8,10 +8,25 @@ class MarketData {
 
   static const Duration timeFrame = Duration(minutes: 15);
 
+  /// Rounds [time] down to the last close of a [timeFrame] candle.
+  ///
+  /// A real venue stamps a 15-minute candle at :00, :15, :30 or :45, never at
+  /// whatever minute the demo happened to launch on — and the date axis labels
+  /// the candle that opens each period, so unaligned data would print 06:09
+  /// where a real feed prints 06:00.
+  static DateTime alignToTimeFrame(DateTime time) {
+    final step = timeFrame.inMilliseconds;
+    return DateTime.fromMillisecondsSinceEpoch(
+      time.millisecondsSinceEpoch ~/ step * step,
+    );
+  }
+
   /// Builds [count] candles ending now, as a seeded random walk.
   static List<KLineEntity> candles({int count = 240}) {
     final random = Random(42);
-    final start = DateTime.now().subtract(timeFrame * count);
+    final start = alignToTimeFrame(
+      DateTime.now().subtract(timeFrame * count),
+    );
     var price = 64000.0;
 
     final candles = <KLineEntity>[];

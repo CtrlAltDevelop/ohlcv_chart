@@ -1,3 +1,55 @@
+## Unreleased
+
+### Axes
+
+- **Both axes now choose round values first and place them, rather than
+  dividing the box into equal pixel bands and reading back whatever landed
+  there.** The price scale reads `70000, 69500, 69000` where it used to read
+  `70429, 69745, 69060`, and the date axis lands on `06:00, 12:00, 18:00`
+  rather than on whichever candle fell on an evenly spaced pixel. The grid is
+  ruled where the labels are, so a line and its number always agree.
+- A logarithmic axis steps by ratio — 1, 2 and 5 times each power of ten — and
+  a percentage axis picks round percentages and converts them back to prices.
+  A range too narrow to hold a decade falls back to linear steps.
+- Below a day, the date axis reads as a run of clock times with the date
+  promoted where the day turns over, so an intraday chart shows where one
+  session ends and the next begins. A custom `dateFormatter` or
+  `ChartStyle.dateTimeFormat` still takes over completely.
+- Date labels that would crowd into each other are dropped rather than printed
+  over one another.
+- Boundaries follow the clock the chart prints, not the underlying instant, so
+  a `timeZoneOffset` of half an hour still labels round local times.
+- New `niceTicks`, `niceLogTicks`, `niceStep`, `niceTimeStep`, `timeBucket` and
+  `startsNewDay` in `src/utils/axis_ticks.dart` carry the arithmetic.
+
+### Panes
+
+- Indicator panes are ruled and labelled at round values instead of showing
+  only their highest and lowest. Three ATRs at three periods can now be read
+  against each other rather than being three unlabelled squiggles. A pane with
+  a range of its own — RSI, KDJ, WR — is still marked by its guides.
+- The MACD and Awesome Oscillator panes draw their zero line. The histogram
+  changes colour across it, and until now that axis was invisible.
+- The volume pane marks a round level part-way up, so a bar can be read against
+  something.
+
+### Fixed
+
+- `NumberUtil.format` printed a whole number as `200.200`, reusing the integer
+  digits as the fraction. It now pads, giving `200.00`.
+
+### Theming
+
+- New `ChartColors.gridColumnColor` for the vertical grid lines, which default
+  to a lighter shade of `gridColor`. A chart is read across price far more than
+  across time, so the time columns now sit behind the price rows.
+
+### Painters
+
+- `BaseChartRenderer.drawGrid` takes a new optional `columnXs`, the shared x of
+  every time tick, so all the panes rule themselves on the same columns. Only
+  code that subclasses a renderer directly is affected.
+
 ## 2.0.0
 
 ### Drawing tools
