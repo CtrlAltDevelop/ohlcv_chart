@@ -29,6 +29,13 @@
 
 ### Saving a workspace
 
+- **`IndicatorTemplate` and `IndicatorTemplates`** — a named set of indicators,
+  saved and put on any chart in one gesture; what `DrawingTemplate` is to a
+  drawing's look. Saving under a name already taken replaces it in its place,
+  and `IndicatorTemplate.starters` holds four ordinary sets so a template menu
+  has something in it on the first run. Serialises through the same codec a
+  workspace uses, with `unsaveable` naming anything the catalog cannot rebuild.
+
 - **A chart workspace saves and restores.** `ChartWorkspace` bundles the
   indicators, the drawings, the chart type and the price-axis settings into one
   JSON-serialisable snapshot, so an app can reopen the chart somebody left.

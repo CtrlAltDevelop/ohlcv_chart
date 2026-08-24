@@ -38,6 +38,7 @@ Named for the open-high-low-close-volume bars it renders.
 - **Select several and edit them together** — shift- or ⌘-click, or ⌘A; then drag, restyle or delete the lot in one step, with ⌘C/⌘V/⌘D to copy and ⌘]/⌘[ to restack.
 - **Exact coordinates** — a dialog over any drawing's anchors, each price and candle typed in rather than placed by eye.
 - **Style templates** — save one drawing's look and put it on the rest.
+- **Indicator templates** — a named set of indicators saved and put on any chart in one gesture, with four starter sets to begin from.
 - **A layout that persists** — every drawing serialises, so `jsonEncode(drawings.toJson())` and `ChartDrawings.fromJson` are the whole story.
 - **A drawing manager** — a ready-made panel listing what is drawn, with show/hide, lock, delete, undo, redo and clear.
 - **Price alerts** on a level, a trend line, either side of a channel or every step of a retracement, reported when the market crosses one.

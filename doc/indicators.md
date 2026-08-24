@@ -391,6 +391,41 @@ indicators.upsert(AtrIndicator(period: 20));                    // a second pane
 indicators.toggle(RsiIndicator());                              // on, then off
 ```
 
+## Templates
+
+A template is a named set of indicators — the reading of the market somebody
+works from, saved so it can be put on any chart in one gesture. It is to
+indicators what `DrawingTemplate` is to a drawing's look.
+
+```dart
+final saved = IndicatorTemplates(IndicatorTemplate.starters);
+
+// Save what is on the chart now.
+saved.save(IndicatorTemplate(name: 'Swing', indicators: indicators));
+
+// Put one on.
+setState(() => indicators = [...saved['Swing']!.indicators]);
+
+await prefs.setString('templates', jsonEncode(saved.toJson()));
+```
+
+Saving under a name that is already taken replaces it in its place, so "save"
+and "overwrite" are one gesture and a menu built from `all` does not reshuffle.
+`IndicatorTemplate.starters` is four ordinary sets — trend, momentum,
+volatility and volume — so a template menu has something in it on the first
+run; nothing about them is privileged, and an app is free to ignore them.
+
+Templates serialise through the same codec a workspace uses. An indicator the
+catalog cannot rebuild is left out rather than saved as something else, and
+`unsaveable` lists which, so an app can say so instead of quietly dropping it:
+
+```dart
+final template = IndicatorTemplate(name: 'Mine', indicators: indicators);
+if (template.unsaveable.isNotEmpty) {
+  // Tell somebody, rather than losing them silently.
+}
+```
+
 ## Building a settings UI
 
 ![The example app's add-indicator sheet, built from the catalog](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/indicator-settings.png)
