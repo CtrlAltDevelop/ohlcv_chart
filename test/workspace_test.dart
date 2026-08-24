@@ -93,7 +93,8 @@ void main() {
         'kind': 'MA',
         'values': {'period': 1000000},
       });
-      final period = indicatorCatalog.firstWhere((t) => t.name == 'MA')
+      final period = indicatorCatalog
+          .firstWhere((t) => t.name == 'MA')
           .settings
           .first;
       expect(back, isNotNull);
@@ -135,8 +136,10 @@ void main() {
       );
 
       expect(back.indicators, workspace.indicators);
-      expect(back.indicators.first.colors!.first.toARGB32(),
-          Colors.amber.toARGB32());
+      expect(
+        back.indicators.first.colors!.first.toARGB32(),
+        Colors.amber.toARGB32(),
+      );
       expect(back.chartType, ChartType.bars);
       expect(back.priceAxisScale, PriceAxisScale.logarithmic);
       expect(back.invertPriceAxis, isTrue);
@@ -155,15 +158,20 @@ void main() {
     });
 
     test('stamps a version', () {
-      expect(const ChartWorkspace().toJson()['version'],
-          ChartWorkspace.formatVersion);
+      expect(
+        const ChartWorkspace().toJson()['version'],
+        ChartWorkspace.formatVersion,
+      );
     });
 
     test('skips what it cannot read and keeps the rest', () {
       final back = ChartWorkspace.fromJson({
         'version': 99,
         'indicators': [
-          {'kind': 'MA', 'values': {'period': 9}},
+          {
+            'kind': 'MA',
+            'values': {'period': 9},
+          },
           {'kind': 'SOMETHING_NEW'},
           'not even a map',
           {'kind': 'RSI'},
