@@ -1,3 +1,21 @@
+## Unreleased
+
+### Saving a workspace
+
+- **A chart workspace saves and restores.** `ChartWorkspace` bundles the
+  indicators, the drawings, the chart type and the price-axis settings into one
+  JSON-serialisable snapshot, so an app can reopen the chart somebody left.
+  `indicatorToJson` and `indicatorFromJson` do one indicator apiece; anything a
+  release does not recognise is skipped rather than throwing.
+- `indicatorTypeRebuilding` finds the catalog entry that rebuilds an indicator
+  exactly, where `indicatorTypeOf` matched on the name alone — which could hand
+  back a daily pivot for a weekly one, both being named `PIVOT`.
+
+### Package
+
+- The top-level `docs/` directory is now `doc/`, which is the layout pub
+  expects; a link to a page under `docs/` needs updating to `doc/`.
+
 ## 2.1.0
 
 ### Axes
