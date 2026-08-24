@@ -236,6 +236,86 @@ void main() {
       expect(link.syncFrom(detached), isFalse);
     });
 
+    test('the crosshair travels between charts, by candle', () {
+      final a = chart();
+      final b = chart();
+      ChartLink()
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.hoverAt(42);
+      expect(b.host.crosshair, 42);
+
+      // And going away travels too, or the follower keeps a stale crosshair.
+      a.host.hoverAt(null);
+      expect(b.host.crosshair, isNull);
+      expect(b.host.crosshairsAsked, [42, null]);
+    });
+
+    test('a chart already pointing there is not told again', () {
+      final a = chart();
+      final b = chart();
+      ChartLink()
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.hoverAt(42);
+      a.host.hoverAt(42);
+
+      expect(b.host.crosshairsAsked, [42], reason: 'pushed once');
+    });
+
+    test('the follower does not push its crosshair back', () {
+      final a = chart();
+      final b = chart();
+      ChartLink()
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.hoverAt(42);
+
+      expect(a.host.crosshairsAsked, isEmpty, reason: 'the leader is left');
+    });
+
+    test('a crosshair beyond a shorter history rests at its edge', () {
+      final long = chart(total: 500);
+      final short = chart(total: 60);
+      ChartLink()
+        ..add(long.controller)
+        ..add(short.controller);
+
+      long.host.hoverAt(400);
+      expect(short.host.crosshair, 59);
+    });
+
+    test('crosshair: false leaves it alone, and still moves the window', () {
+      final a = chart();
+      final b = chart();
+      ChartLink(crosshair: false)
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.hoverAt(42);
+      expect(b.host.crosshairsAsked, isEmpty);
+
+      a.host.scrollTo(100, 119);
+      expect(b.host.asked.last, (100, 119));
+    });
+
+    test('window: false carries the crosshair alone', () {
+      final a = chart();
+      final b = chart();
+      ChartLink(window: false)
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.scrollTo(100, 119);
+      expect(b.host.asked, isEmpty, reason: 'the window stayed where it was');
+
+      a.host.hoverAt(42);
+      expect(b.host.crosshair, 42);
+    });
+
     test('the list it hands out cannot be edited behind its back', () {
       final link = ChartLink()..add(chart().controller);
       expect(

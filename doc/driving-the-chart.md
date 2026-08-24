@@ -105,15 +105,43 @@ already are rather than waiting for a scroll.
 Charts over histories of different lengths line up as far as they overlap: a
 window pushed onto a chart is clamped to the candles it actually has.
 
-**What is linked** is the visible window, and with it the zoom — showing the
-same candles across the same width is what zoom means here. The crosshair is
-not: it is the chart's own gesture state, with no callback to hang this on. The
-price axis is deliberately left alone too, since two instruments at different
-prices share no sensible vertical scale and forcing one would leave a chart
-drawing a flat line off the top of its pane.
+**What is linked** is the visible window — and with it the zoom, since showing
+the same candles across the same width is what zoom means here — and the
+crosshair, by candle rather than by pixel, so charts at different widths still
+point at the same bar. Either can be left off:
 
-Doing it by hand is still an option — pass the range from `onVisibleRangeChanged`
-to the other chart's `showRange`.
+```dart
+ChartLink(crosshair: false);  // scroll together, read separately
+ChartLink(window: false);     // one crosshair, each chart scrolled on its own
+```
+
+A crosshair pushed onto a chart reads as one *hovered* rather than one held
+down, so it never takes the place of a press the user is making themselves, and
+a candle scrolled out of view rests at the near edge rather than vanishing.
+
+The price axis is deliberately left alone. Two instruments at different prices
+share no sensible vertical scale, and forcing one would leave a chart drawing a
+flat line off the top of its pane.
+
+Doing either by hand is still an option — pass the range from
+`onVisibleRangeChanged` to the other chart's `showRange`, or the candle from
+`onCrosshairChanged` to its `showCrosshair`.
+
+## The crosshair, on its own
+
+`KChartController` reads and moves the crosshair whether or not a link is
+involved:
+
+```dart
+chart.crosshairIndex;        // which candle it is on, or null
+chart.showCrosshair(120);    // put it on candle 120
+chart.hideCrosshair();       // take it down
+```
+
+`onCrosshairChanged` reports where it moved to, on the same terms as
+`onVisibleRangeChanged`: after the frame that moved it, and only when the
+candle is actually different, so sliding the pointer within one candle says
+nothing.
 
 ## The overview strip
 

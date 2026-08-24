@@ -29,15 +29,29 @@ import 'chart_controller.dart';
 ///
 /// The visible window — which candles are on screen — and with it the zoom,
 /// since showing the same number of candles across the same width is what zoom
-/// means here. The crosshair is not: it is the chart's own gesture state and
-/// has no callback to hang this on.
+/// means here.
 ///
-/// The price axis is deliberately left alone too. Two instruments at different
+/// The crosshair too, by candle rather than by pixel, so charts at different
+/// widths still point at the same bar. Turn it off with `crosshair: false` for
+/// charts that should scroll together but be read separately. A crosshair
+/// pushed onto a chart reads as one hovered rather than one held down, so it
+/// never takes the place of a press the user is making themselves.
+///
+/// The price axis is deliberately left alone. Two instruments at different
 /// prices share no sensible vertical scale, and forcing one would leave a chart
 /// showing a flat line off the top of its pane.
 class ChartLink {
   /// Creates a link with no charts on it yet.
-  ChartLink();
+  ///
+  /// [window] carries the visible window and its zoom; [crosshair] carries the
+  /// candle the crosshair is on. Either can be left off.
+  ChartLink({this.window = true, this.crosshair = true});
+
+  /// Whether the visible window is carried between charts.
+  final bool window;
+
+  /// Whether the crosshair is carried between charts.
+  final bool crosshair;
 
   final Map<KChartController, void Function()> _following = {};
 
@@ -92,21 +106,31 @@ class ChartLink {
 
   void _spreadFrom(KChartController source) {
     if (_applying) return;
-    final range = source.visibleRange;
-    if (range == null) return;
+
+    final range = window ? source.visibleRange : null;
+    final at = crosshair ? source.crosshairIndex : null;
+    // A crosshair that has just gone needs pushing as much as one that arrived,
+    // so "nothing to say" is only when neither half is being carried.
+    if (range == null && !crosshair) return;
 
     _applying = true;
     try {
       for (final other in _following.keys) {
         if (identical(other, source)) continue;
-        final current = other.visibleRange;
-        // Already there: moving it again would only churn a repaint.
-        if (current != null &&
-            current.firstIndex == range.firstIndex &&
-            current.lastIndex == range.lastIndex) {
-          continue;
+
+        if (range != null) {
+          final current = other.visibleRange;
+          // Already there: moving it again would only churn a repaint.
+          if (current == null ||
+              current.firstIndex != range.firstIndex ||
+              current.lastIndex != range.lastIndex) {
+            other.showRange(range.firstIndex, range.lastIndex);
+          }
         }
-        other.showRange(range.firstIndex, range.lastIndex);
+
+        if (crosshair && other.crosshairIndex != at) {
+          other.showCrosshair(at);
+        }
       }
     } finally {
       _applying = false;

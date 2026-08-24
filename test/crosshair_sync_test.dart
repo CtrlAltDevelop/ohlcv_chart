@@ -147,4 +147,67 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  group('two real charts on a link', () {
+    testWidgets('one chart\'s crosshair reaches the other', (tester) async {
+      final data = candles(rampThenFall(120));
+      DataUtil.calculate(data);
+      final top = KChartController();
+      final bottom = KChartController();
+      final link = ChartLink()
+        ..add(top)
+        ..add(bottom);
+      addTearDown(link.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                SizedBox(
+                  width: 400,
+                  height: 260,
+                  child: KChartWidget(
+                    data,
+                    ChartColors(),
+                    isTrendLine: false,
+                    watermarkAssetPath: 'assets/none.svg',
+                    timeFrame: const Duration(minutes: 15),
+                    showNowPrice: false,
+                    controller: top,
+                  ),
+                ),
+                SizedBox(
+                  width: 400,
+                  height: 260,
+                  child: KChartWidget(
+                    data,
+                    ChartColors(),
+                    isTrendLine: false,
+                    watermarkAssetPath: 'assets/none.svg',
+                    timeFrame: const Duration(minutes: 15),
+                    showNowPrice: false,
+                    controller: bottom,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final visible = top.visibleRange!;
+      final wanted = (visible.firstIndex + visible.lastIndex) ~/ 2;
+
+      top.showCrosshair(wanted);
+      await tester.pumpAndSettle();
+
+      expect(bottom.crosshairIndex, wanted);
+
+      top.hideCrosshair();
+      await tester.pumpAndSettle();
+      expect(bottom.crosshairIndex, isNull);
+    });
+  });
 }

@@ -29,12 +29,20 @@
 
 ### Navigation
 
-- **`ChartLink`** — holds any number of charts on the same visible window, so
-  scrolling or zooming one carries the rest with it. No leader: whichever chart
-  the user moves is the one followed, and the link guards against the push back
-  that would otherwise bounce the window between them. `syncFrom` joins a chart
-  built later to where the others already are. The window and its zoom are
-  linked; the crosshair and the price axis deliberately are not.
+- **`ChartLink`** — holds any number of charts on the same visible window and
+  crosshair, so scrolling, zooming or pointing at one carries the rest with it.
+  No leader: whichever chart the user moves is the one followed, and the link
+  guards against the push back that would otherwise bounce the window between
+  them. `syncFrom` joins a chart built later to where the others already are.
+  `ChartLink(crosshair: false)` and `ChartLink(window: false)` carry one half
+  alone. The price axis is deliberately never linked — two instruments at
+  different prices share no sensible vertical scale.
+- **The crosshair is now readable and movable from `KChartController`** —
+  `crosshairIndex`, `showCrosshair(index)` and `hideCrosshair()`, with
+  `KChartWidget.onCrosshairChanged` reporting where it moved to. It is carried
+  by candle rather than by pixel, so charts of different widths point at the
+  same bar, and one put up from outside reads as hovered rather than held down
+  so it never displaces a press the user is making.
 - **`ChartOverview`** — a slim chart of the whole history to sit under the main
   one, with the visible window lit on it. Drag the lit part to scrub, drag
   either edge to widen or narrow the window, or tap anywhere to jump there. It
@@ -68,6 +76,14 @@
 - `indicatorTypeRebuilding` finds the catalog entry that rebuilds an indicator
   exactly, where `indicatorTypeOf` matched on the name alone — which could hand
   back a daily pivot for a weekly one, both being named `PIVOT`.
+
+### Fixed
+
+- **Reading a chart's window before its first frame threw** a
+  `LateInitializationError` rather than answering null. A `KChartController`'s
+  getters are reachable the moment it exists, which is before the chart it
+  belongs to has been laid out — two linked charts hit this immediately, the
+  first one's build asking the second where it was looking.
 
 ### Package
 
