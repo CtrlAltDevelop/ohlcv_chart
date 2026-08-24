@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'depth_ladder.dart';
 import 'depth_mode.dart';
+import 'depth_ratio_bar.dart';
 import 'depth_style.dart';
 import 'depth_translations.dart';
 import 'entity/depth_entity.dart';
@@ -46,6 +47,7 @@ class DepthChart extends StatefulWidget {
     this.scale = DepthScale.linear,
     this.zoom,
     this.ladderLevels = 10,
+    this.showRatioBar = false,
     super.key,
   });
 
@@ -89,6 +91,12 @@ class DepthChart extends StatefulWidget {
   /// How many levels of each side the ladder lists.
   final int ladderLevels;
 
+  /// Whether a [DepthRatioBar] sits under the chart.
+  ///
+  /// It weighs the levels the chart is drawing, [zoom] and all, so the split it
+  /// reports is the split of the picture above it.
+  final bool showRatioBar;
+
   @override
   State<DepthChart> createState() => _DepthChartState();
 }
@@ -110,10 +118,11 @@ class _DepthChartState extends State<DepthChart> {
         chartColors: widget.chartColors,
         chartStyle: widget.chartStyle,
         chartTranslations: widget.chartTranslations,
+        showRatioBar: widget.showRatioBar,
       );
     }
 
-    return GestureDetector(
+    final chart = GestureDetector(
       onLongPressStart: (details) {
         pressOffset = details.localPosition;
         isLongPress = true;
@@ -146,6 +155,34 @@ class _DepthChartState extends State<DepthChart> {
           scale: widget.scale,
           zoom: widget.zoom,
         ),
+      ),
+    );
+
+    if (!widget.showRatioBar) return chart;
+
+    final bar = Padding(
+      padding: EdgeInsets.all(widget.chartStyle.padding),
+      child: DepthRatioBar(
+        widget.bids,
+        widget.asks,
+        zoom: widget.zoom,
+        chartColors: widget.chartColors,
+        chartStyle: widget.chartStyle,
+        chartTranslations: widget.chartTranslations,
+      ),
+    );
+
+    // The painted chart fills whatever height it is given and falls back to 200
+    // when it is given none. Flexing it would turn that second case into an
+    // unbounded-constraints error, so the bar only takes its slice off the top
+    // of a height that exists.
+    return LayoutBuilder(
+      builder: (context, constraints) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (constraints.hasBoundedHeight) Expanded(child: chart) else chart,
+          bar,
+        ],
       ),
     );
   }

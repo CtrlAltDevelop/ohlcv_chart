@@ -231,6 +231,9 @@ class DemoState extends ChangeNotifier {
   /// How far either side of the mid the depth chart looks, or null for all.
   double? depthZoom;
 
+  /// Whether the bid/ask ratio bar sits under the depth chart.
+  bool depthRatioBar = true;
+
   // ── Drawing ─────────────────────────────────────────────────────────────
   DrawingTool tool = DrawingTool.none;
   bool magnetMode = false;

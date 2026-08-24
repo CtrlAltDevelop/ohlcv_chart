@@ -331,6 +331,145 @@ void main() {
     });
   });
 
+  group('DepthRatioBar', () {
+    Widget host(Widget child) => MaterialApp(
+      home: Scaffold(body: SizedBox(width: 320, height: 600, child: child)),
+    );
+
+    /// The two halves of the bar, in the order they are drawn.
+    List<Size> halves(WidgetTester tester) => [
+      for (var i = 0; i < 2; i++)
+        tester.getSize(
+          find
+              .descendant(
+                of: find.byType(DepthRatioBar),
+                matching: find.byType(Container),
+              )
+              .at(i),
+        ),
+    ];
+
+    testWidgets('names each side its share of the book', (tester) async {
+      await tester.pumpWidget(
+        host(
+          DepthRatioBar(
+            DepthEntity.bids(rawBids()),
+            DepthEntity.asks(rawAsks()),
+          ),
+        ),
+      );
+
+      // 6 resting on the bids against 15 on the asks.
+      expect(find.text('28.57%'), findsOneWidget);
+      expect(find.text('71.43%'), findsOneWidget);
+    });
+
+    testWidgets('draws each side in proportion to its volume', (tester) async {
+      await tester.pumpWidget(
+        host(
+          DepthRatioBar(
+            DepthEntity.bids(rawBids()),
+            DepthEntity.asks(rawAsks()),
+          ),
+        ),
+      );
+
+      final [bid, ask] = halves(tester);
+      // Both ends keep a pill's width whatever they hold, so the proportion is
+      // of what is left over once each side has been given one.
+      const least = 4.0;
+      expect(bid.width, lessThan(ask.width));
+      expect((bid.width - least) / (ask.width - least), closeTo(6 / 15, 0.01));
+      expect(bid.height, least);
+    });
+
+    testWidgets('weighs only the levels a zoom leaves', (tester) async {
+      await tester.pumpWidget(
+        host(
+          DepthRatioBar(
+            DepthEntity.bids(rawBids()),
+            DepthEntity.asks(rawAsks()),
+            // Tight enough to leave the best rung a side: 1 against 4.
+            zoom: 0.015,
+          ),
+        ),
+      );
+
+      expect(find.text('20.00%'), findsOneWidget);
+      expect(find.text('80.00%'), findsOneWidget);
+    });
+
+    testWidgets('holds its place while the book is empty', (tester) async {
+      await tester.pumpWidget(
+        host(const DepthRatioBar(<DepthEntity>[], <DepthEntity>[])),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('--'), findsNWidgets(2));
+      final [bid, ask] = halves(tester);
+      expect(bid.width, closeTo(ask.width, 0.01));
+    });
+
+    testWidgets('slides to a new split rather than jumping', (tester) async {
+      Widget bar(List<DepthEntity> bids) => host(
+        DepthRatioBar(DepthEntity.bids(bids), DepthEntity.asks(rawAsks())),
+      );
+
+      await tester.pumpWidget(bar(rawBids()));
+      final before = halves(tester).first.width;
+
+      // Ten times the bids: the split ends up the other way round.
+      await tester.pumpWidget(
+        bar([DepthEntity(99, 10), DepthEntity(98, 20), DepthEntity(97, 30)]),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      final midway = halves(tester).first.width;
+
+      await tester.pump(const Duration(milliseconds: 400));
+      final after = halves(tester).first.width;
+
+      expect(midway, greaterThan(before));
+      expect(midway, lessThan(after));
+      expect(find.text('80.00%'), findsOneWidget);
+    });
+
+    testWidgets('the ladder closes off with one when asked', (tester) async {
+      await tester.pumpWidget(
+        host(
+          DepthLadder(
+            DepthEntity.bids(rawBids()),
+            DepthEntity.asks(rawAsks()),
+            quoteUnit: 0,
+            baseUnit: 0,
+            showRatioBar: true,
+          ),
+        ),
+      );
+
+      expect(find.byType(DepthRatioBar), findsOneWidget);
+      // Under the last of the bids.
+      expect(
+        tester.getCenter(find.text('28.57%')).dy,
+        greaterThan(tester.getCenter(find.text('97')).dy),
+      );
+    });
+
+    testWidgets('the ladder leaves it off by default', (tester) async {
+      await tester.pumpWidget(
+        host(
+          DepthLadder(
+            DepthEntity.bids(rawBids()),
+            DepthEntity.asks(rawAsks()),
+            quoteUnit: 0,
+            baseUnit: 0,
+          ),
+        ),
+      );
+
+      expect(find.byType(DepthRatioBar), findsNothing);
+    });
+  });
+
   group('the chart renders every mode', () {
     for (final mode in DepthChartMode.values) {
       testWidgets(mode.name, (tester) async {
@@ -346,6 +485,7 @@ void main() {
                   mode: mode,
                   scale: DepthScale.log,
                   zoom: 0.05,
+                  showRatioBar: true,
                 ),
               ),
             ),
@@ -355,5 +495,30 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+
+    testWidgets('the ratio bar survives an unbounded height', (tester) async {
+      // The painted chart falls back to 200 tall when it is given no height of
+      // its own, and flexing it under the bar would break that.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: SizedBox(
+                width: 400,
+                child: DepthChart(
+                  DepthEntity.bids(rawBids()),
+                  DepthEntity.asks(rawAsks()),
+                  showRatioBar: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DepthRatioBar), findsOneWidget);
+      expect(tester.getSize(find.byType(CustomPaint).last).height, 200);
+    });
   });
 }

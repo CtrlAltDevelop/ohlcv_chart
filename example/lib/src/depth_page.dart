@@ -56,6 +56,7 @@ class DepthPage extends StatelessWidget {
                   mode: state.depthMode,
                   scale: state.depthScale,
                   zoom: state.depthZoom,
+                  showRatioBar: state.depthRatioBar,
                   chartColors: state.depthColors,
                   chartTranslations: state.depthTranslations,
                   chartStyle: const DepthChartStyle(
@@ -116,6 +117,12 @@ class DepthPage extends StatelessWidget {
                       onSelected: (_) =>
                           state.update(() => state.depthZoom = zoom),
                     ),
+                  FilterChip(
+                    label: const Text('ratio bar'),
+                    selected: state.depthRatioBar,
+                    onSelected: (on) =>
+                        state.update(() => state.depthRatioBar = on),
+                  ),
                 ],
               ),
             ),

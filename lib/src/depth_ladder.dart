@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'depth_ratio_bar.dart';
 import 'depth_style.dart';
 import 'depth_translations.dart';
 import 'entity/depth_book.dart';
@@ -32,6 +33,7 @@ class DepthLadder extends StatelessWidget {
     this.levels = 10,
     this.zoom,
     this.barsShowTotal = true,
+    this.showRatioBar = false,
     this.chartColors = const DepthChartColors(),
     this.chartStyle = const DepthChartStyle(),
     this.chartTranslations = const DepthChartTranslations(),
@@ -61,6 +63,12 @@ class DepthLadder extends StatelessWidget {
   /// The total makes the bars grow away from the mid, showing the shape of the
   /// book; the rung's own size makes each wall stand on its own.
   final bool barsShowTotal;
+
+  /// Whether a [DepthRatioBar] closes the ladder off underneath.
+  ///
+  /// It weighs the same levels the rows list, so it agrees with what is on
+  /// screen rather than with the whole book.
+  final bool showRatioBar;
 
   /// Every colour the ladder paints with.
   final DepthChartColors chartColors;
@@ -134,6 +142,23 @@ class DepthLadder extends StatelessWidget {
               baseUnit: baseUnit,
               quoteUnit: quoteUnit,
               barsShowTotal: barsShowTotal,
+            ),
+          if (showRatioBar)
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                chartStyle.padding,
+                chartStyle.padding / 2,
+                chartStyle.padding,
+                chartStyle.padding,
+              ),
+              child: DepthRatioBar(
+                bids,
+                asks,
+                zoom: zoom,
+                chartColors: chartColors,
+                chartStyle: chartStyle,
+                chartTranslations: chartTranslations,
+              ),
             ),
         ],
       ),

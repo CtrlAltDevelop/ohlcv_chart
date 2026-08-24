@@ -11,6 +11,7 @@ export './chart_workspace.dart';
 export './depth_chart.dart';
 export './depth_ladder.dart';
 export './depth_mode.dart';
+export './depth_ratio_bar.dart';
 export './depth_style.dart';
 export './depth_translations.dart';
 export './drawing/drawing_anchors.dart';

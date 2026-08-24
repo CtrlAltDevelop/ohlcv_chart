@@ -64,7 +64,7 @@ Named for the open-high-low-close-volume bars it renders.
 - **Event marks** — earnings, dividends, splits and news badged under the candle they happened on, and tappable.
 - **Orders and positions** — live lines from your venue, tagged with side, size and P&L, and draggable to amend.
 - **Extended-hours shading** — the pre-market and after-hours stretches washed behind the candles — and a per-bar colour of your own.
-- **Depth chart** — a separate `DepthChart` widget for the order book, drawn as the cumulative curve, a per-rung histogram, both at once, or a numeric ladder of price, size and running total, on a linear, log or percentage axis and zoomable to the levels around the mid.
+- **Depth chart** — a separate `DepthChart` widget for the order book, drawn as the cumulative curve, a per-rung histogram, both at once, or a numeric ladder of price, size and running total, on a linear, log or percentage axis and zoomable to the levels around the mid, with an optional bid/ask ratio bar underneath showing which way the resting orders lean.
 - **Info dialog** on long press, either the built-in Material popup or your own builder.
 - **"Now price" line** with a live countdown to the close of the current candle.
 - **Session dividers and a display time zone**, so an intraday chart breaks where the trader's day does.

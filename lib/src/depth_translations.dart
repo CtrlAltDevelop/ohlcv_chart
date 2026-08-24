@@ -25,10 +25,10 @@ class DepthChartTranslations {
   /// Label of the running-total column in the ladder.
   final String total;
 
-  /// Heading of the bid side of the ladder.
+  /// Names the bid side, for the ratio bar's screen-reader label.
   final String bids;
 
-  /// Heading of the ask side of the ladder.
+  /// Names the ask side, for the ratio bar's screen-reader label.
   final String asks;
 
   /// Label of the gap between the best bid and the best ask.

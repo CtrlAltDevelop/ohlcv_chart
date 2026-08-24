@@ -1,3 +1,17 @@
+## Unreleased
+
+### Depth chart
+
+- **`DepthRatioBar`** — the volume resting on each side of the book added up and
+  drawn as two lengths meeting in the middle, each labelled with its share. It
+  says plainly what the shape of a depth chart only hints at: which way the
+  resting orders lean, and by how much. `showRatioBar: true` closes off either
+  `DepthChart` or `DepthLadder` with one, weighing exactly the levels the widget
+  above it is showing — `zoom` and all — so the number agrees with the picture.
+  It slides to each new reading rather than jumping, and a book with nothing on
+  either side holds its place as a grey track rather than collapsing the row it
+  sits in. `DepthChartStyle.ratioBarHeight` and `ratioFontSize` size it.
+
 ## 2.2.0
 
 ### Indicators

@@ -66,6 +66,39 @@ DepthLadder(bids, asks, levels: 12, barsShowTotal: false);
 The long-press readout names the size resting on the rung under the finger as
 well as the running total out to it.
 
+## The ratio bar
+
+`showRatioBar: true` closes either widget off with a `DepthRatioBar`: the volume
+on each side added up and drawn as two lengths meeting in the middle, each
+labelled with its share. It says plainly what the shape of the chart only hints
+at — which way the resting orders lean, and by how much — and it slides to each
+new reading rather than jumping.
+
+```dart
+DepthChart(
+  DepthEntity.bids(rawBids),
+  DepthEntity.asks(rawAsks),
+  zoom: 0.05,
+  showRatioBar: true, // the split of the book within 5% of the mid
+);
+```
+
+It weighs whatever the widget above it is showing, `zoom` and all, so the number
+agrees with the picture. That matters: the split of a whole book and the split of
+its nearest one percent are different readings, and the near one is what moves.
+Reach for the bar directly to put it somewhere else of its own, to weigh a
+window the chart is not drawing, or to change how long the slide takes:
+
+```dart
+DepthRatioBar(bids, asks, zoom: 0.01, duration: Duration.zero);
+```
+
+`DepthChartStyle.ratioBarHeight` sets its thickness and the radius of its ends,
+`ratioFontSize` the two percentages; the bids take `upColor` and the asks
+`dnColor`. A book with nothing resting on either side — one still on its way —
+holds its place as a grey track labelled `--` rather than collapsing the row it
+sits in.
+
 ---
 
 [← All docs](README.md) · [Package README](../README.md)

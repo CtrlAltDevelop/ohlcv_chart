@@ -62,6 +62,8 @@ class DepthChartStyle {
     this.barWidthFactor = 0.7,
     this.ladderRowHeight = 22,
     this.ladderFontSize = 11,
+    this.ratioBarHeight = 4,
+    this.ratioFontSize = 11,
   });
 
   final double lineWidth;
@@ -83,4 +85,10 @@ class DepthChartStyle {
 
   /// Text size used by the ladder.
   final double ladderFontSize;
+
+  /// Thickness of the bid/ask ratio bar, and the radius of its rounded ends.
+  final double ratioBarHeight;
+
+  /// Text size of the two percentages either side of the ratio bar.
+  final double ratioFontSize;
 }

@@ -65,7 +65,8 @@ For installation, the feature list and support, see the
 ## More
 
 - **[Depth chart](depth-chart.md)** — the `DepthChart` widget for an order book:
-  its four modes, three axes and how far either side of the mid to look.
+  its four modes, three axes, how far either side of the mid to look, and the
+  bid/ask ratio bar.
 - **[Theming](theming.md)** — `ChartStyle` for geometry, `ChartColors` for
   colour, `ChartTranslations` for every label.
 - **[Migrating from 1.x](migrating-from-1.x.md)** — what changed, and what to

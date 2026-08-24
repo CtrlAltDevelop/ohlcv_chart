@@ -6,6 +6,9 @@
 // flutter run -d macos -t tool/screenshots.dart
 // ```
 //
+// `--dart-define=only=depth-ratio,depth` shoots just those scenes, for a run
+// that is adding one rather than redoing the set.
+//
 // Each scene is laid out at a fixed size, captured straight off the raster
 // boundary and written into `../screenshots/`, then the app exits. Rendering
 // the real widgets in a real engine is what keeps the images honest — text,
@@ -24,6 +27,15 @@ import 'package:ohlcv_chart/ohlcv_chart.dart';
 import 'package:ohlcv_chart_example/src/chart_theme.dart';
 import 'package:ohlcv_chart_example/src/indicator_sheet.dart';
 import 'package:ohlcv_chart_example/src/market_data.dart';
+
+/// The scenes to shoot, comma-separated, or every one of them when left unset.
+///
+/// A run that adds one image should not rewrite the other thirty:
+///
+/// ```sh
+/// flutter run -d macos -t tool/screenshots.dart --dart-define=only=depth-ratio
+/// ```
+const String requestedScenes = String.fromEnvironment('only');
 
 /// Where the images are written.
 ///
@@ -118,7 +130,20 @@ class ScreenshotApp extends StatefulWidget {
 
 class _ScreenshotAppState extends State<ScreenshotApp> {
   final GlobalKey _boundary = GlobalKey();
-  late final List<Scene> _scenes = buildScenes();
+  late final List<Scene> _scenes = _asked(buildScenes());
+
+  /// The scenes [requestedScenes] names, or all of them when it names none.
+  List<Scene> _asked(List<Scene> all) {
+    if (requestedScenes.isEmpty) return all;
+    final names = requestedScenes.split(',').map((name) => name.trim()).toSet();
+    final asked = all.where((scene) => names.contains(scene.name)).toList();
+    if (asked.isEmpty) {
+      stdout.writeln('no scene goes by ${names.join(', ')}');
+      exit(1);
+    }
+    return asked;
+  }
+
   int _index = 0;
 
   @override
@@ -1144,6 +1169,69 @@ List<Scene> buildScenes() {
               chartColors: ChartTheme.darkDepth,
               quoteUnit: 0,
             ),
+          ),
+        );
+      },
+    ),
+    (
+      name: 'depth-ratio',
+      size: wide,
+      act: null,
+      build: () {
+        // A book with a wall of bids under the market and the weight of the
+        // asks further out, which is what makes the three readings differ.
+        final random = Random(11);
+        final rungs = [
+          for (var i = 1; i <= 40; i++)
+            (
+              bid: DepthEntity(
+                last * (1 - i * 0.0015),
+                9 - i * 0.2 + random.nextDouble() * 1.5,
+              ),
+              ask: DepthEntity(
+                last * (1 + i * 0.0015),
+                0.6 + i * 0.28 + random.nextDouble() * 1.5,
+              ),
+            ),
+        ];
+        final bids = DepthEntity.bids([for (final rung in rungs) rung.bid]);
+        final asks = DepthEntity.asks([for (final rung in rungs) rung.ask]);
+
+        // Two readings, not three: a third panel narrows each one until the
+        // price labels along the bottom run into each other.
+        const panels = <(String, double?)>[
+          ('the whole book', null),
+          ('within 1% of the mid', 0.01),
+        ];
+
+        return ColoredBox(
+          color: ChartTheme.darkColors().bgColor,
+          child: Row(
+            children: [
+              for (final (label, zoom) in panels)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 14, 12, 8),
+                    child: titled(
+                      label,
+                      DepthChart(
+                        bids,
+                        asks,
+                        chartColors: ChartTheme.darkDepth,
+                        quoteUnit: 0,
+                        zoom: zoom,
+                        showRatioBar: true,
+                        chartStyle: const DepthChartStyle(
+                          ratioBarHeight: 8,
+                          ratioFontSize: 14,
+                          padding: 10,
+                        ),
+                      ),
+                      centred: true,
+                    ),
+                  ),
+                ),
+            ],
           ),
         );
       },
