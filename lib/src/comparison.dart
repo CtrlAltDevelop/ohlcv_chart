@@ -189,8 +189,8 @@ List<double?> alignComparison(
 
 /// Where a rebased comparison is pinned to the main series.
 ///
-/// [value] is the comparison's own value at the left edge of the window and
-/// [price] the main series' price there, so every later value is drawn at
+/// `value` is the comparison's own value at the left edge of the window and
+/// `price` the main series' price there, so every later value is drawn at
 /// `price * v / value` — the same proportional move, started from the same
 /// place.
 typedef ComparisonAnchor = ({double value, double price});

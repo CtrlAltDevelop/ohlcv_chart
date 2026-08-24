@@ -778,7 +778,8 @@ final List<IndicatorType> indicatorCatalog = List.unmodifiable([
 
 /// The catalog entry that rebuilds [indicator] exactly, or null if none does.
 ///
-/// Stricter than [indicatorTypeOf]: the entry found is one whose [create] gives
+/// Stricter than [indicatorTypeOf]: the entry found is one whose
+/// [IndicatorType.create] gives
 /// back an indicator equal to this one, so an indicator round-tripped through it
 /// comes out as it went in. That is what makes it safe to persist with — see
 /// `indicatorToJson`.

@@ -9,8 +9,8 @@ import '../entity/vertical_lines.dart';
 
 /// One of a drawing's anchors, read out for editing.
 ///
-/// [name] is what to call it in a form — `Start`, `End`, `X`, `Point 3`.
-/// [time] is null for an anchor with no time of its own, and [price] is null
+/// `name` is what to call it in a form — `Start`, `End`, `X`, `Point 3`.
+/// `time` is null for an anchor with no time of its own, and `price` is null
 /// for one with no price: a horizontal level has a price and no time, a
 /// vertical line the other way about.
 typedef DrawingAnchor = ({String name, DateTime? time, double? price});
