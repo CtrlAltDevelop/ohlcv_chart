@@ -1,3 +1,6 @@
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart';
+
 import 'chart_controller.dart';
 
 /// Keeps several charts looking at the same stretch of history.
@@ -97,9 +100,28 @@ class ChartLink {
   /// Adds [controller], if it is not already on the link.
   void add(KChartController controller) {
     if (_following.containsKey(controller)) return;
-    void listener() => _spreadFrom(controller);
+    void listener() => _whenSafe(() => _spreadFrom(controller));
     _following[controller] = listener;
     controller.addListener(listener);
+  }
+
+  /// Runs [work] once the frame in flight is done.
+  static void _afterFrame(void Function() work) =>
+      WidgetsBinding.instance.addPostFrameCallback((_) => work());
+
+  /// Runs [work] now, or after this frame if one is being built.
+  ///
+  /// A chart notifies its controller while it is building — attaching does it,
+  /// and so does every scroll — and moving another chart from there would mark
+  /// it dirty mid-build, which is an error. A frame's delay is invisible;
+  /// throwing is not.
+  static void _whenSafe(void Function() work) {
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => work());
+      return;
+    }
+    work();
   }
 
   /// Takes [controller] off the link, answering whether it was on it.
@@ -148,6 +170,7 @@ class ChartLink {
       for (final other in _following.keys) {
         if (identical(other, source)) continue;
 
+        var movedWindow = false;
         if (range != null) {
           final current = other.visibleRange;
           // Already there: moving it again would only churn a repaint.
@@ -155,6 +178,7 @@ class ChartLink {
               current.firstIndex != range.firstIndex ||
               current.lastIndex != range.lastIndex) {
             other.showRange(range.firstIndex, range.lastIndex);
+            movedWindow = true;
           }
         }
 
@@ -166,9 +190,23 @@ class ChartLink {
             ..setPricePan(source.pricePan);
         }
 
-        if (crosshair &&
-            (other.crosshairIndex != at ||
-                (crosshairPrice && other.crosshairPrice != price))) {
+        if (!crosshair) continue;
+        if (other.crosshairIndex == at &&
+            (!crosshairPrice || other.crosshairPrice == price)) {
+          continue;
+        }
+
+        if (movedWindow) {
+          // A chart lands its new window on the next frame, and until it does
+          // it still believes the old one — so a crosshair placed now would be
+          // clamped into the stretch it was showing a moment ago, and stick
+          // there. Waiting a frame puts it on the candle actually asked for.
+          _afterFrame(() {
+            if (_following.containsKey(other)) {
+              other.showCrosshair(at, price: price);
+            }
+          });
+        } else {
           other.showCrosshair(at, price: price);
         }
       }

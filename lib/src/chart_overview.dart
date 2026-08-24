@@ -80,6 +80,14 @@ class _ChartOverviewState extends State<ChartOverview> {
   void initState() {
     super.initState();
     widget.controller.addListener(_onControllerChanged);
+
+    // A chart has no window until it has laid itself out, and laying out is not
+    // something it notifies about — it only speaks up once something moves it.
+    // Without a look after the first frame the strip would draw the history
+    // with no window lit on it until the user happened to scroll.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -97,8 +105,25 @@ class _ChartOverviewState extends State<ChartOverview> {
     super.dispose();
   }
 
+  /// Whether a repaint is already waiting on the end of this frame.
+  bool _pending = false;
+
   void _onControllerChanged() {
-    if (mounted) setState(() {});
+    if (!mounted || _pending) return;
+    _pending = true;
+
+    // Always after the frame, for two reasons that pull the same way. A chart
+    // notifies while it is building — attaching does it, and so does every
+    // scroll — and marking a sibling dirty mid-build is an error. And a chart
+    // told to show a new window has not laid it out yet when it notifies, so
+    // reading the window now would read the one it is about to leave, and
+    // nothing would come along afterwards to correct it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pending = false;
+      if (mounted) setState(() {});
+    });
+    // A notification does not always come with a frame of its own.
+    WidgetsBinding.instance.scheduleFrame();
   }
 
   /// The candle a point [x] pixels across a strip [width] wide falls on.
@@ -296,7 +321,12 @@ class _OverviewPainter extends CustomPainter {
     final right = xOf(last.clamp(0, candles.length - 1));
 
     // Wash over what is not on screen, so the window reads as the lit part.
-    final scrim = Paint()..color = colors.bgColor.withValues(alpha: 0.62);
+    //
+    // The wash is the background's own colour, which on a dark theme is dark
+    // over dark and barely tells — so the window is *also* lifted by a tint of
+    // its own and bracketed by two bright edges. Between the three it reads
+    // whichever way round the theme runs.
+    final scrim = Paint()..color = colors.bgColor.withValues(alpha: 0.72);
     if (left > 0) {
       canvas.drawRect(Rect.fromLTRB(0, 0, left, size.height), scrim);
     }
@@ -304,27 +334,27 @@ class _OverviewPainter extends CustomPainter {
       canvas.drawRect(Rect.fromLTRB(right, 0, size.width, size.height), scrim);
     }
 
-    final edge = Paint()
-      ..color = colors.kLineColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+    final window = Rect.fromLTRB(left, 0, right, size.height);
     canvas
-      ..drawRect(Rect.fromLTRB(left, 0, right, size.height), edge)
-      // The two edges are what a drag resizes, so they are drawn heavier.
-      ..drawLine(
-        Offset(left, 0),
-        Offset(left, size.height),
-        Paint()
-          ..color = colors.kLineColor
-          ..strokeWidth = 2,
+      ..drawRect(
+        window,
+        Paint()..color = colors.kLineColor.withValues(alpha: 0.14),
       )
-      ..drawLine(
-        Offset(right, 0),
-        Offset(right, size.height),
+      ..drawRect(
+        window,
         Paint()
-          ..color = colors.kLineColor
-          ..strokeWidth = 2,
+          ..color = colors.defaultTextColor.withValues(alpha: 0.5)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
       );
+
+    // The two edges are what a drag resizes, so they are drawn heavier.
+    final handle = Paint()
+      ..color = colors.defaultTextColor
+      ..strokeWidth = 2.5;
+    canvas
+      ..drawLine(Offset(left, 0), Offset(left, size.height), handle)
+      ..drawLine(Offset(right, 0), Offset(right, size.height), handle);
   }
 
   @override

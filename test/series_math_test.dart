@@ -304,6 +304,26 @@ void main() {
       expect(series.vwap[4], isNot(closeTo(data[4].close, 1e-9)));
     });
 
+    test('one candle into a session has no spread to band yet', () {
+      // Two whole days: the second opens at index 24.
+      final data = hours(48, [
+        for (var i = 0; i < 24; i++) 100.0 + i,
+        for (var i = 0; i < 24; i++) 200.0 + i,
+      ]);
+      final series = sessionVwapSeries(data, deviations: 2);
+
+      // The average is there from the first candle of each session; the bands
+      // are not, a lone observation having no spread to speak of. Drawing them
+      // as zero would pin them to the average and fling them apart next candle.
+      expect(series.vwap[0], isNotNull);
+      expect(series.upper[0], isNull);
+      expect(series.lower[0], isNull);
+
+      expect(series.vwap[24], isNotNull, reason: 'the second session opens');
+      expect(series.upper[24], isNull);
+      expect(series.upper[25], isNotNull, reason: 'and bands from the second');
+    });
+
     test('a session with no volume still says something', () {
       final data = [
         KLineEntity.fromCustom(

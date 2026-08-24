@@ -66,8 +66,19 @@ class TimeframeIndicator extends Indicator {
   @override
   String get label => '${applied.label} @ ${formatTimeframe(timeframe)}';
 
+  /// The applied indicator's lines, each named with the timeframe.
+  ///
+  /// Without this a daily `MA20` and the chart's own `MA20` are two legend rows
+  /// reading exactly alike, which is the one thing a reader has to be able to
+  /// tell apart here.
   @override
-  List<IndicatorLine> get lines => applied.lines;
+  List<IndicatorLine> get lines => [
+    for (final line in applied.lines)
+      IndicatorLine(
+        '${line.label}@${formatTimeframe(timeframe)}',
+        shape: line.shape,
+      ),
+  ];
 
   @override
   List<Object?> get settings => [

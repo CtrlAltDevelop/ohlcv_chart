@@ -200,6 +200,7 @@ sessionVwapSeries(
   var weighted = 0.0;
   var weightedSquares = 0.0;
   var volume = 0.0;
+  var seen = 0;
 
   for (var i = 0; i < candles.length; i++) {
     final candle = candles[i];
@@ -209,7 +210,9 @@ sessionVwapSeries(
       weighted = 0;
       weightedSquares = 0;
       volume = 0;
+      seen = 0;
     }
+    seen++;
 
     final typical = _typicalPrice(candle);
     weighted += typical * candle.vol;
@@ -220,7 +223,13 @@ sessionVwapSeries(
     // speaks for itself.
     final average = volume == 0 ? typical : weighted / volume;
     vwap[i] = average;
-    if (deviations <= 0 || volume == 0) continue;
+
+    // One observation has no spread — not a spread of zero, but none to speak
+    // of. Drawing it as zero pins both bands to the average at every session
+    // open and then flings them apart on the next candle, which reads as a
+    // vertical line through the chart. The average itself is fine from the
+    // first candle; only the bands wait.
+    if (deviations <= 0 || volume == 0 || seen < 2) continue;
 
     // Rounding can drive a variance that is really zero a hair below it.
     final variance = max(0.0, weightedSquares / volume - average * average);

@@ -138,6 +138,11 @@ class _FakeHost implements KChartHost {
 }
 
 void main() {
+  // ChartLink asks the scheduler whether a frame is being built before it
+  // moves another chart, so the binding has to exist even for these plain
+  // tests. A real app always has one.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('ChartLink', () {
     test('moving one chart moves the others', () {
       final a = chart();
