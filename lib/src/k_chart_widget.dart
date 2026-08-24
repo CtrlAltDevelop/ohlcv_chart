@@ -3723,7 +3723,26 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   @override
-  void showChartCrosshair(int? index) {
+  double? get chartCrosshairPrice {
+    if (!isLongPress && !_isHovering) return null;
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty || !_laidOut) return null;
+    return painter.calculatePrice(mSelectY);
+  }
+
+  @override
+  double get chartPricePan => _pricePan;
+
+  @override
+  void setChartPricePan(double pan) {
+    final clamped = pan.clamp(-5.0, 5.0);
+    if (clamped == _pricePan) return;
+    setState(() => _pricePan = clamped);
+    widget.controller?.hostChanged();
+  }
+
+  @override
+  void showChartCrosshair(int? index, {double? price}) {
     if (index == null) {
       if (!isLongPress && !_isHovering) return;
       isLongPress = false;
@@ -3740,13 +3759,28 @@ class _KChartWidgetState extends State<KChartWidget>
     // a chart scrolled elsewhere rests at the near edge rather than vanishing.
     final at = index.clamp(painter.mStartIndex, painter.mStopIndex);
     final x = painter.translateXtoX(painter.getX(at));
+
+    // A price of its own where one was given, and mid-pane otherwise — which
+    // is what a chart of another instrument wants, having no price in common
+    // with the one the pointer is over. Either way it stays in the pane.
+    final middle = (painter.mMainRect.top + painter.mMainRect.bottom) / 2;
+    final y = price == null
+        ? middle
+        : painter
+              .getMainY(price)
+              .clamp(painter.mMainRect.top, painter.mMainRect.bottom);
+
     // A crosshair put up from outside reads as a hover, not as a press, so it
     // does not take a held finger's place or leave one behind when it goes.
-    if (_isHovering && (mSelectX - x).abs() < 0.5) return;
+    if (_isHovering &&
+        (mSelectX - x).abs() < 0.5 &&
+        (mSelectY - y).abs() < 0.5) {
+      return;
+    }
 
     _isHovering = true;
     mSelectX = x;
-    mSelectY = (painter.mMainRect.top + painter.mMainRect.bottom) / 2;
+    mSelectY = y;
     notifyChanged();
   }
 

@@ -50,8 +50,19 @@ abstract interface class KChartHost {
   /// Which candle the crosshair is on, or null when there is none up.
   int? get chartCrosshairIndex;
 
+  /// What price the crosshair sits at, or null when there is none up.
+  double? get chartCrosshairPrice;
+
   /// Puts the crosshair on the candle at [index], or takes it down for null.
-  void showChartCrosshair(int? index);
+  ///
+  /// [price] sets how high up it sits; left off, it rests mid-pane.
+  void showChartCrosshair(int? index, {double? price});
+
+  /// How far the price axis is shifted from where it would sit.
+  double get chartPricePan;
+
+  /// Shifts the price axis to [pan], within the range the chart allows.
+  void setChartPricePan(double pan);
 }
 
 /// Drives a chart from outside it: where it is scrolled, how far it is zoomed,
@@ -207,10 +218,27 @@ class KChartController extends ChangeNotifier {
   ///
   /// The index is clamped to the candles in view, so a crosshair pushed from a
   /// chart scrolled elsewhere lands at the near edge rather than vanishing.
-  void showCrosshair(int? index) => _host?.showChartCrosshair(index);
+  ///
+  /// [price] sets how high up it sits. Left off, it rests mid-pane — which is
+  /// what a chart of a different instrument wants, having no price in common
+  /// with the one the pointer is over.
+  void showCrosshair(int? index, {double? price}) =>
+      _host?.showChartCrosshair(index, price: price);
+
+  /// What price the crosshair sits at, or null when there is none up.
+  double? get crosshairPrice => _host?.chartCrosshairPrice;
 
   /// Takes the crosshair down.
   void hideCrosshair() => showCrosshair(null);
+
+  /// How far the price axis is shifted from where it would sit.
+  ///
+  /// 0 is unshifted, which is where a chart starts and what [resetPriceScale]
+  /// returns it to. Dragging the axis moves this.
+  double get pricePan => _host?.chartPricePan ?? 0;
+
+  /// Shifts the price axis to [value], within the range the chart allows.
+  void setPricePan(double value) => _host?.setChartPricePan(value);
 }
 
 /// The candles in [candles] that cover [from] to [to], as an index pair.

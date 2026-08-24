@@ -37,21 +37,50 @@ import 'chart_controller.dart';
 /// pushed onto a chart reads as one hovered rather than one held down, so it
 /// never takes the place of a press the user is making themselves.
 ///
-/// The price axis is deliberately left alone. Two instruments at different
-/// prices share no sensible vertical scale, and forcing one would leave a chart
-/// showing a flat line off the top of its pane.
+/// ## The two that are off by default
+///
+/// [crosshairPrice] carries how high up the crosshair sits, and [priceScale]
+/// carries the stretch and shift of the price axis. Both are only meaningful
+/// between charts of **the same instrument**: two instruments at different
+/// prices share no vertical scale, and forcing one leaves a chart drawing a
+/// flat line off the top of its pane. Turn them on for a chart shown twice —
+/// the same market at two zooms, say — and leave them off otherwise.
+///
+/// [ChartLink.all] turns on everything, for exactly that case.
 class ChartLink {
   /// Creates a link with no charts on it yet.
   ///
-  /// [window] carries the visible window and its zoom; [crosshair] carries the
-  /// candle the crosshair is on. Either can be left off.
-  ChartLink({this.window = true, this.crosshair = true});
+  /// [window] carries the visible window and its zoom, and [crosshair] the
+  /// candle the crosshair is on; both are on by default and are safe between
+  /// any two charts. [crosshairPrice] and [priceScale] carry the vertical, and
+  /// suit only charts of the same instrument — see the note above.
+  ChartLink({
+    this.window = true,
+    this.crosshair = true,
+    this.crosshairPrice = false,
+    this.priceScale = false,
+  });
+
+  /// A link that carries everything, for charts of the same instrument.
+  ChartLink.all()
+    : window = true,
+      crosshair = true,
+      crosshairPrice = true,
+      priceScale = true;
 
   /// Whether the visible window is carried between charts.
   final bool window;
 
-  /// Whether the crosshair is carried between charts.
+  /// Whether the candle the crosshair is on is carried between charts.
   final bool crosshair;
+
+  /// Whether the price the crosshair sits at is carried too.
+  ///
+  /// Does nothing while [crosshair] is off, there being no crosshair to place.
+  final bool crosshairPrice;
+
+  /// Whether the price axis's stretch and shift are carried between charts.
+  final bool priceScale;
 
   final Map<KChartController, void Function()> _following = {};
 
@@ -109,9 +138,10 @@ class ChartLink {
 
     final range = window ? source.visibleRange : null;
     final at = crosshair ? source.crosshairIndex : null;
+    final price = crosshairPrice ? source.crosshairPrice : null;
     // A crosshair that has just gone needs pushing as much as one that arrived,
-    // so "nothing to say" is only when neither half is being carried.
-    if (range == null && !crosshair) return;
+    // so "nothing to say" is only when no half is being carried at all.
+    if (range == null && !crosshair && !priceScale) return;
 
     _applying = true;
     try {
@@ -128,8 +158,18 @@ class ChartLink {
           }
         }
 
-        if (crosshair && other.crosshairIndex != at) {
-          other.showCrosshair(at);
+        if (priceScale) {
+          // Both setters ignore a value they already hold, so there is no
+          // repaint to save by checking first.
+          other
+            ..setPriceZoom(source.priceZoom)
+            ..setPricePan(source.pricePan);
+        }
+
+        if (crosshair &&
+            (other.crosshairIndex != at ||
+                (crosshairPrice && other.crosshairPrice != price))) {
+          other.showCrosshair(at, price: price);
         }
       }
     } finally {

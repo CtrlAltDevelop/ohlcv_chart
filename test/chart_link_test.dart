@@ -61,9 +61,14 @@ class _FakeHost implements KChartHost {
   @override
   Future<Uint8List?> captureChart({required double pixelRatio}) async => null;
   @override
-  double get chartPriceZoom => 1;
+  double get chartPriceZoom => priceZoom;
   @override
-  void setChartPriceZoom(double zoom) {}
+  void setChartPriceZoom(double zoom) {
+    if (zoom == priceZoom) return;
+    priceZoom = zoom;
+    controller?.hostChanged();
+  }
+
   @override
   void resetChartPriceScale() {}
   @override
@@ -73,11 +78,25 @@ class _FakeHost implements KChartHost {
 
   /// Which candle the crosshair is on, and every one it was put on.
   int? crosshair;
+  double? crosshairPrice;
   final List<int?> crosshairsAsked = [];
+  final List<double?> pricesAsked = [];
+
+  /// The price axis's stretch and shift.
+  double priceZoom = 1;
+  double pricePan = 0;
 
   /// Moves the crosshair as a user hovering would.
-  void hoverAt(int? index) {
+  void hoverAt(int? index, {double? price}) {
     crosshair = index;
+    crosshairPrice = price;
+    controller?.hostChanged();
+  }
+
+  /// Stretches the axis as a user dragging its labels would.
+  void stretchTo(double zoom, double pan) {
+    priceZoom = zoom;
+    pricePan = pan;
     controller?.hostChanged();
   }
 
@@ -85,9 +104,24 @@ class _FakeHost implements KChartHost {
   int? get chartCrosshairIndex => crosshair;
 
   @override
-  void showChartCrosshair(int? index) {
+  double? get chartCrosshairPrice => crosshairPrice;
+
+  @override
+  void showChartCrosshair(int? index, {double? price}) {
     crosshairsAsked.add(index);
+    pricesAsked.add(price);
     crosshair = index?.clamp(0, total - 1);
+    crosshairPrice = price;
+    controller?.hostChanged();
+  }
+
+  @override
+  double get chartPricePan => pricePan;
+
+  @override
+  void setChartPricePan(double pan) {
+    if (pan == pricePan) return;
+    pricePan = pan;
     controller?.hostChanged();
   }
 }
@@ -314,6 +348,110 @@ void main() {
 
       a.host.hoverAt(42);
       expect(b.host.crosshair, 42);
+    });
+
+    test('the crosshair price is left off unless asked for', () {
+      final a = chart();
+      final b = chart();
+      ChartLink()
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.hoverAt(42, price: 101.5);
+
+      expect(b.host.crosshair, 42, reason: 'the candle still travels');
+      expect(
+        b.host.pricesAsked.last,
+        isNull,
+        reason: 'but the price does not, by default',
+      );
+    });
+
+    test('crosshairPrice carries how high up it sits', () {
+      final a = chart();
+      final b = chart();
+      ChartLink(crosshairPrice: true)
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.hoverAt(42, price: 101.5);
+
+      expect(b.host.crosshair, 42);
+      expect(b.host.crosshairPrice, 101.5);
+    });
+
+    test('a crosshair that only moved up is still pushed', () {
+      final a = chart();
+      final b = chart();
+      ChartLink(crosshairPrice: true)
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.hoverAt(42, price: 100);
+      a.host.hoverAt(42, price: 105);
+
+      expect(b.host.pricesAsked, [
+        100,
+        105,
+      ], reason: 'the candle held but the price changed');
+    });
+
+    test('priceScale carries the stretch and the shift', () {
+      final a = chart();
+      final b = chart();
+      ChartLink(priceScale: true)
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.stretchTo(2.5, -0.4);
+
+      expect(b.host.priceZoom, 2.5);
+      expect(b.host.pricePan, -0.4);
+    });
+
+    test('the price axis is left alone by default', () {
+      final a = chart();
+      final b = chart();
+      ChartLink()
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.stretchTo(2.5, -0.4);
+
+      expect(b.host.priceZoom, 1);
+      expect(b.host.pricePan, 0);
+    });
+
+    test('ChartLink.all carries every part of it', () {
+      final a = chart();
+      final b = chart();
+      ChartLink.all()
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.scrollTo(100, 119);
+      expect(b.host.asked.last, (100, 119));
+
+      a.host.stretchTo(1.8, 0.3);
+      expect(b.host.priceZoom, 1.8);
+      expect(b.host.pricePan, 0.3);
+
+      a.host.hoverAt(110, price: 99.25);
+      expect(b.host.crosshair, 110);
+      expect(b.host.crosshairPrice, 99.25);
+    });
+
+    test('a stretched follower does not push back', () {
+      final a = chart();
+      final b = chart();
+      ChartLink(priceScale: true)
+        ..add(a.controller)
+        ..add(b.controller);
+
+      a.host.stretchTo(2.5, -0.4);
+
+      expect(a.host.priceZoom, 2.5, reason: 'the leader is left as it was');
+      expect(a.host.pricePan, -0.4);
     });
 
     test('the list it hands out cannot be edited behind its back', () {

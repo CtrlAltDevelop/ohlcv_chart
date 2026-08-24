@@ -56,7 +56,13 @@ class _FakeHost implements KChartHost {
   @override
   int? get chartCrosshairIndex => null;
   @override
-  void showChartCrosshair(int? index) {}
+  double? get chartCrosshairPrice => null;
+  @override
+  void showChartCrosshair(int? index, {double? price}) {}
+  @override
+  double get chartPricePan => 0;
+  @override
+  void setChartPricePan(double pan) {}
 }
 
 List<KLineEntity> series(int count) => [

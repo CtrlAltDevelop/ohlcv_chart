@@ -134,6 +134,46 @@ void main() {
       expect(reported, [wanted, null]);
     });
 
+    testWidgets('reads back the price it was put at', (tester) async {
+      final data = candles(rampThenFall(120));
+      DataUtil.calculate(data);
+      final controller = KChartController();
+
+      await tester.pumpWidget(chart(data, controller: controller));
+      await tester.pumpAndSettle();
+
+      final visible = controller.visibleRange!;
+      final wanted = (visible.firstIndex + visible.lastIndex) ~/ 2;
+      final price = data[wanted].close;
+
+      controller.showCrosshair(wanted, price: price);
+      await tester.pumpAndSettle();
+
+      expect(controller.crosshairIndex, wanted);
+      expect(
+        controller.crosshairPrice,
+        closeTo(price, price.abs() * 0.02),
+        reason: 'back through the pixel it was placed at',
+      );
+    });
+
+    testWidgets('a price left off rests mid-pane', (tester) async {
+      final data = candles(rampThenFall(120));
+      DataUtil.calculate(data);
+      final controller = KChartController();
+
+      await tester.pumpWidget(chart(data, controller: controller));
+      await tester.pumpAndSettle();
+
+      final visible = controller.visibleRange!;
+      controller.showCrosshair((visible.firstIndex + visible.lastIndex) ~/ 2);
+      await tester.pumpAndSettle();
+
+      // Mid-pane is a real price, whatever it is — not null and not off-chart.
+      expect(controller.crosshairPrice, isNotNull);
+      expect(controller.crosshairPrice!.isFinite, isTrue);
+    });
+
     testWidgets('does nothing over a chart with no candles', (tester) async {
       final controller = KChartController();
 

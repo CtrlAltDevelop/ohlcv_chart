@@ -35,14 +35,21 @@
   guards against the push back that would otherwise bounce the window between
   them. `syncFrom` joins a chart built later to where the others already are.
   `ChartLink(crosshair: false)` and `ChartLink(window: false)` carry one half
-  alone. The price axis is deliberately never linked — two instruments at
-  different prices share no sensible vertical scale.
+  alone. `crosshairPrice` and `priceScale` add the vertical — how high the
+  crosshair sits, and the axis's stretch and shift — and are off by default
+  because they only mean anything between charts of the same instrument; two
+  instruments at different prices share no vertical scale. `ChartLink.all()`
+  turns on everything, for one market shown twice.
 - **The crosshair is now readable and movable from `KChartController`** —
   `crosshairIndex`, `showCrosshair(index)` and `hideCrosshair()`, with
   `KChartWidget.onCrosshairChanged` reporting where it moved to. It is carried
   by candle rather than by pixel, so charts of different widths point at the
   same bar, and one put up from outside reads as hovered rather than held down
-  so it never displaces a press the user is making.
+  so it never displaces a press the user is making. `crosshairPrice` reads how
+  high it sits and `showCrosshair(index, price: …)` sets it; left off, it rests
+  mid-pane.
+- **The price axis's shift is now on the controller too**, as `pricePan` and
+  `setPricePan`, alongside the `priceZoom` that was already there.
 - **`ChartOverview`** — a slim chart of the whole history to sit under the main
   one, with the visible window lit on it. Drag the lit part to scrub, drag
   either edge to widen or narrow the window, or tap anywhere to jump there. It

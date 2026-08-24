@@ -105,10 +105,11 @@ already are rather than waiting for a scroll.
 Charts over histories of different lengths line up as far as they overlap: a
 window pushed onto a chart is clamped to the candles it actually has.
 
-**What is linked** is the visible window — and with it the zoom, since showing
+**On by default** are the visible window — and with it the zoom, since showing
 the same candles across the same width is what zoom means here — and the
 crosshair, by candle rather than by pixel, so charts at different widths still
-point at the same bar. Either can be left off:
+point at the same bar. Both are safe between any two charts, whatever they
+show. Either can be left off:
 
 ```dart
 ChartLink(crosshair: false);  // scroll together, read separately
@@ -119,11 +120,22 @@ A crosshair pushed onto a chart reads as one *hovered* rather than one held
 down, so it never takes the place of a press the user is making themselves, and
 a candle scrolled out of view rests at the near edge rather than vanishing.
 
-The price axis is deliberately left alone. Two instruments at different prices
-share no sensible vertical scale, and forcing one would leave a chart drawing a
-flat line off the top of its pane.
+**Off by default** are the two vertical ones, because they only mean anything
+between charts of the *same instrument*:
 
-Doing either by hand is still an option — pass the range from
+```dart
+ChartLink(crosshairPrice: true);  // the crosshair's height as well as its candle
+ChartLink(priceScale: true);      // the axis's stretch and shift
+ChartLink.all();                  // everything, for one market shown twice
+```
+
+Two instruments at different prices share no vertical scale, and forcing one
+leaves a chart drawing a flat line off the top of its pane — which is why these
+are opt-in. Turn them on for the same market shown twice, at two zooms or two
+timeframes, and leave them off otherwise. With `crosshairPrice` off the
+crosshair still travels, and simply rests mid-pane on the charts it lands on.
+
+Doing any of it by hand is still an option — pass the range from
 `onVisibleRangeChanged` to the other chart's `showRange`, or the candle from
 `onCrosshairChanged` to its `showCrosshair`.
 
@@ -133,10 +145,16 @@ Doing either by hand is still an option — pass the range from
 involved:
 
 ```dart
-chart.crosshairIndex;        // which candle it is on, or null
-chart.showCrosshair(120);    // put it on candle 120
-chart.hideCrosshair();       // take it down
+chart.crosshairIndex;                    // which candle it is on, or null
+chart.crosshairPrice;                    // and what price it sits at
+chart.showCrosshair(120);                // put it on candle 120, mid-pane
+chart.showCrosshair(120, price: 68400);  // and at a price of its own
+chart.hideCrosshair();                   // take it down
 ```
+
+The price axis is readable and settable the same way — `priceZoom` and
+`pricePan` for its stretch and shift, `setPriceZoom`, `setPricePan` and
+`resetPriceScale` to move it.
 
 `onCrosshairChanged` reports where it moved to, on the same terms as
 `onVisibleRangeChanged`: after the frame that moved it, and only when the
