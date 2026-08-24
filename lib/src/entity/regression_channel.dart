@@ -77,11 +77,11 @@ class RegressionChannel extends TwoPointDrawing implements FilledDrawing {
   };
 }
 
-/// A least-squares line through the closes of [candles], and their spread
-/// about it.
+/// A least-squares line through the closes of a stretch of candles, and
+/// their spread about it.
 ///
-/// [startPrice] and [endPrice] are the fit at the first and last candle, and
-/// [deviation] is the root-mean-square distance of the closes from it — what
+/// `startPrice` and `endPrice` are the fit at the first and last candle, and
+/// `deviation` is the root-mean-square distance of the closes from it — what
 /// the bands are measured in. Fewer than two candles cannot be fitted, so
 /// [fitRegression] answers null.
 typedef RegressionFit = ({

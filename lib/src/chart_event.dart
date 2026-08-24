@@ -103,7 +103,7 @@ class ChartEvent {
 
 /// An event lined up against the chart's own candles.
 ///
-/// [index] is the candle the event marks — the nearest one to its time — so the
+/// `index` is the candle the event marks — the nearest one to its time — so the
 /// painter does not have to search for it on every frame.
 typedef ResolvedEvent = ({ChartEvent event, int index});
 

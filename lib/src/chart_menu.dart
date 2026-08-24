@@ -52,7 +52,7 @@ class ChartMenuItem extends ChartMenuEntry {
 
 /// What the user right-clicked, handed to a [ChartMenuBuilder].
 ///
-/// [drawing] is the drawing under the pointer, or null for empty chart. The
+/// `drawing` is the drawing under the pointer, or null for empty chart. The
 /// rest says where the click landed, so an item of your own can act on the
 /// candle or the price beneath it.
 typedef ChartMenuRequest = ({

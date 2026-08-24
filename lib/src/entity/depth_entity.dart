@@ -1,7 +1,8 @@
 /// One point of the depth curve: the cumulative [vol] out to [price].
 ///
 /// [DepthChart] plots these as given, so sort them away from the mid price and
-/// pass running totals — [cumulative] builds those from per-rung sizes.
+/// pass running totals — [DepthEntity.bids] and [DepthEntity.asks] build
+/// those from per-rung sizes.
 class DepthEntity {
   /// Creates a depth rung.
   DepthEntity(this.price, this.vol);
@@ -12,8 +13,8 @@ class DepthEntity {
   /// Cumulative volume out to [price], in base currency.
   ///
   /// The chart plots this value as given: pass a running total, not the size
-  /// resting on that one rung. [cumulative] converts the per-rung sizes most
-  /// order-book feeds return.
+  /// resting on that one rung. [DepthEntity.bids] and [DepthEntity.asks]
+  /// convert the per-rung sizes most order-book feeds return.
   double vol;
 
   /// Builds the bid curve from raw order-book rungs.
