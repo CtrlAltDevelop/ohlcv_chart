@@ -70,6 +70,26 @@ class _FakeHost implements KChartHost {
   bool scrollChartTo(int index, {required bool animated}) => false;
   @override
   bool fitChartToData() => false;
+
+  /// Which candle the crosshair is on, and every one it was put on.
+  int? crosshair;
+  final List<int?> crosshairsAsked = [];
+
+  /// Moves the crosshair as a user hovering would.
+  void hoverAt(int? index) {
+    crosshair = index;
+    controller?.hostChanged();
+  }
+
+  @override
+  int? get chartCrosshairIndex => crosshair;
+
+  @override
+  void showChartCrosshair(int? index) {
+    crosshairsAsked.add(index);
+    crosshair = index?.clamp(0, total - 1);
+    controller?.hostChanged();
+  }
 }
 
 ({KChartController controller, _FakeHost host}) chart({

@@ -46,6 +46,12 @@ abstract interface class KChartHost {
 
   /// Zooms out until every candle fits, and scrolls to the newest.
   bool fitChartToData();
+
+  /// Which candle the crosshair is on, or null when there is none up.
+  int? get chartCrosshairIndex;
+
+  /// Puts the crosshair on the candle at [index], or takes it down for null.
+  void showChartCrosshair(int? index);
 }
 
 /// Drives a chart from outside it: where it is scrolled, how far it is zoomed,
@@ -187,6 +193,24 @@ class KChartController extends ChangeNotifier {
   /// Stops at the chart's own zoom-out limit, so a very long history may still
   /// not fit in one window.
   bool fitAll() => _host?.fitChartToData() ?? false;
+
+  // ── The crosshair ────────────────────────────────────────────────────────
+
+  /// Which candle the crosshair is on, or null when there is none up.
+  ///
+  /// A crosshair put up from here reads as one hovered rather than one held
+  /// down, so it does not fight a press the user is making on the chart
+  /// itself. Listen for it through `KChartWidget.onCrosshairChanged`.
+  int? get crosshairIndex => _host?.chartCrosshairIndex;
+
+  /// Puts the crosshair on the candle at [index], or takes it down for null.
+  ///
+  /// The index is clamped to the candles in view, so a crosshair pushed from a
+  /// chart scrolled elsewhere lands at the near edge rather than vanishing.
+  void showCrosshair(int? index) => _host?.showChartCrosshair(index);
+
+  /// Takes the crosshair down.
+  void hideCrosshair() => showCrosshair(null);
 }
 
 /// The candles in [candles] that cover [from] to [to], as an index pair.

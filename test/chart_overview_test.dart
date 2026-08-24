@@ -53,6 +53,10 @@ class _FakeHost implements KChartHost {
   bool scrollChartTo(int index, {required bool animated}) => false;
   @override
   bool fitChartToData() => false;
+  @override
+  int? get chartCrosshairIndex => null;
+  @override
+  void showChartCrosshair(int? index) {}
 }
 
 List<KLineEntity> series(int count) => [

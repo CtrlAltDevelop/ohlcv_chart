@@ -272,6 +272,7 @@ class KChartWidget extends StatefulWidget {
     this.events = const [],
     this.onEventTapped,
     this.onVisibleRangeChanged,
+    this.onCrosshairChanged,
     this.showContextMenu = true,
     this.contextMenuBuilder,
     this.showDrawingCoordinates = true,
@@ -539,6 +540,14 @@ class KChartWidget extends StatefulWidget {
   /// screen" readout, a linked second chart, or a feed that loads history on
   /// demand listens to.
   final ValueChanged<ChartVisibleRange>? onVisibleRangeChanged;
+
+  /// Called with the candle the crosshair moved onto, or null as it goes.
+  ///
+  /// Fires after the frame that moved it, on the same terms as
+  /// [onVisibleRangeChanged], and only when the candle is actually different —
+  /// sliding the pointer within one candle reports nothing. What a linked
+  /// second chart listens to, through `ChartLink` or by hand.
+  final ValueChanged<int?>? onCrosshairChanged;
 
   /// Instruments drawn over the candles for comparison.
   ///
@@ -962,6 +971,20 @@ class _KChartWidgetState extends State<KChartWidget>
   Map<ChartLine, List<({int index, double price})>> _dragOthers = const {};
 
   late ChartPainter painter;
+
+  /// Whether [painter] has been built yet.
+  ///
+  /// It is `late` and assigned during build, so reading it before the first
+  /// frame throws rather than answering. Everything reachable from outside the
+  /// widget — the `KChartHost` members a controller calls — has to ask this
+  /// first, because a caller can hold a controller before its chart has ever
+  /// been laid out: two linked charts do exactly that, the first one's build
+  /// asking the second where it is looking.
+  bool _painterBuilt = false;
+
+  /// Whether the chart has been laid out and can answer about its window.
+  bool get _laidOut => _painterBuilt && painter.hasLayout;
+
   double _lastScale = 1.0;
   bool isScale = false;
   bool isDrag = false;
@@ -1715,6 +1738,45 @@ class _KChartWidgetState extends State<KChartWidget>
     });
   }
 
+  /// The candle last reported through `onCrosshairChanged`.
+  int? _reportedCrosshair;
+
+  /// Whether that report has been made at least once.
+  ///
+  /// Told apart from "reported null", so a chart that starts with no crosshair
+  /// does not announce one going away that was never there.
+  bool _crosshairEverReported = false;
+
+  /// Whether a crosshair report is already waiting for this frame to finish.
+  bool _crosshairReportPending = false;
+
+  /// Reports where the crosshair has moved to.
+  ///
+  /// Left until the frame is done for the same two reasons as
+  /// [_reportVisibleRange]: which candle is under it is worked out while
+  /// painting, and a host that rebuilds in answer must not be asked to
+  /// mid-build.
+  void _reportCrosshair() {
+    if (widget.onCrosshairChanged == null || _crosshairReportPending) return;
+    _crosshairReportPending = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _crosshairReportPending = false;
+      if (!mounted) return;
+
+      final report = widget.onCrosshairChanged;
+      if (report == null) return;
+
+      final index = chartCrosshairIndex;
+      // Sliding within one candle moves the crosshair without changing what it
+      // is pointing at.
+      if (_crosshairEverReported && index == _reportedCrosshair) return;
+      _crosshairEverReported = true;
+      _reportedCrosshair = index;
+      report(index);
+    });
+  }
+
   /// Reports any alerting level the newest candle has crossed.
   ///
   /// Called from build, so the report itself is left until the frame is done: a
@@ -1799,6 +1861,7 @@ class _KChartWidgetState extends State<KChartWidget>
     _collectDrawings();
     _checkAlerts();
     _reportVisibleRange();
+    _reportCrosshair();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1813,6 +1876,7 @@ class _KChartWidgetState extends State<KChartWidget>
           paneHeights: _effectivePaneHeights,
         );
 
+        _painterBuilt = true;
         painter = ChartPainter(
           widget.chartStyle,
           widget.chartColors,
@@ -3571,7 +3635,7 @@ class _KChartWidgetState extends State<KChartWidget>
   @override
   ChartVisibleRange? get chartVisibleRange {
     final candles = _candlesInPlay;
-    if (candles == null || candles.isEmpty || !painter.hasLayout) return null;
+    if (candles == null || candles.isEmpty || !_laidOut) return null;
     return ChartVisibleRange.of(
       candles,
       painter.mStartIndex,
@@ -3596,7 +3660,7 @@ class _KChartWidgetState extends State<KChartWidget>
   @override
   bool showChartRange(int firstIndex, int lastIndex) {
     final candles = _candlesInPlay;
-    if (candles == null || candles.isEmpty || !painter.hasLayout) return false;
+    if (candles == null || candles.isEmpty || !_laidOut) return false;
 
     final from = math.min(firstIndex, lastIndex).clamp(0, candles.length - 1);
     final to = math.max(firstIndex, lastIndex).clamp(0, candles.length - 1);
@@ -3623,7 +3687,7 @@ class _KChartWidgetState extends State<KChartWidget>
   @override
   bool scrollChartTo(int index, {bool animated = true}) {
     final candles = _candlesInPlay;
-    if (candles == null || candles.isEmpty || !painter.hasLayout) return false;
+    if (candles == null || candles.isEmpty || !_laidOut) return false;
 
     final target = index.clamp(0, candles.length - 1);
     // Centred, so the candle asked for is the middle of the window rather than
@@ -3646,8 +3710,44 @@ class _KChartWidgetState extends State<KChartWidget>
   @override
   bool fitChartToData() {
     final candles = _candlesInPlay;
-    if (candles == null || candles.isEmpty || !painter.hasLayout) return false;
+    if (candles == null || candles.isEmpty || !_laidOut) return false;
     return showChartRange(0, candles.length - 1);
+  }
+
+  @override
+  int? get chartCrosshairIndex {
+    if (!isLongPress && !_isHovering) return null;
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty || !_laidOut) return null;
+    return painter.calculateSelectedX(mSelectX);
+  }
+
+  @override
+  void showChartCrosshair(int? index) {
+    if (index == null) {
+      if (!isLongPress && !_isHovering) return;
+      isLongPress = false;
+      _isHovering = false;
+      _closeInfoWindow();
+      notifyChanged();
+      return;
+    }
+
+    final candles = _candlesInPlay;
+    if (candles == null || candles.isEmpty || !_laidOut) return;
+
+    // Only the candles on screen have an x to sit at; a crosshair pushed from
+    // a chart scrolled elsewhere rests at the near edge rather than vanishing.
+    final at = index.clamp(painter.mStartIndex, painter.mStopIndex);
+    final x = painter.translateXtoX(painter.getX(at));
+    // A crosshair put up from outside reads as a hover, not as a press, so it
+    // does not take a held finger's place or leave one behind when it goes.
+    if (_isHovering && (mSelectX - x).abs() < 0.5) return;
+
+    _isHovering = true;
+    mSelectX = x;
+    mSelectY = (painter.mMainRect.top + painter.mMainRect.bottom) / 2;
+    notifyChanged();
   }
 
   /// Slides the window to [scroll] over the fling duration.
