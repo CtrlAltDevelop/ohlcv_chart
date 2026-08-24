@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart' show Color, Colors;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
@@ -101,6 +103,101 @@ void main() {
     test('falls back to defaults for a missing setting', () {
       final back = indicatorFromJson({'kind': 'ATR'});
       expect(back, AtrIndicator(period: 14));
+    });
+  });
+
+  group('ChartWorkspace', () {
+    test('round-trips through JSON text', () {
+      final drawings = ChartDrawings([
+        HorizontalLine(price: 101.5, color: Colors.orange),
+        TrendLine(
+          time1: DateTime(2024, 1, 3),
+          price1: 100,
+          time2: DateTime(2024, 2, 9),
+          price2: 120,
+        ),
+      ]);
+      final workspace = ChartWorkspace(
+        indicators: [
+          MaIndicator(period: 20, color: Colors.amber),
+          BollIndicator(period: 20),
+          MacdIndicator(),
+        ],
+        drawings: drawings,
+        chartType: ChartType.bars,
+        priceAxisScale: PriceAxisScale.logarithmic,
+        invertPriceAxis: true,
+      );
+
+      final text = jsonEncode(workspace.toJson());
+      final back = ChartWorkspace.fromJson(
+        jsonDecode(text) as Map<String, dynamic>,
+      );
+
+      expect(back.indicators, workspace.indicators);
+      expect(back.indicators.first.colors!.first.toARGB32(),
+          Colors.amber.toARGB32());
+      expect(back.chartType, ChartType.bars);
+      expect(back.priceAxisScale, PriceAxisScale.logarithmic);
+      expect(back.invertPriceAxis, isTrue);
+      expect(back.drawings!.length, 2);
+      expect(back.drawings!.horizontalLines.single.price, 101.5);
+      expect(back.drawings!.trendLines.single.price2, 120);
+    });
+
+    test('an empty workspace round-trips to an empty one', () {
+      final back = ChartWorkspace.fromJson(const ChartWorkspace().toJson());
+      expect(back.indicators, isEmpty);
+      expect(back.drawings, isNull);
+      expect(back.chartType, isNull);
+      expect(back.priceAxisScale, PriceAxisScale.linear);
+      expect(back.invertPriceAxis, isFalse);
+    });
+
+    test('stamps a version', () {
+      expect(const ChartWorkspace().toJson()['version'],
+          ChartWorkspace.formatVersion);
+    });
+
+    test('skips what it cannot read and keeps the rest', () {
+      final back = ChartWorkspace.fromJson({
+        'version': 99,
+        'indicators': [
+          {'kind': 'MA', 'values': {'period': 9}},
+          {'kind': 'SOMETHING_NEW'},
+          'not even a map',
+          {'kind': 'RSI'},
+        ],
+        'chartType': 'someFutureType',
+        'priceAxisScale': 'someFutureScale',
+      });
+
+      expect(back.indicators, [MaIndicator(period: 9), RsiIndicator()]);
+      expect(back.chartType, isNull, reason: 'unknown type falls away');
+      expect(back.priceAxisScale, PriceAxisScale.linear);
+    });
+
+    test('reports the indicators it cannot save, and leaves them out', () {
+      final mine = _Mine();
+      final workspace = ChartWorkspace(
+        indicators: [MaIndicator(period: 20), mine],
+      );
+
+      expect(workspace.unsaveable, [mine]);
+
+      final back = ChartWorkspace.fromJson(workspace.toJson());
+      expect(back.indicators, [MaIndicator(period: 20)]);
+    });
+
+    test('copyWith replaces only what it is given', () {
+      final workspace = ChartWorkspace(
+        indicators: [MaIndicator(period: 20)],
+        priceAxisScale: PriceAxisScale.logarithmic,
+      );
+      final moved = workspace.copyWith(indicators: [RsiIndicator()]);
+
+      expect(moved.indicators, [RsiIndicator()]);
+      expect(moved.priceAxisScale, PriceAxisScale.logarithmic);
     });
   });
 
