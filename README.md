@@ -42,6 +42,7 @@ Named for the open-high-low-close-volume bars it renders.
 - **A drawing manager** — a ready-made panel listing what is drawn, with show/hide, lock, delete, undo, redo and clear.
 - **Price alerts** on a level, a trend line, either side of a channel or every step of a retracement, reported when the market crosses one.
 - **Indicator alerts** — an RSI over 70, a histogram turning positive — and panes that can be logarithmic or read as a percentage, with any indicator computable over another's output.
+- **Higher timeframes** — a daily moving average on a fifteen-minute chart, through `TimeframeIndicator`; each candle reads the last higher-timeframe bar that had closed when it opened, so the line never repaints and never shows a value from its own future.
 - **A right-click menu** on the chart and on any drawing — coordinates, duplicate, restack, lock, hide, alert, delete; paste, select all, fit the scale, undo — with your own items added through one builder.
 - **Crosshair on hover** and an **OHLC legend** above the chart, which is how a chart reads on a desktop.
 - **Driven from your own code** — `KChartController` zooms, scrolls back to the live candle and hands you the chart as a PNG.
@@ -98,7 +99,7 @@ One page per feature, in [`doc/`](doc/README.md):
 | | |
 | --- | --- |
 | [Candlestick chart](doc/candlestick-chart.md) | The candles, and the shape `KLineEntity` expects |
-| [Indicators](doc/indicators.md) | 29 of them as instances, the catalogue, pane scales, chaining, alerts |
+| [Indicators](doc/indicators.md) | 30 of them as instances, the catalogue, pane scales, chaining, higher timeframes, alerts |
 | [Comparing a second instrument](doc/comparison.md) | Other series over the same window, rebased or at their own prices |
 | [Chart types](doc/chart-types.md) | Eight ways to draw a series, and six transforms of the candles |
 | [Price axis](doc/price-axis.md) | Linear, log, percentage or indexed to 100; inverting and dragging it |

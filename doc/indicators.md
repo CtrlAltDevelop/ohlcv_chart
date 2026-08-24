@@ -178,6 +178,50 @@ the pane settings, guides, format and colours all come from the applied
 indicator. `flattenToCandles` is exported if you would rather do the wrapping
 yourself.
 
+## An indicator on a higher timeframe
+
+`TimeframeIndicator` computes an indicator on bars coarser than the chart is
+drawn at, so a daily moving average can be read on a fifteen-minute chart:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  isTrendLine: false,
+  timeFrame: const Duration(minutes: 15),
+  indicators: [
+    MaIndicator(period: 20),
+    TimeframeIndicator(
+      timeframe: const Duration(days: 1),
+      applied: MaIndicator(period: 20),
+    ),
+    TimeframeIndicator(
+      timeframe: const Duration(hours: 4),
+      applied: RsiIndicator(period: 14),
+    ),
+  ],
+);
+```
+
+The candles are aggregated up to `timeframe` — first open, highest high, lowest
+low, last close, total volume — and the applied indicator is computed over
+those bars. Bucketing is the chart's own, so a daily bar breaks where the chart
+draws its day divider rather than every 24 candles, and a monthly one follows
+the calendar rather than thirty days.
+
+**Each candle reads the last higher-timeframe bar that had closed when it
+opened.** The line steps once per higher-timeframe bar and holds flat between,
+and the candles of the very first bar draw nothing. This is deliberate: reading
+the bar a candle is *inside* would show this morning's candles a value computed
+from this afternoon's, which flatters a backtest and then repaints as the day
+fills in. What is drawn here was genuinely known at the time and never changes
+once drawn.
+
+Pane settings, guides, format and colours come from the applied indicator, as
+with `ChainedIndicator`. The aggregation is exported on its own —
+`CandleTransforms.resample(candles, timeframe)` for the bars, and
+`CandleTransforms.bucketIndices` for which bar each candle fell in.
+
 ## Indicator alerts
 
 An indicator declares the levels worth watching, and the chart reports when the

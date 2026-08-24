@@ -2,6 +2,15 @@
 
 ### Indicators
 
+- **`TimeframeIndicator`** — an indicator computed on bars coarser than the
+  chart is drawn at, so a daily moving average reads on a fifteen-minute chart.
+  Each candle takes the last higher-timeframe bar that had closed when it
+  opened, so the line steps once per bar, never repaints, and never shows a
+  value computed from the candle's own future. The aggregation is public on its
+  own as `CandleTransforms.resample` and `CandleTransforms.bucketIndices`, and
+  follows the chart's own bucketing — a daily bar breaks where the day divider
+  does, a monthly one on the calendar.
+
 - **`AroonIndicator`** — how recently the highest high and the lowest low of
   the last `period` candles fell, each as a percentage. Up near 100 marks a
   fresh high, down near 100 a fresh low, and the cross between the two lines is

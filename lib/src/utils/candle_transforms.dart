@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../entity/k_line_entity.dart';
+import 'axis_ticks.dart';
 
 /// Rewrites a list of candles into one the chart draws as candles, but which
 /// says something different about the market.
@@ -501,5 +502,105 @@ abstract final class CandleTransforms {
 
     final atr = sum / period;
     return atr > 0 ? atr : null;
+  }
+
+  /// Which [timeframe] bucket each of [candles] falls in, numbered from zero
+  /// and rising with time.
+  ///
+  /// Two candles share a number when they belong to the same higher-timeframe
+  /// bar, which is what lets a value computed over the coarser series be read
+  /// back against the finer one. The bucketing is the chart's own — a calendar
+  /// month rather than thirty days, and the wall clock rather than the
+  /// underlying instant — so a daily bucket breaks where the chart draws its
+  /// day divider.
+  ///
+  /// A candle with no time of its own is kept with the one before it, having
+  /// nothing to be bucketed by.
+  static List<int> bucketIndices(
+    List<KLineEntity> candles,
+    Duration timeframe,
+  ) {
+    final out = List<int>.filled(candles.length, 0);
+    if (candles.isEmpty || timeframe <= Duration.zero) return out;
+
+    var bucket = -1;
+    int? previous;
+    for (var i = 0; i < candles.length; i++) {
+      final time = candles[i].dateTime;
+      if (time == null) {
+        out[i] = math.max(bucket, 0);
+        continue;
+      }
+      final key = timeBucket(time, timeframe);
+      if (previous == null || key != previous) {
+        bucket++;
+        previous = key;
+      }
+      out[i] = bucket;
+    }
+    return out;
+  }
+
+  /// Aggregates [candles] up to [timeframe] — fifteen-minute candles into
+  /// hourly ones, daily into weekly.
+  ///
+  /// Each bar takes the first open, the highest high, the lowest low, the last
+  /// close and the total volume of the candles that fell in it, and is stamped
+  /// with the time the bucket opened. The last bar may be partial, exactly as
+  /// the newest candle of any live series is.
+  ///
+  /// Nothing here interpolates: a timeframe finer than the candles themselves
+  /// gives one bar per candle rather than inventing any.
+  static List<KLineEntity> resample(
+    List<KLineEntity> candles,
+    Duration timeframe,
+  ) {
+    if (candles.isEmpty) return [];
+
+    final buckets = bucketIndices(candles, timeframe);
+    final out = <KLineEntity>[];
+
+    var current = -1;
+    var open = 0.0;
+    var high = 0.0;
+    var low = 0.0;
+    var close = 0.0;
+    var volume = 0.0;
+    DateTime? opened;
+
+    void flush() {
+      if (current < 0) return;
+      out.add(
+        KLineEntity.fromCustom(
+          open: open,
+          high: high,
+          low: low,
+          close: close,
+          vol: volume,
+          dateTime:
+              opened ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        ),
+      );
+    }
+
+    for (var i = 0; i < candles.length; i++) {
+      final candle = candles[i];
+      if (buckets[i] != current) {
+        flush();
+        current = buckets[i];
+        open = candle.open;
+        high = candle.high;
+        low = candle.low;
+        volume = 0;
+        opened = candle.dateTime;
+      }
+      high = math.max(high, candle.high);
+      low = math.min(low, candle.low);
+      close = candle.close;
+      volume += candle.vol;
+    }
+    flush();
+
+    return out;
   }
 }
