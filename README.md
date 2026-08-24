@@ -48,6 +48,7 @@ Named for the open-high-low-close-volume bars it renders.
 - **Crosshair on hover** and an **OHLC legend** above the chart, which is how a chart reads on a desktop.
 - **Driven from your own code** — `KChartController` zooms, scrolls back to the live candle and hands you the chart as a PNG.
 - **The visible window, read and set** — which candles are on screen, go-to-date, fit-to-screen, and a callback whenever it moves.
+- **An overview strip** — `ChartOverview` draws the whole history under the chart with the visible window lit; drag it to scrub, drag its edges to zoom, tap to jump.
 - **Compare a second instrument** — overlay any number of other series, rebased so relative performance reads off the same axis, matched to your candles by time.
 - **Bar replay** — rewind to any candle and step or play the market forward, with the indicators only knowing what has arrived.
 - **Buy/sell signal markers** pinned to candles.

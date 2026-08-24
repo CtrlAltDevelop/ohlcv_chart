@@ -27,6 +27,16 @@
   indicators. Its two lines are themed through `ChartColors.aroonUpColor` and
   `aroonDownColor`.
 
+### Navigation
+
+- **`ChartOverview`** — a slim chart of the whole history to sit under the main
+  one, with the visible window lit on it. Drag the lit part to scrub, drag
+  either edge to widen or narrow the window, or tap anywhere to jump there. It
+  drives the chart through the same `KChartController` and reads the window
+  back from it, so the two never disagree — and a chart moved by any other
+  means moves the strip with it. Panning to either end slides the window up
+  against it rather than shrinking it.
+
 ### Drawing tools
 
 - **Magnet mode now snaps an anchor being dragged**, not only one being placed

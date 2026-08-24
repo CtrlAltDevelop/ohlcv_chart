@@ -77,6 +77,43 @@ That is also how two charts are kept in step — hand the range from one to the
 other's `showRange`. `indexRangeCovering` and `indexNearest` are exported for
 working out either from a list of candles without a chart in hand.
 
+## The overview strip
+
+`ChartOverview` is a slim chart of the whole history with the visible window
+marked on it — drag the lit part to scrub, drag either edge to widen or narrow
+the window, or tap anywhere to jump there:
+
+```dart
+final chart = KChartController();
+
+Column(
+  children: [
+    Expanded(
+      child: KChartWidget(
+        candles,
+        ChartColors(),
+        isTrendLine: false,
+        timeFrame: const Duration(minutes: 15),
+        controller: chart,
+      ),
+    ),
+    ChartOverview(candles, controller: chart, colors: ChartColors()),
+  ],
+);
+```
+
+It drives the chart through the same controller and reads the window back from
+it, so the two never disagree about where they are — and a chart scrolled by
+any other means moves the strip with it. Hand it the same list the chart has.
+
+It draws the closes rather than the candles, so a long history still reads as a
+shape at a glance. `height`, `padding` and `handleWidth` size it;
+`handleWidth` is how near an edge a grab counts as a resize rather than a pan,
+so a narrow window is still draggable rather than being all handle.
+
+Panning to either end slides the window up against it rather than shrinking it,
+so a drag past the edge keeps the window the width it was.
+
 ---
 
 [← All docs](README.md) · [Package README](../README.md)
