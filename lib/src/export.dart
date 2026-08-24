@@ -48,6 +48,7 @@ export './indicators/chained_indicator.dart';
 export './indicators/indicator.dart';
 export './indicators/indicator_cache.dart';
 export './indicators/indicator_catalog.dart';
+export './indicators/indicator_codec.dart';
 export './indicators/indicators.dart';
 export './indicators/resolved_indicator.dart'
     show
