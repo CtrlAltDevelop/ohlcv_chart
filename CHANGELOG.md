@@ -29,6 +29,12 @@
 
 ### Navigation
 
+- **`ChartLink`** — holds any number of charts on the same visible window, so
+  scrolling or zooming one carries the rest with it. No leader: whichever chart
+  the user moves is the one followed, and the link guards against the push back
+  that would otherwise bounce the window between them. `syncFrom` joins a chart
+  built later to where the others already are. The window and its zoom are
+  linked; the crosshair and the price axis deliberately are not.
 - **`ChartOverview`** — a slim chart of the whole history to sit under the main
   one, with the visible window lit on it. Drag the lit part to scrub, drag
   either edge to widen or narrow the window, or tap anywhere to jump there. It

@@ -73,9 +73,47 @@ KChartWidget(
 );
 ```
 
-That is also how two charts are kept in step — hand the range from one to the
-other's `showRange`. `indexRangeCovering` and `indexNearest` are exported for
-working out either from a list of candles without a chart in hand.
+`indexRangeCovering` and `indexNearest` are exported for working out either
+from a list of candles without a chart in hand.
+
+## Keeping charts in step
+
+`ChartLink` holds several charts on the same window. Add each one's controller
+and whichever the user scrolls or zooms carries the rest with it:
+
+```dart
+final price = KChartController();
+final volume = KChartController();
+late final link = ChartLink()..add(price)..add(volume);
+
+@override
+void dispose() {
+  link.dispose();
+  super.dispose();
+}
+```
+
+There is no leader: any chart the user moves becomes the one being followed for
+as long as it is moving, and the link guards against the push back — moving the
+others notifies them, and without the guard their notification would move the
+first one straight back.
+
+`syncFrom(controller)` puts every other chart on that one's window at once,
+which is what a chart built later wants so it joins the others where they
+already are rather than waiting for a scroll.
+
+Charts over histories of different lengths line up as far as they overlap: a
+window pushed onto a chart is clamped to the candles it actually has.
+
+**What is linked** is the visible window, and with it the zoom — showing the
+same candles across the same width is what zoom means here. The crosshair is
+not: it is the chart's own gesture state, with no callback to hang this on. The
+price axis is deliberately left alone too, since two instruments at different
+prices share no sensible vertical scale and forcing one would leave a chart
+drawing a flat line off the top of its pane.
+
+Doing it by hand is still an option — pass the range from `onVisibleRangeChanged`
+to the other chart's `showRange`.
 
 ## The overview strip
 

@@ -1,5 +1,6 @@
 export './chart_controller.dart';
 export './chart_event.dart';
+export './chart_link.dart';
 export './chart_menu.dart';
 export './chart_overview.dart';
 export './comparison.dart';
