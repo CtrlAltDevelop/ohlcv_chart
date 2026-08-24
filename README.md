@@ -1,5 +1,13 @@
 # ohlcv_chart — the most complete candlestick chart for Flutter, with every drawing tool and indicator
 
+> **Read the changelog and the docs.** This package moves quickly — a release
+> can carry several new indicators, a new widget or two, and behaviour that has
+> been sharpened since the last one. The list below is a summary and goes stale
+> between releases; [`CHANGELOG.md`](CHANGELOG.md) says what actually changed
+> and why, and [`doc/`](doc/README.md) has a page per feature with the detail.
+> Both are worth a minute before you upgrade, and before you conclude something
+> is missing.
+
 ## Support
 
 The full package is free to use in your own projects — every chart type, all 31

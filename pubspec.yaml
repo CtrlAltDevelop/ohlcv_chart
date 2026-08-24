@@ -42,9 +42,9 @@ screenshots:
       they fell on.
     path: screenshots/events.png
   - description: >-
-      The pre-market and after-hours stretches washed behind the candles, with
-      the biggest bars picked out in a colour of their own.
-    path: screenshots/sessions.png
+      Two charts of the same market held on one window and one crosshair, so
+      moving or pointing at either carries the other with it.
+    path: screenshots/linked-charts.png
   - description: >-
       The same market as line break, Kagi, point & figure and range bars.
     path: screenshots/bar-types.png
