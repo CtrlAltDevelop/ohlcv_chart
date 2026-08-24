@@ -25,6 +25,8 @@ final List<Indicator> resumable = [
   RocIndicator(period: 12),
   VolumeMaIndicator(period: 10),
   DonchianIndicator(period: 20),
+  AroonIndicator(period: 14),
+  AroonIndicator(period: 25),
   // These two out-wait their seed rather than resuming from it; the point of
   // testing them alongside the rest is that the difference does not show.
   RsiIndicator(period: 14),
@@ -123,7 +125,10 @@ void main() {
         final before = indicator.compute(data);
 
         final ticked = List<KLineEntity>.of(data);
-        ticked[ticked.length - 1] = retick(ticked.last, ticked.last.close * 1.01);
+        ticked[ticked.length - 1] = retick(
+          ticked.last,
+          ticked.last.close * 1.01,
+        );
 
         final extended = indicator.extendSeries(
           ticked,
@@ -190,7 +195,8 @@ void main() {
                   open: data.last.close,
                   high: data.last.close * 1.01,
                   low: data.last.close * 0.995,
-                  close: data.last.close * (1 + (random.nextDouble() - 0.5) / 50),
+                  close:
+                      data.last.close * (1 + (random.nextDouble() - 0.5) / 50),
                   vol: 100 + random.nextDouble() * 400,
                   dateTime: data.last.dateTime!.add(const Duration(minutes: 1)),
                 ),
@@ -380,8 +386,10 @@ void _cacheTests() {
       // change a single value, so the tick after a recolour still extends.
       final ticked = List<KLineEntity>.of(data);
       ticked[ticked.length - 1] = _at(data.last.dateTime!, 555);
-      cache.seriesFor(MaIndicator(period: 20, color: const Color(0xFF00FF00)),
-          ticked);
+      cache.seriesFor(
+        MaIndicator(period: 20, color: const Color(0xFF00FF00)),
+        ticked,
+      );
 
       expect(cache.extensions, 1);
       expect(cache.fullComputations, 1);

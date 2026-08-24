@@ -46,6 +46,8 @@ class ChartColors {
     this.adxColor = const Color(0xffE5B767),
     this.keltnerColor = const Color(0xff2f8fd5),
     this.donchianColor = const Color(0xffB48CE3),
+    this.aroonUpColor = const Color(0xFF14AD8F),
+    this.aroonDownColor = const Color(0xFFD5405D),
     this.conversionColor = const Color(0xff2f8fd5),
     this.baseColor = const Color(0xffD5405D),
     this.spanAColor = const Color(0xff14AD8F),
@@ -167,6 +169,12 @@ class ChartColors {
 
   /// Donchian channel bands.
   Color donchianColor;
+
+  /// Aroon up line.
+  Color aroonUpColor;
+
+  /// Aroon down line.
+  Color aroonDownColor;
 
   /// Ichimoku conversion line (tenkan-sen).
   Color conversionColor;

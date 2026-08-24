@@ -1,5 +1,15 @@
 ## Unreleased
 
+### Indicators
+
+- **`AroonIndicator`** — how recently the highest high and the lowest low of
+  the last `period` candles fell, each as a percentage. Up near 100 marks a
+  fresh high, down near 100 a fresh low, and the cross between the two lines is
+  the usual read of a change in trend. Takes a pane of its own, fixed to 0–100
+  with guides at 30 and 70, and resumes on a tick like the other window-based
+  indicators. Its two lines are themed through `ChartColors.aroonUpColor` and
+  `aroonDownColor`.
+
 ### Saving a workspace
 
 - **A chart workspace saves and restores.** `ChartWorkspace` bundles the

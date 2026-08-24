@@ -53,6 +53,7 @@ KChartWidget(
 | `ObvIndicator` | — |
 | `MfiIndicator` | `period`, with 20/80 guides |
 | `DmiIndicator` | `period`, with the 20 guide |
+| `AroonIndicator` | `period`, with 30/70 guides; up and down lines, 0–100 |
 | `StochRsiIndicator` | `rsiPeriod`, `period`, `kSmoothing`, `dSmoothing`, with 20/80 guides |
 | `RocIndicator` | `period` |
 | `TrixIndicator` | `period`, `signalPeriod` |
@@ -248,7 +249,7 @@ class MyIndicator extends Indicator {
 and the series is computed in full, which is always correct and is what sixteen
 of the built-in indicators still do: anything reading the whole series at once,
 such as a volume profile, a zigzag or the swing overlays built on it, has no
-tail to extend. The other thirteen resume, and a chart carrying a moving
+tail to extend. The other fourteen resume, and a chart carrying a moving
 average, Bollinger bands, an ATR, an OBV, an RSI and a MACD over 200,000 candles
 spends around 2ms a tick on them rather than around 100ms.
 
@@ -309,7 +310,7 @@ indicators.toggle(RsiIndicator());                              // on, then off
 
 `indicatorCatalog` describes every indicator — its settings, their ranges and
 its colour slots — so an "add indicator" sheet can be driven by data rather than
-a hard-coded list. It holds 32 entries: the 29 indicators above, with the four
+a hard-coded list. It holds 33 entries: the 30 indicators above, with the four
 pivot flavours — classic, Fibonacci, Camarilla and weekly — listed one apiece.
 The example app's `IndicatorSheet` is built entirely from it:
 

@@ -633,6 +633,14 @@ final List<IndicatorType> indicatorCatalog = List.unmodifiable([
         DmiIndicator(period: values['period']!.toInt(), colors: colors),
   ),
   IndicatorType(
+    name: 'AROON',
+    description: 'Aroon: how recently the highs and lows fell.',
+    placement: IndicatorPlacement.pane,
+    settings: [_period],
+    builder: (values, colors) =>
+        AroonIndicator(period: values['period']!.toInt(), colors: colors),
+  ),
+  IndicatorType(
     name: 'StochRSI',
     description: 'Stochastic RSI: where the RSI sits in its own range.',
     placement: IndicatorPlacement.pane,

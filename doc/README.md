@@ -13,7 +13,7 @@ For installation, the feature list and support, see the
 
 ## Series and indicators
 
-- **[Indicators](indicators.md)** — all 29 of them as configured instances, the
+- **[Indicators](indicators.md)** — all 30 of them as configured instances, the
   catalogue behind an "add indicator" sheet, pane scales, chained indicators,
   alerts, colours and writing your own.
 - **[Comparing a second instrument](comparison.md)** — overlaying other series,

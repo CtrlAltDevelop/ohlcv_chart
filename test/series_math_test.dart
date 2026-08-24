@@ -148,6 +148,41 @@ void main() {
       expect(ao[40], closeTo(meanMidpoint(40, 5) - meanMidpoint(40, 34), 1e-9));
     });
 
+    test('Aroon reads how long ago the extremes fell', () {
+      final data = spreadCandles([10, 12, 11, 15, 13, 9]);
+      final aroon = aroonSeries(data, 3);
+
+      // The window spans four candles, so nothing lands until index 3.
+      expect(aroon.up.take(3), everyElement(isNull));
+      expect(aroon.down.take(3), everyElement(isNull));
+
+      // At 3 the high (17) is today's and the low (8) is as old as the
+      // window reaches.
+      expect(aroon.up[3], 100);
+      expect(aroon.down[3], 0);
+
+      // At 5 that high is two candles back, and the low is today's.
+      expect(aroon.up[5], closeTo(100 * (3 - 2) / 3, 1e-9));
+      expect(aroon.down[5], 100);
+    });
+
+    test('Aroon pins to 100 and 0 on a market going one way', () {
+      final rising = spreadCandles([for (var i = 0; i < 40; i++) 100.0 + i]);
+      final aroon = aroonSeries(rising, 14);
+
+      // Every candle is a fresh high, and the low is always the oldest in
+      // the window.
+      expect(aroon.up.last, 100);
+      expect(aroon.down.last, 0);
+
+      final values = [
+        ...aroon.up.whereType<double>(),
+        ...aroon.down.whereType<double>(),
+      ];
+      expect(values, isNotEmpty);
+      expect(values.every((v) => v >= 0 && v <= 100), isTrue);
+    });
+
     test('the volume average is the mean of the window', () {
       final data = [
         for (var i = 0; i < 5; i++) candle(100, vol: (i + 1) * 10, minute: i),

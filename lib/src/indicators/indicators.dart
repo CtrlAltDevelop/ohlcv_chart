@@ -529,7 +529,12 @@ class MacdIndicator extends Indicator {
       from,
       recursiveLookback([fast, slow, signal].reduce(max)),
       (slice) {
-        final series = macdSeries(slice, fast: fast, slow: slow, signal: signal);
+        final series = macdSeries(
+          slice,
+          fast: fast,
+          slow: slow,
+          signal: signal,
+        );
         return [series.macd, series.dif, series.dea];
       },
     ),
@@ -1673,6 +1678,61 @@ class AwesomeIndicator extends Indicator {
     final grew = index < _rising.length ? _rising[index] : true;
     return grew ? theme.upColor : theme.dnColor;
   }
+}
+
+/// Aroon: how recently the highest high and the lowest low of the last
+/// [period] candles fell, each read as a percentage — up near 100 marks a
+/// fresh high, down near 100 a fresh low, and a cross between the two lines
+/// is the usual read of a change in trend.
+class AroonIndicator extends Indicator {
+  /// Creates an Aroon over [period] candles.
+  AroonIndicator({this.period = 14, super.colors});
+
+  /// How many candles back the highs and lows are read over.
+  final int period;
+
+  @override
+  IndicatorPlacement get placement => IndicatorPlacement.pane;
+
+  @override
+  String get name => 'AROON';
+
+  @override
+  String get label => 'AROON($period)';
+
+  @override
+  List<IndicatorLine> get lines => [IndicatorLine('Up'), IndicatorLine('Down')];
+
+  @override
+  List<Object?> get settings => [period];
+
+  @override
+  List<double> get guides => const [30, 70];
+
+  @override
+  (double, double)? get fixedRange => (0, 100);
+
+  @override
+  IndicatorSeries compute(List<KLineEntity> candles) {
+    final aroon = aroonSeries(candles, period);
+    return IndicatorSeries([aroon.up, aroon.down]);
+  }
+
+  @override
+  IndicatorSeries? extendSeries(
+    List<KLineEntity> candles,
+    IndicatorSeries previous,
+    int from,
+  ) => IndicatorSeries(
+    graftTailLines(candles, previous.lines, from, period, (slice) {
+      final aroon = aroonSeries(slice, period);
+      return [aroon.up, aroon.down];
+    }),
+  );
+
+  @override
+  Color defaultColor(int line, ChartColors theme, int ordinal) =>
+      line == 0 ? theme.aroonUpColor : theme.aroonDownColor;
 }
 
 /// Writes a swing depth, naming the one worked out from the candles.

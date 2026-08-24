@@ -705,6 +705,42 @@ donchianSeries(List<KLineEntity> candles, int period) {
   return (upper: upper, middle: middle, lower: lower);
 }
 
+/// Aroon: how many of the last [period] candles ago the highest high and the
+/// lowest low fell, each as a percentage of [period] — 100 when the extreme is
+/// today's candle, falling toward 0 the further back it sits.
+///
+/// A tie is read as the more recent of the two, matching how a trader reading
+/// the chart would call it.
+({List<double?> up, List<double?> down}) aroonSeries(
+  List<KLineEntity> candles,
+  int period,
+) {
+  final up = List<double?>.filled(candles.length, null);
+  final down = List<double?>.filled(candles.length, null);
+  if (period <= 0) return (up: up, down: down);
+
+  for (var i = period; i < candles.length; i++) {
+    var highIndex = i - period;
+    var highValue = candles[highIndex].high;
+    var lowIndex = i - period;
+    var lowValue = candles[lowIndex].low;
+    for (var window = i - period; window <= i; window++) {
+      final candle = candles[window];
+      if (candle.high >= highValue) {
+        highValue = candle.high;
+        highIndex = window;
+      }
+      if (candle.low <= lowValue) {
+        lowValue = candle.low;
+        lowIndex = window;
+      }
+    }
+    up[i] = 100 * (period - (i - highIndex)) / period;
+    down[i] = 100 * (period - (i - lowIndex)) / period;
+  }
+  return (up: up, down: down);
+}
+
 /// Supertrend: an ATR band that follows the trend and flips when price closes
 /// through it.
 ///
@@ -1199,7 +1235,7 @@ List<double?> _smoothValues(List<double?> values, int period) {
 /// relative difference on the order of 1e-14, some fourteen orders of magnitude
 /// below the two decimals a chart displays — rather than bit-for-bit. Series
 /// that re-add their window ([wrSeries], [cciSeries], [mfiSeries],
-/// [donchianSeries]) and the seeded recursions below are exact.
+/// [donchianSeries], [aroonSeries]) and the seeded recursions below are exact.
 List<double?> graftTail(
   List<KLineEntity> candles,
   List<double?> previous,
@@ -1307,7 +1343,8 @@ List<double?>? atrTail(
 
   var running = seed;
   for (var i = from; i < candles.length; i++) {
-    running = (running * (period - 1) + trueRange(candles[i], candles[i - 1])) /
+    running =
+        (running * (period - 1) + trueRange(candles[i], candles[i - 1])) /
         period;
     out[i] = running;
   }
