@@ -3,7 +3,7 @@ description: >-
   The most complete candlestick chart for Flutter: eight chart types, 31
   indicators and 29 drawing tools, a market-depth chart, alerts and bar replay,
   in pure CustomPainter.
-version: 2.1.0
+version: 2.2.0
 homepage: https://github.com/CtrlAltDevelop
 repository: https://github.com/CtrlAltDevelop/ohlcv_chart
 issue_tracker: https://github.com/CtrlAltDevelop/ohlcv_chart/issues

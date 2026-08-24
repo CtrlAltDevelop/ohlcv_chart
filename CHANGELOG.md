@@ -1,4 +1,4 @@
-## Unreleased
+## 2.2.0
 
 ### Indicators
 
@@ -86,6 +86,22 @@
 
 ### Fixed
 
+- **A session VWAP banded the first candle of every session**, where a lone
+  observation has no spread at all — both bands pinned to the average and then
+  flung apart on the next candle, drawing a vertical line through the chart at
+  every session open. The bands now wait for a second candle; the average still
+  starts at the first.
+- **`TimeframeIndicator` named its lines after the applied indicator alone**, so
+  a daily `MA20` and the chart's own `MA20` were two legend rows reading exactly
+  alike. They now carry the timeframe: `MA20@1D`.
+- **`ChartOverview` and `ChartLink` acted on a controller notification
+  synchronously**, and a chart notifies while it is building — so marking a
+  sibling dirty from there threw. Both now wait for the frame to end. The strip
+  also read the window before the chart had laid the new one out, drawing the
+  window it was about to leave, and never looked again after its first frame.
+- **A linked crosshair was clamped into the window being left behind** when the
+  window moved in the same pass, and stuck there — a chart still believes its
+  old window until the next frame.
 - **Reading a chart's window before its first frame threw** a
   `LateInitializationError` rather than answering null. A `KChartController`'s
   getters are reachable the moment it exists, which is before the chart it
@@ -95,7 +111,15 @@
 ### Package
 
 - The top-level `docs/` directory is now `doc/`, which is the layout pub
-  expects; a link to a page under `docs/` needs updating to `doc/`.
+  expects. Nothing in the API moved, but a link to a page under `docs/` —
+  a bookmark, or a README of your own — needs updating to `doc/`.
+- `KChartHost` gained members: `chartCrosshairIndex`, `chartCrosshairPrice`,
+  `chartPricePan`, `setChartPricePan`, and a `price` argument on
+  `showChartCrosshair`. It is documented as an interface only `KChartWidget`
+  implements, and nothing in this package or the example implements it
+  otherwise — but if you had implemented it yourself, those are new members to
+  fill in. `KChartController` is the supported way to drive a chart and gained
+  only additions.
 
 ## 2.1.0
 
