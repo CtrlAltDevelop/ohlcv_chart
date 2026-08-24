@@ -1,14 +1,19 @@
-# ohlcv_chart
+# ohlcv_chart — the most complete candlestick chart for Flutter, with every drawing tool and indicator
 
 ## Support
 
-This package is free to use in your own projects, and I keep it updated weekly —
-new indicators, drawing tools and fixes land as I use it myself.
+The full package is free to use in your own projects — every chart type, all 29
+indicators and all 29 drawing tools, nothing held back, nothing paywalled,
+commercial projects included. I keep it updated weekly: new indicators, drawing
+tools and fixes land as I use it myself.
 
-If it saves you some work, the only thing I ask in return is a ⭐ on the
-[repository](https://github.com/CtrlAltDevelop/ohlcv_chart) and a follow on
-[GitHub](https://github.com/CtrlAltDevelop). That is what keeps the weekly
-updates coming.
+If it saves you some work, all I ask in return is:
+
+- ⭐ a **star** on the [repository](https://github.com/CtrlAltDevelop/ohlcv_chart)
+- 👍 a **like** on [the package on pub.dev](https://pub.dev/packages/ohlcv_chart)
+- 👤 a **follow** on [GitHub](https://github.com/CtrlAltDevelop)
+
+That is the whole price, and it is what keeps the weekly updates coming.
 
 A candlestick (K-line) and market-depth chart for Flutter, drawn entirely with
 `CustomPainter` — no WebView, no JavaScript bridge.

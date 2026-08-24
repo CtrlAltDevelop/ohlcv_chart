@@ -1,8 +1,8 @@
 name: ohlcv_chart
 description: >-
-  Candlestick and market-depth charts for Flutter, with MA, BOLL and SAR
-  overlays, MACD, KDJ, RSI, WR and CCI sub-charts, signal markers and
-  interactive drawing tools.
+  The most complete candlestick chart for Flutter: eight chart types, 29
+  indicators and 29 drawing tools, a market-depth chart, alerts and bar replay,
+  in pure CustomPainter.
 version: 2.1.0
 homepage: https://github.com/CtrlAltDevelop
 repository: https://github.com/CtrlAltDevelop/ohlcv_chart
