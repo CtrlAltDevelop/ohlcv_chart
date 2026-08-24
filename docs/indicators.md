@@ -222,6 +222,57 @@ Supertrend changes colour at a reversal.
 The same kind of indicator, three times over, is the point of the list: each
 instance carries its own settings and colours.
 
+## Recomputing only what moved
+
+A live feed moves the newest candle several times a second, and computing every
+indicator over the whole history each time is work that grows with how much
+history is loaded rather than with what actually changed. The chart keeps an
+`IndicatorCache` and offers each indicator the chance to extend the series it
+already has instead:
+
+```dart
+class MyIndicator extends Indicator {
+  @override
+  IndicatorSeries? extendSeries(
+    List<KLineEntity> candles,
+    IndicatorSeries previous,
+    int from,
+  ) => IndicatorSeries([
+    graftTail(candles, previous.lines[0], from, period - 1,
+        (slice) => myMaths(slice, period)),
+  ]);
+}
+```
+
+`from` is the earliest index that can have moved. Return null — the default —
+and the series is computed in full, which is always correct and is what sixteen
+of the built-in indicators still do: anything reading the whole series at once,
+such as a volume profile, a zigzag or the swing overlays built on it, has no
+tail to extend. The other thirteen resume, and a chart carrying a moving
+average, Bollinger bands, an ATR, an OBV, an RSI and a MACD over 200,000 candles
+spends around 2ms a tick on them rather than around 100ms.
+
+Whatever `extendSeries` returns has to be what `compute` would have returned.
+Two shapes make that hold, and `series_math.dart` has a helper for each:
+
+- **A window.** `graftTail` recomputes from `from - lookback`, which is exact
+  when a value depends only on the candles in its own window. `graftTailLines`
+  is the same for an indicator drawing several lines from one pass.
+- **A recursion whose own last value is its whole state.** `emaTail`, `atrTail`
+  and `obvTail` seed from `previous[from - 1]` and carry on, which is exact to
+  the last bit.
+
+Where neither holds — Wilder's smoothing inside an RSI keeps state its published
+values do not show — `recursiveLookback` picks the recursion up forty periods
+back instead. An exponential recursion forgets its seed geometrically, so by
+then the difference is some eighteen orders of magnitude down, well beneath the
+gap between neighbouring doubles.
+
+One thing to know if you write an indicator that reads a series handed in from
+outside rather than the candles: the cache reuses values for the same instance
+while the candles sit still, and recomputes for a new one, so rebuilding your
+indicator is what tells the chart its values have changed.
+
 ## Colours
 
 Every indicator takes its colours from `ChartColors`, and a `color` (or

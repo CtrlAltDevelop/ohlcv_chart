@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' show Color;
 import '../chart_style.dart';
 import '../entity/k_line_entity.dart';
 import 'indicator.dart';
+import 'indicator_cache.dart';
 
 /// An indicator paired with its computed values, ready to draw.
 class ResolvedIndicator {
@@ -85,12 +86,21 @@ class ResolvedIndicators {
 /// indicator that is already on the chart restyles it instead of stacking a
 /// second copy. Each indicator is told its position among the others of its
 /// group, which is how a second moving average picks up a different colour.
+///
+/// Pass a [cache] that outlives the call — one per chart — and an indicator
+/// whose candles have only grown at the end extends the values it already has
+/// instead of recomputing the whole history. Without one every call computes
+/// everything from the first candle.
 ResolvedIndicators resolveIndicators(
   Iterable<Indicator> indicators,
-  List<KLineEntity>? candles,
-) {
+  List<KLineEntity>? candles, {
+  IndicatorCache? cache,
+}) {
   final unique = dedupeIndicators(indicators);
-  if (unique.isEmpty) return ResolvedIndicators.empty;
+  if (unique.isEmpty) {
+    cache?.clear();
+    return ResolvedIndicators.empty;
+  }
 
   final data = candles ?? const <KLineEntity>[];
   final overlays = <ResolvedIndicator>[];
@@ -104,9 +114,13 @@ ResolvedIndicators resolveIndicators(
     ordinals[group] = ordinal + 1;
     final resolved = ResolvedIndicator(
       indicator: indicator,
-      series: indicator.compute(data),
+      series: cache == null
+          ? indicator.compute(data)
+          : cache.seriesFor(indicator, data),
       ordinal: ordinal,
-      profile: indicator.computeProfile(data),
+      profile: cache == null
+          ? indicator.computeProfile(data)
+          : cache.profileFor(indicator, data),
     );
     if (indicator.placement == IndicatorPlacement.overlay) {
       overlays.add(resolved);
@@ -115,6 +129,8 @@ ResolvedIndicators resolveIndicators(
       panes.add(resolved);
     }
   }
+
+  cache?.retain(unique);
 
   return ResolvedIndicators(
     overlays: overlays,

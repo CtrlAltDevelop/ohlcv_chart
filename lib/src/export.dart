@@ -46,6 +46,7 @@ export './entity/two_point_drawing.dart';
 export './entity/vertical_lines.dart';
 export './indicators/chained_indicator.dart';
 export './indicators/indicator.dart';
+export './indicators/indicator_cache.dart';
 export './indicators/indicator_catalog.dart';
 export './indicators/indicators.dart';
 export './indicators/resolved_indicator.dart'

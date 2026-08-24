@@ -1171,3 +1171,199 @@ List<double?> _smoothValues(List<double?> values, int period) {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Resuming a series
+//
+// A live feed changes the newest candle several times a second, and every
+// change used to mean recomputing every indicator over the whole history. The
+// helpers below recompute only the part that can have moved, which is what
+// `Indicator.extendSeries` is built on.
+// ---------------------------------------------------------------------------
+
+/// Recomputes [previous] from [from] onward, for a window-based series.
+///
+/// [compute] is run over the candles from `from - lookback` on, which is far
+/// enough back for every value from [from] to come out exactly as a full pass
+/// would give it — provided the value at any index really does depend only on
+/// the [lookback] candles before it. Values before [from] are carried over from
+/// [previous] untouched.
+///
+/// An indicator whose values depend on the whole history — anything cumulative
+/// or recursive — must not use this.
+///
+/// One caveat, for the series that keep a running total rather than re-adding
+/// each window: [smaSeries] and [volumeMaSeries] carry a sum across the list,
+/// so where the sum starts changes how its rounding accumulates. Their grafted
+/// values are therefore correct to within floating-point accumulation — a
+/// relative difference on the order of 1e-14, some fourteen orders of magnitude
+/// below the two decimals a chart displays — rather than bit-for-bit. Series
+/// that re-add their window ([wrSeries], [cciSeries], [mfiSeries],
+/// [donchianSeries]) and the seeded recursions below are exact.
+List<double?> graftTail(
+  List<KLineEntity> candles,
+  List<double?> previous,
+  int from,
+  int lookback,
+  List<double?> Function(List<KLineEntity> slice) compute,
+) {
+  final start = max(0, from - lookback);
+  // A slice that reaches back to the first candle is the whole list, so the
+  // warm-up inside it is the real warm-up and every value is exact.
+  final slice = start == 0 ? candles : candles.sublist(start);
+  final tail = compute(slice);
+
+  final out = _roomFor(candles.length, previous, from);
+  for (var i = max(from, 0); i < candles.length; i++) {
+    out[i] = tail[i - start];
+  }
+  return out;
+}
+
+/// A list of [length] holding [previous]'s values below [from], ready for the
+/// rest to be written into.
+///
+/// A tick leaves the series the same length as it was, which is much the most
+/// common case and the one worth not copying for: the previous list is written
+/// into and handed back. Anything else — a candle appended, a replay moving —
+/// needs a list of a different size, so one is allocated and the part that still
+/// stands is copied over.
+///
+/// The list handed in is therefore not safe to go on reading afterwards. Callers
+/// of `Indicator.extendSeries` must treat the series they passed as spent, which
+/// is what `IndicatorCache` does.
+List<double?> _roomFor(int length, List<double?> previous, int from) {
+  if (previous.length == length) return previous;
+
+  final out = List<double?>.filled(length, null);
+  final carried = min(max(from, 0), min(previous.length, length));
+  for (var i = 0; i < carried; i++) {
+    out[i] = previous[i];
+  }
+  return out;
+}
+
+/// How far back a recursive series has to be picked up for its seed to vanish.
+///
+/// An exponential recursion forgets where it started geometrically: an error in
+/// the seed is scaled by `(1 - 2/(period + 1))` every candle, so after forty
+/// periods it has been multiplied by something around 1e-18. That is smaller
+/// than the gap between neighbouring doubles at any price a chart draws, so a
+/// graft reaching this far back lands on the same values a full pass gives —
+/// while recomputing a couple of thousand candles instead of a couple of
+/// hundred thousand.
+///
+/// This is the escape route for the recursions whose state their published
+/// values do not carry: Wilder's smoothing inside an RSI, the pair of averages
+/// behind a MACD. Unlike [emaTail] and [atrTail], which resume from the exact
+/// previous value, this one out-waits the difference rather than avoiding it —
+/// which is why the number is generous.
+int recursiveLookback(int period) => 40 * max(period, 1);
+
+/// Continues an exponential moving average from the value before [from].
+///
+/// An EMA's whole memory is its own last value, so seeding the recursion with
+/// `previous[from - 1]` picks it up exactly where the last pass left off.
+/// Returns null where [previous] has no usable value to seed from, which is the
+/// caller's cue to compute the series in full.
+List<double?>? emaTail(
+  List<KLineEntity> candles,
+  int period,
+  List<double?> previous,
+  int from,
+) {
+  if (period <= 0 || from <= 0 || from > candles.length) return null;
+  final seed = from - 1 < previous.length ? previous[from - 1] : null;
+  if (seed == null) return null;
+
+  final out = _roomFor(candles.length, previous, from);
+
+  final weight = 2 / (period + 1);
+  var running = seed;
+  for (var i = from; i < candles.length; i++) {
+    running = candles[i].close * weight + running * (1 - weight);
+    out[i] = running;
+  }
+  return out;
+}
+
+/// Continues Wilder's average true range from the value before [from].
+///
+/// Past its warm-up the average is its own state, so it resumes exactly. Inside
+/// the warm-up there is nothing to resume from and this answers null.
+List<double?>? atrTail(
+  List<KLineEntity> candles,
+  int period,
+  List<double?> previous,
+  int from,
+) {
+  // Before `period` the series is still summing its seed window, which the
+  // published values do not carry.
+  if (period <= 0 || from < period || from > candles.length) return null;
+  final seed = from - 1 < previous.length ? previous[from - 1] : null;
+  if (seed == null) return null;
+
+  final out = _roomFor(candles.length, previous, from);
+
+  var running = seed;
+  for (var i = from; i < candles.length; i++) {
+    running = (running * (period - 1) + trueRange(candles[i], candles[i - 1])) /
+        period;
+    out[i] = running;
+  }
+  return out;
+}
+
+/// Continues on-balance volume from the running total before [from].
+List<double?>? obvTail(
+  List<KLineEntity> candles,
+  List<double?> previous,
+  int from,
+) {
+  if (from <= 0 || from > candles.length) return null;
+  final seed = from - 1 < previous.length ? previous[from - 1] : null;
+  if (seed == null) return null;
+
+  final out = _roomFor(candles.length, previous, from);
+
+  var running = seed;
+  for (var i = from; i < candles.length; i++) {
+    final close = candles[i].close;
+    final previousClose = candles[i - 1].close;
+    if (close > previousClose) {
+      running += candles[i].vol;
+    } else if (close < previousClose) {
+      running -= candles[i].vol;
+    }
+    out[i] = running;
+  }
+  return out;
+}
+
+/// [graftTail] for an indicator that draws several lines from one pass.
+///
+/// The lines are computed together, as a full pass would compute them, so a
+/// three-band indicator costs one recomputation rather than three.
+List<List<double?>> graftTailLines(
+  List<KLineEntity> candles,
+  List<List<double?>> previous,
+  int from,
+  int lookback,
+  List<List<double?>> Function(List<KLineEntity> slice) compute,
+) {
+  final start = max(0, from - lookback);
+  final slice = start == 0 ? candles : candles.sublist(start);
+  final tail = compute(slice);
+
+  return [
+    for (var line = 0; line < tail.length; line++)
+      () {
+        final was = line < previous.length ? previous[line] : const <double?>[];
+        final out = _roomFor(candles.length, was, from);
+        for (var i = max(from, 0); i < candles.length; i++) {
+          out[i] = tail[line][i - start];
+        }
+        return out;
+      }(),
+  ];
+}

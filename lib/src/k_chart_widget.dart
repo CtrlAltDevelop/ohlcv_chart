@@ -53,6 +53,7 @@ import 'entity/triangle_drawing.dart';
 import 'entity/two_point_drawing.dart';
 import 'entity/vertical_lines.dart';
 import 'indicators/indicator.dart';
+import 'indicators/indicator_cache.dart';
 import 'indicators/resolved_indicator.dart';
 import 'price_axis_scale.dart';
 import 'renderer/base_chart_painter.dart';
@@ -1219,6 +1220,13 @@ class _KChartWidgetState extends State<KChartWidget>
   /// The indicators, computed over the candles and split by where they draw.
   ResolvedIndicators _resolved = ResolvedIndicators.empty;
 
+  /// Holds the indicator values between frames.
+  ///
+  /// A tick moves the newest candle and nothing else, so each indicator is given
+  /// the chance to extend the series it already has rather than recompute the
+  /// whole history — see [IndicatorCache].
+  final IndicatorCache _indicatorCache = IndicatorCache();
+
   /// What the last resolution was computed from, so a rebuild that changes
   /// neither the candles nor the indicators reuses it.
   ({int length, Object? last, DateTime? time})? _resolvedFrom;
@@ -1286,7 +1294,11 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   void _resolveIndicators() {
-    _resolved = resolveIndicators(widget.indicators, _candlesInPlay);
+    _resolved = resolveIndicators(
+      widget.indicators,
+      _candlesInPlay,
+      cache: _indicatorCache,
+    );
     _resolvedComparisons = resolveComparisons(
       _candlesInPlay ?? const [],
       widget.comparisons,

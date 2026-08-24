@@ -309,10 +309,54 @@ abstract class Indicator {
   ///
   /// Colours are deliberately left out, so re-adding an indicator with a new
   /// colour updates the one already there.
+  ///
+  /// Two indicators of a type with equal settings are taken to be the same
+  /// indicator throughout: `dedupeIndicators` keeps one of them, `upsert`
+  /// replaces one with the other, and an alert on one carries its state over to
+  /// the other. So a custom indicator that reads a period or a source field
+  /// should name it here.
+  ///
+  /// An indicator may still compute different values from one build to the next
+  /// with its settings unchanged — reading a series handed in from outside, say.
+  /// That works: `IndicatorCache` only reuses values for the very same instance
+  /// while the candles sit still, and recomputes for a new one.
   List<Object?> get settings;
 
   /// Computes one value per candle for each of [lines].
   IndicatorSeries compute(List<KLineEntity> candles);
+
+  /// Recomputes [previous] for candles that have changed at or after [from].
+  ///
+  /// A live feed moves the newest candle several times a second. Rather than
+  /// recompute the whole history each time, the chart offers the series it
+  /// already has and the earliest index that can have moved; an indicator that
+  /// can pick the recursion up from there returns the extended series, and one
+  /// that cannot returns null and is recomputed in full.
+  ///
+  /// Whatever is returned must be what [compute] would give for the same
+  /// candles: this is a shortcut through the arithmetic, not a cheaper estimate
+  /// of it. The one allowance is rounding — a series that carries a running
+  /// total accumulates it differently when it starts part-way along, which
+  /// moves the last bit or two of a value and nothing a chart can draw.
+  /// `graftTail`, `emaTail`, `atrTail` and `obvTail` in `series_math.dart` are
+  /// the shapes that hold:
+  /// a window the value depends on, or a recursion whose own last value is all
+  /// the state it needs. Anything reading the whole history — a cumulative
+  /// total, a smoothing whose state is not published, a swing count — should
+  /// leave this alone.
+  ///
+  /// [from] is always at least 0 and at most `candles.length`.
+  ///
+  /// The series returned may reuse [previous]'s own storage rather than allocate
+  /// alongside it — a tick leaves the series the same length, and copying every
+  /// value to move the last one would put back the cost this is here to avoid.
+  /// So [previous] is spent once this has been called, and the caller must read
+  /// the returned series instead. `IndicatorCache` does exactly that.
+  IndicatorSeries? extendSeries(
+    List<KLineEntity> candles,
+    IndicatorSeries previous,
+    int from,
+  ) => null;
 
   /// Volume gathered by price, for an indicator that draws a profile.
   ///
