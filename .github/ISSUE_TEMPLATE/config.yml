@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/CtrlAltDevelop/ohlcv_chart/tree/main/doc
+    about: One page per feature — a "how do I..." question may already be answered here.
+  - name: pub.dev package page
+    url: https://pub.dev/packages/ohlcv_chart
+    about: Installation, versions and the API reference.

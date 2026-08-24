@@ -1,0 +1,61 @@
+name: Bug report
+description: Something in the chart is broken, or does not match the docs.
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected instead, and what you saw.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce it
+      description: >-
+        A minimal `KChartWidget` or `DepthChart` setup that shows the problem —
+        the fewer indicators, drawings and options involved, the faster this
+        gets fixed. A snippet is enough; it does not need to be a runnable
+        project unless the bug depends on surrounding widget state.
+      render: dart
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: ohlcv_chart version
+      placeholder: "2.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: flutter-version
+    attributes:
+      label: Flutter version
+      description: Output of `flutter --version`.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      multiple: true
+      options:
+        - iOS
+        - Android
+        - Web
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, stack traces, or what you already ruled out.

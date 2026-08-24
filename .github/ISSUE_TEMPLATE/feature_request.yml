@@ -1,0 +1,27 @@
+name: Feature request
+description: An indicator, drawing tool or chart behaviour the package does not have yet.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: >-
+        The trading or charting need behind the request — not just the API
+        you imagine, but what it is for. If it is an indicator or drawing
+        tool, a link to how it is usually defined helps.
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: How you are working around it today
+      description: Composing existing indicators, a custom `Indicator`, doing it outside the chart — whatever you are doing in the meantime, if anything.
+
+  - type: textarea
+    id: shape
+    attributes:
+      label: What it might look like
+      description: A rough API sketch, if you have one in mind. Not required.
+      render: dart

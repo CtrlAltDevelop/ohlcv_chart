@@ -1,0 +1,29 @@
+name: pub.dev dry run
+
+on:
+  pull_request:
+    paths:
+      - pubspec.yaml
+      - CHANGELOG.md
+      - lib/**
+      - doc/**
+      - README.md
+      - LICENSE
+  workflow_dispatch:
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      # Catches what actually blocks or downgrades a pub.dev score before it
+      # reaches a release: a pubspec version the CHANGELOG doesn't have an
+      # entry for, a missing/invalid LICENSE, an oversized or unpublishable
+      # asset, and any other publish-time validation error.
+      - run: flutter pub publish --dry-run

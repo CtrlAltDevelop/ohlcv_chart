@@ -87,36 +87,36 @@ KChartWidget(
 );
 ```
 
-That is a working chart. The [candlestick chart](docs/candlestick-chart.md) page
+That is a working chart. The [candlestick chart](doc/candlestick-chart.md) page
 covers the rest of the constructor, and the [example app](example/) is a tour of
 every switch in the package.
 
 ## Documentation
 
-One page per feature, in [`docs/`](docs/README.md):
+One page per feature, in [`doc/`](doc/README.md):
 
 | | |
 | --- | --- |
-| [Candlestick chart](docs/candlestick-chart.md) | The candles, and the shape `KLineEntity` expects |
-| [Indicators](docs/indicators.md) | 29 of them as instances, the catalogue, pane scales, chaining, alerts |
-| [Comparing a second instrument](docs/comparison.md) | Other series over the same window, rebased or at their own prices |
-| [Chart types](docs/chart-types.md) | Eight ways to draw a series, and six transforms of the candles |
-| [Price axis](docs/price-axis.md) | Linear, log, percentage or indexed to 100; inverting and dragging it |
-| [The date axis](docs/date-axis.md) | Round time values, and taking the axis over yourself |
-| [The legend and the crosshair](docs/legend-and-crosshair.md) | The OHLC row, and the crosshair on hover |
-| [The long-press readout](docs/readout.md) | The card over a held candle, and your own builder |
-| [Drawing tools](docs/drawing-tools.md) | All 29 tools, persistence, undo, multi-select, templates, alerts |
-| [Customising the line editor](docs/line-editor.md) | Every control of the editor, through `DrawingStyle` |
-| [Orders and positions](docs/orders-and-positions.md) | Live lines from your venue, tagged and draggable |
-| [Event marks](docs/event-marks.md) | Earnings, dividends, splits and news under the candles |
-| [Sessions and time zones](docs/sessions.md) | Day dividers, display time zone, extended hours, per-bar colour |
-| [Driving the chart](docs/driving-the-chart.md) | `KChartController`, and the visible window |
-| [Panes](docs/panes.md) | Stacking, resizing and reordering the indicator panes |
-| [Bar replay](docs/bar-replay.md) | Rewind, then step or play the market forward |
-| [Sizing](docs/sizing.md) | How the candle area and the panes divide the height |
-| [Depth chart](docs/depth-chart.md) | The order-book widget: four modes, three axes |
-| [Theming](docs/theming.md) | `ChartStyle`, `ChartColors` and `ChartTranslations` |
-| [Migrating from 1.x](docs/migrating-from-1.x.md) | What changed, and what to use instead |
+| [Candlestick chart](doc/candlestick-chart.md) | The candles, and the shape `KLineEntity` expects |
+| [Indicators](doc/indicators.md) | 29 of them as instances, the catalogue, pane scales, chaining, alerts |
+| [Comparing a second instrument](doc/comparison.md) | Other series over the same window, rebased or at their own prices |
+| [Chart types](doc/chart-types.md) | Eight ways to draw a series, and six transforms of the candles |
+| [Price axis](doc/price-axis.md) | Linear, log, percentage or indexed to 100; inverting and dragging it |
+| [The date axis](doc/date-axis.md) | Round time values, and taking the axis over yourself |
+| [The legend and the crosshair](doc/legend-and-crosshair.md) | The OHLC row, and the crosshair on hover |
+| [The long-press readout](doc/readout.md) | The card over a held candle, and your own builder |
+| [Drawing tools](doc/drawing-tools.md) | All 29 tools, persistence, undo, multi-select, templates, alerts |
+| [Customising the line editor](doc/line-editor.md) | Every control of the editor, through `DrawingStyle` |
+| [Orders and positions](doc/orders-and-positions.md) | Live lines from your venue, tagged and draggable |
+| [Event marks](doc/event-marks.md) | Earnings, dividends, splits and news under the candles |
+| [Sessions and time zones](doc/sessions.md) | Day dividers, display time zone, extended hours, per-bar colour |
+| [Driving the chart](doc/driving-the-chart.md) | `KChartController`, and the visible window |
+| [Panes](doc/panes.md) | Stacking, resizing and reordering the indicator panes |
+| [Bar replay](doc/bar-replay.md) | Rewind, then step or play the market forward |
+| [Sizing](doc/sizing.md) | How the candle area and the panes divide the height |
+| [Depth chart](doc/depth-chart.md) | The order-book widget: four modes, three axes |
+| [Theming](doc/theming.md) | `ChartStyle`, `ChartColors` and `ChartTranslations` |
+| [Migrating from 1.x](doc/migrating-from-1.x.md) | What changed, and what to use instead |
 
 ## Notes
 
