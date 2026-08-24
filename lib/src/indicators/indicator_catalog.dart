@@ -736,8 +736,38 @@ final List<IndicatorType> indicatorCatalog = List.unmodifiable([
   ),
 ]);
 
+/// The catalog entry that rebuilds [indicator] exactly, or null if none does.
+///
+/// Stricter than [indicatorTypeOf]: the entry found is one whose [create] gives
+/// back an indicator equal to this one, so an indicator round-tripped through it
+/// comes out as it went in. That is what makes it safe to persist with — see
+/// `indicatorToJson`.
+///
+/// A name is not enough to go on. Four catalog entries build a
+/// `PivotPointsIndicator`, and a weekly one calls itself `PIVOT` like the daily
+/// one does, so matching on the name alone would quietly turn a week's pivots
+/// into a day's. Nor is every indicator reachable from the catalog: one carrying
+/// a setting the catalog does not describe — a Fibonacci's own ratios — is not
+/// rebuilt by any entry, and answers null.
+IndicatorType? indicatorTypeRebuilding(Indicator indicator) {
+  for (final type in indicatorCatalog) {
+    // An entry whose settings this indicator does not report is still worth
+    // trying at its defaults: that is how the entries that differ by something
+    // other than a number — a pivot's method, its session — are told apart.
+    final values = type.valuesOf(indicator) ?? type.defaults;
+    if (type.create(values: values) == indicator) return type;
+  }
+  return null;
+}
+
 /// The catalog entry describing [indicator], or null if there is none.
+///
+/// Prefers the entry that rebuilds it exactly, and falls back to the one of the
+/// same name — which is the best that can be done for an indicator configured
+/// beyond what the catalog describes.
 IndicatorType? indicatorTypeOf(Indicator indicator) {
+  final exact = indicatorTypeRebuilding(indicator);
+  if (exact != null) return exact;
   for (final type in indicatorCatalog) {
     if (type.name == indicator.name) return type;
   }
