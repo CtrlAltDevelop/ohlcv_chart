@@ -44,9 +44,15 @@ one gesture, on a touch screen as much as with a mouse. Escape abandons a line
 that is half-placed, as does tapping outside the chart or switching tools, and
 the line editor stays out of the way until the line is finished.
 
-With `magnetMode: true`, each point placed snaps to the nearest open, high, low
-or close within `DrawingStyle.magnetSnapDistance` pixels, and lands wherever the
-pointer is when nothing is that close.
+With `magnetMode: true`, each point snaps to the nearest open, high, low or
+close within `DrawingStyle.magnetSnapDistance` pixels, and lands wherever the
+pointer is when nothing is that close. This applies to an anchor **dragged**
+afterwards as much as to one being placed, which is how a line already drawn
+gets pinned exactly onto a wick.
+
+Dragging a drawing by its *body* is not snapped: it moves by the distance the
+pointer has travelled, and pulling one end onto a candle value would stretch or
+shift the shape rather than move it.
 
 ## What can be drawn
 

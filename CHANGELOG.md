@@ -27,6 +27,14 @@
   indicators. Its two lines are themed through `ChartColors.aroonUpColor` and
   `aroonDownColor`.
 
+### Drawing tools
+
+- **Magnet mode now snaps an anchor being dragged**, not only one being placed
+  — which is how a line already drawn gets pinned exactly onto a wick. Dragging
+  a drawing by its *body* is still unsnapped on purpose: it moves by the
+  distance the pointer has travelled, and snapping one end of that measurement
+  would shift the shape rather than move it.
+
 ### Saving a workspace
 
 - **`IndicatorTemplate` and `IndicatorTemplates`** — a named set of indicators,

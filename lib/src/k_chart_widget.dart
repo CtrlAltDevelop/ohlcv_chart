@@ -365,11 +365,17 @@ class KChartWidget extends StatefulWidget {
   /// The active drawing mode; see [DrawingTool].
   final DrawingTool currentDrawingTool;
 
-  /// Snaps points being placed to the nearest open, high, low or close.
+  /// Snaps drawing anchors to the nearest open, high, low or close.
   ///
   /// A point only snaps when a candle's price is within
   /// [DrawingStyle.magnetSnapDistance] pixels of the pointer; further away it
   /// lands wherever the pointer is.
+  ///
+  /// This covers an anchor dragged after the fact as much as one being placed,
+  /// which is how a line already drawn is pinned onto a wick. Dragging a
+  /// drawing by its body is deliberately not snapped: it moves by the distance
+  /// the pointer has travelled, and snapping one end of that measurement would
+  /// shift the shape by the difference rather than move it.
   final bool magnetMode;
 
   /// Called when the user finishes drawing or edits a trend line.
@@ -3331,13 +3337,22 @@ class _KChartWidgetState extends State<KChartWidget>
     if (time == null) return;
     final price = painter.calculatePrice(pos.dy);
 
+    // Magnet mode snaps an anchor being placed onto a nearby open, high, low
+    // or close — which is most of the point of dragging one. A drag of a whole
+    // drawing keeps the raw price: it moves by the distance the pointer has
+    // travelled since `_beginHandleDrag` recorded it, and snapping one end of
+    // that measurement would jump the shape by the difference.
+    final snapped = widget.magnetMode
+        ? _magnetPrice(candles[index], pos.dy, price)
+        : price;
+
     switch (line) {
       case HorizontalLine():
         // A title the user never customised tracks the price it was named for.
         if (line.title == line.price.toStringAsFixed(widget.fixedLength)) {
-          line.title = price.toStringAsFixed(widget.fixedLength);
+          line.title = snapped.toStringAsFixed(widget.fixedLength);
         }
-        line.price = price;
+        line.price = snapped;
         // Dragging a ray carries its start along with it.
         if (line.isRay) line.startTime = time;
       case VerticalLine():
@@ -3348,7 +3363,7 @@ class _KChartWidgetState extends State<KChartWidget>
       case TextAnnotation():
         line
           ..time = time
-          ..price = price;
+          ..price = snapped;
       case FreehandDrawing():
         _dragWholeDrawing(line, candles, index, price);
       case MultiPointDrawing shape:
@@ -3358,37 +3373,41 @@ class _KChartWidgetState extends State<KChartWidget>
         if (anchor == null || anchor == 0 || anchor > shape.points.length) {
           _dragWholeDrawing(line, candles, index, price);
         } else {
-          shape.points[anchor - 1] = (time: time, price: price);
+          shape.points[anchor - 1] = (time: time, price: snapped);
         }
       case TwoPointDrawing():
-        _dragShape(line, candles, index, time, price);
+        _dragShape(line, candles, index, time, price, snapped);
     }
     notifyChanged();
   }
 
   /// Drags one anchor of [shape], or the whole shape when the grab landed on
   /// its body.
+  /// [price] is where the pointer is; [snapped] is that price pulled onto a
+  /// nearby candle value under magnet mode. An anchor takes the snapped one, a
+  /// whole-shape move the raw one — see [_applyHandleDrag].
   void _dragShape(
     TwoPointDrawing shape,
     List<KLineEntity> candles,
     int index,
     DateTime time,
     double price,
+    double snapped,
   ) {
     switch (draggingAnchor) {
       case 1:
         shape
           ..time1 = time
-          ..price1 = price;
+          ..price1 = snapped;
       case 2:
         shape
           ..time2 = time
-          ..price2 = price;
+          ..price2 = snapped;
       case 3:
         if (shape is! ThreePointDrawing) return;
         shape
           ..time3 = time
-          ..price3 = price;
+          ..price3 = snapped;
       case 0:
         _dragWholeDrawing(shape, candles, index, price);
     }

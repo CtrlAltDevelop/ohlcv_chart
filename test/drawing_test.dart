@@ -535,6 +535,106 @@ void main() {
         reason: 'the price snapped to an OHLC value',
       );
     });
+
+    testWidgets('magnet mode snaps an anchor being dragged, not just placed', (
+      tester,
+    ) async {
+      final data = candles(rampThenFall(60));
+      DataUtil.calculate(data);
+
+      // Deliberately off any candle value, so a snap is visible.
+      final line = TrendLine(
+        time1: data[10].dateTime!,
+        price1: data[10].close + 3.7,
+        time2: data[40].dateTime!,
+        price2: data[40].close + 3.7,
+      );
+
+      await tester.pumpWidget(
+        _host(
+          KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: true,
+            watermarkAssetPath: 'assets/none.svg',
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: false,
+            magnetMode: true,
+            // Handles reachable and the stroke not, so a grab takes an anchor
+            // rather than the body — and anywhere is within the snap.
+            drawingStyle: const DrawingStyle(
+              hitTestTolerance: 0,
+              handleHitTestTolerance: 10000,
+              magnetSnapDistance: 10000,
+            ),
+            trendLines: [line],
+          ),
+        ),
+      );
+
+      await tester.drag(find.byType(KChartWidget), const Offset(30, -40));
+      await tester.pumpAndSettle();
+
+      bool isCandleValue(double? price) => data.any(
+        (c) =>
+            c.open == price ||
+            c.high == price ||
+            c.low == price ||
+            c.close == price,
+      );
+
+      expect(
+        isCandleValue(line.price1) || isCandleValue(line.price2),
+        isTrue,
+        reason: 'the dragged anchor landed on an OHLC value',
+      );
+    });
+
+    testWidgets('a whole-drawing drag keeps its shape under magnet mode', (
+      tester,
+    ) async {
+      final data = candles(rampThenFall(60));
+      DataUtil.calculate(data);
+
+      final line = TrendLine(
+        time1: data[10].dateTime!,
+        price1: data[10].close,
+        time2: data[40].dateTime!,
+        price2: data[40].close,
+      );
+      final span = line.price2! - line.price1;
+
+      await tester.pumpWidget(
+        _host(
+          KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: true,
+            watermarkAssetPath: 'assets/none.svg',
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: false,
+            magnetMode: true,
+            // Stroke reachable, ends not: every grab moves the whole line.
+            drawingStyle: const DrawingStyle(
+              hitTestTolerance: 10000,
+              handleHitTestTolerance: 0,
+              magnetSnapDistance: 10000,
+            ),
+            trendLines: [line],
+          ),
+        ),
+      );
+
+      await tester.drag(find.byType(KChartWidget), const Offset(-40, -60));
+      await tester.pumpAndSettle();
+
+      // Snapping one end of a delta would stretch the line; it must not.
+      expect(
+        line.price2! - line.price1,
+        closeTo(span, 0.001),
+        reason: 'a body drag shifts the line rather than snapping an end',
+      );
+    });
   });
 
   group('shapes', () {
