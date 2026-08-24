@@ -2,7 +2,7 @@
 
 ## Support
 
-The full package is free to use in your own projects — every chart type, all 30
+The full package is free to use in your own projects — every chart type, all 31
 indicators and all 29 drawing tools, nothing held back, nothing paywalled,
 commercial projects included. I keep it updated weekly: new indicators, drawing
 tools and fixes land as I use it myself.
@@ -25,8 +25,8 @@ Named for the open-high-low-close-volume bars it renders.
 ## Features
 
 - **Eight chart types** — candles, OHLC bars, a line, a step line, a filled area, an HLC area, a baseline chart and columns — plus Heikin-Ashi, Renko, three-line break, Kagi, point & figure and range bars as transforms of the candles themselves.
-- **30 indicators**, each a configured instance rather than a flag — so `ATR(8)`, `ATR(14)` and `ATR(20)` are three panes, with their own settings and colours.
-- **Main-chart overlays** — `MA`, `EMA`, `BOLL`, `SAR`, `VWAP` and anchored `VWAP`, Supertrend, Keltner and Donchian channels, the Ichimoku Cloud, pivot points and a volume profile.
+- **31 indicators**, each a configured instance rather than a flag — so `ATR(8)`, `ATR(14)` and `ATR(20)` are three panes, with their own settings and colours.
+- **Main-chart overlays** — `MA`, `EMA`, `BOLL`, `SAR`, `VWAP` in three flavours — whole-series, anchored to a candle, or restarted each session with standard-deviation bands — Supertrend, Keltner and Donchian channels, the Ichimoku Cloud, pivot points and a volume profile.
 - **Swing readers** — a zigzag through the swing highs and lows, Fibonacci retracement of the last swing, and Elliott wave labels, all sized to the market by default.
 - **Sub-charts** — `MACD`, `KDJ`, `RSI`, `WR`, `CCI`, `ATR`, `OBV`, `MFI`, `DMI`, Aroon, Stochastic RSI, `ROC`, `TRIX`, a volume average and the Awesome oscillator, each in its own stacked pane — resizable and reorderable by dragging.
 - **Linear, logarithmic, percentage or indexed-to-100 price axis**, so a decade of compounding reads as well as an afternoon — invertible, with the window's high, low and average close markable on it.
@@ -99,7 +99,7 @@ One page per feature, in [`doc/`](doc/README.md):
 | | |
 | --- | --- |
 | [Candlestick chart](doc/candlestick-chart.md) | The candles, and the shape `KLineEntity` expects |
-| [Indicators](doc/indicators.md) | 30 of them as instances, the catalogue, pane scales, chaining, higher timeframes, alerts |
+| [Indicators](doc/indicators.md) | 31 of them as instances, the catalogue, pane scales, chaining, higher timeframes, alerts |
 | [Comparing a second instrument](doc/comparison.md) | Other series over the same window, rebased or at their own prices |
 | [Chart types](doc/chart-types.md) | Eight ways to draw a series, and six transforms of the candles |
 | [Price axis](doc/price-axis.md) | Linear, log, percentage or indexed to 100; inverting and dragging it |

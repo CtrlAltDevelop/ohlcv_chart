@@ -2,6 +2,14 @@
 
 ### Indicators
 
+- **`SessionVwapIndicator`** — the VWAP a desk means by the word, beginning
+  again at every session boundary rather than dragging the whole history behind
+  it, with a band of volume-weighted standard deviations either side. Resets
+  daily, weekly, monthly or yearly, on the same boundary the pivot levels step
+  on. `deviations: 0` draws the average alone. A VWAP over the *visible range*
+  is the existing `AnchoredVwapIndicator` rebuilt from `onVisibleRangeChanged`,
+  which the indicators page now shows.
+
 - **`TimeframeIndicator`** — an indicator computed on bars coarser than the
   chart is drawn at, so a daily moving average reads on a fifteen-minute chart.
   Each candle takes the last higher-timeframe bar that had closed when it

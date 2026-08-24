@@ -191,6 +191,137 @@ void main() {
     });
   });
 
+  group('session VWAP', () {
+    /// Hourly candles across [hours], flat-ranged so the typical price is the
+    /// close, with a volume of 1 each.
+    List<KLineEntity> hours(int count, List<double> closes) => [
+      for (var i = 0; i < count; i++)
+        KLineEntity.fromCustom(
+          open: closes[i],
+          high: closes[i],
+          low: closes[i],
+          close: closes[i],
+          vol: 1,
+          dateTime: DateTime.utc(2024, 1, 1).add(Duration(hours: i)),
+        ),
+    ];
+
+    test('averages the session so far, and begins again the next day', () {
+      // 24 hours at 100, then 24 at 200.
+      final data = hours(48, [
+        for (var i = 0; i < 24; i++) 100.0,
+        for (var i = 0; i < 24; i++) 200.0,
+      ]);
+      final series = sessionVwapSeries(data, deviations: 0);
+
+      expect(series.vwap[23], closeTo(100, 1e-9));
+      // The second day starts over rather than dragging the first behind it.
+      expect(series.vwap[24], closeTo(200, 1e-9));
+      expect(series.vwap.last, closeTo(200, 1e-9));
+    });
+
+    test('weights by volume, not by candle', () {
+      final data = [
+        KLineEntity.fromCustom(
+          open: 100,
+          high: 100,
+          low: 100,
+          close: 100,
+          vol: 1,
+          dateTime: DateTime.utc(2024, 1, 1),
+        ),
+        KLineEntity.fromCustom(
+          open: 200,
+          high: 200,
+          low: 200,
+          close: 200,
+          vol: 9,
+          dateTime: DateTime.utc(2024, 1, 1, 1),
+        ),
+      ];
+      final series = sessionVwapSeries(data, deviations: 0);
+
+      // (100*1 + 200*9) / 10 — not the 150 a plain mean would give.
+      expect(series.vwap.last, closeTo(190, 1e-9));
+    });
+
+    test('a flat session has no spread to band', () {
+      final data = hours(6, [for (var i = 0; i < 6; i++) 100.0]);
+      final series = sessionVwapSeries(data, deviations: 2);
+
+      expect(series.upper.last, closeTo(100, 1e-9));
+      expect(series.lower.last, closeTo(100, 1e-9));
+    });
+
+    test('the bands sit symmetrically, and widen with the deviation', () {
+      final data = hours(8, [100, 110, 90, 105, 95, 115, 85, 100]);
+      final one = sessionVwapSeries(data, deviations: 1);
+      final two = sessionVwapSeries(data, deviations: 2);
+
+      final average = one.vwap.last!;
+      expect(
+        one.upper.last! - average,
+        closeTo(average - one.lower.last!, 1e-9),
+      );
+      expect(
+        two.upper.last! - average,
+        closeTo((one.upper.last! - average) * 2, 1e-9),
+      );
+    });
+
+    test('no deviation asked for, no bands drawn', () {
+      final data = hours(4, [100, 110, 90, 105]);
+      final series = sessionVwapSeries(data, deviations: 0);
+
+      expect(series.vwap, everyElement(isNotNull));
+      expect(series.upper, everyElement(isNull));
+      expect(series.lower, everyElement(isNull));
+    });
+
+    test('a week restarts on the Monday, not every seven candles', () {
+      // Daily candles from a Wednesday, so the first week is three long.
+      final data = [
+        for (var i = 0; i < 10; i++)
+          KLineEntity.fromCustom(
+            open: 100.0 + i,
+            high: 100.0 + i,
+            low: 100.0 + i,
+            close: 100.0 + i,
+            vol: 1,
+            dateTime: DateTime.utc(2024, 1, 3).add(Duration(days: i)),
+          ),
+      ];
+      final series = sessionVwapSeries(
+        data,
+        session: PivotSession.week,
+        deviations: 0,
+      );
+
+      // 2024-01-03 is a Wednesday; the 8th is the following Monday, so the
+      // average restarts at that candle's own price.
+      expect(data[5].dateTime!.weekday, DateTime.monday);
+      expect(series.vwap[5], closeTo(data[5].close, 1e-9));
+      expect(series.vwap[4], isNot(closeTo(data[4].close, 1e-9)));
+    });
+
+    test('a session with no volume still says something', () {
+      final data = [
+        KLineEntity.fromCustom(
+          open: 100,
+          high: 110,
+          low: 90,
+          close: 105,
+          vol: 0,
+          dateTime: DateTime.utc(2024, 1, 1),
+        ),
+      ];
+      final series = sessionVwapSeries(data);
+
+      // The typical price, there being no volume to weight by.
+      expect(series.vwap.single, closeTo((110 + 90 + 105) / 3, 1e-9));
+    });
+  });
+
   group('swings', () {
     /// Two clean legs up then down, well past any sensible threshold.
     final swinging = spreadCandles([

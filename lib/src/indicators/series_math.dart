@@ -168,6 +168,70 @@ List<double?> anchoredVwapSeries(List<KLineEntity> candles, int anchor) {
   return out;
 }
 
+/// VWAP restarted at every [session] boundary, with a band [deviations]
+/// volume-weighted standard deviations either side.
+///
+/// This is the VWAP a desk means by the word: what has been paid on average
+/// *this session*, beginning again when the session turns over rather than
+/// dragging the whole history behind it. The bands say how far from that
+/// average the session has been trading, so a move outside one is a move away
+/// from where the volume actually went.
+///
+/// The spread is volume-weighted too, taken as `E[p²] - E[p]²` over the
+/// session's volume rather than over its candles, so a thin candle at a silly
+/// price widens the band far less than a heavy one does. Passing a
+/// [deviations] of zero or less leaves both bands null and draws only the
+/// average.
+///
+/// A candle with no timestamp cannot be placed in a session, so it stays in
+/// whichever one preceded it — the same reading [CandleTransforms.bucketIndices]
+/// takes.
+({List<double?> vwap, List<double?> upper, List<double?> lower})
+sessionVwapSeries(
+  List<KLineEntity> candles, {
+  PivotSession session = PivotSession.day,
+  double deviations = 1,
+}) {
+  final vwap = List<double?>.filled(candles.length, null);
+  final upper = List<double?>.filled(candles.length, null);
+  final lower = List<double?>.filled(candles.length, null);
+
+  Object? current;
+  var weighted = 0.0;
+  var weightedSquares = 0.0;
+  var volume = 0.0;
+
+  for (var i = 0; i < candles.length; i++) {
+    final candle = candles[i];
+    final key = session.keyOf(candle);
+    if (key != null && key != current) {
+      current = key;
+      weighted = 0;
+      weightedSquares = 0;
+      volume = 0;
+    }
+
+    final typical = _typicalPrice(candle);
+    weighted += typical * candle.vol;
+    weightedSquares += typical * typical * candle.vol;
+    volume += candle.vol;
+
+    // A session of zero volume has no weighted average to give, so the candle
+    // speaks for itself.
+    final average = volume == 0 ? typical : weighted / volume;
+    vwap[i] = average;
+    if (deviations <= 0 || volume == 0) continue;
+
+    // Rounding can drive a variance that is really zero a hair below it.
+    final variance = max(0.0, weightedSquares / volume - average * average);
+    final spread = sqrt(variance) * deviations;
+    upper[i] = average + spread;
+    lower[i] = average - spread;
+  }
+
+  return (vwap: vwap, upper: upper, lower: lower);
+}
+
 /// Pivot levels for every candle, one list per level: `P, R1, R2, R3, S1, S2,
 /// S3`.
 ///

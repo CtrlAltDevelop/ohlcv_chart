@@ -164,6 +164,17 @@ const IndicatorSetting _period = IndicatorSetting(
   max: 200,
 );
 
+/// How wide the session VWAP's bands sit; zero draws the average alone.
+const IndicatorSetting _vwapDeviations = IndicatorSetting(
+  key: 'deviations',
+  label: 'Deviations',
+  defaultValue: 1,
+  min: 0,
+  max: 5,
+  step: 0.5,
+  isInteger: false,
+);
+
 IndicatorSetting _periodOf(int defaultValue) => IndicatorSetting(
   key: 'period',
   label: 'Period',
@@ -284,6 +295,27 @@ final List<IndicatorType> indicatorCatalog = List.unmodifiable([
     builder: (values, colors) => AnchoredVwapIndicator(
       anchor: values['anchor']!.toInt(),
       color: colors?.firstOrNull,
+    ),
+  ),
+  IndicatorType(
+    name: 'SVWAP',
+    description: 'VWAP restarted each day, with a band either side.',
+    placement: IndicatorPlacement.overlay,
+    settings: [_vwapDeviations],
+    builder: (values, colors) => SessionVwapIndicator(
+      deviations: values['deviations']!.toDouble(),
+      colors: colors,
+    ),
+  ),
+  IndicatorType(
+    name: 'SVWAPW',
+    description: 'VWAP restarted each week, with a band either side.',
+    placement: IndicatorPlacement.overlay,
+    settings: [_vwapDeviations],
+    builder: (values, colors) => SessionVwapIndicator(
+      session: PivotSession.week,
+      deviations: values['deviations']!.toDouble(),
+      colors: colors,
     ),
   ),
   IndicatorType(

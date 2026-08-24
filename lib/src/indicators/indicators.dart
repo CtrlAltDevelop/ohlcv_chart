@@ -311,6 +311,88 @@ class AnchoredVwapIndicator extends Indicator {
       theme.vwapColor;
 }
 
+/// VWAP restarted at every session boundary, with a band either side.
+///
+/// The plain [VwapIndicator] averages the whole series and [AnchoredVwapIndicator]
+/// measures from a candle you pick; this one begins again each session, which is
+/// what a desk means by the word — what has been paid on average *today*, not
+/// since the history happened to start.
+///
+/// The bands are [deviations] volume-weighted standard deviations from that
+/// average, so they say how far from it the session has been trading. Set
+/// [deviations] to zero to draw the average alone; the band lines stay in the
+/// legend and simply hold no values.
+class SessionVwapIndicator extends Indicator {
+  /// Creates a VWAP restarting each [session], banded at [deviations].
+  SessionVwapIndicator({
+    this.session = PivotSession.day,
+    this.deviations = 1,
+    super.colors,
+  });
+
+  /// How often the average begins again.
+  final PivotSession session;
+
+  /// How many volume-weighted standard deviations the bands sit either side.
+  final double deviations;
+
+  @override
+  IndicatorPlacement get placement => IndicatorPlacement.overlay;
+
+  // One name per catalog entry, as the pivots do it: the entry that rebuilds
+  // an indicator is found by name first, so a weekly VWAP must not answer to
+  // the daily one's.
+  @override
+  String get name => switch (session) {
+    PivotSession.day => 'SVWAP',
+    PivotSession.week => 'SVWAPW',
+    PivotSession.month => 'SVWAPM',
+    PivotSession.year => 'SVWAPY',
+  };
+
+  @override
+  String get label => deviations > 0
+      ? 'VWAP(${_sessionLabel(session)},${_trim(deviations)})'
+      : 'VWAP(${_sessionLabel(session)})';
+
+  @override
+  List<IndicatorLine> get lines => [
+    IndicatorLine('VWAP'),
+    IndicatorLine('UB'),
+    IndicatorLine('LB'),
+  ];
+
+  // The numeric setting comes first: a catalog entry reads these positionally,
+  // and stops at the first one that is not a number.
+  @override
+  List<Object?> get settings => [deviations, session];
+
+  @override
+  IndicatorFormat get format => IndicatorFormat.price;
+
+  @override
+  IndicatorSeries compute(List<KLineEntity> candles) {
+    final series = sessionVwapSeries(
+      candles,
+      session: session,
+      deviations: deviations,
+    );
+    return IndicatorSeries([series.vwap, series.upper, series.lower]);
+  }
+
+  @override
+  Color defaultColor(int line, ChartColors theme, int ordinal) =>
+      line == 0 ? theme.vwapColor : theme.avgColor;
+}
+
+/// Writes a session the way a platform labels it: `D`, `W`, `M`, `Y`.
+String _sessionLabel(PivotSession session) => switch (session) {
+  PivotSession.day => 'D',
+  PivotSession.week => 'W',
+  PivotSession.month => 'M',
+  PivotSession.year => 'Y',
+};
+
 /// The pivot of the session before, with its supports and resistances.
 ///
 /// Each session takes its levels from the one that closed before it, so they

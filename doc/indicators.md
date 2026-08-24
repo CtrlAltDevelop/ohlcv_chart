@@ -32,6 +32,7 @@ KChartWidget(
 | `SarIndicator` | `start`, `step`, `maximum` |
 | `VwapIndicator` | — |
 | `AnchoredVwapIndicator` | `anchor` — the candle it measures from |
+| `SessionVwapIndicator` | `session`, `deviations`; restarts each session, banded |
 | `PivotPointsIndicator` | `method`, `session`; the pivot with three supports and resistances |
 | `VolumeProfileIndicator` | `bins`, `valueArea`; volume by price, drawn back from the axis |
 | `SupertrendIndicator` | `period`, `multiplier`; flips colour with the trend |
@@ -117,6 +118,48 @@ KChartWidget(
 ```
 
 ![A volume profile and an anchored VWAP over the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/profile.png)
+
+`SessionVwapIndicator` is the one a desk means by the word: it begins again at
+every session boundary rather than dragging the whole history behind it, so an
+intraday chart reads what has been paid on average *today*.
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  isTrendLine: false,
+  indicators: [
+    SessionVwapIndicator(),                              // resets daily, ±1σ
+    SessionVwapIndicator(session: PivotSession.week),    // resets on the Monday
+    SessionVwapIndicator(deviations: 0),                 // the average alone
+  ],
+);
+```
+
+The bands are `deviations` volume-weighted standard deviations either side, so
+they say how far from the average the session has been trading — a move outside
+one is a move away from where the volume actually went. The spread is weighted
+by volume rather than by candle, so a thin candle at a silly price widens the
+band far less than a heavy one does. Passing `0` leaves the bands empty and
+draws the average alone.
+
+The reset follows the same boundary the pivot levels step on, so a day breaks
+where the chart draws its day divider and a week runs from the Monday.
+
+**A VWAP over the visible range** is `AnchoredVwapIndicator` anchored to the
+first candle on screen — rebuild it from `onVisibleRangeChanged` and the average
+re-measures as the window moves:
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  isTrendLine: false,
+  indicators: [AnchoredVwapIndicator(anchor: firstVisible)],
+  onVisibleRangeChanged: (range) =>
+      setState(() => firstVisible = range.firstIndex),
+);
+```
 
 An indicator of your own can draw a profile too: return an `IndicatorProfile`
 of `ProfileBin`s from `computeProfile` and the chart draws the bars, picks out
@@ -354,9 +397,10 @@ indicators.toggle(RsiIndicator());                              // on, then off
 
 `indicatorCatalog` describes every indicator — its settings, their ranges and
 its colour slots — so an "add indicator" sheet can be driven by data rather than
-a hard-coded list. It holds 33 entries: the 30 indicators above, with the four
-pivot flavours — classic, Fibonacci, Camarilla and weekly — listed one apiece.
-The example app's `IndicatorSheet` is built entirely from it:
+a hard-coded list. It holds 35 entries: the 31 indicators above, with the four
+pivot flavours — classic, Fibonacci, Camarilla and weekly — and the daily and
+weekly session VWAPs each listed one apiece. The example app's
+`IndicatorSheet` is built entirely from it:
 
 ```dart
 final type = indicatorCatalog.firstWhere((t) => t.name == 'ATR');
