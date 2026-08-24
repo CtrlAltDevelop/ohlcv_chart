@@ -64,11 +64,15 @@ Named for the open-high-low-close-volume bars it renders.
 - **Fully themeable** — `ChartStyle` for geometry, `ChartColors` for every colour, `DrawingStyle` for the drawing tools; `ChartTranslations` for every label. Filled or hollow candles, dashed or solid crosshair, pane separators, axis-label pills and a placed, tinted watermark.
 - **Fits its box** — the candles take whatever height the volume and indicator panes leave, so the chart works from a phone to a desktop window without arithmetic on your side.
 
+![The overview strip under a chart, with the visible window lit on it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/overview.png)
+
+![Two linked charts sharing one crosshair](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/linked-charts.png)
+
 ## Install
 
 ```yaml
 dependencies:
-  ohlcv_chart: ^2.1.0
+  ohlcv_chart: ^2.2.0
 ```
 
 ## Quick start

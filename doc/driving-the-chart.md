@@ -93,6 +93,8 @@ void dispose() {
 }
 ```
 
+![Two linked charts sharing one crosshair](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/linked-charts.png)
+
 There is no leader: any chart the user moves becomes the one being followed for
 as long as it is moving, and the link guards against the push back — moving the
 others notifies them, and without the guard their notification would move the
@@ -185,6 +187,8 @@ Column(
   ],
 );
 ```
+
+![The overview strip under a chart, with the visible window lit on it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/overview.png)
 
 It drives the chart through the same controller and reads the window back from
 it, so the two never disagree about where they are — and a chart scrolled by

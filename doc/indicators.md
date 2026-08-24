@@ -136,6 +136,8 @@ KChartWidget(
 );
 ```
 
+![A session VWAP with its band, over an Aroon pane](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/session-vwap.png)
+
 The bands are `deviations` volume-weighted standard deviations either side, so
 they say how far from the average the session has been trading — a move outside
 one is a move away from where the volume actually went. The spread is weighted
@@ -245,6 +247,8 @@ KChartWidget(
   ],
 );
 ```
+
+![A four-hour moving average and RSI over fifteen-minute candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/higher-timeframe.png)
 
 The candles are aggregated up to `timeframe` — first open, highest high, lowest
 low, last close, total volume — and the applied indicator is computed over

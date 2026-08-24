@@ -260,6 +260,24 @@ List<Scene> buildScenes() {
   final candles = MarketData.candles(count: 220);
   final last = candles.last.close;
 
+  /// A longer run, for the scenes that need several sessions to show anything.
+  ///
+  /// 15-minute candles, so 420 of them is a bit over four days: enough for a
+  /// session VWAP to reset a few times and a four-hour average to step.
+  final longRun = MarketData.candles(count: 420);
+
+  // One controller per chart, made once rather than per build, so the strip and
+  // the linked charts are talking to the same chart across every frame the
+  // shutter waits through.
+  final overviewChart = KChartController();
+  final linkedTop = KChartController();
+  final linkedBottom = KChartController();
+  // The same market shown twice, so the price axis and the crosshair's height
+  // are worth carrying as well as the window.
+  ChartLink.all()
+    ..add(linkedTop)
+    ..add(linkedBottom);
+
   Widget chart({
     required List<Indicator> indicators,
     bool volHidden = false,
@@ -287,6 +305,8 @@ List<Scene> buildScenes() {
     bool showAverageClose = false,
     bool showHighLowOnAxis = false,
     Color? extendedHoursColor,
+    KChartController? controller,
+    bool showInfoDialog = true,
   }) {
     final colors = light ? ChartTheme.lightColors() : ChartTheme.darkColors();
     // The default wash is 7% of the text colour — right on a chart being read,
@@ -305,6 +325,8 @@ List<Scene> buildScenes() {
         chartType: chartType,
         priceAxisScale: priceAxisScale,
         showOhlcLegend: showOhlcLegend,
+        controller: controller,
+        showInfoDialog: showInfoDialog,
         showScrollToNowButton: false,
         drawings: drawings,
         isTrendLine:
@@ -392,6 +414,69 @@ List<Scene> buildScenes() {
     ],
   );
 
+  /// The chart with the overview strip beneath it.
+  Widget overviewScene() {
+    final colors = ChartTheme.darkColors();
+    return ColoredBox(
+      color: colors.bgColor,
+      child: Column(
+        children: [
+          Expanded(
+            child: chart(
+              volHidden: true,
+              data: longRun,
+              controller: overviewChart,
+              indicators: [MaIndicator(period: 20), MacdIndicator()],
+            ),
+          ),
+          ChartOverview(
+            longRun,
+            controller: overviewChart,
+            colors: colors,
+            height: 68,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The same market twice, on one link.
+  Widget linkedScene() {
+    final colors = ChartTheme.darkColors();
+    return ColoredBox(
+      color: colors.bgColor,
+      child: Column(
+        children: [
+          Expanded(
+            flex: 3,
+            child: chart(
+              volHidden: true,
+              data: longRun,
+              controller: linkedTop,
+              showOhlcLegend: true,
+              // The popup would sit over the legend, and the crosshair is
+              // what this picture is about.
+              showInfoDialog: false,
+              indicators: [MaIndicator(period: 20), BollIndicator()],
+            ),
+          ),
+          const SizedBox(height: 1),
+          Expanded(
+            flex: 2,
+            child: chart(
+              volHidden: true,
+              data: longRun,
+              controller: linkedBottom,
+              showInfoDialog: false,
+              // One pane, so the candles below still have room to be candles.
+              indicators: [RsiIndicator(period: 14)],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   return [
     (
       name: 'candles',
@@ -446,6 +531,73 @@ List<Scene> buildScenes() {
           RsiIndicator(),
         ],
       ),
+    ),
+    (
+      // A four-hour average over fifteen-minute candles: it steps once a bar
+      // and holds flat between, which is the whole point of the thing.
+      name: 'higher-timeframe',
+      size: wide,
+      act: null,
+      build: () => chart(
+        volHidden: true,
+        data: longRun,
+        indicators: [
+          // Both cover about twenty hours, so they sit in the same stretch of
+          // price and the only difference on show is the stepping. A 4h MA20
+          // would reach back eighty hours and drag the whole axis down with it.
+          MaIndicator(period: 80),
+          TimeframeIndicator(
+            timeframe: const Duration(hours: 4),
+            applied: MaIndicator(period: 5),
+            // A colour of its own, so the stepped line and the smooth one are
+            // told apart at a glance rather than by their shape.
+            colors: const [Color(0xFF4DABF7)],
+          ),
+          TimeframeIndicator(
+            timeframe: const Duration(hours: 4),
+            applied: RsiIndicator(period: 14),
+          ),
+        ],
+      ),
+    ),
+    (
+      name: 'session-vwap',
+      size: wide,
+      act: null,
+      build: () => chart(
+        volHidden: true,
+        data: longRun,
+        sessionDividers: true,
+        indicators: [
+          // One deviation rather than two: the band still says where the
+          // session has been trading without stretching the axis to fit it.
+          SessionVwapIndicator(),
+          AroonIndicator(period: 14),
+        ],
+      ),
+    ),
+    (
+      name: 'overview',
+      size: wide,
+      // Parked mid-history, so both handles of the window are in the picture
+      // rather than the right-hand one sitting off the end of the strip.
+      act: (area, shoot) async {
+        overviewChart.showRange(150, 300);
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+        await shoot();
+      },
+      build: () => overviewScene(),
+    ),
+    (
+      // Held on the upper chart, so the crosshair the link carries down to the
+      // lower one is in the picture.
+      name: 'linked-charts',
+      size: wide,
+      act: (area, shoot) => hold(
+        Offset(area.left + area.width * 0.62, area.top + area.height * 0.24),
+        shoot,
+      ),
+      build: () => linkedScene(),
     ),
     (
       name: 'panes',
