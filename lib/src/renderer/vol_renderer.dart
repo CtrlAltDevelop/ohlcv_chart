@@ -7,6 +7,7 @@ import '../extension/num_ext.dart';
 import '../utils/axis_ticks.dart';
 import '../utils/number_util.dart';
 import 'base_chart_renderer.dart';
+import 'path_batch.dart';
 
 class VolRenderer extends BaseChartRenderer<VolumeEntity> {
   VolRenderer(
@@ -39,6 +40,21 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
   final ChartStyle chartStyle;
   final ChartColors chartColors;
 
+  /// The two volume averages, collected across the window and stroked once.
+  final PathBatch _ma5 = PathBatch();
+  final PathBatch _ma10 = PathBatch();
+
+  /// Strokes an average.
+  ///
+  /// Matches what [BaseChartRenderer.drawLine] used to hand `canvas.drawLine`:
+  /// the same width and antialiasing, and an explicit stroke style, which
+  /// `drawLine` did not need but `drawPath` does.
+  final Paint _maPaint = Paint()
+    ..isAntiAlias = true
+    ..filterQuality = FilterQuality.high
+    ..strokeWidth = 1.0
+    ..style = PaintingStyle.stroke;
+
   @override
   void drawChart(
     VolumeEntity lastPoint,
@@ -63,26 +79,35 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     }
 
     if (lastPoint.ma5Volume != 0) {
-      drawLine(
-        lastPoint.ma5Volume,
-        curPoint.ma5Volume,
-        canvas,
-        lastX,
-        curX,
-        chartColors.ma5Color,
-      );
+      _collect(_ma5, lastPoint.ma5Volume, curPoint.ma5Volume, lastX, curX);
     }
 
     if (lastPoint.ma10Volume != 0) {
-      drawLine(
-        lastPoint.ma10Volume,
-        curPoint.ma10Volume,
-        canvas,
-        lastX,
-        curX,
-        chartColors.ma10Color,
-      );
+      _collect(_ma10, lastPoint.ma10Volume, curPoint.ma10Volume, lastX, curX);
     }
+  }
+
+  /// Adds one stretch of an average to [batch], skipping a gap in the values
+  /// the way [BaseChartRenderer.drawLine] did.
+  void _collect(
+    PathBatch batch,
+    double? lastValue,
+    double? curValue,
+    double lastX,
+    double curX,
+  ) {
+    if (lastValue == null || curValue == null) return;
+    batch.addSegment(lastX, getY(lastValue), curX, getY(curValue));
+  }
+
+  /// Strokes the averages collected over the window.
+  ///
+  /// Called once the candle loop is done, in the same transform the segments
+  /// were collected in.
+  @override
+  void flushSeries(Canvas canvas) {
+    _ma5.flush(canvas, _maPaint..color = chartColors.ma5Color);
+    _ma10.flush(canvas, _maPaint..color = chartColors.ma10Color);
   }
 
   @override

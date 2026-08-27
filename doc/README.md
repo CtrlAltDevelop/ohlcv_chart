@@ -61,6 +61,8 @@ For installation, the feature list and support, see the
   market forward, with the indicators only knowing what has arrived.
 - **[Sizing](sizing.md)** — how the candle area and the panes divide up the
   height they are given.
+- **[Performance](performance.md)** — what the chart does to stay cheap to
+  redraw, what a host can do that undoes it, and how to measure a frame.
 
 ## More
 

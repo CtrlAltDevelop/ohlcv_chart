@@ -12,6 +12,7 @@ import '../indicators/resolved_indicator.dart';
 import '../price_axis_scale.dart';
 import '../utils/axis_ticks.dart';
 import 'base_chart_renderer.dart';
+import 'path_batch.dart';
 import 'series_painter.dart';
 
 /// Which side of the main chart the price axis labels sit on.
@@ -561,16 +562,11 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     final lastY = getY(lastPrice);
     final curY = getY(curPrice);
 
-    final paint = mLinePaint
-      ..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0);
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(lastX, lastY)
-        ..lineTo(curX, lastY)
-        ..lineTo(curX, curY),
-      paint,
-    );
+    _stepLine.path
+      ..moveTo(lastX, lastY)
+      ..lineTo(curX, lastY)
+      ..lineTo(curX, curY);
+    _stepLine.touch();
   }
 
   /// Draws one stretch of an HLC area: the high-low band washed in, with the
@@ -584,24 +580,19 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   ) {
     final lastX = lastXO == curX ? 0.0 : lastXO;
 
-    canvas.drawPath(
-      Path()
-        ..moveTo(lastX, getY(lastPoint.high))
-        ..lineTo(curX, getY(curPoint.high))
-        ..lineTo(curX, getY(curPoint.low))
-        ..lineTo(lastX, getY(lastPoint.low))
-        ..close(),
-      Paint()
-        ..isAntiAlias = true
-        ..color = chartColors.kLineColor.withValues(
-          alpha: chartStyle.hlcAreaOpacity.clamp(0.0, 1.0),
-        ),
-    );
+    _hlcBand.path
+      ..moveTo(lastX, getY(lastPoint.high))
+      ..lineTo(curX, getY(curPoint.high))
+      ..lineTo(curX, getY(curPoint.low))
+      ..lineTo(lastX, getY(lastPoint.low))
+      ..close();
+    _hlcBand.touch();
 
-    canvas.drawLine(
-      Offset(lastX, getY(lastPoint.close)),
-      Offset(curX, getY(curPoint.close)),
-      mLinePaint..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0),
+    _hlcClose.addSegment(
+      lastX,
+      getY(lastPoint.close),
+      curX,
+      getY(curPoint.close),
     );
   }
 
@@ -711,38 +702,48 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     final curY = getY(curPrice);
 
     // Which side of the level this stretch sits on decides its colour; a
-    // stretch that straddles it takes the side it ends on.
+    // stretch that straddles it takes the side it ends on, so the two sides are
+    // collected apart and stroked in their own colour.
     final above = curPrice >= baseline;
-    final color = above ? chartColors.upColor : chartColors.dnColor;
 
-    canvas.drawPath(
-      Path()
-        ..moveTo(lastX, baseY)
-        ..lineTo(lastX, lastY)
-        ..lineTo(curX, curY)
-        ..lineTo(curX, baseY)
-        ..close(),
-      Paint()
-        ..color = color.withValues(alpha: 0.18)
-        ..style = PaintingStyle.fill
-        ..isAntiAlias = true,
-    );
-    canvas.drawLine(
-      Offset(lastX, lastY),
-      Offset(curX, curY),
-      Paint()
-        ..color = color
-        ..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0)
-        ..isAntiAlias = true,
-    );
+    final fill = above ? _baselineUpFill : _baselineDnFill;
+    fill.path
+      ..moveTo(lastX, baseY)
+      ..lineTo(lastX, lastY)
+      ..lineTo(curX, curY)
+      ..lineTo(curX, baseY)
+      ..close();
+    fill.touch();
+
+    final stroke = above ? _baselineUpLine : _baselineDnLine;
+    stroke.addSegment(lastX, lastY, curX, curY);
   }
 
   Shader? mLineFillShader;
-  Path? mLinePath;
-  Path? mLineFillPath;
   Paint mLineFillPaint = Paint()
     ..style = PaintingStyle.fill
     ..isAntiAlias = true;
+
+  /// Fills a band — the HLC wash, and either side of a baseline.
+  final Paint _bandPaint = Paint()
+    ..style = PaintingStyle.fill
+    ..isAntiAlias = true;
+
+  /// Strokes a series in a colour of its own, where [mLinePaint]'s is wrong.
+  final Paint _seriesLinePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..isAntiAlias = true;
+
+  /// The series, collected a candle at a time and drawn in [flushSeries].
+  final PathBatch _line = PathBatch();
+  final PathBatch _lineFill = PathBatch();
+  final PathBatch _stepLine = PathBatch();
+  final PathBatch _hlcBand = PathBatch();
+  final PathBatch _hlcClose = PathBatch();
+  final PathBatch _baselineUpFill = PathBatch();
+  final PathBatch _baselineDnFill = PathBatch();
+  final PathBatch _baselineUpLine = PathBatch();
+  final PathBatch _baselineDnLine = PathBatch();
 
   // Draw a line graph
   void drawPolyline(
@@ -754,76 +755,107 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     bool fill = true,
   }) {
     double lastX = lastXO;
-    //    drawLine(lastPrice + 100, curPrice + 100, canvas, lastX, curX, ChartColors.kLineColor);
-    mLinePath ??= Path();
-
-    //    if (lastX == curX) {
-    //      mLinePath.moveTo(lastX, getY(lastPrice));
-    //    } else {
-    ////      mLinePath.lineTo(curX, getY(curPrice));
-    //      mLinePath.cubicTo(
-    //          (lastX + curX) / 2, getY(lastPrice), (lastX + curX) / 2, getY(curPrice), curX, getY(curPrice));
-    //    }
     if (lastX == curX) lastX = 0; // Fill at the starting position
-    mLinePath!.moveTo(lastX, getY(lastPrice));
-    mLinePath!.cubicTo(
-      (lastX + curX) / 2,
-      getY(lastPrice),
-      (lastX + curX) / 2,
-      getY(curPrice),
-      curX,
-      getY(curPrice),
-    );
-
-    if (!fill) {
-      canvas.drawPath(
-        mLinePath!,
-        mLinePaint..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0),
+    _line.path
+      ..moveTo(lastX, getY(lastPrice))
+      ..cubicTo(
+        (lastX + curX) / 2,
+        getY(lastPrice),
+        (lastX + curX) / 2,
+        getY(curPrice),
+        curX,
+        getY(curPrice),
       );
-      mLinePath!.reset();
-      return;
-    }
+    _line.touch();
 
-    // Draw shadows
-    mLineFillShader ??=
-        LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          tileMode: TileMode.clamp,
-          colors: [chartColors.lineFillColor, chartColors.lineFillInsideColor],
-        ).createShader(
-          Rect.fromLTRB(
-            chartRect.left,
-            chartRect.top,
-            chartRect.right,
-            chartRect.bottom,
-          ),
-        );
-    mLineFillPaint.shader = mLineFillShader;
+    if (!fill) return;
 
-    mLineFillPath ??= Path();
+    _lineFill.path
+      ..moveTo(lastX, chartRect.height + chartRect.top)
+      ..lineTo(lastX, getY(lastPrice))
+      ..cubicTo(
+        (lastX + curX) / 2,
+        getY(lastPrice),
+        (lastX + curX) / 2,
+        getY(curPrice),
+        curX,
+        getY(curPrice),
+      )
+      ..lineTo(curX, chartRect.height + chartRect.top)
+      ..close();
+    _lineFill.touch();
+  }
 
-    mLineFillPath!.moveTo(lastX, chartRect.height + chartRect.top);
-    mLineFillPath!.lineTo(lastX, getY(lastPrice));
-    mLineFillPath!.cubicTo(
-      (lastX + curX) / 2,
-      getY(lastPrice),
-      (lastX + curX) / 2,
-      getY(curPrice),
-      curX,
-      getY(curPrice),
+  /// The wash under a line or area chart.
+  ///
+  /// Built once for the pane it fills, since it is measured from the pane and
+  /// not from the data.
+  Shader get _fillShader =>
+      mLineFillShader ??=
+          LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            tileMode: TileMode.clamp,
+            colors: [
+              chartColors.lineFillColor,
+              chartColors.lineFillInsideColor,
+            ],
+          ).createShader(
+            Rect.fromLTRB(
+              chartRect.left,
+              chartRect.top,
+              chartRect.right,
+              chartRect.bottom,
+            ),
+          );
+
+  /// Draws the series collected over the visible window.
+  ///
+  /// The renderer is handed one candle at a time, so a line used to cost a
+  /// `drawPath` per candle. Each piece is appended as its own subpath instead
+  /// and the lot goes down in one call, which draws the same thing: an
+  /// unjoined subpath strokes exactly as a separate call did.
+  ///
+  /// Called after the candle loop, inside the transform the pieces were
+  /// measured in.
+  @override
+  void flushSeries(Canvas canvas) {
+    final strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0);
+
+    _lineFill.flush(canvas, mLineFillPaint..shader = _fillShader);
+    _line.flush(canvas, mLinePaint..strokeWidth = strokeWidth);
+
+    _stepLine.flush(canvas, mLinePaint..strokeWidth = strokeWidth);
+
+    _hlcBand.flush(
+      canvas,
+      _bandPaint
+        ..color = chartColors.kLineColor.withValues(
+          alpha: chartStyle.hlcAreaOpacity.clamp(0.0, 1.0),
+        ),
     );
-    mLineFillPath!.lineTo(curX, chartRect.height + chartRect.top);
-    mLineFillPath!.close();
+    _hlcClose.flush(canvas, mLinePaint..strokeWidth = strokeWidth);
 
-    canvas.drawPath(mLineFillPath!, mLineFillPaint);
-    mLineFillPath!.reset();
-
-    canvas.drawPath(
-      mLinePath!,
-      mLinePaint..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0),
+    _baselineUpFill.flush(
+      canvas,
+      _bandPaint..color = chartColors.upColor.withValues(alpha: 0.18),
     );
-    mLinePath!.reset();
+    _baselineDnFill.flush(
+      canvas,
+      _bandPaint..color = chartColors.dnColor.withValues(alpha: 0.18),
+    );
+    _baselineUpLine.flush(
+      canvas,
+      _seriesLinePaint
+        ..color = chartColors.upColor
+        ..strokeWidth = strokeWidth,
+    );
+    _baselineDnLine.flush(
+      canvas,
+      _seriesLinePaint
+        ..color = chartColors.dnColor
+        ..strokeWidth = strokeWidth,
+    );
   }
 
   void drawCandle(

@@ -58,8 +58,10 @@ import 'indicators/resolved_indicator.dart';
 import 'price_axis_scale.dart';
 import 'renderer/base_chart_painter.dart';
 import 'renderer/base_dimension.dart';
+import 'renderer/candle_index.dart';
 import 'renderer/chart_painter.dart';
 import 'renderer/main_renderer.dart';
+import 'renderer/text_painter_cache.dart';
 import 'utils/date_format_util.dart';
 
 /// The drawing mode the chart is currently in.
@@ -1256,6 +1258,59 @@ class _KChartWidgetState extends State<KChartWidget>
   /// whole history — see [IndicatorCache].
   final IndicatorCache _indicatorCache = IndicatorCache();
 
+  /// Turns the timestamp a drawing is anchored to back into a candle index.
+  ///
+  /// Kept for the chart's life so the lookup is built once per series rather
+  /// than walked once per anchor per frame — see [CandleIndex].
+  final CandleIndex _candleIndex = CandleIndex();
+
+  /// Holds the chart's labels laid out between frames, for the same reason.
+  final TextPainterCache _textCache = TextPainterCache();
+
+  /// Bumped to redraw the crosshair layer on its own.
+  ///
+  /// A pointer moving over the chart changes only what that layer draws, so it
+  /// is repainted directly rather than through `setState` — which would rebuild
+  /// the whole chart and repaint every candle for a mouse move.
+  final ValueNotifier<int> _crosshairRepaint = ValueNotifier<int>(0);
+
+  /// The cursor the last build handed the [MouseRegion].
+  ///
+  /// The cursor is chosen from where the pointer is, so moving between the
+  /// chart, a pane edge and the price scale changes it — and that needs a
+  /// rebuild, unlike the crosshair itself.
+  MouseCursor _appliedCursor = MouseCursor.defer;
+
+  /// Redraws the crosshair layer, without rebuilding the chart.
+  ///
+  /// The painter is kept and its pointer-driven fields are moved on in place,
+  /// so the candles, the indicators and every label stay exactly as they were
+  /// drawn — the only thing redrawn is the layer the crosshair lives on.
+  void _repaintCrosshair() {
+    if (!_painterBuilt) {
+      notifyChanged();
+      return;
+    }
+
+    // A cursor change is a rebuild, since the cursor is chosen in build.
+    if (_hoverCursor != _appliedCursor) {
+      notifyChanged();
+      return;
+    }
+
+    painter
+      ..selectX = mSelectX
+      ..selectY = mSelectY
+      ..isHovering = _isHovering
+      ..isOnTap = isOnTap
+      ..isLongPress = isLongPress
+      ..suppressCrosshair = _isDrawing || isDraggingHandle;
+
+    _crosshairRepaint.value++;
+    _reportCrosshair();
+    widget.controller?.hostChanged();
+  }
+
   /// What the last resolution was computed from, so a rebuild that changes
   /// neither the candles nor the indicators reuses it.
   ({int length, Object? last, DateTime? time})? _resolvedFrom;
@@ -1332,10 +1387,15 @@ class _KChartWidgetState extends State<KChartWidget>
       _candlesInPlay ?? const [],
       widget.comparisons,
     );
-    _resolvedEvents = resolveEvents([
-      for (final candle in _candlesInPlay ?? const <KLineEntity>[])
-        candle.dateTime,
-    ], widget.events);
+    // Lining events up means handing over every candle's timestamp, which is a
+    // list as long as the history — built afresh every time a tick moves the
+    // newest candle. A chart with no events has nothing to line up.
+    _resolvedEvents = widget.events.isEmpty
+        ? const <ResolvedEvent>[]
+        : resolveEvents([
+            for (final candle in _candlesInPlay ?? const <KLineEntity>[])
+              candle.dateTime,
+          ], widget.events);
     _resolvedEventsFrom = List<ChartEvent>.of(widget.events);
     _resolvedFrom = _candleFingerprint;
     _resolvedIndicators = List<Indicator>.of(widget.indicators);
@@ -1451,6 +1511,7 @@ class _KChartWidgetState extends State<KChartWidget>
     _countdownTimer?.cancel();
     mInfoWindowStream.close();
     _controller?.dispose();
+    _crosshairRepaint.dispose();
     super.dispose();
   }
 
@@ -1790,26 +1851,37 @@ class _KChartWidgetState extends State<KChartWidget>
     if (at == null) return;
 
     final crossed = <(AlertingDrawing, double)>[];
-    final seen = <(AlertingDrawing, int)>{};
 
-    for (final line in _drawings.whereType<AlertingDrawing>()) {
-      if (!line.alert) continue;
+    // Sweeping the drawings costs a list and a set, and this runs on every
+    // build — every hover, every frame of a pan. A chart with nothing armed
+    // gets neither. The sides already recorded matter too: they have to be
+    // cleared when the drawing that set them is disarmed or deleted.
+    final armed = _drawings.any(
+      (line) => line is AlertingDrawing && line.alert,
+    );
+    if (armed || _alertSides.isNotEmpty) {
+      final seen = <(AlertingDrawing, int)>{};
 
-      final levels = line.alertLevelsAt(at);
-      for (final (index, level) in levels.indexed) {
-        final key = (line, index);
-        seen.add(key);
+      for (final line in _drawings.whereType<AlertingDrawing>()) {
+        if (!line.alert) continue;
 
-        final above = last.close >= level;
-        final before = _alertSides[key];
-        _alertSides[key] = above;
-        // The first sighting sets the side; only a change from it is a
-        // crossing.
-        if (before != null && before != above) crossed.add((line, level));
+        final levels = line.alertLevelsAt(at);
+        for (final (index, level) in levels.indexed) {
+          final key = (line, index);
+          seen.add(key);
+
+          final above = last.close >= level;
+          final before = _alertSides[key];
+          _alertSides[key] = above;
+          // The first sighting sets the side; only a change from it is a
+          // crossing.
+          if (before != null && before != above) crossed.add((line, level));
+        }
       }
+
+      _alertSides.removeWhere((key, _) => !seen.contains(key));
     }
 
-    _alertSides.removeWhere((key, _) => !seen.contains(key));
     _checkIndicatorAlerts(last);
 
     final reportLevel = widget.onAlertCrossed;
@@ -1942,13 +2014,15 @@ class _KChartWidgetState extends State<KChartWidget>
           priceAxisScale: widget.priceAxisScale,
           priceZoom: _priceZoom,
           pricePan: _pricePan,
+          candleIndex: _candleIndex,
+          textCache: _textCache,
         );
 
         return Stack(
           children: [
             MouseRegion(
               opaque: false,
-              cursor: _hoverCursor,
+              cursor: _appliedCursor = _hoverCursor,
               onHover: (event) => _handleHover(event.localPosition),
               onExit: (_) {
                 _lastHoverPosition = null;
@@ -2188,11 +2262,35 @@ class _KChartWidgetState extends State<KChartWidget>
                   },
                   child: Stack(
                     children: [
+                      // Two layers, each behind its own boundary: the chart,
+                      // which only has to be drawn again when what it is drawn
+                      // from changes, and the crosshair over it, which follows
+                      // the pointer. A mouse moving across the chart repaints
+                      // the second and leaves the first alone.
                       RepaintBoundary(
                         key: _paintKey,
-                        child: CustomPaint(
-                          size: Size.fromHeight(baseDimension.mDisplayHeight),
-                          painter: painter,
+                        child: Stack(
+                          children: [
+                            RepaintBoundary(
+                              child: CustomPaint(
+                                size: Size.fromHeight(
+                                  baseDimension.mDisplayHeight,
+                                ),
+                                painter: painter,
+                              ),
+                            ),
+                            RepaintBoundary(
+                              child: CustomPaint(
+                                size: Size.fromHeight(
+                                  baseDimension.mDisplayHeight,
+                                ),
+                                painter: ChartOverlayPainter(
+                                  painter,
+                                  repaint: _crosshairRepaint,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       if (widget.showInfoDialog) _buildInfoDialog(),
@@ -2751,14 +2849,14 @@ class _KChartWidgetState extends State<KChartWidget>
     _isHovering = true;
     mSelectX = pos.dx;
     mSelectY = pos.dy;
-    notifyChanged();
+    _repaintCrosshair();
   }
 
   void _clearHoverCrosshair() {
     if (!_isHovering) return;
     _isHovering = false;
     _closeInfoWindow();
-    notifyChanged();
+    _repaintCrosshair();
   }
 
   void _trySelectLine(Offset pos) {

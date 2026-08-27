@@ -11,6 +11,8 @@ import '../export.dart';
 import '../utils/date_format_util.dart';
 import '../utils/number_util.dart';
 import 'base_chart_painter.dart';
+import 'candle_index.dart';
+import 'text_painter_cache.dart';
 import 'base_chart_renderer.dart';
 import 'indicator_pane_renderer.dart';
 import 'main_renderer.dart';
@@ -46,6 +48,8 @@ class ChartPainter extends BaseChartPainter {
     this.priceAxisScale = PriceAxisScale.linear,
     this.priceZoom = 1.0,
     this.pricePan = 0.0,
+    CandleIndex? candleIndex,
+    TextPainterCache? textCache,
     this.chartType = ChartType.candles,
     this.baselinePrice,
     this.session,
@@ -71,7 +75,9 @@ class ChartPainter extends BaseChartPainter {
     this.showNowPrice = true,
     this.fixedLength = 2,
     this.dateFormatter,
-  }) {
+    super.repaint,
+  }) : candleIndex = candleIndex ?? CandleIndex(),
+       textCache = textCache ?? TextPainterCache() {
     selectPointPaint = Paint()
       ..isAntiAlias = true
       ..strokeWidth = 0.5
@@ -153,7 +159,25 @@ class ChartPainter extends BaseChartPainter {
 
   final List<SignalEntity> signals;
   final bool isTrendLine;
-  final double selectY;
+  double selectY;
+
+  /// Turns a drawing's timestamp back into a candle index.
+  ///
+  /// Handed in by the chart, which keeps one for its life, so the lookup is
+  /// built once rather than walked per anchor per frame. A painter built
+  /// without one — a test, or a one-off render — gets its own.
+  final CandleIndex candleIndex;
+
+  /// Holds the chart's labels laid out between frames.
+  ///
+  /// Handed in by the chart for the same reason as [candleIndex]: a painter is
+  /// built afresh every frame, so a cache it owned itself would never be hit.
+  final TextPainterCache textCache;
+
+  /// How many labels this chart has had to lay out.
+  ///
+  /// Useful in a test or a benchmark; nothing in the chart reads it.
+  int get textLayouts => textCache.layouts;
 
   /// Reports the candle under the crosshair, for the info dialog.
   ///
@@ -532,9 +556,12 @@ class ChartPainter extends BaseChartPainter {
       );
     }
 
-    if (showCrosshair) {
-      drawCrossLine(canvas, size);
-    }
+    // The renderers collect their series across the window rather than drawing
+    // a piece per candle, so the strokes and washes go down here, in the same
+    // transform the pieces were measured in.
+    mMainRenderer.flushSeries(canvas);
+    mVolRenderer?.flushSeries(canvas);
+
     canvas.restore();
 
     // Indicators paint in view space too, from their precomputed values, so a
@@ -916,8 +943,8 @@ class ChartPainter extends BaseChartPainter {
   /// data at all.
   Offset? _anchor(DateTime? time, double? price) {
     if (time == null || price == null) return null;
-    final index = candles!.indexWhere((e) => e.dateTime == time);
-    if (index == -1) return null;
+    final index = candleIndex.indexOf(candles!, time);
+    if (index == null) return null;
     return Offset(translateXtoX(getX(index)), getMainY(price));
   }
 
@@ -944,8 +971,8 @@ class ChartPainter extends BaseChartPainter {
   double? horizontalRayStartX(HorizontalLine line) {
     final start = line.startTime;
     if (start == null) return null;
-    final index = candles!.indexWhere((e) => e.dateTime == start);
-    if (index == -1) return null;
+    final index = candleIndex.indexOf(candles!, start);
+    if (index == null) return null;
     return translateXtoX(getX(index));
   }
 
@@ -971,8 +998,8 @@ class ChartPainter extends BaseChartPainter {
 
   void drawVerticalLines(Canvas canvas, Size size) {
     for (final line in _withDraft(verticalLines)) {
-      final index = candles!.indexWhere((e) => e.dateTime == line.time);
-      if (index == -1) continue;
+      final index = candleIndex.indexOf(candles!, line.time);
+      if (index == null) continue;
 
       final x = translateXtoX(getX(index));
       strokeChartLine(
@@ -992,8 +1019,8 @@ class ChartPainter extends BaseChartPainter {
     for (final line in verticalLines) {
       if (!line.showLabel || line.hidden) continue;
 
-      final index = candles!.indexWhere((e) => e.dateTime == line.time);
-      if (index == -1) continue;
+      final index = candleIndex.indexOf(candles!, line.time);
+      if (index == null) continue;
 
       final x = getX(index);
       if (x < -mTranslateX || x > -mTranslateX + mWidth / scaleX) continue;
@@ -1233,9 +1260,9 @@ class ChartPainter extends BaseChartPainter {
         continue;
       }
 
-      final i1 = candles!.indexWhere((e) => e.dateTime == line.time1);
-      final i2 = candles!.indexWhere((e) => e.dateTime == line.time2);
-      if (i1 == -1 || i2 == -1) continue;
+      final i1 = candleIndex.indexOf(candles!, line.time1);
+      final i2 = candleIndex.indexOf(candles!, line.time2);
+      if (i1 == null || i2 == null) continue;
 
       final x1 = translateXtoX(getX(i1));
       final y1 = getMainY(line.price1);
@@ -1277,8 +1304,7 @@ class ChartPainter extends BaseChartPainter {
   /// The index of the candle at [time], or null when it is not in the data.
   int? _indexOf(DateTime? time) {
     if (time == null) return null;
-    final index = candles!.indexWhere((e) => e.dateTime == time);
-    return index == -1 ? null : index;
+    return candleIndex.indexOf(candles!, time);
   }
 
   void drawEllipses(Canvas canvas, Size size) {
@@ -3072,15 +3098,16 @@ class ChartPainter extends BaseChartPainter {
     canvas.drawCircle(Offset(x, selectY), 2.0, circlePaint);
   }
 
+  /// A painter for [text], laid out and ready to paint.
+  ///
+  /// Shared through [textCache] — paint it wherever it belongs, but do not
+  /// mutate it.
   TextPainter getTextPainter(String text, Color? color, {double? fontSize}) {
     final c = color ?? chartColors.defaultTextColor;
     final style = fontSize == null
         ? getTextStyle(c)
         : getTextStyle(c).copyWith(fontSize: fontSize);
-    final span = TextSpan(text: text, style: style);
-    final tp = TextPainter(text: span, textDirection: TextDirection.ltr);
-    tp.layout();
-    return tp;
+    return textCache.get(text, style);
   }
 
   String getDate(DateTime? date) =>
@@ -3120,4 +3147,28 @@ class ChartPainter extends BaseChartPainter {
     canvas.restore();
     canvas.restore();
   }
+}
+
+/// Draws the crosshair, its readouts and the legends, over the chart.
+///
+/// A layer of its own so that moving the pointer does not repaint the candles.
+/// Everything here changes as the pointer moves and nothing else does, so it
+/// sits in its own [RepaintBoundary] and is driven by its own `repaint`
+/// listenable — the chart underneath is left alone.
+///
+/// Deliberately not a [ChartPainter]: the chart is found by its painter's type
+/// in several places, and two of them in one tree would make which one is found
+/// depend on the order they happen to be visited in.
+class ChartOverlayPainter extends CustomPainter {
+  ChartOverlayPainter(this.chart, {super.repaint});
+
+  /// The chart this draws over, and shares its geometry with.
+  final ChartPainter chart;
+
+  @override
+  void paint(Canvas canvas, Size size) => chart.paintOverlay(canvas, size);
+
+  @override
+  bool shouldRepaint(ChartOverlayPainter oldDelegate) =>
+      !identical(oldDelegate.chart, chart);
 }

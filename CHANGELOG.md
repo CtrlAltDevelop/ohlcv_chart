@@ -1,3 +1,72 @@
+## 2.3.1
+
+### Performance
+
+Nothing about the chart's API or how it looks has changed; it is the same chart
+drawn for less. There is a new [performance page](doc/performance.md) with the
+whole picture, and `test/render_perf_test.dart` measures it.
+
+- **A series is drawn in one call, not one per candle.** The renderers are
+  handed a candle at a time, so a line chart spent a `drawPath` on every candle
+  in the window — and a throwaway `Path` with it. Each piece is now collected as
+  its own subpath and drawn once, which draws the same thing: an unjoined
+  subpath strokes exactly as a separate call did. Over a ninety-candle window
+  that is 479 draw calls down to 212 for a line, 569 to 213 for an area, 573 to
+  217 for a high-low band. Both volume moving averages were stroked per segment
+  on *every* chart type — some 180 calls a frame — and are now two paths, which
+  takes candles from 573 to 395 and bars from 663 to 485. What is left per
+  candle is what is genuinely per candle: a candle body and an OHLC bar stay one
+  rectangle each.
+
+- **The crosshair is drawn on a layer of its own.** The chart and the crosshair
+  over it now sit behind separate repaint boundaries, and the crosshair is
+  driven directly rather than through a rebuild. Moving the mouse redraws the
+  crosshair, its readouts and the legends — which read out the candle under it —
+  and leaves every candle, indicator and axis label as it was. Before, a chart
+  with a resting mouse over it redrew everything on every mouse move.
+
+- **Labels are laid out once.** Laying out text is the most expensive thing the
+  chart does per label, and the price axis, the date axis and the legends read
+  the same strings frame after frame. They are held laid out, keyed by the
+  string, its colour and its size, so a recolour or a resize measures afresh and
+  nothing else does.
+
+- **A drawing's anchor no longer searches the history.** A drawing remembers
+  when it was placed rather than where, and turning that back into a candle
+  index searched the whole series — once per anchor, twice for a two-point
+  shape, on every frame. With a long history and a few drawings on it that was
+  the most expensive thing in the frame, and it grew with how much history was
+  loaded rather than with what was on screen. The lookup is built once per
+  series instead.
+
+- **A chart with no events no longer lines any up.** Aligning events handed over
+  a list of every candle's timestamp, rebuilt every time a tick moved the newest
+  candle. A chart with nothing to align now skips it, as does a chart with no
+  alerting drawings when the alert sweep runs.
+
+### Fixed
+
+- The wash under an area or baseline chart was drawn in per-candle slices, so
+  each slice was painted over the stroke of the one before it and the line came
+  out progressively tinted. The wash now goes down whole and the line is drawn
+  over it.
+
+- A pane's legend is no longer drawn under the high and low price markers, which
+  could clip it where the two happened to overlap.
+
+### Tests
+
+- `test/render_perf_test.dart` and `test/counting_canvas.dart` — a `Canvas` that
+  tallies every drawing call and forwards it to a real one, and assertions on
+  what a frame costs. Measured as the *growth* in draw calls as the window
+  widens rather than an absolute count, so the grid and the dashed price line —
+  which scale with the canvas rather than with the data — stay out of the
+  answer, and so the numbers mean the same thing on a busy CI machine as on an
+  idle laptop.
+
+- Goldens for the step line, the high-low band and the columns chart, three
+  chart types that had none.
+
 ## 2.3.0
 
 ### Depth chart

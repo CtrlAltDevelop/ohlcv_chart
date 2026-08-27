@@ -123,6 +123,13 @@ abstract class BaseChartRenderer<T> {
     int index = 0,
   }) {}
 
+  /// Draws whatever this renderer collected over the visible window.
+  ///
+  /// A renderer that draws a series a candle at a time collects the pieces
+  /// instead and puts them down in one call; one that draws each candle
+  /// outright has nothing to flush.
+  void flushSeries(Canvas canvas) {}
+
   void drawLine(
     double? lastPrice,
     double? curPrice,

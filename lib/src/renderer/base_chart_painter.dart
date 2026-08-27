@@ -35,6 +35,7 @@ abstract class BaseChartPainter extends CustomPainter {
     this.volHidden = false,
     this.isTapShowInfoDialog = false,
     this.isLine = false,
+    super.repaint,
   }) {
     mItemCount = candles?.length ?? 0;
     mPointWidth = chartStyle.pointWidth;
@@ -177,15 +178,39 @@ abstract class BaseChartPainter extends CustomPainter {
     }
   }
 
-  /// paint chart
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.clipRect(Rect.fromLTRB(0, 0, size.width, size.height));
+  /// Works out where everything goes, at [size].
+  ///
+  /// Kept apart from the drawing so the two layers of the chart can share one
+  /// answer. The crosshair layer repaints on its own whenever the pointer
+  /// moves, and the geometry it reads has not changed — recomputing it there
+  /// would be work for nothing, and any drift between the two would show as a
+  /// crosshair a pixel off the candle it is reading.
+  void layout(Size size) {
     mDisplayHeight = size.height - mTopPadding - mBottomPadding;
     mWidth = size.width;
     initRect(size);
     calculateValue();
     initChartRenderer();
+  }
+
+  /// How many times the chart layer has been drawn.
+  ///
+  /// Useful in a test or a benchmark; nothing in the chart reads it. What it is
+  /// good for is showing that a pointer moving over the chart leaves this
+  /// alone and only moves [overlayPaints].
+  int get chartPaints => _chartPaints;
+  int _chartPaints = 0;
+
+  /// How many times the crosshair layer has been drawn.
+  int get overlayPaints => _overlayPaints;
+  int _overlayPaints = 0;
+
+  /// Draws the chart itself: everything that does not follow the pointer.
+  @override
+  void paint(Canvas canvas, Size size) {
+    _chartPaints++;
+    canvas.clipRect(Rect.fromLTRB(0, 0, size.width, size.height));
+    layout(size);
 
     canvas.save();
     canvas.scale(1, 1);
@@ -196,13 +221,38 @@ abstract class BaseChartPainter extends CustomPainter {
       drawVerticalText(canvas);
       drawDate(canvas, size);
 
-      drawText(canvas, candles!.last, 5);
       drawNowPrice(canvas);
       drawMaxAndMin(canvas);
       drawSignals(canvas);
-      if (showCrosshair) {
-        drawCrossLineText(canvas, size);
-      }
+    }
+    canvas.restore();
+  }
+
+  /// Draws what follows the pointer: the crosshair, its readouts, and the
+  /// legends, which read out the candle under it.
+  ///
+  /// Reuses the geometry [paint] worked out. On a frame where only the pointer
+  /// moved that is last frame's answer, which is the point: nothing the chart
+  /// is drawn from has changed, so nothing has to be measured again.
+  void paintOverlay(Canvas canvas, Size size) {
+    _overlayPaints++;
+    if (!hasLayout) layout(size);
+    if (candles == null || candles!.isEmpty) return;
+
+    canvas.clipRect(Rect.fromLTRB(0, 0, size.width, size.height));
+    canvas.save();
+    if (showCrosshair) {
+      // The crosshair is measured in candle space, like the candles it picks
+      // out, so it takes the same transform they are drawn in.
+      canvas.save();
+      canvas.translate(mTranslateX * scaleX, 0.0);
+      canvas.scale(scaleX, 1.0);
+      drawCrossLine(canvas, size);
+      canvas.restore();
+    }
+    drawText(canvas, candles!.last, 5);
+    if (showCrosshair) {
+      drawCrossLineText(canvas, size);
     }
     canvas.restore();
   }

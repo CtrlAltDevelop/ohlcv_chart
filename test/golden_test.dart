@@ -115,6 +115,18 @@ void main() {
     await matches(tester, _chart(chartType: ChartType.baseline), 'baseline');
   });
 
+  testWidgets('a step line', (tester) async {
+    await matches(tester, _chart(chartType: ChartType.stepLine), 'step_line');
+  });
+
+  testWidgets('a high-low band with the close through it', (tester) async {
+    await matches(tester, _chart(chartType: ChartType.hlcArea), 'hlc_area');
+  });
+
+  testWidgets('columns from the baseline', (tester) async {
+    await matches(tester, _chart(chartType: ChartType.columns), 'columns');
+  });
+
   testWidgets('Heikin-Ashi candles', (tester) async {
     final ha = CandleTransforms.heikinAshi(_market());
     DataUtil.calculate(ha);
