@@ -5,6 +5,48 @@ of a pan, every tick from the feed, every pixel the mouse moves. This page says
 what the chart does to keep that cheap, and the few things a host can do that
 undo it.
 
+## Where it stands
+
+```
+Microseconds to paint one frame — 140 candles in a 1200×800 box, median
+of three runs. Filled is what it costs now; hollow is what went away.
+
+                        0           200          400  µs
+                        ┼──┬──┬──┬──┼──┬───┬──┬──┼──┬──┬──┬
+candles                 ███████████████████░░░░░░░░░        312 ← 445  1.4×
+OHLC bars               ██████████████████░░░░░░            285 ← 391  1.4×
+line                    ████████████░░░░░░░                 190 ← 307  1.6×
+area                    ████████████░░░░░░░░░░░░            191 ← 386  2.0×
+baseline                ███████████░░░░░░░░░░               173 ← 344  2.0×
+step line               ██████████░░░░░░░░░                 162 ← 300  1.9×
+high-low band           ██████████░░░░░░░░░░░               163 ← 344  2.1×
+columns                 ██████████░░░░░░                    164 ← 254  1.5×
+candles + 6 indicators  ████████████████████████░░░░░░░░    382 ← 522  1.4×
+a mouse move            ████░░░░░░░░░░░░░░░░░░░░░░░░        72 ← 445  6.2×
+
+With a long history behind the window, on a scale of its own:
+
+                        0           1000        2000  µs
+                        ┼──┬──┬──┬──┼──┬──┬──┬──┼──┬──┬──┬─
+50k candles, 20 lines   ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    198 ← 2668  13.5×
+```
+
+Both charts are the same measurement: the time one call to the painter takes,
+which is the part of a frame the chart is responsible for. The gains come from
+the sections below — the series batching accounts for most of the per-type
+difference, the crosshair layer for the mouse move, and the anchor index for
+almost all of the long-history case.
+
+Reproduce them with:
+
+```
+flutter test test/paint_benchmark.dart
+```
+
+It is not a test and asserts nothing, so `flutter test` does not collect it —
+its name has no `_test` suffix. Run it either side of a change, on the same
+quiet machine.
+
 ## What the chart already does
 
 **Only the window is drawn.** The paint loop runs from the first candle on
@@ -102,6 +144,9 @@ painter.candleIndex.scans// candles walked to build the anchor lookup
 real one. It measures the *growth* in draw calls as the window widens rather
 than an absolute count, so the grid and the dashed price line — which scale with
 the canvas and not with the data — stay out of the answer.
+
+`test/paint_benchmark.dart` puts a time on the same cases, for comparing one
+revision against another rather than for guarding anything.
 
 For the real thing, run in profile mode and read the timeline:
 

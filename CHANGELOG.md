@@ -3,8 +3,37 @@
 ### Performance
 
 Nothing about the chart's API or how it looks has changed; it is the same chart
-drawn for less. There is a new [performance page](doc/performance.md) with the
-whole picture, and `test/render_perf_test.dart` measures it.
+drawn for less.
+
+```
+Microseconds to paint one frame — 140 candles in a 1200×800 box, median
+of three runs. Filled is what it costs now; hollow is what went away.
+
+                        0           200          400  µs
+                        ┼──┬──┬──┬──┼──┬───┬──┬──┼──┬──┬──┬
+candles                 ███████████████████░░░░░░░░░        312 ← 445  1.4×
+OHLC bars               ██████████████████░░░░░░            285 ← 391  1.4×
+line                    ████████████░░░░░░░                 190 ← 307  1.6×
+area                    ████████████░░░░░░░░░░░░            191 ← 386  2.0×
+baseline                ███████████░░░░░░░░░░               173 ← 344  2.0×
+step line               ██████████░░░░░░░░░                 162 ← 300  1.9×
+high-low band           ██████████░░░░░░░░░░░               163 ← 344  2.1×
+columns                 ██████████░░░░░░                    164 ← 254  1.5×
+candles + 6 indicators  ████████████████████████░░░░░░░░    382 ← 522  1.4×
+a mouse move            ████░░░░░░░░░░░░░░░░░░░░░░░░        72 ← 445  6.2×
+
+With a long history behind the window, on a scale of its own:
+
+                        0           1000        2000  µs
+                        ┼──┬──┬──┬──┼──┬──┬──┬──┼──┬──┬──┬─
+50k candles, 20 lines   ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    198 ← 2668  13.5×
+```
+
+Measured with `test/paint_benchmark.dart`, which is not run by `flutter test` —
+run it by name either side of a change. The assertions that guard this live in
+`test/render_perf_test.dart` and count draw calls rather than time, since a
+count means the same thing on a busy machine as on an idle one. The new
+[performance page](doc/performance.md) has the whole picture.
 
 - **A series is drawn in one call, not one per candle.** The renderers are
   handed a candle at a time, so a line chart spent a `drawPath` on every candle
