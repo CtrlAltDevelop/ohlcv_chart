@@ -35,7 +35,9 @@ Both charts are the same measurement: the time one call to the painter takes,
 which is the part of a frame the chart is responsible for. The gains come from
 the sections below — the series batching accounts for most of the per-type
 difference, the crosshair layer for the mouse move, and the anchor index for
-almost all of the long-history case.
+almost all of the long-history case, which is **13.5× faster**: a frame that
+cost 2668µs now costs 198, so what is behind the window no longer decides what
+a frame costs.
 
 Reproduce them with:
 

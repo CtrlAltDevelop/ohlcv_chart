@@ -29,6 +29,10 @@ With a long history behind the window, on a scale of its own:
 50k candles, 20 lines   ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    198 ← 2668  13.5×
 ```
 
+The last row is the one to look at: a long history behind the window used to
+cost far more than what was on screen, and now it does not — **13.5× faster**,
+2668µs a frame down to 198.
+
 Measured with `test/paint_benchmark.dart`, which is not run by `flutter test` —
 run it by name either side of a change. The assertions that guard this live in
 `test/render_perf_test.dart` and count draw calls rather than time, since a
@@ -66,7 +70,8 @@ count means the same thing on a busy machine as on an idle one. The new
   shape, on every frame. With a long history and a few drawings on it that was
   the most expensive thing in the frame, and it grew with how much history was
   loaded rather than with what was on screen. The lookup is built once per
-  series instead.
+  series instead, which is **13.5× faster** on fifty thousand candles with
+  twenty lines over them.
 
 - **A chart with no events no longer lines any up.** Aligning events handed over
   a list of every candle's timestamp, rebuilt every time a tick moved the newest
