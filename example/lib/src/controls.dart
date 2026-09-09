@@ -424,6 +424,12 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.fixedPriceAxis = v),
             ),
             _Toggle(
+              label: 'Lock the price scale',
+              subtitle: 'Scrolling moves the candles, not the axis',
+              value: state.lockPriceScale,
+              onChanged: (v) => state.update(() => state.lockPriceScale = v),
+            ),
+            _Toggle(
               label: 'Now price and countdown',
               value: state.showNowPrice,
               onChanged: (v) => state.update(() => state.showNowPrice = v),

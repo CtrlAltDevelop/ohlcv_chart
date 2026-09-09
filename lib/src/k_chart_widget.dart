@@ -285,6 +285,7 @@ class KChartWidget extends StatefulWidget {
     this.hideGrid = false,
     this.showNowPrice = true,
     this.showInfoDialog = true,
+    this.lockPriceScale = false,
     this.materialInfoDialog = true,
     this.chartStyle = const ChartStyle(),
     this.drawingStyle = const DrawingStyle(),
@@ -664,6 +665,25 @@ class KChartWidget extends StatefulWidget {
   /// Enables the long-press info dialog.
   final bool showInfoDialog;
 
+  /// Holds the price axis at one range instead of refitting it to the window.
+  ///
+  /// The axis fits whatever candles are on screen by default, so scrolling
+  /// rescales it and every number on it changes as the window moves. Locked,
+  /// it keeps the range it had when the lock took hold: the candles move under
+  /// a scale that stays put, which is what reading a level off the axis while
+  /// scrolling needs.
+  ///
+  /// The scale can still be dragged and zoomed, from the locked range rather
+  /// than the window's, and `KChartController.resetPriceScale` hands the axis
+  /// back to the chart — which refits it to the window and locks it there
+  /// again.
+  ///
+  /// The range is held until it is reset, so a chart that switches to another
+  /// instrument should reset it: a range from one instrument means nothing on
+  /// another. Paging in history and live ticks need nothing, which is the
+  /// point — they are what the lock is there to sit still through.
+  final bool lockPriceScale;
+
   /// Uses the Material info dialog rather than the Cupertino-styled one.
   final bool materialInfoDialog;
 
@@ -934,6 +954,12 @@ class _KChartWidgetState extends State<KChartWidget>
   /// and how far it is shifted; 1 and 0 hand the axis back to the chart.
   double _priceZoom = 1.0;
   double _pricePan = 0.0;
+
+  /// The range a locked price axis is held at, or null while it is free.
+  ///
+  /// Taken from the axis as it was last fitted, so turning the lock on holds
+  /// the chart exactly where the user was already looking.
+  (double, double)? _lockedPriceRange;
 
   /// Whether the price axis is being held where the user put it.
   bool get _priceScaleIsManual => _priceZoom != 1.0 || _pricePan != 0.0;
@@ -1498,6 +1524,10 @@ class _KChartWidgetState extends State<KChartWidget>
       widget.replay?.addListener(_onReplayChanged);
     }
     if (!identical(oldWidget.candles, widget.candles)) _resolveIndicators();
+    if (oldWidget.lockPriceScale && !widget.lockPriceScale) {
+      // Unlocked, the axis goes back to fitting the window.
+      _lockedPriceRange = null;
+    }
     if (oldWidget.currentDrawingTool != widget.currentDrawingTool) {
       // Picking a different tool abandons whatever the last one had started —
       // except an open-ended shape, which is finished rather than lost, since
@@ -1957,6 +1987,21 @@ class _KChartWidgetState extends State<KChartWidget>
           paneHeights: _effectivePaneHeights,
         );
 
+        // Taken from the axis as it stands, which is last frame's fit: this
+        // runs before the painter for this frame is made, so the range
+        // captured is the one the user is already looking at. Held in a field
+        // rather than pushed through setState because it is read straight
+        // away, by the painter built just below.
+        if (!widget.lockPriceScale) {
+          _lockedPriceRange = null;
+        } else if (_lockedPriceRange == null && _laidOut) {
+          final min = painter.mMainMinValue;
+          final max = painter.mMainMaxValue;
+          if (min.isFinite && max.isFinite && max > min) {
+            _lockedPriceRange = (min, max);
+          }
+        }
+
         _painterBuilt = true;
         painter = ChartPainter(
           widget.chartStyle,
@@ -2023,6 +2068,8 @@ class _KChartWidgetState extends State<KChartWidget>
           priceAxisScale: widget.priceAxisScale,
           priceZoom: _priceZoom,
           pricePan: _pricePan,
+          fixedPriceMin: _lockedPriceRange?.$1,
+          fixedPriceMax: _lockedPriceRange?.$2,
           candleIndex: _candleIndex,
           textCache: _textCache,
         );
@@ -4055,10 +4102,14 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Hands the price axis back to the chart, which fits it to the window.
   void resetPriceScale() {
-    if (!_priceScaleIsManual) return;
+    // A locked axis has something to reset even at zoom 1: the range it is
+    // being held at. Clearing it refits the axis to the window, and the next
+    // build locks it there.
+    if (!_priceScaleIsManual && _lockedPriceRange == null) return;
     setState(() {
       _priceZoom = 1.0;
       _pricePan = 0.0;
+      _lockedPriceRange = null;
     });
     widget.controller?.hostChanged();
   }

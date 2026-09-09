@@ -259,6 +259,9 @@ class DemoState extends ChangeNotifier {
   /// labels rather than scrolling under them.
   bool fixedPriceAxis = false;
 
+  /// Holds the price axis at one range, so scrolling does not rescale it.
+  bool lockPriceScale = false;
+
   // ── Markers and readouts ────────────────────────────────────────────────
   bool showSignals = true;
   bool showInfoDialog = true;

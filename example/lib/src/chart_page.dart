@@ -90,6 +90,7 @@ class _Chart extends StatelessWidget {
       watermarkAssetPath: 'assets/watermark.svg',
       timeFrame: MarketData.timeFrame,
       chartStyle: state.style,
+      lockPriceScale: state.lockPriceScale,
       drawingStyle: state.drawingStyle,
       chartTranslations: state.translations,
       currentDrawingTool: state.tool,

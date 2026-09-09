@@ -62,6 +62,8 @@ class ChartPainter extends BaseChartPainter {
     super.isHovering,
     super.suppressCrosshair,
     super.isOnTap,
+    this.fixedPriceMin,
+    this.fixedPriceMax,
     super.isTapShowInfoDialog,
     super.overlays,
     super.panes,
@@ -233,6 +235,19 @@ class ChartPainter extends BaseChartPainter {
   /// leaves the auto-fitted window where it is.
   final double pricePan;
 
+  /// The range to hold the price axis at, rather than scaling it from the fit
+  /// to whatever candles are in the window.
+  ///
+  /// Both ends are needed for the lock to take; either one left null and the
+  /// axis is scaled from the window as it always has been. Only the scale is
+  /// held: [mMainMaxValue] and [mMainMinValue] stay the window's honest fit, so
+  /// the high and low markers still point at the candles that set them and the
+  /// chart can be handed back its own scale at any time.
+  final double? fixedPriceMin;
+
+  /// The upper end of [fixedPriceMin]'s range.
+  final double? fixedPriceMax;
+
   /// What the candle area draws for each candle.
   final ChartType chartType;
 
@@ -300,22 +315,34 @@ class ChartPainter extends BaseChartPainter {
   /// axis, their logarithms for a logarithmic one — so a stretched log axis
   /// stays a log axis.
   (double, double) _scaledMainRange() {
-    if (priceZoom == 1 && pricePan == 0) return (mMainMaxValue, mMainMinValue);
-    if (!mMainMaxValue.isFinite || !mMainMinValue.isFinite) {
-      return (mMainMaxValue, mMainMinValue);
-    }
+    // A locked axis is scaled from the range it is held at rather than from the
+    // window's fit, which is what keeps it still while the chart scrolls: the
+    // candles move and the scale under them does not.
+    final lockedMin = fixedPriceMin;
+    final lockedMax = fixedPriceMax;
+    final locked =
+        lockedMin != null &&
+        lockedMax != null &&
+        lockedMin.isFinite &&
+        lockedMax.isFinite &&
+        lockedMax > lockedMin;
+    final fitMax = locked ? lockedMax : mMainMaxValue;
+    final fitMin = locked ? lockedMin : mMainMinValue;
+
+    if (priceZoom == 1 && pricePan == 0) return (fitMax, fitMin);
+    if (!fitMax.isFinite || !fitMin.isFinite) return (fitMax, fitMin);
 
     final logarithmic =
-        priceAxisScale == PriceAxisScale.logarithmic && mMainMinValue > 0;
+        priceAxisScale == PriceAxisScale.logarithmic && fitMin > 0;
     double toAxis(double price) =>
         logarithmic ? math.log(price) / math.ln10 : price;
     double toPrice(double value) =>
         logarithmic ? math.pow(10, value).toDouble() : value;
 
-    final top = toAxis(mMainMaxValue);
-    final bottom = toAxis(mMainMinValue);
+    final top = toAxis(fitMax);
+    final bottom = toAxis(fitMin);
     final span = top - bottom;
-    if (span <= 0) return (mMainMaxValue, mMainMinValue);
+    if (span <= 0) return (fitMax, fitMin);
 
     final middle = (top + bottom) / 2 + span * pricePan;
     final half = span / 2 / priceZoom;

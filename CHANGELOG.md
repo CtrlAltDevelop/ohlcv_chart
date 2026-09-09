@@ -21,7 +21,17 @@
 
 ### Added
 
-- **A fixed price axis.** `ChartStyle.priceAxisWidth` holds a gutter back on the
+- **A price axis that can be kept still while the chart scrolls.**
+  `lockPriceScale` holds the axis at one range instead of refitting it to the
+  candles in the window, so scrolling moves the candles under a scale that stays
+  where it is rather than rescaling every number on the axis as the window
+  moves. It locks onto the range already on screen, so turning it on does not
+  move the chart, and `resetPriceScale` hands the axis back — refitting it to
+  the window and holding there afresh. Only the scale is held: the window's high
+  and low are still measured, so their markers stay on the candles that set
+  them, and the axis can still be dragged and zoomed from the locked range.
+
+- **A gutter for the price axis.** `ChartStyle.priceAxisWidth` holds a gutter back on the
   price axis side — whichever side `verticalTextAlignment` puts the labels on —
   and the candles, the grid, the indicator panes and the date axis all stop
   short of it. The labels sit in the gutter on their own, so the axis reads

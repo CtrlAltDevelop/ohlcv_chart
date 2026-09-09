@@ -87,6 +87,42 @@ the window rather than the whole history.
 the axis reads in. The leader lines already point at the candles that set them;
 this says what to read them off the axis as.
 
+## Keeping it still while the chart scrolls
+
+The axis fits the candles in the window, so scrolling rescales it: drag back
+through a trend and every number on the axis changes as the window moves.
+`lockPriceScale` holds it at one range instead.
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  lockPriceScale: true,
+  // ...
+)
+```
+
+It locks onto the range the axis was already showing, so turning it on does not
+move the chart. From then on the candles move under a scale that stays where it
+is — which is what reading a level off the axis while scrolling needs, and what
+paging in history through `onLoadMore` needs in order not to jump.
+
+Only the scale is held. The window's own high and low are still measured, so
+`showHighLowOnAxis` and the high and low markers keep pointing at the candles
+that set them, and a locked axis can still be dragged and zoomed — from the
+range it is held at rather than the window's.
+
+`resetPriceScale` hands the axis back to the chart: it refits to whatever is on
+screen and holds there afresh.
+
+```dart
+chart.resetPriceScale();  // refit to the window, then hold there
+```
+
+Because the range is held until it is reset, a chart that switches to another
+instrument should reset it — a range from one instrument means nothing on
+another. Paging in candles and live ticks need nothing, which is the point.
+
 ## Holding a gutter back for it
 
 By default the price labels are drawn over the candles, and the candles scroll
