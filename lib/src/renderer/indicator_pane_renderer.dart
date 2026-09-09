@@ -27,6 +27,8 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
     this.chartColors,
     this.resolved, {
     this.percentBase,
+    super.priceAxisGutter = 0.0,
+    super.priceAxisGutterOnLeft = false,
   }) : super(
          chartRect: rect,
          maxValue: maxValue,
@@ -224,7 +226,7 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
         chartRect.bottom - tp.height,
       );
 
-      tp.paint(canvas, Offset(chartRect.width - tp.width - padding, offsetY));
+      tp.paint(canvas, Offset(axisLabelX(tp.width, padding), offsetY));
     }
   }
 

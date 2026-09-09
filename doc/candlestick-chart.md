@@ -26,6 +26,12 @@ KChartWidget(
 `KLineEntity.fromJson` accepts the usual OHLCV shape (`open`, `high`, `low`,
 `close`, `vol`, `time`/`id`), or build the entity directly.
 
+`onLoadMore` fires when the scroll lands on an edge — `false` at the oldest
+candle, `true` at the newest — once when it arrives rather than on every frame
+the drag spends there, and again if the user comes away and goes back. Prepend
+the older candles you fetch and hand the chart the longer list; it keeps its
+place in the data, so the window does not jump.
+
 ---
 
 [← All docs](README.md) · [Package README](../README.md)

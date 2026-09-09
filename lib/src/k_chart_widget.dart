@@ -4072,18 +4072,28 @@ class _KChartWidgetState extends State<KChartWidget>
     if (!widget.priceScaleDrag || !painter.hasLayout) return false;
     if (widget.currentDrawingTool != DrawingTool.none) return false;
 
-    final rect = painter.mMainRect;
-    if (!rect.contains(pos)) return false;
-
-    final width = widget.chartStyle.priceScaleGripWidth.clamp(
+    final grip = widget.chartStyle.priceScaleGripWidth.clamp(
       0.0,
-      rect.width / 2,
+      painter.mMainRect.width / 2,
     );
-    if (width <= 0) return false;
+    if (grip <= 0) return false;
 
-    return widget.verticalTextAlignment == VerticalTextAlignment.left
-        ? pos.dx <= rect.left + width
-        : pos.dx >= rect.right - width;
+    // The gutter is the axis, so pressing the labels themselves grabs the
+    // scale; the grip is measured in from there.
+    final onLeft = widget.verticalTextAlignment == VerticalTextAlignment.left;
+    final gutter = painter.priceAxisGutter;
+    final rect = painter.mMainRect;
+    final area = Rect.fromLTRB(
+      onLeft ? rect.left - gutter : rect.left,
+      rect.top,
+      onLeft ? rect.right : rect.right + gutter,
+      rect.bottom,
+    );
+    if (!area.contains(pos)) return false;
+
+    return onLeft
+        ? pos.dx <= area.left + grip + gutter
+        : pos.dx >= area.right - grip - gutter;
   }
 
   /// Handles a tap on the price scale, and reports whether it was one.

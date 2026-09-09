@@ -17,6 +17,8 @@ abstract class BaseChartRenderer<T> {
     this.labelCornerRadius = 3.0,
     this.legendPadding = 4.0,
     this.legendBgColor,
+    this.priceAxisGutter = 0.0,
+    this.priceAxisGutterOnLeft = false,
   }) {
     if (maxValue == minValue) {
       maxValue *= 1.5;
@@ -42,6 +44,31 @@ abstract class BaseChartRenderer<T> {
 
   /// Fill of the legend pill; null leaves the legend unbacked.
   final Color? legendBgColor;
+
+  /// Width held back beside [chartRect] for the price axis labels.
+  ///
+  /// Already resolved by the painter, so it is never wider than the canvas can
+  /// spare. 0 means there is no gutter and the labels are drawn over the plot,
+  /// which is the long-standing behaviour.
+  final double priceAxisGutter;
+
+  /// Which side [priceAxisGutter] is held back on.
+  final bool priceAxisGutterOnLeft;
+
+  /// Where a price axis label [width] wide starts, [padding] in from its edge.
+  ///
+  /// With a gutter the label goes in it, on whichever side it was held back,
+  /// so the plot never runs underneath. Without one the label is drawn just
+  /// inside the plot, against [onLeft] — which is how the axis has always been
+  /// drawn, and what every pane still does by default.
+  double axisLabelX(double width, double padding, {bool onLeft = false}) {
+    if (priceAxisGutter > 0) {
+      return priceAxisGutterOnLeft
+          ? chartRect.left - priceAxisGutter + padding
+          : chartRect.right + padding;
+    }
+    return onLeft ? chartRect.left + padding : chartRect.right - width - padding;
+  }
 
   double maxValue;
   double minValue;

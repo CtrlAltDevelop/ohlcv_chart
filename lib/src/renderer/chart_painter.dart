@@ -253,6 +253,10 @@ class ChartPainter extends BaseChartPainter {
   final bool hideGrid;
   final bool showNowPrice;
   final VerticalTextAlignment verticalTextAlignment;
+
+  @override
+  bool get priceAxisOnLeft =>
+      verticalTextAlignment == VerticalTextAlignment.left;
   final String Function(KLineEntity entity, bool isCrossLine)? dateFormatter;
   final vg.PictureInfo? watermarkPicture;
   final Duration timeFrame;
@@ -345,6 +349,8 @@ class ChartPainter extends BaseChartPainter {
       inverted: invertPriceAxis,
       averageClose: showAverageClose ? _averageCloseInView : null,
       candleColor: candleColor,
+      priceAxisGutter: priceAxisGutter,
+      priceAxisGutterOnLeft: priceAxisOnLeft,
     );
     if (mVolRect != null) {
       mVolRenderer = VolRenderer(
@@ -355,6 +361,8 @@ class ChartPainter extends BaseChartPainter {
         fixedLength,
         chartStyle,
         chartColors,
+        priceAxisGutter: priceAxisGutter,
+        priceAxisGutterOnLeft: priceAxisOnLeft,
       );
     }
     mIndicatorPaneList = [
@@ -369,6 +377,8 @@ class ChartPainter extends BaseChartPainter {
           chartColors,
           panes[i],
           percentBase: _paneBase(panes[i]),
+          priceAxisGutter: priceAxisGutter,
+          priceAxisGutterOnLeft: priceAxisOnLeft,
         ),
     ];
   }
@@ -526,7 +536,13 @@ class ChartPainter extends BaseChartPainter {
     mMainRenderer.drawProfiles(canvas);
 
     canvas.save();
-    canvas.translate(mTranslateX * scaleX, 0.0);
+    // Clipped to the plot so nothing runs under the price axis gutter, then
+    // moved into candle space -- which starts at the plot's left edge, not the
+    // canvas's.
+    canvas.clipRect(
+      Rect.fromLTRB(mPlotLeft, 0, mPlotRight, size.height),
+    );
+    canvas.translate(mPlotLeft + mTranslateX * scaleX, 0.0);
     canvas.scale(scaleX, 1.0);
 
     for (int i = mStartIndex; candles != null && i <= mStopIndex; i++) {
@@ -688,8 +704,8 @@ class ChartPainter extends BaseChartPainter {
     final trading = chartStyle.trading;
     paintStyledLine(
       canvas,
-      Offset(0, y),
-      Offset(size.width, y),
+      Offset(mPlotLeft, y),
+      Offset(mPlotRight, y),
       Paint()
         ..color = color
         ..strokeWidth = trading.lineWidth
@@ -748,7 +764,7 @@ class ChartPainter extends BaseChartPainter {
     final y = mMainRect.bottom - radius - chartStyle.eventMarkGap;
     for (final mark in events) {
       final x = translateXtoX(getX(mark.index));
-      if (x < -radius || x > mWidth + radius) continue;
+      if (x < mPlotLeft - radius || x > mPlotRight + radius) continue;
 
       final color =
           mark.event.color ?? chartColors.eventColor(mark.event.kind.name);
@@ -2584,7 +2600,7 @@ class ChartPainter extends BaseChartPainter {
       final tp = getTextPainter(label, null);
       final y = size.height - (mBottomPadding - tp.height) / 2 - tp.height;
       var x = translateXtoX(getX(index)) - tp.width / 2;
-      x = x.clamp(0.0, math.max(0.0, size.width - tp.width));
+      x = x.clamp(mPlotLeft, math.max(mPlotLeft, mPlotRight - tp.width));
 
       // Two labels crowding into each other read as one long number, so the
       // later one gives way.
@@ -2599,19 +2615,19 @@ class ChartPainter extends BaseChartPainter {
   double calculatePrice(double y) => mMainRenderer.getValue(y);
 
   CrossArea getCrossArea(double y) {
-    if (mMainRect.contains(Offset(0, y))) return CrossArea.main;
-    if (mVolRect != null && mVolRect!.contains(Offset(0, y))) {
+    if (mMainRect.contains(Offset(mPlotLeft, y))) return CrossArea.main;
+    if (mVolRect != null && mVolRect!.contains(Offset(mPlotLeft, y))) {
       return CrossArea.volume;
     }
     for (final sec in mSecondaryRectList) {
-      if (sec.mRect.contains(Offset(0, y))) return CrossArea.secondary;
+      if (sec.mRect.contains(Offset(mPlotLeft, y))) return CrossArea.secondary;
     }
     return CrossArea.none;
   }
 
   IndicatorPaneRenderer? _getSecondaryRendererByY(double y) {
     for (int i = 0; i < mSecondaryRectList.length; i++) {
-      if (mSecondaryRectList[i].mRect.contains(Offset(0, y)) &&
+      if (mSecondaryRectList[i].mRect.contains(Offset(mPlotLeft, y)) &&
           i < mIndicatorPaneList.length) {
         return mIndicatorPaneList[i];
       }
@@ -2679,7 +2695,7 @@ class ChartPainter extends BaseChartPainter {
     double x;
     bool isLeft;
 
-    if (translateXtoX(getX(index)) < mWidth / 2) {
+    if (translateXtoX(getX(index)) < mPlotLeft + mWidth / 2) {
       isLeft = false;
       x = 1;
 
@@ -2703,13 +2719,13 @@ class ChartPainter extends BaseChartPainter {
       }
     } else {
       isLeft = true;
-      x = mWidth - textWidth - 1 - 2 * w1 - w2;
+      x = mPlotRight - textWidth - 1 - 2 * w1 - w2;
 
       final path = Path()
         ..moveTo(x, selectY)
         ..lineTo(x + w2, selectY + r)
-        ..lineTo(mWidth - 2, selectY + r)
-        ..lineTo(mWidth - 2, selectY - r)
+        ..lineTo(mPlotRight - 2, selectY + r)
+        ..lineTo(mPlotRight - 2, selectY - r)
         ..lineTo(x + w2, selectY - r)
         ..close();
 
@@ -2735,8 +2751,8 @@ class ChartPainter extends BaseChartPainter {
 
     if (dateX < dateTp.width / 2 + w1) {
       dateX = dateTp.width / 2 + w1;
-    } else if (mWidth - dateX < dateTp.width / 2 + w1) {
-      dateX = mWidth - dateTp.width / 2 - w1;
+    } else if (mPlotRight - dateX < dateTp.width / 2 + w1) {
+      dateX = mPlotRight - dateTp.width / 2 - w1;
     }
 
     canvas.drawRect(
@@ -2898,9 +2914,9 @@ class ChartPainter extends BaseChartPainter {
       ..isAntiAlias = true;
 
     // Point away from the nearer edge so the label always has room.
-    final pointsRight = x < mWidth / 2;
+    final pointsRight = x < mPlotLeft + mWidth / 2;
     final textLeft = pointsRight
-        ? math.min(x + leader + gap, mWidth - tp.width - 2)
+        ? math.min(x + leader + gap, mPlotRight - tp.width - 2)
         : math.max(x - leader - gap - tp.width, 2.0);
 
     canvas.drawLine(
@@ -2929,11 +2945,13 @@ class ChartPainter extends BaseChartPainter {
 
     // Dashes run the full width so the level can be read anywhere, while the
     // stretch since the last candle stays solid.
-    final lastX = translateXtoX(getX(candles!.length - 1)).clamp(0.0, mWidth);
+    final lastX = translateXtoX(
+      getX(candles!.length - 1),
+    ).clamp(mPlotLeft, mPlotRight);
     if (chartStyle.nowPriceDashed) {
       paintStyledLine(
         canvas,
-        Offset(0, y),
+        Offset(mPlotLeft, y),
         Offset(lastX, y),
         nowPricePaint,
         style: LineStyle.dashed,
@@ -2941,9 +2959,9 @@ class ChartPainter extends BaseChartPainter {
         dashGap: chartStyle.nowPriceLineSpan,
       );
     } else {
-      canvas.drawLine(Offset(0, y), Offset(lastX, y), nowPricePaint);
+      canvas.drawLine(Offset(mPlotLeft, y), Offset(lastX, y), nowPricePaint);
     }
-    canvas.drawLine(Offset(lastX, y), Offset(mWidth, y), nowPricePaint);
+    canvas.drawLine(Offset(lastX, y), Offset(mPlotRight, y), nowPricePaint);
 
     String countdown = '00:00';
     if (last.dateTime != null) {
@@ -2981,8 +2999,8 @@ class ChartPainter extends BaseChartPainter {
     const padding = 4.0;
     final tagWidth = tp.width + padding * 2;
     final left = verticalTextAlignment == VerticalTextAlignment.left
-        ? mWidth - tagWidth - 1
-        : 1.0;
+        ? mPlotRight - tagWidth - 1
+        : mPlotLeft + 1.0;
     final top = y - tp.height / 2 - padding / 2;
 
     canvas.drawRRect(
@@ -3017,8 +3035,8 @@ class ChartPainter extends BaseChartPainter {
 
       paintStyledLine(
         canvas,
-        Offset(0, y),
-        Offset(mWidth, y),
+        Offset(mPlotLeft, y),
+        Offset(mPlotRight, y),
         linePaint,
         style: signal.useDash ? LineStyle.dashed : LineStyle.solid,
         dashLength: chartStyle.nowPriceLineLength,
@@ -3121,9 +3139,9 @@ class ChartPainter extends BaseChartPainter {
     if (picture == null) return;
 
     final area = Rect.fromLTRB(
-      0,
+      mPlotLeft,
       mTopPadding,
-      mWidth,
+      mPlotRight,
       mTopPadding + mMainRect.height,
     );
     final logoWidth =

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 import 'package:ohlcv_chart/src/components/popup_info_view.dart';
+import 'package:ohlcv_chart/src/renderer/chart_painter.dart';
 
 import 'test_utils.dart';
 
@@ -34,6 +35,29 @@ Widget _chart({
     ),
   );
 }
+
+ChartPainter _painterOf(WidgetTester tester) {
+  final dynamic state = tester.state(find.byType(KChartWidget));
+  // ignore: avoid_dynamic_calls
+  return state.painter as ChartPainter;
+}
+
+Widget _chartWith(List<KLineEntity> data) => MaterialApp(
+  home: Scaffold(
+    body: SizedBox(
+      width: 500,
+      height: 600,
+      child: KChartWidget(
+        data,
+        ChartColors(),
+        isTrendLine: false,
+        watermarkAssetPath: 'assets/none.svg',
+        timeFrame: const Duration(minutes: 15),
+        showNowPrice: false,
+      ),
+    ),
+  ),
+);
 
 void main() {
   group('onLoadMore', () {
@@ -104,6 +128,35 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(calls, contains(true));
+    });
+
+    testWidgets('the window stays put when older candles arrive', (
+      tester,
+    ) async {
+      // What a caller does in response to onLoadMore(false): prepend the older
+      // candles and hand back the longer list. The chart is anchored to the
+      // newest candle, so the window must not jump.
+      final recent = candles(rampThenFall(120));
+      DataUtil.calculate(recent);
+      await tester.pumpWidget(_chartWith(recent));
+
+      await tester.drag(find.byType(KChartWidget), const Offset(300, 0));
+      await tester.pumpAndSettle();
+      final atRightEdge = recent[_painterOf(tester).mStopIndex].dateTime;
+
+      final longer = [
+        for (var i = 0; i < 80; i++) candle(90.0 + i, minute: -80 + i),
+        ...recent,
+      ];
+      DataUtil.calculate(longer);
+      await tester.pumpWidget(_chartWith(longer));
+      await tester.pumpAndSettle();
+
+      expect(
+        longer[_painterOf(tester).mStopIndex].dateTime,
+        atRightEdge,
+        reason: 'the same candle is still at the right edge',
+      );
     });
 
     testWidgets('a chart with no callback still scrolls', (tester) async {

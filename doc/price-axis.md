@@ -87,6 +87,35 @@ the window rather than the whole history.
 the axis reads in. The leader lines already point at the candles that set them;
 this says what to read them off the axis as.
 
+## Holding a gutter back for it
+
+By default the price labels are drawn over the candles, and the candles scroll
+underneath them. `ChartStyle.priceAxisWidth` holds a gutter back instead: the
+candles, the grid, the indicator panes and the date axis all stop short of it,
+and the labels sit in it on their own.
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  chartStyle: const ChartStyle(priceAxisWidth: 56),
+  // Which side it is held back on follows the labels.
+  verticalTextAlignment: VerticalTextAlignment.right,
+  // ...
+)
+```
+
+56 or so suits four or five digits at the default text size. The gutter is
+never allowed past half the width, so a narrow chart is still mostly candles.
+
+The plot is clipped to its own bounds, so nothing — a candle at the edge of the
+window, an indicator line, the now-price level — spills into the gutter, and
+the axis reads the same however far the chart is scrolled. Pressing the labels
+still grabs the scale, as below; the gutter counts as part of the axis strip.
+
+Left at 0, the default, nothing changes and the labels are drawn over the
+candles as they always were.
+
 ## Dragging the scale
 
 The axis fits the window by default, so the candles always fill the height —

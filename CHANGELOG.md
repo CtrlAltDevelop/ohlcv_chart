@@ -1,3 +1,36 @@
+## Unreleased
+
+### Fixed
+
+- **`onLoadMore` is called again.** The callback was declared, documented and
+  accepted, but nothing in the package ever invoked it, so paging in older
+  candles could not work however it was wired up. It is now asked at both
+  places the scroll is clamped — dragging and flinging — with the edge latched,
+  so a drag held against the edge asks once when it arrives rather than on
+  every frame, and asks again after coming away and going back. The flag is
+  `true` at the newest candle and `false` at the oldest, as documented.
+
+- **The long-press readout can be turned off and on again.** It listened to a
+  single-subscription stream from a subtree that is only mounted while
+  `showInfoDialog` is set. Setting it back to `true` made a second listen on a
+  stream already listened to, which threw `Bad state: Stream has already been
+  listened to` as the readout remounted — and because that throw landed while
+  the enclosing `Stack` was mounting its children, what callers actually saw was
+  `LateInitializationError: Field '_children' has not been initialized`. The
+  controller is a broadcast one now.
+
+### Added
+
+- **A fixed price axis.** `ChartStyle.priceAxisWidth` holds a gutter back on the
+  price axis side — whichever side `verticalTextAlignment` puts the labels on —
+  and the candles, the grid, the indicator panes and the date axis all stop
+  short of it. The labels sit in the gutter on their own, so the axis reads
+  cleanly however far the chart is scrolled, instead of candles sliding under
+  the numbers. The plot is clipped to its own bounds, so nothing spills into the
+  gutter, and pressing the labels grabs the scale the way pressing the axis
+  strip always has. Left at 0, the default, nothing changes: the labels are
+  drawn over the candles exactly as before.
+
 ## 2.3.1
 
 ### Performance

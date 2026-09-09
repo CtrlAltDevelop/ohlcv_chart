@@ -475,6 +475,7 @@ class ChartStyle {
     this.maxPaneHeight = 400.0,
     this.axisLabelBackground = true,
     this.axisLabelPadding = 4.0,
+    this.priceAxisWidth = 0.0,
     this.labelCornerRadius = 3.0,
     this.legendPadding = 4.0,
     this.legendSpacing = 2.0,
@@ -607,6 +608,18 @@ class ChartStyle {
   /// Space between the chart edge and the price axis labels.
   final double axisLabelPadding;
 
+  /// Width of a gutter held back on the price axis side for its labels.
+  ///
+  /// Left at 0 — the default — the price labels are drawn over the candles,
+  /// which scroll underneath them. Given a width, the candles, the grid and
+  /// the date axis all stop short of it and the labels sit in the gutter on
+  /// their own, so the axis reads cleanly however far the chart is scrolled.
+  /// 56 or so suits four or five digits at the default text size.
+  ///
+  /// Which side it is held back on follows
+  /// `KChartWidget.verticalTextAlignment`.
+  final double priceAxisWidth;
+
   /// Corner radius of the axis label and legend pills.
   final double labelCornerRadius;
 
@@ -662,6 +675,7 @@ class ChartStyle {
     double? maxPaneHeight,
     bool? axisLabelBackground,
     double? axisLabelPadding,
+    double? priceAxisWidth,
     double? labelCornerRadius,
     double? legendPadding,
     double? legendSpacing,
@@ -705,6 +719,7 @@ class ChartStyle {
       maxPaneHeight: maxPaneHeight ?? this.maxPaneHeight,
       axisLabelBackground: axisLabelBackground ?? this.axisLabelBackground,
       axisLabelPadding: axisLabelPadding ?? this.axisLabelPadding,
+      priceAxisWidth: priceAxisWidth ?? this.priceAxisWidth,
       labelCornerRadius: labelCornerRadius ?? this.labelCornerRadius,
       legendPadding: legendPadding ?? this.legendPadding,
       legendSpacing: legendSpacing ?? this.legendSpacing,

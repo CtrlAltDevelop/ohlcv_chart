@@ -418,6 +418,12 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.axisOnRight = v),
             ),
             _Toggle(
+              label: 'Fixed price axis',
+              subtitle: 'Holds a gutter back so candles stop short of it',
+              value: state.fixedPriceAxis,
+              onChanged: (v) => state.update(() => state.fixedPriceAxis = v),
+            ),
+            _Toggle(
               label: 'Now price and countdown',
               value: state.showNowPrice,
               onChanged: (v) => state.update(() => state.showNowPrice = v),
