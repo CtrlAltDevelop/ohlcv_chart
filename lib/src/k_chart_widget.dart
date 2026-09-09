@@ -795,8 +795,17 @@ class KChartWidget extends StatefulWidget {
 class _KChartWidgetState extends State<KChartWidget>
     with TickerProviderStateMixin
     implements KChartHost {
+  /// What the info dialog is reading out, or null when it has nothing to say.
+  ///
+  /// Broadcast on both counts that matter here. The dialog is only in the tree
+  /// while [KChartWidget.showInfoDialog] is set, so its subscription comes and
+  /// goes with that flag; a single-subscription stream refused the second
+  /// listen and threw as the dialog was remounted. And delivery stays
+  /// asynchronous, which a plain notifier would not be — the painter emits
+  /// from inside paint, so telling the dialog synchronously would schedule a
+  /// build during the frame.
   final StreamController<InfoWindowEntity?> mInfoWindowStream =
-      StreamController<InfoWindowEntity?>();
+      StreamController<InfoWindowEntity?>.broadcast();
 
   /// The drawings the chart is painting, from the controller when there is one
   /// and from the per-kind lists otherwise.
@@ -2200,6 +2209,7 @@ class _KChartWidgetState extends State<KChartWidget>
                         0.0,
                         BaseChartPainter.maxScrollX,
                       );
+                      _maybeLoadMore();
                       // Only once the axis is already being held: while it
                       // fits the window there is nothing to slide.
                       if (widget.priceScaleDrag && _priceScaleIsManual) {
@@ -3646,6 +3656,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
     aniX!.addListener(() {
       mScrollX = aniX!.value.clamp(0.0, BaseChartPainter.maxScrollX);
+      _maybeLoadMore();
       notifyChanged();
     });
 
@@ -3658,6 +3669,42 @@ class _KChartWidgetState extends State<KChartWidget>
     });
 
     _controller!.forward();
+  }
+
+  /// Which edge [onLoadMore] has already been told about, so it is asked once
+  /// per arrival rather than on every frame the drag spends pinned there.
+  ///
+  /// Cleared as soon as the chart comes away from that edge, so scrolling back
+  /// out and in asks again.
+  bool? _loadMoreEdgeNotified;
+
+  /// Asks the host to page in more candles when the scroll lands on an edge.
+  ///
+  /// `mScrollX` is clamped to `[0, maxScrollX]`, so those two bounds *are* the
+  /// edges: 0 is the newest candle and `maxScrollX` the oldest. The flag
+  /// [KChartWidget.onLoadMore] is given follows that — true at the right.
+  void _maybeLoadMore() {
+    final callback = widget.onLoadMore;
+    if (callback == null) return;
+
+    // Nothing to page towards until the data has been laid out at least once;
+    // before that both bounds are 0 and every edge looks like both edges.
+    final maxScroll = BaseChartPainter.maxScrollX;
+    if (maxScroll <= 0) return;
+
+    final bool? edge = switch (mScrollX) {
+      <= 0.0 => true,
+      _ when mScrollX >= maxScroll => false,
+      _ => null,
+    };
+
+    if (edge == null) {
+      _loadMoreEdgeNotified = null;
+      return;
+    }
+    if (_loadMoreEdgeNotified == edge) return;
+    _loadMoreEdgeNotified = edge;
+    callback(edge);
   }
 
   void notifyChanged() {
@@ -3919,12 +3966,11 @@ class _KChartWidgetState extends State<KChartWidget>
     return StreamBuilder<InfoWindowEntity?>(
       stream: mInfoWindowStream.stream,
       builder: (context, snapshot) {
-        if ((!isLongPress && !isOnTap) ||
-            !snapshot.hasData ||
-            snapshot.data?.kLineEntity == null) {
+        final info = snapshot.data;
+        if ((!isLongPress && !isOnTap) || info == null) {
           return const SizedBox.shrink();
         }
-        final entity = snapshot.data!.kLineEntity;
+        final entity = info.kLineEntity;
         // Never wider than the chart itself, whatever the caller asked for.
         final maxWidth = math.min(
           widget.infoDialogMaxWidth,
@@ -3932,12 +3978,12 @@ class _KChartWidgetState extends State<KChartWidget>
         );
         return Positioned(
           top: 10,
-          left: snapshot.data!.isLeft ? 10.0 : null,
-          right: snapshot.data!.isLeft ? null : 10.0,
+          left: info.isLeft ? 10.0 : null,
+          right: info.isLeft ? null : 10.0,
           child:
               widget.infoDialogBuilder?.call(
                 context,
-                snapshot.data?.kLinePreviousEntity,
+                info.kLinePreviousEntity,
                 entity,
               ) ??
               PopupInfoView(
