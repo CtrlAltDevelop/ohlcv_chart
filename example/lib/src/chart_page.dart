@@ -91,6 +91,8 @@ class _Chart extends StatelessWidget {
       timeFrame: MarketData.timeFrame,
       chartStyle: state.style,
       lockPriceScale: state.lockPriceScale,
+      scrollEnabled: state.scrollEnabled,
+      zoomEnabled: state.zoomEnabled,
       drawingStyle: state.drawingStyle,
       chartTranslations: state.translations,
       currentDrawingTool: state.tool,

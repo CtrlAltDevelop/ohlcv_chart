@@ -231,6 +231,8 @@ class KChartWidget extends StatefulWidget {
     this.currentDrawingTool = DrawingTool.none,
     this.magnetMode = false,
     this.priceScaleDrag = true,
+    this.scrollEnabled = true,
+    this.zoomEnabled = true,
     this.replay,
     this.enableKeyboardShortcuts = true,
     this.crosshairOnHover = true,
@@ -652,6 +654,32 @@ class KChartWidget extends StatefulWidget {
   /// the axis, the crosshair's date and the session dividers into the zone the
   /// trader works in. It changes what is displayed, never the data.
   final Duration timeZoneOffset;
+
+  /// Lets the user scroll the chart sideways.
+  ///
+  /// Off, the window stays where it is: a drag neither slides it nor flings it,
+  /// and [onLoadMore] is never asked for more candles, since no edge is ever
+  /// reached. What is drawn is still whatever the window holds, so a chart that
+  /// is meant to show one fixed stretch — a session, a day — wants its candles
+  /// to fit the box: see `ChartStyle.pointWidth`.
+  ///
+  /// The controller is unaffected, the way [priceScaleDrag] leaves it: a chart
+  /// the user cannot scroll can still be scrolled from your own code.
+  final bool scrollEnabled;
+
+  /// Lets the user zoom the chart in and out.
+  ///
+  /// Off, pinching does nothing and the zoom slider — which is only ever shown
+  /// on the web and on desktop, where there is no pinch — is left off too.
+  ///
+  /// Worth turning off alongside [scrollEnabled] for a chart meant to sit
+  /// still: zooming out makes the candles narrower, which leaves the window
+  /// with room to scroll into and so hands back the scrolling that
+  /// [scrollEnabled] took away.
+  ///
+  /// The controller is unaffected, so `zoomIn`, `zoomOut` and `setChartScale`
+  /// still work.
+  final bool zoomEnabled;
 
   /// Opens the info dialog on tap as well as on long press.
   final bool isTapShowInfoDialog;
@@ -2238,7 +2266,10 @@ class _KChartWidgetState extends State<KChartWidget>
                     }
 
                     if (details.scale != 1.0) {
-                      // Zoom
+                      // Zoom. A pinch on a chart that cannot be zoomed is not
+                      // a scroll either, so it is dropped rather than falling
+                      // through to the pan below.
+                      if (!widget.zoomEnabled) return;
                       mScaleX = (_lastScale * details.scale).clamp(0.1, 3.0);
                       notifyChanged();
                       return;
@@ -2251,12 +2282,14 @@ class _KChartWidgetState extends State<KChartWidget>
                     } else if (isDraggingHandle) {
                       _applyHandleDrag(pos);
                     } else {
-                      mScrollX += details.focalPointDelta.dx / mScaleX;
-                      mScrollX = mScrollX.clamp(
-                        0.0,
-                        BaseChartPainter.maxScrollX,
-                      );
-                      _maybeLoadMore();
+                      if (widget.scrollEnabled) {
+                        mScrollX += details.focalPointDelta.dx / mScaleX;
+                        mScrollX = mScrollX.clamp(
+                          0.0,
+                          BaseChartPainter.maxScrollX,
+                        );
+                        _maybeLoadMore();
+                      }
                       // Only once the axis is already being held: while it
                       // fits the window there is nothing to slide.
                       if (widget.priceScaleDrag && _priceScaleIsManual) {
@@ -2308,7 +2341,9 @@ class _KChartWidgetState extends State<KChartWidget>
                     isScale = false;
                     _lastScale = mScaleX;
 
-                    if (!_isDrawing && !isDraggingHandle) {
+                    if (!_isDrawing &&
+                        !isDraggingHandle &&
+                        widget.scrollEnabled) {
                       final velocity = details.velocity.pixelsPerSecond.dx;
                       _onFling(velocity);
                     } else {
@@ -2365,9 +2400,10 @@ class _KChartWidgetState extends State<KChartWidget>
             // Touch platforms pinch to zoom; everything else gets the
             // slider. (`!isIOS || !isAndroid` was always true, so the slider
             // used to render on mobile too.)
-            if (kIsWeb ||
-                (defaultTargetPlatform != TargetPlatform.iOS &&
-                    defaultTargetPlatform != TargetPlatform.android))
+            if (widget.zoomEnabled &&
+                (kIsWeb ||
+                    (defaultTargetPlatform != TargetPlatform.iOS &&
+                        defaultTargetPlatform != TargetPlatform.android)))
               _buildScaleX(),
             if (widget.showScrollToNowButton && !isChartAtRightEdge)
               _buildScrollToNowButton(),

@@ -1,5 +1,24 @@
 ## 2.4.0
 
+### A chart that sits still
+
+- **New `scrollEnabled` and `zoomEnabled` turn the chart's own gestures off**,
+  for a chart that is meant to show one fixed stretch rather than be navigated
+  — an intraday session, a thumbnail, a printed figure. With `scrollEnabled`
+  off a drag neither slides the window nor flings it, and `onLoadMore` is never
+  asked for more candles, since no edge is ever reached. With `zoomEnabled` off
+  a pinch does nothing, and the zoom slider — only ever shown on the web and on
+  desktop, where there is no pinch — is left off too.
+- They are worth turning off together. Zooming out makes the candles narrower,
+  which leaves the window room to scroll into, so a chart that only had
+  `scrollEnabled` off could be pinched back into a scrollable one.
+- Both hold the user back and leave your own code alone, the way
+  `priceScaleDrag` already did: `zoomIn`, `zoomOut`, `setChartScale`,
+  `goToIndex`, `fitAll` and the rest of `KChartController` still work.
+- For a chart drawn at a fixed position, give `ChartStyle.pointWidth` roughly
+  the chart's width divided by the number of candles. Once the whole series
+  fits, there is nowhere to scroll to even before the flag.
+
 ### Price axis
 
 - **New `lockPriceScale` keeps the axis still while the chart scrolls.** The

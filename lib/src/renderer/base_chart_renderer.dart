@@ -67,7 +67,9 @@ abstract class BaseChartRenderer<T> {
           ? chartRect.left - priceAxisGutter + padding
           : chartRect.right + padding;
     }
-    return onLeft ? chartRect.left + padding : chartRect.right - width - padding;
+    return onLeft
+        ? chartRect.left + padding
+        : chartRect.right - width - padding;
   }
 
   double maxValue;

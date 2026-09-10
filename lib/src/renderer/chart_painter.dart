@@ -566,9 +566,7 @@ class ChartPainter extends BaseChartPainter {
     // Clipped to the plot so nothing runs under the price axis gutter, then
     // moved into candle space -- which starts at the plot's left edge, not the
     // canvas's.
-    canvas.clipRect(
-      Rect.fromLTRB(mPlotLeft, 0, mPlotRight, size.height),
-    );
+    canvas.clipRect(Rect.fromLTRB(mPlotLeft, 0, mPlotRight, size.height));
     canvas.translate(mPlotLeft + mTranslateX * scaleX, 0.0);
     canvas.scale(scaleX, 1.0);
 
@@ -2972,9 +2970,8 @@ class ChartPainter extends BaseChartPainter {
 
     // Dashes run the full width so the level can be read anywhere, while the
     // stretch since the last candle stays solid.
-    final lastX = translateXtoX(
-      getX(candles!.length - 1),
-    ).clamp(mPlotLeft, mPlotRight);
+    final lastX = translateXtoX(getX(candles!.length - 1))
+        .clamp(mPlotLeft, mPlotRight);
     if (chartStyle.nowPriceDashed) {
       paintStyledLine(
         canvas,

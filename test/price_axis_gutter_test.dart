@@ -73,8 +73,7 @@ class _GutterProbe implements Canvas {
   final List<Rect> _stack = [];
 
   /// Whether the plot was clipped to at any point.
-  bool get clippedToPlot =>
-      clips.any((r) => (r.right - plotRight).abs() < 0.5);
+  bool get clippedToPlot => clips.any((r) => (r.right - plotRight).abs() < 0.5);
 
   void _check(String what, double x) {
     if (x > plotRight + 0.5 && _clip.right > plotRight + 0.5) {
@@ -151,10 +150,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _chart(
-          priceAxisWidth: _gutter,
-          alignment: VerticalTextAlignment.left,
-        ),
+        _chart(priceAxisWidth: _gutter, alignment: VerticalTextAlignment.left),
       );
       final painter = _painterOf(tester);
 
@@ -293,10 +289,7 @@ void main() {
   group('coordinates round-trip through the gutter', () {
     testWidgets('a plot x maps back to itself', (tester) async {
       await tester.pumpWidget(
-        _chart(
-          priceAxisWidth: _gutter,
-          alignment: VerticalTextAlignment.left,
-        ),
+        _chart(priceAxisWidth: _gutter, alignment: VerticalTextAlignment.left),
       );
       final painter = _painterOf(tester);
 
@@ -335,10 +328,7 @@ void main() {
       // the two disagree about where the plot begins, the crosshair drifts off
       // the candle it is reading.
       await tester.pumpWidget(
-        _chart(
-          priceAxisWidth: _gutter,
-          alignment: VerticalTextAlignment.left,
-        ),
+        _chart(priceAxisWidth: _gutter, alignment: VerticalTextAlignment.left),
       );
       final painter = _painterOf(tester);
 

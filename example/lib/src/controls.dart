@@ -516,6 +516,18 @@ class Controls extends StatelessWidget {
                   state.update(() => state.frontPadding = v.toDouble()),
             ),
             _Toggle(
+              label: 'Scrolling',
+              subtitle: 'Off, a drag leaves the window where it is',
+              value: state.scrollEnabled,
+              onChanged: (v) => state.update(() => state.scrollEnabled = v),
+            ),
+            _Toggle(
+              label: 'Zooming',
+              subtitle: 'Off, no pinch — and no slider on desktop',
+              value: state.zoomEnabled,
+              onChanged: (v) => state.update(() => state.zoomEnabled = v),
+            ),
+            _Toggle(
               label: 'Scroll-to-now button',
               subtitle: 'Appears once the chart is scrolled back',
               value: state.scrollToNowButton,

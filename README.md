@@ -55,6 +55,7 @@ Named for the open-high-low-close-volume bars it renders.
 - **Higher timeframes** — a daily moving average on a fifteen-minute chart, through `TimeframeIndicator`; each candle reads the last higher-timeframe bar that had closed when it opened, so the line never repaints and never shows a value from its own future.
 - **A right-click menu** on the chart and on any drawing — coordinates, duplicate, restack, lock, hide, alert, delete; paste, select all, fit the scale, undo — with your own items added through one builder.
 - **Crosshair on hover** and an **OHLC legend** above the chart, which is how a chart reads on a desktop.
+- **Or no interaction at all** — `scrollEnabled` and `zoomEnabled` turn the chart's own gestures off, for an intraday session, a thumbnail or a figure that is meant to sit still rather than be navigated; your own code can still drive it.
 - **Driven from your own code** — `KChartController` zooms, scrolls back to the live candle and hands you the chart as a PNG.
 - **The visible window, read and set** — which candles are on screen, go-to-date, fit-to-screen, and a callback whenever it moves.
 - **An overview strip** — `ChartOverview` draws the whole history under the chart with the visible window lit; drag it to scrub, drag its edges to zoom, tap to jump.
@@ -129,7 +130,7 @@ One page per feature, in [`doc/`](doc/README.md):
 | [Orders and positions](doc/orders-and-positions.md) | Live lines from your venue, tagged and draggable |
 | [Event marks](doc/event-marks.md) | Earnings, dividends, splits and news under the candles |
 | [Sessions and time zones](doc/sessions.md) | Day dividers, display time zone, extended hours, per-bar colour |
-| [Driving the chart](doc/driving-the-chart.md) | `KChartController`, and the visible window |
+| [Driving the chart](doc/driving-the-chart.md) | `KChartController`, the visible window, and a chart with no gestures |
 | [Panes](doc/panes.md) | Stacking, resizing and reordering the indicator panes |
 | [Bar replay](doc/bar-replay.md) | Rewind, then step or play the market forward |
 | [Sizing](doc/sizing.md) | How the candle area and the panes divide the height |

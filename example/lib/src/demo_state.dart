@@ -262,6 +262,12 @@ class DemoState extends ChangeNotifier {
   /// Holds the price axis at one range, so scrolling does not rescale it.
   bool lockPriceScale = false;
 
+  /// Lets the user scroll the chart sideways.
+  bool scrollEnabled = true;
+
+  /// Lets the user pinch, or drag the slider on desktop and the web.
+  bool zoomEnabled = true;
+
   // ── Markers and readouts ────────────────────────────────────────────────
   bool showSignals = true;
   bool showInfoDialog = true;

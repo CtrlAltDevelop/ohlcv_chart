@@ -112,6 +112,7 @@ abstract class BaseChartPainter extends CustomPainter {
   /// Secondary list support
   List<RenderRect> mSecondaryRectList = [];
   late double mDisplayHeight;
+
   /// Whether the price axis gutter is held back on the left rather than the
   /// right.
   ///

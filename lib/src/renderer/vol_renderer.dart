@@ -21,20 +21,20 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     super.priceAxisGutter = 0.0,
     super.priceAxisGutterOnLeft = false,
   }) : super(
-        chartRect: mainRect,
-        maxValue: maxValue,
-        minValue: minValue,
-        topPadding: topPadding,
-        fixedLength: fixedLength,
-        gridColor: chartColors.gridColor,
-        separatorColor: chartColors.effectiveSeparatorColor,
-        gridColumnColor: chartColors.effectiveGridColumnColor,
-        gridStrokeWidth: chartStyle.gridStrokeWidth,
-        separatorWidth: chartStyle.separatorWidth,
-        labelCornerRadius: chartStyle.labelCornerRadius,
-        legendPadding: chartStyle.legendPadding,
-        legendBgColor: chartColors.effectiveLegendBgColor,
-      ) {
+         chartRect: mainRect,
+         maxValue: maxValue,
+         minValue: minValue,
+         topPadding: topPadding,
+         fixedLength: fixedLength,
+         gridColor: chartColors.gridColor,
+         separatorColor: chartColors.effectiveSeparatorColor,
+         gridColumnColor: chartColors.effectiveGridColumnColor,
+         gridStrokeWidth: chartStyle.gridStrokeWidth,
+         separatorWidth: chartStyle.separatorWidth,
+         labelCornerRadius: chartStyle.labelCornerRadius,
+         legendPadding: chartStyle.legendPadding,
+         legendBgColor: chartColors.effectiveLegendBgColor,
+       ) {
     mVolWidth = chartStyle.volWidth;
   }
 
