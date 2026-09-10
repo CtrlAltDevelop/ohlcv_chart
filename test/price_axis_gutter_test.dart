@@ -45,12 +45,14 @@ Widget _chart({
   );
 }
 
-/// Every x a line or rect was drawn at, from one paint of [painter].
-({List<double> xs, CountingCanvas canvas}) _record(ChartPainter painter) {
-  final recorder = ui.PictureRecorder();
-  final canvas = CountingCanvas(Canvas(recorder));
-  painter.paint(canvas, Size(_width, 600));
-  return (xs: const [], canvas: canvas);
+/// Paints [painter] once onto a real canvas, tallying the draw calls.
+///
+/// Forwarding to a recorder rather than swallowing the calls keeps the painter
+/// honest: anything that would throw on a real canvas throws here too.
+CountingCanvas _record(ChartPainter painter) {
+  final canvas = CountingCanvas(Canvas(ui.PictureRecorder()));
+  painter.paint(canvas, const Size(_width, 600));
+  return canvas;
 }
 
 /// A canvas that records the clips pushed during a paint, and any line drawn
@@ -281,8 +283,7 @@ void main() {
       await tester.pumpWidget(_chart(priceAxisWidth: _gutter));
       final painter = _painterOf(tester);
 
-      final recorded = _record(painter);
-      expect(recorded.canvas.totalDraws, greaterThan(0));
+      expect(_record(painter).totalDraws, greaterThan(0));
     });
   });
 

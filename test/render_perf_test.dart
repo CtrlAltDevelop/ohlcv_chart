@@ -202,7 +202,8 @@ void main() {
       expect(
         second - first,
         lessThan(first ~/ 4),
-        reason: 'repainting the same chart re-laid-out ${second - first} labels',
+        reason:
+            'repainting the same chart re-laid-out ${second - first} labels',
       );
     });
   });
