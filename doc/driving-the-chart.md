@@ -156,7 +156,9 @@ chart.hideCrosshair();                   // take it down
 
 The price axis is readable and settable the same way — `priceZoom` and
 `pricePan` for its stretch and shift, `setPriceZoom`, `setPricePan` and
-`resetPriceScale` to move it.
+`resetPriceScale` to move it. `resetPriceScale` is also what hands a
+[locked axis](price-axis.md#keeping-it-still-while-the-chart-scrolls) back to the
+chart, refitting it to the window and holding it there afresh.
 
 `onCrosshairChanged` reports where it moved to, on the same terms as
 `onVisibleRangeChanged`: after the frame that moved it, and only when the

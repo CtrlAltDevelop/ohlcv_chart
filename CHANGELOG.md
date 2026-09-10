@@ -1,4 +1,30 @@
-## Unreleased
+## 2.4.0
+
+### Price axis
+
+- **New `lockPriceScale` keeps the axis still while the chart scrolls.** The
+  axis fits the candles in the window, so scrolling rescaled it: dragging back
+  through a trend changed every number on it. Locked, it holds the range it was
+  already showing and the candles move under a scale that stays where it is —
+  which is what reading a level off the axis while scrolling needs, and what
+  paging in history through `onLoadMore` needs in order not to jump. It locks
+  onto what is already on screen, so turning it on does not move the chart, and
+  `resetPriceScale` hands the axis back: it refits to the window and holds there
+  afresh.
+- Only the scale is held. The window's own high and low are still measured, so
+  their markers keep pointing at the candles that set them, and a locked axis
+  can still be dragged and zoomed — from the range it is held at rather than
+  the window's. The range is held until it is reset, so a chart that switches to
+  another instrument should reset it; paging in candles and live ticks need
+  nothing, which is the point.
+- **New `ChartStyle.priceAxisWidth` holds a gutter back for the labels.** It is
+  taken off whichever side `verticalTextAlignment` puts them on, and the
+  candles, the grid, the indicator panes and the date axis all stop short of it,
+  so the labels sit in the gutter on their own instead of candles sliding under
+  the numbers. The plot is clipped to its own bounds, so nothing spills into the
+  gutter, and pressing the labels grabs the scale the way pressing the axis
+  strip always has. Left at 0, the default, nothing changes: the labels are
+  drawn over the candles exactly as before.
 
 ### Fixed
 
@@ -18,28 +44,6 @@
   the enclosing `Stack` was mounting its children, what callers actually saw was
   `LateInitializationError: Field '_children' has not been initialized`. The
   controller is a broadcast one now.
-
-### Added
-
-- **A price axis that can be kept still while the chart scrolls.**
-  `lockPriceScale` holds the axis at one range instead of refitting it to the
-  candles in the window, so scrolling moves the candles under a scale that stays
-  where it is rather than rescaling every number on the axis as the window
-  moves. It locks onto the range already on screen, so turning it on does not
-  move the chart, and `resetPriceScale` hands the axis back — refitting it to
-  the window and holding there afresh. Only the scale is held: the window's high
-  and low are still measured, so their markers stay on the candles that set
-  them, and the axis can still be dragged and zoomed from the locked range.
-
-- **A gutter for the price axis.** `ChartStyle.priceAxisWidth` holds a gutter back on the
-  price axis side — whichever side `verticalTextAlignment` puts the labels on —
-  and the candles, the grid, the indicator panes and the date axis all stop
-  short of it. The labels sit in the gutter on their own, so the axis reads
-  cleanly however far the chart is scrolled, instead of candles sliding under
-  the numbers. The plot is clipped to its own bounds, so nothing spills into the
-  gutter, and pressing the labels grabs the scale the way pressing the axis
-  strip always has. Left at 0, the default, nothing changes: the labels are
-  drawn over the candles exactly as before.
 
 ## 2.3.1
 

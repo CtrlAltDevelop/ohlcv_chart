@@ -39,6 +39,7 @@ Named for the open-high-low-close-volume bars it renders.
 - **Sub-charts** — `MACD`, `KDJ`, `RSI`, `WR`, `CCI`, `ATR`, `OBV`, `MFI`, `DMI`, Aroon, Stochastic RSI, `ROC`, `TRIX`, a volume average and the Awesome oscillator, each in its own stacked pane — resizable and reorderable by dragging.
 - **Linear, logarithmic, percentage or indexed-to-100 price axis**, so a decade of compounding reads as well as an afternoon — invertible, with the window's high, low and average close markable on it.
 - **A price scale you can drag** — pull the labels to stretch or flatten the candles, drag the chart to slide the window, double-tap to fit it back; from code as well, through the controller.
+- **A price axis that can be pinned** — `lockPriceScale` holds it at one range instead of refitting it to whatever is on screen, so scrolling moves the candles under a scale that stays put rather than rescaling every number on the axis; and `priceAxisWidth` holds a gutter back for the labels, so the candles stop short of them instead of sliding underneath.
 - **Axes that read as round numbers** — both axes choose their values first and are ruled where the labels fall, so a price scale steps `69000, 69500, 70000` and an intraday date axis lands on the hour, never on whatever value happened to fall on an evenly spaced pixel.
 - **29 drawing tools** — levels and rays, trend lines, arrows, extended lines, boxes, ellipses, triangles, parallel channels, pitchforks, Gann fans and boxes, four Fibonacci tools, a regression trend with its bands, XABCD patterns, multi-leg paths, price and date brackets, a measuring tool, planned positions with their risk-to-reward, notes, callouts, flags and freehand strokes; each placed by tap or drag, then dragged, locked, hidden and removed.
 - **A line editor** that opens on selection: colour, opacity, thickness, solid/dashed/dotted stroke, fill, label text and visibility, alerts, lock and delete — every option list, control and pixel of it configurable through `DrawingStyle`.
@@ -82,7 +83,7 @@ Named for the open-high-low-close-volume bars it renders.
 
 ```yaml
 dependencies:
-  ohlcv_chart: ^2.2.0
+  ohlcv_chart: ^2.4.0
 ```
 
 ## Quick start
@@ -119,7 +120,7 @@ One page per feature, in [`doc/`](doc/README.md):
 | [Indicators](doc/indicators.md) | 31 of them as instances, the catalogue, pane scales, chaining, higher timeframes, alerts |
 | [Comparing a second instrument](doc/comparison.md) | Other series over the same window, rebased or at their own prices |
 | [Chart types](doc/chart-types.md) | Eight ways to draw a series, and six transforms of the candles |
-| [Price axis](doc/price-axis.md) | Linear, log, percentage or indexed to 100; inverting and dragging it |
+| [Price axis](doc/price-axis.md) | Linear, log, percentage or indexed to 100; inverting, dragging, locking it, and its gutter |
 | [The date axis](doc/date-axis.md) | Round time values, and taking the axis over yourself |
 | [The legend and the crosshair](doc/legend-and-crosshair.md) | The OHLC row, and the crosshair on hover |
 | [The long-press readout](doc/readout.md) | The card over a held candle, and your own builder |

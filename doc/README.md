@@ -25,8 +25,9 @@ For installation, the feature list and support, see the
 ## Axes and reading the chart
 
 - **[Price axis](price-axis.md)** — linear, logarithmic, percentage or indexed
-  to 100; inverting it, marking the window's high, low and average close, and
-  dragging the scale by hand.
+  to 100; inverting it, marking the window's high, low and average close,
+  dragging the scale by hand, locking it so scrolling cannot rescale it, and
+  holding a gutter back for its labels.
 - **[The date axis](date-axis.md)** — round time values, the formats it picks
   between, and taking it over with `dateFormatter`.
 - **[The legend and the crosshair](legend-and-crosshair.md)** — the OHLC row

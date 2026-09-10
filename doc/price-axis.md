@@ -193,6 +193,11 @@ chart.priceZoom;          // 1 while the chart is fitting it itself
 Set `priceScaleDrag: false` to keep the axis fitted to the window whatever the
 user does, which is the older behaviour.
 
+That is the opposite of [locking it](#keeping-it-still-while-the-chart-scrolls),
+which is worth keeping straight: `priceScaleDrag: false` means the axis *always*
+refits to the window, and `lockPriceScale: true` means it *never* does. The two
+can be combined — an axis held at one range that the user cannot drag off it.
+
 ---
 
 [← All docs](README.md) · [Package README](../README.md)
