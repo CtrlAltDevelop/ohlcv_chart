@@ -17,22 +17,24 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     double topPadding,
     int fixedLength,
     this.chartStyle,
-    this.chartColors,
-  ) : super(
-        chartRect: mainRect,
-        maxValue: maxValue,
-        minValue: minValue,
-        topPadding: topPadding,
-        fixedLength: fixedLength,
-        gridColor: chartColors.gridColor,
-        separatorColor: chartColors.effectiveSeparatorColor,
-        gridColumnColor: chartColors.effectiveGridColumnColor,
-        gridStrokeWidth: chartStyle.gridStrokeWidth,
-        separatorWidth: chartStyle.separatorWidth,
-        labelCornerRadius: chartStyle.labelCornerRadius,
-        legendPadding: chartStyle.legendPadding,
-        legendBgColor: chartColors.effectiveLegendBgColor,
-      ) {
+    this.chartColors, {
+    super.priceAxisGutter = 0.0,
+    super.priceAxisGutterOnLeft = false,
+  }) : super(
+         chartRect: mainRect,
+         maxValue: maxValue,
+         minValue: minValue,
+         topPadding: topPadding,
+         fixedLength: fixedLength,
+         gridColor: chartColors.gridColor,
+         separatorColor: chartColors.effectiveSeparatorColor,
+         gridColumnColor: chartColors.effectiveGridColumnColor,
+         gridStrokeWidth: chartStyle.gridStrokeWidth,
+         separatorWidth: chartStyle.separatorWidth,
+         labelCornerRadius: chartStyle.labelCornerRadius,
+         legendPadding: chartStyle.legendPadding,
+         legendBgColor: chartColors.effectiveLegendBgColor,
+       ) {
     mVolWidth = chartStyle.volWidth;
   }
 
@@ -179,7 +181,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
       final top = chartRect.top - topPadding;
       final offsetY = (y - tp.height).clamp(top, chartRect.bottom - tp.height);
 
-      tp.paint(canvas, Offset(chartRect.width - tp.width - padding, offsetY));
+      tp.paint(canvas, Offset(axisLabelX(tp.width, padding), offsetY));
     }
   }
 

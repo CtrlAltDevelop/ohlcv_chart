@@ -255,6 +255,19 @@ class DemoState extends ChangeNotifier {
   /// The last layout saved with [saveLayout].
   String? savedLayout;
 
+  /// Holds a gutter back for the price axis, so the candles stop short of the
+  /// labels rather than scrolling under them.
+  bool fixedPriceAxis = false;
+
+  /// Holds the price axis at one range, so scrolling does not rescale it.
+  bool lockPriceScale = false;
+
+  /// Lets the user scroll the chart sideways.
+  bool scrollEnabled = true;
+
+  /// Lets the user pinch, or drag the slider on desktop and the web.
+  bool zoomEnabled = true;
+
   // ── Markers and readouts ────────────────────────────────────────────────
   bool showSignals = true;
   bool showInfoDialog = true;
@@ -289,7 +302,10 @@ class DemoState extends ChangeNotifier {
   /// Geometry for the current candle style, plus the session dividers.
   ChartStyle get style {
     final base = hollowCandles ? ChartTheme.hollow : ChartTheme.filled;
-    return base.copyWith(showSessionDividers: sessionDividers);
+    return base.copyWith(
+      showSessionDividers: sessionDividers,
+      priceAxisWidth: fixedPriceAxis ? 56.0 : 0.0,
+    );
   }
 
   /// The line editor's configuration.

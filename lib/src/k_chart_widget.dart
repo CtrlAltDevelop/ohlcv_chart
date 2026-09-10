@@ -231,6 +231,8 @@ class KChartWidget extends StatefulWidget {
     this.currentDrawingTool = DrawingTool.none,
     this.magnetMode = false,
     this.priceScaleDrag = true,
+    this.scrollEnabled = true,
+    this.zoomEnabled = true,
     this.replay,
     this.enableKeyboardShortcuts = true,
     this.crosshairOnHover = true,
@@ -285,6 +287,7 @@ class KChartWidget extends StatefulWidget {
     this.hideGrid = false,
     this.showNowPrice = true,
     this.showInfoDialog = true,
+    this.lockPriceScale = false,
     this.materialInfoDialog = true,
     this.chartStyle = const ChartStyle(),
     this.drawingStyle = const DrawingStyle(),
@@ -652,6 +655,32 @@ class KChartWidget extends StatefulWidget {
   /// trader works in. It changes what is displayed, never the data.
   final Duration timeZoneOffset;
 
+  /// Lets the user scroll the chart sideways.
+  ///
+  /// Off, the window stays where it is: a drag neither slides it nor flings it,
+  /// and [onLoadMore] is never asked for more candles, since no edge is ever
+  /// reached. What is drawn is still whatever the window holds, so a chart that
+  /// is meant to show one fixed stretch — a session, a day — wants its candles
+  /// to fit the box: see `ChartStyle.pointWidth`.
+  ///
+  /// The controller is unaffected, the way [priceScaleDrag] leaves it: a chart
+  /// the user cannot scroll can still be scrolled from your own code.
+  final bool scrollEnabled;
+
+  /// Lets the user zoom the chart in and out.
+  ///
+  /// Off, pinching does nothing and the zoom slider — which is only ever shown
+  /// on the web and on desktop, where there is no pinch — is left off too.
+  ///
+  /// Worth turning off alongside [scrollEnabled] for a chart meant to sit
+  /// still: zooming out makes the candles narrower, which leaves the window
+  /// with room to scroll into and so hands back the scrolling that
+  /// [scrollEnabled] took away.
+  ///
+  /// The controller is unaffected, so `zoomIn`, `zoomOut` and `setChartScale`
+  /// still work.
+  final bool zoomEnabled;
+
   /// Opens the info dialog on tap as well as on long press.
   final bool isTapShowInfoDialog;
 
@@ -663,6 +692,25 @@ class KChartWidget extends StatefulWidget {
 
   /// Enables the long-press info dialog.
   final bool showInfoDialog;
+
+  /// Holds the price axis at one range instead of refitting it to the window.
+  ///
+  /// The axis fits whatever candles are on screen by default, so scrolling
+  /// rescales it and every number on it changes as the window moves. Locked,
+  /// it keeps the range it had when the lock took hold: the candles move under
+  /// a scale that stays put, which is what reading a level off the axis while
+  /// scrolling needs.
+  ///
+  /// The scale can still be dragged and zoomed, from the locked range rather
+  /// than the window's, and `KChartController.resetPriceScale` hands the axis
+  /// back to the chart — which refits it to the window and locks it there
+  /// again.
+  ///
+  /// The range is held until it is reset, so a chart that switches to another
+  /// instrument should reset it: a range from one instrument means nothing on
+  /// another. Paging in history and live ticks need nothing, which is the
+  /// point — they are what the lock is there to sit still through.
+  final bool lockPriceScale;
 
   /// Uses the Material info dialog rather than the Cupertino-styled one.
   final bool materialInfoDialog;
@@ -795,8 +843,17 @@ class KChartWidget extends StatefulWidget {
 class _KChartWidgetState extends State<KChartWidget>
     with TickerProviderStateMixin
     implements KChartHost {
+  /// What the info dialog is reading out, or null when it has nothing to say.
+  ///
+  /// Broadcast on both counts that matter here. The dialog is only in the tree
+  /// while [KChartWidget.showInfoDialog] is set, so its subscription comes and
+  /// goes with that flag; a single-subscription stream refused the second
+  /// listen and threw as the dialog was remounted. And delivery stays
+  /// asynchronous, which a plain notifier would not be — the painter emits
+  /// from inside paint, so telling the dialog synchronously would schedule a
+  /// build during the frame.
   final StreamController<InfoWindowEntity?> mInfoWindowStream =
-      StreamController<InfoWindowEntity?>();
+      StreamController<InfoWindowEntity?>.broadcast();
 
   /// The drawings the chart is painting, from the controller when there is one
   /// and from the per-kind lists otherwise.
@@ -925,6 +982,12 @@ class _KChartWidgetState extends State<KChartWidget>
   /// and how far it is shifted; 1 and 0 hand the axis back to the chart.
   double _priceZoom = 1.0;
   double _pricePan = 0.0;
+
+  /// The range a locked price axis is held at, or null while it is free.
+  ///
+  /// Taken from the axis as it was last fitted, so turning the lock on holds
+  /// the chart exactly where the user was already looking.
+  (double, double)? _lockedPriceRange;
 
   /// Whether the price axis is being held where the user put it.
   bool get _priceScaleIsManual => _priceZoom != 1.0 || _pricePan != 0.0;
@@ -1489,6 +1552,10 @@ class _KChartWidgetState extends State<KChartWidget>
       widget.replay?.addListener(_onReplayChanged);
     }
     if (!identical(oldWidget.candles, widget.candles)) _resolveIndicators();
+    if (oldWidget.lockPriceScale && !widget.lockPriceScale) {
+      // Unlocked, the axis goes back to fitting the window.
+      _lockedPriceRange = null;
+    }
     if (oldWidget.currentDrawingTool != widget.currentDrawingTool) {
       // Picking a different tool abandons whatever the last one had started —
       // except an open-ended shape, which is finished rather than lost, since
@@ -1948,6 +2015,21 @@ class _KChartWidgetState extends State<KChartWidget>
           paneHeights: _effectivePaneHeights,
         );
 
+        // Taken from the axis as it stands, which is last frame's fit: this
+        // runs before the painter for this frame is made, so the range
+        // captured is the one the user is already looking at. Held in a field
+        // rather than pushed through setState because it is read straight
+        // away, by the painter built just below.
+        if (!widget.lockPriceScale) {
+          _lockedPriceRange = null;
+        } else if (_lockedPriceRange == null && _laidOut) {
+          final min = painter.mMainMinValue;
+          final max = painter.mMainMaxValue;
+          if (min.isFinite && max.isFinite && max > min) {
+            _lockedPriceRange = (min, max);
+          }
+        }
+
         _painterBuilt = true;
         painter = ChartPainter(
           widget.chartStyle,
@@ -2014,6 +2096,8 @@ class _KChartWidgetState extends State<KChartWidget>
           priceAxisScale: widget.priceAxisScale,
           priceZoom: _priceZoom,
           pricePan: _pricePan,
+          fixedPriceMin: _lockedPriceRange?.$1,
+          fixedPriceMax: _lockedPriceRange?.$2,
           candleIndex: _candleIndex,
           textCache: _textCache,
         );
@@ -2182,7 +2266,10 @@ class _KChartWidgetState extends State<KChartWidget>
                     }
 
                     if (details.scale != 1.0) {
-                      // Zoom
+                      // Zoom. A pinch on a chart that cannot be zoomed is not
+                      // a scroll either, so it is dropped rather than falling
+                      // through to the pan below.
+                      if (!widget.zoomEnabled) return;
                       mScaleX = (_lastScale * details.scale).clamp(0.1, 3.0);
                       notifyChanged();
                       return;
@@ -2195,11 +2282,14 @@ class _KChartWidgetState extends State<KChartWidget>
                     } else if (isDraggingHandle) {
                       _applyHandleDrag(pos);
                     } else {
-                      mScrollX += details.focalPointDelta.dx / mScaleX;
-                      mScrollX = mScrollX.clamp(
-                        0.0,
-                        BaseChartPainter.maxScrollX,
-                      );
+                      if (widget.scrollEnabled) {
+                        mScrollX += details.focalPointDelta.dx / mScaleX;
+                        mScrollX = mScrollX.clamp(
+                          0.0,
+                          BaseChartPainter.maxScrollX,
+                        );
+                        _maybeLoadMore();
+                      }
                       // Only once the axis is already being held: while it
                       // fits the window there is nothing to slide.
                       if (widget.priceScaleDrag && _priceScaleIsManual) {
@@ -2251,7 +2341,9 @@ class _KChartWidgetState extends State<KChartWidget>
                     isScale = false;
                     _lastScale = mScaleX;
 
-                    if (!_isDrawing && !isDraggingHandle) {
+                    if (!_isDrawing &&
+                        !isDraggingHandle &&
+                        widget.scrollEnabled) {
                       final velocity = details.velocity.pixelsPerSecond.dx;
                       _onFling(velocity);
                     } else {
@@ -2308,9 +2400,10 @@ class _KChartWidgetState extends State<KChartWidget>
             // Touch platforms pinch to zoom; everything else gets the
             // slider. (`!isIOS || !isAndroid` was always true, so the slider
             // used to render on mobile too.)
-            if (kIsWeb ||
-                (defaultTargetPlatform != TargetPlatform.iOS &&
-                    defaultTargetPlatform != TargetPlatform.android))
+            if (widget.zoomEnabled &&
+                (kIsWeb ||
+                    (defaultTargetPlatform != TargetPlatform.iOS &&
+                        defaultTargetPlatform != TargetPlatform.android)))
               _buildScaleX(),
             if (widget.showScrollToNowButton && !isChartAtRightEdge)
               _buildScrollToNowButton(),
@@ -3646,6 +3739,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
     aniX!.addListener(() {
       mScrollX = aniX!.value.clamp(0.0, BaseChartPainter.maxScrollX);
+      _maybeLoadMore();
       notifyChanged();
     });
 
@@ -3658,6 +3752,42 @@ class _KChartWidgetState extends State<KChartWidget>
     });
 
     _controller!.forward();
+  }
+
+  /// Which edge [onLoadMore] has already been told about, so it is asked once
+  /// per arrival rather than on every frame the drag spends pinned there.
+  ///
+  /// Cleared as soon as the chart comes away from that edge, so scrolling back
+  /// out and in asks again.
+  bool? _loadMoreEdgeNotified;
+
+  /// Asks the host to page in more candles when the scroll lands on an edge.
+  ///
+  /// `mScrollX` is clamped to `[0, maxScrollX]`, so those two bounds *are* the
+  /// edges: 0 is the newest candle and `maxScrollX` the oldest. The flag
+  /// [KChartWidget.onLoadMore] is given follows that — true at the right.
+  void _maybeLoadMore() {
+    final callback = widget.onLoadMore;
+    if (callback == null) return;
+
+    // Nothing to page towards until the data has been laid out at least once;
+    // before that both bounds are 0 and every edge looks like both edges.
+    final maxScroll = BaseChartPainter.maxScrollX;
+    if (maxScroll <= 0) return;
+
+    final bool? edge = switch (mScrollX) {
+      <= 0.0 => true,
+      _ when mScrollX >= maxScroll => false,
+      _ => null,
+    };
+
+    if (edge == null) {
+      _loadMoreEdgeNotified = null;
+      return;
+    }
+    if (_loadMoreEdgeNotified == edge) return;
+    _loadMoreEdgeNotified = edge;
+    callback(edge);
   }
 
   void notifyChanged() {
@@ -3919,12 +4049,11 @@ class _KChartWidgetState extends State<KChartWidget>
     return StreamBuilder<InfoWindowEntity?>(
       stream: mInfoWindowStream.stream,
       builder: (context, snapshot) {
-        if ((!isLongPress && !isOnTap) ||
-            !snapshot.hasData ||
-            snapshot.data?.kLineEntity == null) {
+        final info = snapshot.data;
+        if ((!isLongPress && !isOnTap) || info == null) {
           return const SizedBox.shrink();
         }
-        final entity = snapshot.data!.kLineEntity;
+        final entity = info.kLineEntity;
         // Never wider than the chart itself, whatever the caller asked for.
         final maxWidth = math.min(
           widget.infoDialogMaxWidth,
@@ -3932,12 +4061,12 @@ class _KChartWidgetState extends State<KChartWidget>
         );
         return Positioned(
           top: 10,
-          left: snapshot.data!.isLeft ? 10.0 : null,
-          right: snapshot.data!.isLeft ? null : 10.0,
+          left: info.isLeft ? 10.0 : null,
+          right: info.isLeft ? null : 10.0,
           child:
               widget.infoDialogBuilder?.call(
                 context,
-                snapshot.data?.kLinePreviousEntity,
+                info.kLinePreviousEntity,
                 entity,
               ) ??
               PopupInfoView(
@@ -4009,10 +4138,14 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Hands the price axis back to the chart, which fits it to the window.
   void resetPriceScale() {
-    if (!_priceScaleIsManual) return;
+    // A locked axis has something to reset even at zoom 1: the range it is
+    // being held at. Clearing it refits the axis to the window, and the next
+    // build locks it there.
+    if (!_priceScaleIsManual && _lockedPriceRange == null) return;
     setState(() {
       _priceZoom = 1.0;
       _pricePan = 0.0;
+      _lockedPriceRange = null;
     });
     widget.controller?.hostChanged();
   }
@@ -4026,18 +4159,28 @@ class _KChartWidgetState extends State<KChartWidget>
     if (!widget.priceScaleDrag || !painter.hasLayout) return false;
     if (widget.currentDrawingTool != DrawingTool.none) return false;
 
-    final rect = painter.mMainRect;
-    if (!rect.contains(pos)) return false;
-
-    final width = widget.chartStyle.priceScaleGripWidth.clamp(
+    final grip = widget.chartStyle.priceScaleGripWidth.clamp(
       0.0,
-      rect.width / 2,
+      painter.mMainRect.width / 2,
     );
-    if (width <= 0) return false;
+    if (grip <= 0) return false;
 
-    return widget.verticalTextAlignment == VerticalTextAlignment.left
-        ? pos.dx <= rect.left + width
-        : pos.dx >= rect.right - width;
+    // The gutter is the axis, so pressing the labels themselves grabs the
+    // scale; the grip is measured in from there.
+    final onLeft = widget.verticalTextAlignment == VerticalTextAlignment.left;
+    final gutter = painter.priceAxisGutter;
+    final rect = painter.mMainRect;
+    final area = Rect.fromLTRB(
+      onLeft ? rect.left - gutter : rect.left,
+      rect.top,
+      onLeft ? rect.right : rect.right + gutter,
+      rect.bottom,
+    );
+    if (!area.contains(pos)) return false;
+
+    return onLeft
+        ? pos.dx <= area.left + grip + gutter
+        : pos.dx >= area.right - grip - gutter;
   }
 
   /// Handles a tap on the price scale, and reports whether it was one.

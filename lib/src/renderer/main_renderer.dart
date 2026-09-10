@@ -52,6 +52,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     this.inverted = false,
     this.averageClose,
     this.candleColor,
+    super.priceAxisGutter = 0.0,
+    super.priceAxisGutterOnLeft = false,
   }) : super(
          chartRect: mainRect,
          maxValue: maxValue,
@@ -790,24 +792,20 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   ///
   /// Built once for the pane it fills, since it is measured from the pane and
   /// not from the data.
-  Shader get _fillShader =>
-      mLineFillShader ??=
-          LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            tileMode: TileMode.clamp,
-            colors: [
-              chartColors.lineFillColor,
-              chartColors.lineFillInsideColor,
-            ],
-          ).createShader(
-            Rect.fromLTRB(
-              chartRect.left,
-              chartRect.top,
-              chartRect.right,
-              chartRect.bottom,
-            ),
-          );
+  Shader get _fillShader => mLineFillShader ??=
+      LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        tileMode: TileMode.clamp,
+        colors: [chartColors.lineFillColor, chartColors.lineFillInsideColor],
+      ).createShader(
+        Rect.fromLTRB(
+          chartRect.left,
+          chartRect.top,
+          chartRect.right,
+          chartRect.bottom,
+        ),
+      );
 
   /// Draws the series collected over the visible window.
   ///
@@ -991,10 +989,11 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       // print over that pane's legend.
       if (hasPanesBelow && chartRect.bottom - y < tp.height) continue;
 
-      final double offsetX = switch (verticalTextAlignment) {
-        VerticalTextAlignment.left => padding,
-        VerticalTextAlignment.right => chartRect.width - tp.width - padding,
-      };
+      final offsetX = axisLabelX(
+        tp.width,
+        padding,
+        onLeft: verticalTextAlignment == VerticalTextAlignment.left,
+      );
 
       if (chartStyle.axisLabelBackground) {
         canvas.drawRRect(
@@ -1023,7 +1022,11 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     for (final value in priceTicks(gridRows)) {
       final y = getY(value);
       if (!y.isFinite || y < chartRect.top || y > chartRect.bottom) continue;
-      canvas.drawLine(Offset(0, y), Offset(chartRect.width, y), gridPaint);
+      canvas.drawLine(
+        Offset(chartRect.left, y),
+        Offset(chartRect.right, y),
+        gridPaint,
+      );
     }
 
     final columns =

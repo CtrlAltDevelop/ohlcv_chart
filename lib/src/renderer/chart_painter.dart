@@ -62,6 +62,8 @@ class ChartPainter extends BaseChartPainter {
     super.isHovering,
     super.suppressCrosshair,
     super.isOnTap,
+    this.fixedPriceMin,
+    this.fixedPriceMax,
     super.isTapShowInfoDialog,
     super.overlays,
     super.panes,
@@ -233,6 +235,19 @@ class ChartPainter extends BaseChartPainter {
   /// leaves the auto-fitted window where it is.
   final double pricePan;
 
+  /// The range to hold the price axis at, rather than scaling it from the fit
+  /// to whatever candles are in the window.
+  ///
+  /// Both ends are needed for the lock to take; either one left null and the
+  /// axis is scaled from the window as it always has been. Only the scale is
+  /// held: [mMainMaxValue] and [mMainMinValue] stay the window's honest fit, so
+  /// the high and low markers still point at the candles that set them and the
+  /// chart can be handed back its own scale at any time.
+  final double? fixedPriceMin;
+
+  /// The upper end of [fixedPriceMin]'s range.
+  final double? fixedPriceMax;
+
   /// What the candle area draws for each candle.
   final ChartType chartType;
 
@@ -253,6 +268,10 @@ class ChartPainter extends BaseChartPainter {
   final bool hideGrid;
   final bool showNowPrice;
   final VerticalTextAlignment verticalTextAlignment;
+
+  @override
+  bool get priceAxisOnLeft =>
+      verticalTextAlignment == VerticalTextAlignment.left;
   final String Function(KLineEntity entity, bool isCrossLine)? dateFormatter;
   final vg.PictureInfo? watermarkPicture;
   final Duration timeFrame;
@@ -296,22 +315,34 @@ class ChartPainter extends BaseChartPainter {
   /// axis, their logarithms for a logarithmic one — so a stretched log axis
   /// stays a log axis.
   (double, double) _scaledMainRange() {
-    if (priceZoom == 1 && pricePan == 0) return (mMainMaxValue, mMainMinValue);
-    if (!mMainMaxValue.isFinite || !mMainMinValue.isFinite) {
-      return (mMainMaxValue, mMainMinValue);
-    }
+    // A locked axis is scaled from the range it is held at rather than from the
+    // window's fit, which is what keeps it still while the chart scrolls: the
+    // candles move and the scale under them does not.
+    final lockedMin = fixedPriceMin;
+    final lockedMax = fixedPriceMax;
+    final locked =
+        lockedMin != null &&
+        lockedMax != null &&
+        lockedMin.isFinite &&
+        lockedMax.isFinite &&
+        lockedMax > lockedMin;
+    final fitMax = locked ? lockedMax : mMainMaxValue;
+    final fitMin = locked ? lockedMin : mMainMinValue;
+
+    if (priceZoom == 1 && pricePan == 0) return (fitMax, fitMin);
+    if (!fitMax.isFinite || !fitMin.isFinite) return (fitMax, fitMin);
 
     final logarithmic =
-        priceAxisScale == PriceAxisScale.logarithmic && mMainMinValue > 0;
+        priceAxisScale == PriceAxisScale.logarithmic && fitMin > 0;
     double toAxis(double price) =>
         logarithmic ? math.log(price) / math.ln10 : price;
     double toPrice(double value) =>
         logarithmic ? math.pow(10, value).toDouble() : value;
 
-    final top = toAxis(mMainMaxValue);
-    final bottom = toAxis(mMainMinValue);
+    final top = toAxis(fitMax);
+    final bottom = toAxis(fitMin);
     final span = top - bottom;
-    if (span <= 0) return (mMainMaxValue, mMainMinValue);
+    if (span <= 0) return (fitMax, fitMin);
 
     final middle = (top + bottom) / 2 + span * pricePan;
     final half = span / 2 / priceZoom;
@@ -345,6 +376,8 @@ class ChartPainter extends BaseChartPainter {
       inverted: invertPriceAxis,
       averageClose: showAverageClose ? _averageCloseInView : null,
       candleColor: candleColor,
+      priceAxisGutter: priceAxisGutter,
+      priceAxisGutterOnLeft: priceAxisOnLeft,
     );
     if (mVolRect != null) {
       mVolRenderer = VolRenderer(
@@ -355,6 +388,8 @@ class ChartPainter extends BaseChartPainter {
         fixedLength,
         chartStyle,
         chartColors,
+        priceAxisGutter: priceAxisGutter,
+        priceAxisGutterOnLeft: priceAxisOnLeft,
       );
     }
     mIndicatorPaneList = [
@@ -369,6 +404,8 @@ class ChartPainter extends BaseChartPainter {
           chartColors,
           panes[i],
           percentBase: _paneBase(panes[i]),
+          priceAxisGutter: priceAxisGutter,
+          priceAxisGutterOnLeft: priceAxisOnLeft,
         ),
     ];
   }
@@ -526,7 +563,11 @@ class ChartPainter extends BaseChartPainter {
     mMainRenderer.drawProfiles(canvas);
 
     canvas.save();
-    canvas.translate(mTranslateX * scaleX, 0.0);
+    // Clipped to the plot so nothing runs under the price axis gutter, then
+    // moved into candle space -- which starts at the plot's left edge, not the
+    // canvas's.
+    canvas.clipRect(Rect.fromLTRB(mPlotLeft, 0, mPlotRight, size.height));
+    canvas.translate(mPlotLeft + mTranslateX * scaleX, 0.0);
     canvas.scale(scaleX, 1.0);
 
     for (int i = mStartIndex; candles != null && i <= mStopIndex; i++) {
@@ -688,8 +729,8 @@ class ChartPainter extends BaseChartPainter {
     final trading = chartStyle.trading;
     paintStyledLine(
       canvas,
-      Offset(0, y),
-      Offset(size.width, y),
+      Offset(mPlotLeft, y),
+      Offset(mPlotRight, y),
       Paint()
         ..color = color
         ..strokeWidth = trading.lineWidth
@@ -748,7 +789,7 @@ class ChartPainter extends BaseChartPainter {
     final y = mMainRect.bottom - radius - chartStyle.eventMarkGap;
     for (final mark in events) {
       final x = translateXtoX(getX(mark.index));
-      if (x < -radius || x > mWidth + radius) continue;
+      if (x < mPlotLeft - radius || x > mPlotRight + radius) continue;
 
       final color =
           mark.event.color ?? chartColors.eventColor(mark.event.kind.name);
@@ -2584,7 +2625,7 @@ class ChartPainter extends BaseChartPainter {
       final tp = getTextPainter(label, null);
       final y = size.height - (mBottomPadding - tp.height) / 2 - tp.height;
       var x = translateXtoX(getX(index)) - tp.width / 2;
-      x = x.clamp(0.0, math.max(0.0, size.width - tp.width));
+      x = x.clamp(mPlotLeft, math.max(mPlotLeft, mPlotRight - tp.width));
 
       // Two labels crowding into each other read as one long number, so the
       // later one gives way.
@@ -2599,19 +2640,19 @@ class ChartPainter extends BaseChartPainter {
   double calculatePrice(double y) => mMainRenderer.getValue(y);
 
   CrossArea getCrossArea(double y) {
-    if (mMainRect.contains(Offset(0, y))) return CrossArea.main;
-    if (mVolRect != null && mVolRect!.contains(Offset(0, y))) {
+    if (mMainRect.contains(Offset(mPlotLeft, y))) return CrossArea.main;
+    if (mVolRect != null && mVolRect!.contains(Offset(mPlotLeft, y))) {
       return CrossArea.volume;
     }
     for (final sec in mSecondaryRectList) {
-      if (sec.mRect.contains(Offset(0, y))) return CrossArea.secondary;
+      if (sec.mRect.contains(Offset(mPlotLeft, y))) return CrossArea.secondary;
     }
     return CrossArea.none;
   }
 
   IndicatorPaneRenderer? _getSecondaryRendererByY(double y) {
     for (int i = 0; i < mSecondaryRectList.length; i++) {
-      if (mSecondaryRectList[i].mRect.contains(Offset(0, y)) &&
+      if (mSecondaryRectList[i].mRect.contains(Offset(mPlotLeft, y)) &&
           i < mIndicatorPaneList.length) {
         return mIndicatorPaneList[i];
       }
@@ -2679,7 +2720,7 @@ class ChartPainter extends BaseChartPainter {
     double x;
     bool isLeft;
 
-    if (translateXtoX(getX(index)) < mWidth / 2) {
+    if (translateXtoX(getX(index)) < mPlotLeft + mWidth / 2) {
       isLeft = false;
       x = 1;
 
@@ -2703,13 +2744,13 @@ class ChartPainter extends BaseChartPainter {
       }
     } else {
       isLeft = true;
-      x = mWidth - textWidth - 1 - 2 * w1 - w2;
+      x = mPlotRight - textWidth - 1 - 2 * w1 - w2;
 
       final path = Path()
         ..moveTo(x, selectY)
         ..lineTo(x + w2, selectY + r)
-        ..lineTo(mWidth - 2, selectY + r)
-        ..lineTo(mWidth - 2, selectY - r)
+        ..lineTo(mPlotRight - 2, selectY + r)
+        ..lineTo(mPlotRight - 2, selectY - r)
         ..lineTo(x + w2, selectY - r)
         ..close();
 
@@ -2735,8 +2776,8 @@ class ChartPainter extends BaseChartPainter {
 
     if (dateX < dateTp.width / 2 + w1) {
       dateX = dateTp.width / 2 + w1;
-    } else if (mWidth - dateX < dateTp.width / 2 + w1) {
-      dateX = mWidth - dateTp.width / 2 - w1;
+    } else if (mPlotRight - dateX < dateTp.width / 2 + w1) {
+      dateX = mPlotRight - dateTp.width / 2 - w1;
     }
 
     canvas.drawRect(
@@ -2898,9 +2939,9 @@ class ChartPainter extends BaseChartPainter {
       ..isAntiAlias = true;
 
     // Point away from the nearer edge so the label always has room.
-    final pointsRight = x < mWidth / 2;
+    final pointsRight = x < mPlotLeft + mWidth / 2;
     final textLeft = pointsRight
-        ? math.min(x + leader + gap, mWidth - tp.width - 2)
+        ? math.min(x + leader + gap, mPlotRight - tp.width - 2)
         : math.max(x - leader - gap - tp.width, 2.0);
 
     canvas.drawLine(
@@ -2929,11 +2970,12 @@ class ChartPainter extends BaseChartPainter {
 
     // Dashes run the full width so the level can be read anywhere, while the
     // stretch since the last candle stays solid.
-    final lastX = translateXtoX(getX(candles!.length - 1)).clamp(0.0, mWidth);
+    final lastX = translateXtoX(getX(candles!.length - 1))
+        .clamp(mPlotLeft, mPlotRight);
     if (chartStyle.nowPriceDashed) {
       paintStyledLine(
         canvas,
-        Offset(0, y),
+        Offset(mPlotLeft, y),
         Offset(lastX, y),
         nowPricePaint,
         style: LineStyle.dashed,
@@ -2941,9 +2983,9 @@ class ChartPainter extends BaseChartPainter {
         dashGap: chartStyle.nowPriceLineSpan,
       );
     } else {
-      canvas.drawLine(Offset(0, y), Offset(lastX, y), nowPricePaint);
+      canvas.drawLine(Offset(mPlotLeft, y), Offset(lastX, y), nowPricePaint);
     }
-    canvas.drawLine(Offset(lastX, y), Offset(mWidth, y), nowPricePaint);
+    canvas.drawLine(Offset(lastX, y), Offset(mPlotRight, y), nowPricePaint);
 
     String countdown = '00:00';
     if (last.dateTime != null) {
@@ -2981,8 +3023,8 @@ class ChartPainter extends BaseChartPainter {
     const padding = 4.0;
     final tagWidth = tp.width + padding * 2;
     final left = verticalTextAlignment == VerticalTextAlignment.left
-        ? mWidth - tagWidth - 1
-        : 1.0;
+        ? mPlotRight - tagWidth - 1
+        : mPlotLeft + 1.0;
     final top = y - tp.height / 2 - padding / 2;
 
     canvas.drawRRect(
@@ -3017,8 +3059,8 @@ class ChartPainter extends BaseChartPainter {
 
       paintStyledLine(
         canvas,
-        Offset(0, y),
-        Offset(mWidth, y),
+        Offset(mPlotLeft, y),
+        Offset(mPlotRight, y),
         linePaint,
         style: signal.useDash ? LineStyle.dashed : LineStyle.solid,
         dashLength: chartStyle.nowPriceLineLength,
@@ -3121,9 +3163,9 @@ class ChartPainter extends BaseChartPainter {
     if (picture == null) return;
 
     final area = Rect.fromLTRB(
-      0,
+      mPlotLeft,
       mTopPadding,
-      mWidth,
+      mPlotRight,
       mTopPadding + mMainRect.height,
     );
     final logoWidth =

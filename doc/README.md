@@ -25,8 +25,9 @@ For installation, the feature list and support, see the
 ## Axes and reading the chart
 
 - **[Price axis](price-axis.md)** — linear, logarithmic, percentage or indexed
-  to 100; inverting it, marking the window's high, low and average close, and
-  dragging the scale by hand.
+  to 100; inverting it, marking the window's high, low and average close,
+  dragging the scale by hand, locking it so scrolling cannot rescale it, and
+  holding a gutter back for its labels.
 - **[The date axis](date-axis.md)** — round time values, the formats it picks
   between, and taking it over with `dateFormatter`.
 - **[The legend and the crosshair](legend-and-crosshair.md)** — the OHLC row
@@ -55,7 +56,8 @@ For installation, the feature list and support, see the
 ## Driving it from your code
 
 - **[Driving the chart](driving-the-chart.md)** — `KChartController` for zoom,
-  scroll and a PNG of the chart, plus reading and setting the visible window.
+  scroll and a PNG of the chart, reading and setting the visible window, and
+  turning the chart's own gestures off for one that should sit still.
 - **[Panes](panes.md)** — stacking, resizing and reordering the indicator panes.
 - **[Bar replay](bar-replay.md)** — rewind to any candle and step or play the
   market forward, with the indicators only knowing what has arrived.

@@ -1,5 +1,7 @@
 # Panes
 
+![Three ATR panes stacked under the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes.png)
+
 An indicator pane can be made taller by dragging its lower edge, and moved up or
 down the stack by dragging its legend row:
 

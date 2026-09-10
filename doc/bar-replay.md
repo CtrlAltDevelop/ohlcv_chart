@@ -5,6 +5,8 @@ the chart at a candle in the past: everything after it — the candles, the
 indicators computed from them, the now-price line and the legend — is as it was
 at that moment, so a setup can be studied without the answer already on screen.
 
+![The replay running, a candle at a time](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-replay.gif)
+
 ```dart
 final replay = ChartReplayController(interval: const Duration(milliseconds: 300));
 
@@ -30,6 +32,8 @@ candle having been picked first, and it gives up on its own at the newest one �
 `isPlaying`, `isActive`, `position`, `length` and `isAtEnd` are all there to
 drive a transport bar from. It is a `ChangeNotifier`, so those buttons rebuild
 themselves; dispose it with the widget that owns it.
+
+![The chart held at the 150th candle of 420, under a transport bar](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-replay.png)
 
 Nothing is thrown away while a replay runs: the candle list is untouched and
 the drawings stay where they were placed, including any on candles still to

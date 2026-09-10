@@ -100,9 +100,7 @@ void main() {
 
   void report(String label, double micros, int candles) {
     // ignore: avoid_print
-    print(
-      'BENCH|$label|${micros.toStringAsFixed(0)}us|candles=$candles',
-    );
+    print('BENCH|$label|${micros.toStringAsFixed(0)}us|candles=$candles');
   }
 
   /// Paints [body] into a throwaway recorder, the way a frame would.

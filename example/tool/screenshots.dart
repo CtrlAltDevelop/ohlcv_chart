@@ -10,7 +10,10 @@
 // that is adding one rather than redoing the set.
 //
 // Each scene is laid out at a fixed size, captured straight off the raster
-// boundary and written into `../screenshots/`, then the app exits. Rendering
+// boundary and written into `../screenshots/`, then the app exits. A film is
+// the same thing sampled over and over and written out as one looping GIF —
+// `buildFilms` holds those, and `--dart-define=only=` names them alongside the
+// stills. Rendering
 // the real widgets in a real engine is what keeps the images honest — text,
 // anti-aliasing and all — rather than a headless golden, which draws every
 // glyph as a box.
@@ -23,6 +26,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:image/image.dart' as gif;
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 import 'package:ohlcv_chart_example/src/chart_theme.dart';
 import 'package:ohlcv_chart_example/src/indicator_sheet.dart';
@@ -85,6 +89,21 @@ typedef Scene = ({
   Future<void> Function(Rect area, Future<void> Function() shoot)? act,
 });
 
+/// One animation to record: the same as a [Scene], but [roll] is handed a
+/// shutter it is expected to call many times, and the frames are written out
+/// as a single looping GIF rather than a still.
+///
+/// Recorded at 1x rather than the stills' 2x: a GIF carries a 256-colour
+/// palette and every frame whole, so the file grows with the pixels far faster
+/// than a PNG does.
+typedef Film = ({
+  String name,
+  Size size,
+  int fps,
+  Widget Function() build,
+  Future<void> Function(Future<void> Function() frame) roll,
+});
+
 /// The next pointer id, so each synthetic gesture is its own.
 int _pointer = 1;
 
@@ -115,6 +134,97 @@ Future<void> tap(Offset at) async {
   await Future<void>.delayed(const Duration(milliseconds: 400));
 }
 
+/// Moves the mouse to [at] and leaves it there.
+///
+/// The crosshair follows a hover without waiting for a press, so a scene that
+/// wants it up — and the OHLC legend that reads from it — hovers rather than
+/// holds, which would open the readout card instead.
+Future<void> hover(Offset at) async {
+  final pointer = _pointer++;
+  GestureBinding.instance.handlePointerEvent(
+    PointerHoverEvent(
+      pointer: pointer,
+      kind: PointerDeviceKind.mouse,
+      position: at,
+    ),
+  );
+  await Future<void>.delayed(const Duration(milliseconds: 400));
+}
+
+/// The replay transport, as an app would build one: the buttons and the
+/// position readout all come off the controller, so a still says what is being
+/// looked at and the film's counter ticks along with the candles.
+class ReplayBar extends StatelessWidget {
+  /// Creates a transport bar over [replay].
+  const ReplayBar({required this.replay, super.key});
+
+  /// The controller the bar reads and drives.
+  final ChartReplayController replay;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: replay,
+    builder: (context, _) {
+      final position = replay.position ?? replay.length;
+      Widget button(IconData icon, {bool on = true}) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Icon(
+          icon,
+          size: 20,
+          color: on ? const Color(0xFFDCE3EB) : const Color(0xFF4A5361),
+        ),
+      );
+      return ColoredBox(
+        color: const Color(0xFF161B23),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              button(Icons.replay, on: true),
+              button(Icons.skip_previous, on: replay.isActive),
+              button(
+                replay.isPlaying ? Icons.pause : Icons.play_arrow,
+                on: true,
+              ),
+              button(Icons.skip_next, on: replay.isActive),
+              button(Icons.stop, on: replay.isActive),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: replay.length == 0 ? 0 : position / replay.length,
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFF2A313C),
+                    valueColor: const AlwaysStoppedAnimation(
+                      Color(0xFF26A69A),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 148,
+                child: Text(
+                  replay.isActive
+                      ? 'Candle $position of ${replay.length}'
+                      : 'Live — all ${replay.length} candles',
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Color(0xFFB6C0CC),
+                    fontSize: 12,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 void main() {
   runApp(const ScreenshotApp());
 }
@@ -130,21 +240,30 @@ class ScreenshotApp extends StatefulWidget {
 
 class _ScreenshotAppState extends State<ScreenshotApp> {
   final GlobalKey _boundary = GlobalKey();
-  late final List<Scene> _scenes = _asked(buildScenes());
 
-  /// The scenes [requestedScenes] names, or all of them when it names none.
-  List<Scene> _asked(List<Scene> all) {
-    if (requestedScenes.isEmpty) return all;
-    final names = requestedScenes.split(',').map((name) => name.trim()).toSet();
-    final asked = all.where((scene) => names.contains(scene.name)).toList();
-    if (asked.isEmpty) {
-      stdout.writeln('no scene goes by ${names.join(', ')}');
-      exit(1);
-    }
-    return asked;
-  }
+  /// The names asked for, or empty when the whole set was.
+  late final Set<String> _names = requestedScenes.isEmpty
+      ? const {}
+      : requestedScenes.split(',').map((name) => name.trim()).toSet();
 
+  late final List<Scene> _scenes = _asked(buildScenes(), (s) => s.name);
+  late final List<Film> _films = _asked(buildFilms(), (f) => f.name);
+
+  /// The entries [requestedScenes] names, or all of them when it names none.
+  List<T> _asked<T>(List<T> all, String Function(T) name) =>
+      _names.isEmpty ? all : all.where((e) => _names.contains(name(e))).toList();
+
+  /// Where in the run we are: scenes first, then films.
   int _index = 0;
+
+  /// What is on screen right now, whichever list it came from.
+  ({Size size, Widget Function() build}) get _showing =>
+      _index < _scenes.length
+      ? (size: _scenes[_index].size, build: _scenes[_index].build)
+      : (
+          size: _films[_index - _scenes.length].size,
+          build: _films[_index - _scenes.length].build,
+        );
 
   @override
   void initState() {
@@ -155,7 +274,14 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
   late final Directory _output = resolveOutputDirectory();
 
   Future<void> _run() async {
-    stdout.writeln('writing ${_scenes.length} scenes to ${_output.path}');
+    if (_scenes.isEmpty && _films.isEmpty) {
+      stdout.writeln('no scene goes by ${_names.join(', ')}');
+      exit(1);
+    }
+    stdout.writeln(
+      'writing ${_scenes.length} scenes and ${_films.length} films '
+      'to ${_output.path}',
+    );
 
     for (var i = 0; i < _scenes.length; i++) {
       setState(() => _index = i);
@@ -170,6 +296,11 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
       } else {
         await act(_area, () => _capture(scene));
       }
+    }
+    for (var i = 0; i < _films.length; i++) {
+      setState(() => _index = _scenes.length + i);
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      await _record(_films[i]);
     }
     if (_stale.isNotEmpty) {
       stdout.writeln('stale, and not written: ${_stale.join(', ')}');
@@ -199,15 +330,68 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
   /// back whatever was last rasterised — which is how a run writes the same
   /// picture into every file. Marking the boundary dirty and waiting for the
   /// frame that schedules is what asks for a new one.
-  Future<Uint8List> _raster(RenderRepaintBoundary boundary) async {
+  Future<Uint8List> _raster(
+    RenderRepaintBoundary boundary, {
+    double pixelRatio = 2,
+    ui.ImageByteFormat format = ui.ImageByteFormat.png,
+  }) async {
     boundary.markNeedsPaint();
     WidgetsBinding.instance.scheduleFrame();
     await WidgetsBinding.instance.endOfFrame;
 
-    final image = await boundary.toImage(pixelRatio: 2);
-    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    final image = await boundary.toImage(pixelRatio: pixelRatio);
+    final data = await image.toByteData(format: format);
     image.dispose();
     return data!.buffer.asUint8List();
+  }
+
+  /// Records [film] frame by frame and writes the lot out as one looping GIF.
+  Future<void> _record(Film film) async {
+    final boundary =
+        _boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final width = film.size.width.round();
+    final height = film.size.height.round();
+    final frames = <gif.Image>[];
+
+    Future<void> shoot() async {
+      final raw = await _raster(
+        boundary,
+        pixelRatio: 1,
+        format: ui.ImageByteFormat.rawRgba,
+      );
+      frames.add(
+        gif.Image.fromBytes(
+          width: width,
+          height: height,
+          bytes: raw.buffer,
+          numChannels: 4,
+          frameDuration: (1000 / film.fps).round(),
+        ),
+      );
+    }
+
+    await film.roll(shoot);
+    if (frames.isEmpty) {
+      stdout.writeln('${film.name} rolled no frames — left alone');
+      _stale.add(film.name);
+      return;
+    }
+
+    final reel = frames.first;
+    for (final frame in frames.skip(1)) {
+      reel.addFrame(frame);
+    }
+    // A chart is mostly flat background and a handful of hues, so a coarse
+    // sampling factor costs it nothing and keeps the file down.
+    final bytes = gif.encodeGif(reel, repeat: 0, samplingFactor: 20);
+
+    final file = File('${_output.path}/${film.name}.gif');
+    file.writeAsBytesSync(bytes);
+    stdout.writeln(
+      'wrote ${file.path} '
+      '(${frames.length} frames at ${width}x$height, '
+      '${(file.lengthSync() / 1024).round()} KiB)',
+    );
   }
 
   /// Where the scene sits on screen, so a synthetic gesture can find it.
@@ -250,7 +434,7 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
 
   @override
   Widget build(BuildContext context) {
-    final scene = _scenes[_index];
+    final showing = _showing;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: ColoredBox(
@@ -259,12 +443,12 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
           child: RepaintBoundary(
             key: _boundary,
             child: SizedBox.fromSize(
-              size: scene.size,
+              size: showing.size,
               child: MediaQuery(
-                data: MediaQueryData(size: scene.size),
+                data: MediaQueryData(size: showing.size),
                 child: Material(
                   type: MaterialType.transparency,
-                  child: scene.build(),
+                  child: showing.build(),
                 ),
               ),
             ),
@@ -295,6 +479,8 @@ List<Scene> buildScenes() {
   // the linked charts are talking to the same chart across every frame the
   // shutter waits through.
   final overviewChart = KChartController();
+  // Held at one candle for the still; the moving version is its own film.
+  final replay = ChartReplayController();
   final linkedTop = KChartController();
   final linkedBottom = KChartController();
   // The same market shown twice, so the price axis and the crosshair's height
@@ -332,6 +518,10 @@ List<Scene> buildScenes() {
     Color? extendedHoursColor,
     KChartController? controller,
     bool showInfoDialog = true,
+    ChartReplayController? replay,
+    double? mBaseHeight,
+    String Function(KLineEntity candle, bool longForm)? dateFormatter,
+    double xFrontPadding = 80,
   }) {
     final colors = light ? ChartTheme.lightColors() : ChartTheme.darkColors();
     // The default wash is 7% of the text colour — right on a chart being read,
@@ -381,6 +571,10 @@ List<Scene> buildScenes() {
         invertPriceAxis: invertPriceAxis,
         showAverageClose: showAverageClose,
         showHighLowOnAxis: showHighLowOnAxis,
+        replay: replay,
+        mBaseHeight: mBaseHeight,
+        dateFormatter: dateFormatter,
+        xFrontPadding: xFrontPadding,
         fixedLength: 0,
         showNowPrice: true,
       ),
@@ -407,13 +601,18 @@ List<Scene> buildScenes() {
   ///
   /// [centred] moves the name off the top-left corner, for a panel whose chart
   /// already draws a legend or an extreme's label there.
-  Widget titled(String text, Widget child, {bool centred = false}) => Stack(
+  Widget titled(
+    String text,
+    Widget child, {
+    bool centred = false,
+    double top = 8,
+  }) => Stack(
     children: [
       Positioned.fill(child: child),
       Positioned(
         left: centred ? 0 : 10,
         right: centred ? 0 : null,
-        top: 8,
+        top: top,
         // On a chip, because the chart draws its own labels in the same corner.
         child: Align(
           alignment: centred ? Alignment.topCenter : Alignment.topLeft,
@@ -1237,6 +1436,132 @@ List<Scene> buildScenes() {
       },
     ),
     (
+      // Rewound to the 150th candle of 420: the market to the right of it has
+      // not happened yet, and the indicators only know what has arrived.
+      name: 'bar-replay',
+      size: wide,
+      act: (area, shoot) async {
+        replay.start(at: 150);
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        await shoot();
+      },
+      build: () => Column(
+        children: [
+          Expanded(
+            child: chart(
+              data: longRun,
+              replay: replay,
+              indicators: [MaIndicator(period: 20), RsiIndicator()],
+            ),
+          ),
+          ReplayBar(replay: replay),
+        ],
+      ),
+    ),
+    (
+      // Hovered rather than held: the crosshair follows a mouse without a
+      // press, and the legend row reads from wherever it is.
+      name: 'legend-and-crosshair',
+      size: wide,
+      act: (area, shoot) async {
+        await hover(
+          Offset(area.left + area.width * 0.58, area.top + area.height * 0.35),
+        );
+        await shoot();
+      },
+      build: () => chart(
+        showOhlcLegend: true,
+        indicators: [MaIndicator(period: 20), MacdIndicator()],
+      ),
+    ),
+    (
+      // The axis it picks for itself beside one taken over wholesale, on the
+      // same candles, so the difference is the formatting and nothing else.
+      name: 'date-axis',
+      size: wide,
+      act: null,
+      build: () => Column(
+        children: [
+          Expanded(
+            child: titled(
+              'the format it picks: clock times, the date where the day turns',
+              chart(volHidden: true, indicators: [EmaIndicator(period: 21)]),
+              top: 30,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: titled(
+              'dateFormatter taking it over, xFrontPadding: 120',
+              chart(
+                volHidden: true,
+                indicators: [EmaIndicator(period: 21)],
+                xFrontPadding: 120,
+                dateFormatter: (candle, longForm) {
+                  final at = candle.dateTime!;
+                  final hour = at.hour.toString().padLeft(2, '0');
+                  return longForm
+                      ? 'Sep ${at.day}, ${hour}h${at.minute}'
+                      : '${at.day} Sep · ${hour}h';
+                },
+              ),
+              top: 30,
+            ),
+          ),
+        ],
+      ),
+    ),
+    (
+      // The same chart under both palettes: ChartColors is the whole
+      // difference between them.
+      name: 'theming',
+      size: wide,
+      act: null,
+      build: () => Row(
+        children: [
+          Expanded(
+            child: titled(
+              'ChartTheme.darkColors()',
+              chart(indicators: [BollIndicator(), MacdIndicator()]),
+              top: 30,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: titled(
+              'ChartTheme.lightColors()',
+              chart(light: true, indicators: [BollIndicator(), MacdIndicator()]),
+              top: 30,
+            ),
+          ),
+        ],
+      ),
+    ),
+    (
+      // Left to itself the candle area takes what the panes do not want;
+      // pinned, it keeps its height and the panes stack under it.
+      name: 'sizing',
+      size: wide,
+      act: null,
+      build: () => Row(
+        children: [
+          Expanded(
+            child: titled(
+              'mBaseHeight unset — fills the box',
+              chart(indicators: [MacdIndicator()]),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: titled(
+              'mBaseHeight: 220',
+              chart(mBaseHeight: 220, indicators: [MacdIndicator()]),
+            ),
+          ),
+        ],
+      ),
+    ),
+    (
       name: 'indicator-settings',
       size: portrait,
       act: null,
@@ -1252,6 +1577,65 @@ List<Scene> buildScenes() {
           ),
         ),
       ),
+    ),
+  ];
+}
+
+/// The animations to record. Same shape as [buildScenes], but each one is
+/// handed a shutter to call repeatedly.
+List<Film> buildFilms() {
+  final candles = MarketData.candles(count: 420);
+  final replay = ChartReplayController();
+
+  return [
+    (
+      // Stepping the replay forward a candle at a time, which is the one thing
+      // a still of it cannot say.
+      name: 'bar-replay',
+      // Smaller than a still and at 1x: a GIF carries every frame whole.
+      size: const Size(680, 400),
+      fps: 8,
+      roll: (frame) async {
+        replay.start(at: 150);
+        await Future<void>.delayed(const Duration(milliseconds: 600));
+        // Played rather than stepped, so the transport reads as running: the
+        // timer moves the candles while the shutter samples alongside it.
+        replay.play(interval: const Duration(milliseconds: 125));
+        for (var i = 0; i < 30; i++) {
+          await frame();
+          await Future<void>.delayed(const Duration(milliseconds: 125));
+        }
+        replay.pause();
+        await frame();
+      },
+      build: () {
+        final colors = ChartTheme.darkColors();
+        return ColoredBox(
+          color: colors.bgColor,
+          child: Column(
+            children: [
+              Expanded(
+                child: KChartWidget(
+                  candles,
+                  colors,
+                  chartStyle: ChartTheme.filled,
+                  isTrendLine: false,
+                  watermarkAssetPath: 'assets/watermark.svg',
+                  timeFrame: MarketData.timeFrame,
+                  timeFormat: TimeFormat.YEAR_MONTH_DAY_WITH_HOUR,
+                  indicators: [MaIndicator(period: 20), RsiIndicator()],
+                  replay: replay,
+                  showScrollToNowButton: false,
+                  showInfoDialog: false,
+                  fixedLength: 0,
+                  showNowPrice: true,
+                ),
+              ),
+              ReplayBar(replay: replay),
+            ],
+          ),
+        );
+      },
     ),
   ];
 }

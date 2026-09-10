@@ -1,5 +1,7 @@
 # The legend and the crosshair
 
+![The OHLC legend above the chart, reading from the crosshair](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/legend-and-crosshair.png)
+
 With a mouse, the crosshair follows the pointer without waiting for a press —
 that is `crosshairOnHover`, on by default and irrelevant to a touch screen, which
 has nothing that hovers. The values then belong above the chart rather than in a

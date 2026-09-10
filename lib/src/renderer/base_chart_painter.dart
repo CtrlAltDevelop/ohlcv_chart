@@ -112,7 +112,40 @@ abstract class BaseChartPainter extends CustomPainter {
   /// Secondary list support
   List<RenderRect> mSecondaryRectList = [];
   late double mDisplayHeight;
+
+  /// Whether the price axis gutter is held back on the left rather than the
+  /// right.
+  ///
+  /// Concrete so a subclass that draws no axis need not care; the chart
+  /// painter overrides it from its label alignment.
+  bool get priceAxisOnLeft => false;
+
+  /// Width of the plot: the whole canvas less the price axis gutter.
+  ///
+  /// This is what the candles, the grid and the date axis are laid out in, so
+  /// nothing is drawn under the axis labels. With no gutter it is the full
+  /// canvas width, which is what it always was.
   late double mWidth;
+
+  /// Full width of the canvas, gutter included.
+  ///
+  /// For what belongs against the true edge rather than inside the plot: the
+  /// axis labels themselves, and the price tags that point at them.
+  late double mCanvasWidth;
+
+  /// Right edge of the plot, which the gutter takes when the labels are on the
+  /// right.
+  double get mPlotRight => mPlotLeft + mWidth;
+
+  /// Width actually held back for the price axis, after clamping.
+  ///
+  /// What the renderers are given, so where they put the labels and where the
+  /// plot stops can never disagree.
+  double get priceAxisGutter => mCanvasWidth - mWidth;
+
+  /// Left edge of the plot, which the gutter takes when the labels are on the
+  /// left. 0 whenever they are on the right.
+  late double mPlotLeft;
 
   // padding
   double mTopPadding = 20.0;
@@ -187,7 +220,11 @@ abstract class BaseChartPainter extends CustomPainter {
   /// crosshair a pixel off the candle it is reading.
   void layout(Size size) {
     mDisplayHeight = size.height - mTopPadding - mBottomPadding;
-    mWidth = size.width;
+    mCanvasWidth = size.width;
+    // Never so wide that there is no plot left to draw in.
+    final gutter = chartStyle.priceAxisWidth.clamp(0.0, size.width / 2);
+    mWidth = size.width - gutter;
+    mPlotLeft = priceAxisOnLeft ? gutter : 0.0;
     initRect(size);
     calculateValue();
     initChartRenderer();
@@ -245,7 +282,7 @@ abstract class BaseChartPainter extends CustomPainter {
       // The crosshair is measured in candle space, like the candles it picks
       // out, so it takes the same transform they are drawn in.
       canvas.save();
-      canvas.translate(mTranslateX * scaleX, 0.0);
+      canvas.translate(mPlotLeft + mTranslateX * scaleX, 0.0);
       canvas.scale(scaleX, 1.0);
       drawCrossLine(canvas, size);
       canvas.restore();
@@ -319,14 +356,19 @@ abstract class BaseChartPainter extends CustomPainter {
       mainHeight = max(mDisplayHeight - room, 0.0);
     }
 
-    mMainRect = Rect.fromLTRB(0, mTopPadding, mWidth, mTopPadding + mainHeight);
+    mMainRect = Rect.fromLTRB(
+      mPlotLeft,
+      mTopPadding,
+      mPlotLeft + mWidth,
+      mTopPadding + mainHeight,
+    );
     _hasLayout = true;
 
     if (volHidden != true) {
       mVolRect = Rect.fromLTRB(
-        0,
+        mPlotLeft,
         mMainRect.bottom + mChildPadding,
-        mWidth,
+        mPlotLeft + mWidth,
         mMainRect.bottom + volHeight,
       );
     }
@@ -338,7 +380,14 @@ abstract class BaseChartPainter extends CustomPainter {
           ? paneHeights[i]
           : BaseDimension.secondaryPaneHeight;
       mSecondaryRectList.add(
-        RenderRect(Rect.fromLTRB(0, top + mChildPadding, mWidth, top + height)),
+        RenderRect(
+          Rect.fromLTRB(
+            mPlotLeft,
+            top + mChildPadding,
+            mPlotLeft + mWidth,
+            top + height,
+          ),
+        ),
       );
       top += height;
     }
@@ -350,8 +399,8 @@ abstract class BaseChartPainter extends CustomPainter {
     if (candles!.isEmpty) return;
     maxScrollX = getMinTranslateX().abs();
     setTranslateXFromScrollX(scrollX);
-    mStartIndex = indexOfTranslateX(xToTranslateX(0));
-    mStopIndex = indexOfTranslateX(xToTranslateX(mWidth));
+    mStartIndex = indexOfTranslateX(xToTranslateX(mPlotLeft));
+    mStopIndex = indexOfTranslateX(xToTranslateX(mPlotLeft + mWidth));
     // Pinned before the range is measured: a rebased comparison starts from the
     // left edge of the window, so where it sits depends on the window and what
     // it contributes to the range depends on where it sits.
@@ -457,7 +506,7 @@ abstract class BaseChartPainter extends CustomPainter {
   }
 
   // translate x
-  double xToTranslateX(double x) => -mTranslateX + x / scaleX;
+  double xToTranslateX(double x) => -mTranslateX + (x - mPlotLeft) / scaleX;
 
   int indexOfTranslateX(double translateX) =>
       _indexOfTranslateX(translateX, 0, mItemCount - 1);
@@ -518,7 +567,7 @@ abstract class BaseChartPainter extends CustomPainter {
 
   /// translateX is converted to X in view
   double translateXtoX(double translateX) =>
-      (translateX + mTranslateX) * scaleX;
+      (translateX + mTranslateX) * scaleX + mPlotLeft;
 
   /// define text style
   TextStyle getTextStyle(Color color) {

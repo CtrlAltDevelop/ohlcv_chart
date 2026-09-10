@@ -87,6 +87,71 @@ the window rather than the whole history.
 the axis reads in. The leader lines already point at the candles that set them;
 this says what to read them off the axis as.
 
+## Keeping it still while the chart scrolls
+
+The axis fits the candles in the window, so scrolling rescales it: drag back
+through a trend and every number on the axis changes as the window moves.
+`lockPriceScale` holds it at one range instead.
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  lockPriceScale: true,
+  // ...
+)
+```
+
+It locks onto the range the axis was already showing, so turning it on does not
+move the chart. From then on the candles move under a scale that stays where it
+is — which is what reading a level off the axis while scrolling needs, and what
+paging in history through `onLoadMore` needs in order not to jump.
+
+Only the scale is held. The window's own high and low are still measured, so
+`showHighLowOnAxis` and the high and low markers keep pointing at the candles
+that set them, and a locked axis can still be dragged and zoomed — from the
+range it is held at rather than the window's.
+
+`resetPriceScale` hands the axis back to the chart: it refits to whatever is on
+screen and holds there afresh.
+
+```dart
+chart.resetPriceScale();  // refit to the window, then hold there
+```
+
+Because the range is held until it is reset, a chart that switches to another
+instrument should reset it — a range from one instrument means nothing on
+another. Paging in candles and live ticks need nothing, which is the point.
+
+## Holding a gutter back for it
+
+By default the price labels are drawn over the candles, and the candles scroll
+underneath them. `ChartStyle.priceAxisWidth` holds a gutter back instead: the
+candles, the grid, the indicator panes and the date axis all stop short of it,
+and the labels sit in it on their own.
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  chartStyle: const ChartStyle(priceAxisWidth: 56),
+  // Which side it is held back on follows the labels.
+  verticalTextAlignment: VerticalTextAlignment.right,
+  // ...
+)
+```
+
+56 or so suits four or five digits at the default text size. The gutter is
+never allowed past half the width, so a narrow chart is still mostly candles.
+
+The plot is clipped to its own bounds, so nothing — a candle at the edge of the
+window, an indicator line, the now-price level — spills into the gutter, and
+the axis reads the same however far the chart is scrolled. Pressing the labels
+still grabs the scale, as below; the gutter counts as part of the axis strip.
+
+Left at 0, the default, nothing changes and the labels are drawn over the
+candles as they always were.
+
 ## Dragging the scale
 
 The axis fits the window by default, so the candles always fill the height —
@@ -127,6 +192,11 @@ chart.priceZoom;          // 1 while the chart is fitting it itself
 
 Set `priceScaleDrag: false` to keep the axis fitted to the window whatever the
 user does, which is the older behaviour.
+
+That is the opposite of [locking it](#keeping-it-still-while-the-chart-scrolls),
+which is worth keeping straight: `priceScaleDrag: false` means the axis *always*
+refits to the window, and `lockPriceScale: true` means it *never* does. The two
+can be combined — an axis held at one range that the user cannot drag off it.
 
 ---
 

@@ -76,6 +76,73 @@ KChartWidget(
 `indexRangeCovering` and `indexNearest` are exported for working out either
 from a list of candles without a chart in hand.
 
+## Turning the gestures off
+
+Some charts are not meant to be navigated: an intraday session, a thumbnail in
+a list, a figure in a report. `scrollEnabled` and `zoomEnabled` take the
+chart's own gestures away.
+
+```dart
+KChartWidget(
+  sessionCandles,
+  ChartColors(),
+  isTrendLine: false,
+  watermarkAssetPath: 'assets/logo.svg',
+  timeFrame: const Duration(minutes: 5),
+  chartType: ChartType.area,
+  scrollEnabled: false,
+  zoomEnabled: false,
+  // 78 candles in a box about 400 wide: 400 / 78 ≈ 5
+  chartStyle: const ChartStyle(pointWidth: 5),
+  xFrontPadding: 0,
+  volHidden: true,
+  hideGrid: true,
+  showNowPrice: false,
+  showInfoDialog: false,
+  crosshairOnHover: false,
+  showContextMenu: false,
+  showScrollToNowButton: false,
+  priceScaleDrag: false,
+);
+```
+
+With `scrollEnabled` off a drag neither slides the window nor flings it, and
+[`onLoadMore`](candlestick-chart.md) is never asked for more candles — no edge
+is ever reached to ask at. With `zoomEnabled` off a pinch does nothing, and the
+zoom slider is left off too: that slider only ever appears on the web and on
+desktop, standing in for the pinch those platforms do not have.
+
+Turn the two off together. Zooming out makes the candles narrower, which leaves
+the window room to scroll into, so a chart with only `scrollEnabled` off can be
+pinched back into a scrollable one.
+
+The two flags hold the *user* back and leave your own code alone, the way
+`priceScaleDrag` does — so a chart nobody can drag can still be moved from a
+toolbar, or fitted once at startup:
+
+```dart
+chart.fitAll();      // the whole history in the box
+chart.goToIndex(0);  // or somewhere particular
+```
+
+### Filling the width
+
+`scrollEnabled: false` freezes the window wherever it happens to be, which is
+usually at the newest candle with the rest off to the left. For a chart that
+shows one fixed stretch, make the candles fit instead: `ChartStyle.pointWidth`
+is the space each candle takes — 8 by default — so roughly the chart's width
+divided by the number of candles puts the whole series on screen.
+
+```dart
+chartStyle: ChartStyle(pointWidth: width / candles.length),
+```
+
+Once the series fits there is nowhere to scroll to at all, flag or no flag —
+the scroll clamps to zero. `xFrontPadding: 0` gives up the gap the chart
+otherwise leaves to the right of the newest candle, so the candles reach the
+edge. `fitAll()` is the other way there, and works on any width without the
+arithmetic.
+
 ## Keeping charts in step
 
 `ChartLink` holds several charts on the same window. Add each one's controller
@@ -156,7 +223,9 @@ chart.hideCrosshair();                   // take it down
 
 The price axis is readable and settable the same way — `priceZoom` and
 `pricePan` for its stretch and shift, `setPriceZoom`, `setPricePan` and
-`resetPriceScale` to move it.
+`resetPriceScale` to move it. `resetPriceScale` is also what hands a
+[locked axis](price-axis.md#keeping-it-still-while-the-chart-scrolls) back to the
+chart, refitting it to the window and holding it there afresh.
 
 `onCrosshairChanged` reports where it moved to, on the same terms as
 `onVisibleRangeChanged`: after the frame that moved it, and only when the

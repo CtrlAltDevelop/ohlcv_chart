@@ -1,3 +1,69 @@
+## 2.4.0
+
+### A chart that sits still
+
+- **New `scrollEnabled` and `zoomEnabled` turn the chart's own gestures off**,
+  for a chart that is meant to show one fixed stretch rather than be navigated
+  — an intraday session, a thumbnail, a printed figure. With `scrollEnabled`
+  off a drag neither slides the window nor flings it, and `onLoadMore` is never
+  asked for more candles, since no edge is ever reached. With `zoomEnabled` off
+  a pinch does nothing, and the zoom slider — only ever shown on the web and on
+  desktop, where there is no pinch — is left off too.
+- They are worth turning off together. Zooming out makes the candles narrower,
+  which leaves the window room to scroll into, so a chart that only had
+  `scrollEnabled` off could be pinched back into a scrollable one.
+- Both hold the user back and leave your own code alone, the way
+  `priceScaleDrag` already did: `zoomIn`, `zoomOut`, `setChartScale`,
+  `goToIndex`, `fitAll` and the rest of `KChartController` still work.
+- For a chart drawn at a fixed position, give `ChartStyle.pointWidth` roughly
+  the chart's width divided by the number of candles. Once the whole series
+  fits, there is nowhere to scroll to even before the flag.
+
+### Price axis
+
+- **New `lockPriceScale` keeps the axis still while the chart scrolls.** The
+  axis fits the candles in the window, so scrolling rescaled it: dragging back
+  through a trend changed every number on it. Locked, it holds the range it was
+  already showing and the candles move under a scale that stays where it is —
+  which is what reading a level off the axis while scrolling needs, and what
+  paging in history through `onLoadMore` needs in order not to jump. It locks
+  onto what is already on screen, so turning it on does not move the chart, and
+  `resetPriceScale` hands the axis back: it refits to the window and holds there
+  afresh.
+- Only the scale is held. The window's own high and low are still measured, so
+  their markers keep pointing at the candles that set them, and a locked axis
+  can still be dragged and zoomed — from the range it is held at rather than
+  the window's. The range is held until it is reset, so a chart that switches to
+  another instrument should reset it; paging in candles and live ticks need
+  nothing, which is the point.
+- **New `ChartStyle.priceAxisWidth` holds a gutter back for the labels.** It is
+  taken off whichever side `verticalTextAlignment` puts them on, and the
+  candles, the grid, the indicator panes and the date axis all stop short of it,
+  so the labels sit in the gutter on their own instead of candles sliding under
+  the numbers. The plot is clipped to its own bounds, so nothing spills into the
+  gutter, and pressing the labels grabs the scale the way pressing the axis
+  strip always has. Left at 0, the default, nothing changes: the labels are
+  drawn over the candles exactly as before.
+
+### Fixed
+
+- **`onLoadMore` is called again.** The callback was declared, documented and
+  accepted, but nothing in the package ever invoked it, so paging in older
+  candles could not work however it was wired up. It is now asked at both
+  places the scroll is clamped — dragging and flinging — with the edge latched,
+  so a drag held against the edge asks once when it arrives rather than on
+  every frame, and asks again after coming away and going back. The flag is
+  `true` at the newest candle and `false` at the oldest, as documented.
+
+- **The long-press readout can be turned off and on again.** It listened to a
+  single-subscription stream from a subtree that is only mounted while
+  `showInfoDialog` is set. Setting it back to `true` made a second listen on a
+  stream already listened to, which threw `Bad state: Stream has already been
+  listened to` as the readout remounted — and because that throw landed while
+  the enclosing `Stack` was mounting its children, what callers actually saw was
+  `LateInitializationError: Field '_children' has not been initialized`. The
+  controller is a broadcast one now.
+
 ## 2.3.1
 
 ### Performance

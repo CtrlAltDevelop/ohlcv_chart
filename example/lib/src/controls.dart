@@ -418,6 +418,18 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.axisOnRight = v),
             ),
             _Toggle(
+              label: 'Fixed price axis',
+              subtitle: 'Holds a gutter back so candles stop short of it',
+              value: state.fixedPriceAxis,
+              onChanged: (v) => state.update(() => state.fixedPriceAxis = v),
+            ),
+            _Toggle(
+              label: 'Lock the price scale',
+              subtitle: 'Scrolling moves the candles, not the axis',
+              value: state.lockPriceScale,
+              onChanged: (v) => state.update(() => state.lockPriceScale = v),
+            ),
+            _Toggle(
               label: 'Now price and countdown',
               value: state.showNowPrice,
               onChanged: (v) => state.update(() => state.showNowPrice = v),
@@ -502,6 +514,18 @@ class Controls extends StatelessWidget {
               options: const {40: '40', 80: '80', 160: '160'},
               onChanged: (v) =>
                   state.update(() => state.frontPadding = v.toDouble()),
+            ),
+            _Toggle(
+              label: 'Scrolling',
+              subtitle: 'Off, a drag leaves the window where it is',
+              value: state.scrollEnabled,
+              onChanged: (v) => state.update(() => state.scrollEnabled = v),
+            ),
+            _Toggle(
+              label: 'Zooming',
+              subtitle: 'Off, no pinch — and no slider on desktop',
+              value: state.zoomEnabled,
+              onChanged: (v) => state.update(() => state.zoomEnabled = v),
             ),
             _Toggle(
               label: 'Scroll-to-now button',
