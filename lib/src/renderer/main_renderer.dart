@@ -792,24 +792,20 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   ///
   /// Built once for the pane it fills, since it is measured from the pane and
   /// not from the data.
-  Shader get _fillShader =>
-      mLineFillShader ??=
-          LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            tileMode: TileMode.clamp,
-            colors: [
-              chartColors.lineFillColor,
-              chartColors.lineFillInsideColor,
-            ],
-          ).createShader(
-            Rect.fromLTRB(
-              chartRect.left,
-              chartRect.top,
-              chartRect.right,
-              chartRect.bottom,
-            ),
-          );
+  Shader get _fillShader => mLineFillShader ??=
+      LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        tileMode: TileMode.clamp,
+        colors: [chartColors.lineFillColor, chartColors.lineFillInsideColor],
+      ).createShader(
+        Rect.fromLTRB(
+          chartRect.left,
+          chartRect.top,
+          chartRect.right,
+          chartRect.bottom,
+        ),
+      );
 
   /// Draws the series collected over the visible window.
   ///
