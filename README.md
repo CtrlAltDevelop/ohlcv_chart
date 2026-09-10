@@ -76,6 +76,8 @@ Named for the open-high-low-close-volume bars it renders.
 
 ![Two linked charts sharing one crosshair](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/linked-charts.png)
 
+![Bar replay stepping the market forward a candle at a time](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-replay.gif)
+
 ## Install
 
 ```yaml

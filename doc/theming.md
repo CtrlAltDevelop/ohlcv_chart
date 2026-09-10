@@ -1,5 +1,7 @@
 # Theming
 
+![The same chart under the dark and light palettes](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/theming.png)
+
 ```dart
 KChartWidget(
   candles,

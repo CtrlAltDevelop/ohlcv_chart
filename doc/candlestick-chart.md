@@ -1,5 +1,7 @@
 # Candlestick chart
 
+![Candles with moving averages, volume and MACD](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/candles.png)
+
 Feed it a `List<KLineEntity>`. Indicator values are computed in place by
 `DataUtil.calculate` before the first paint, and again whenever new candles arrive:
 

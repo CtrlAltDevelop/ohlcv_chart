@@ -1,5 +1,7 @@
 # Customising the line editor
 
+![The line editor open on a selected line](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/line-editor.png)
+
 `DrawingStyle` decides what the toolbar offers, how it looks, and how close a tap
 has to land to count. Everything is optional:
 
