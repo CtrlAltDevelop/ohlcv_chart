@@ -445,6 +445,7 @@ class ChartStyle {
     this.childPadding = 12.0,
     this.pointWidth = 8,
     this.candleWidth = 6,
+    this.fitContent = false,
     this.candleLineWidth = 1.0,
     this.volWidth = 6,
     this.macdWidth = 1.5,
@@ -493,6 +494,18 @@ class ChartStyle {
 
   ///candle width
   final double candleWidth;
+
+  /// Spreads the candles across the whole plot when they do not fill it.
+  ///
+  /// [pointWidth] is a fixed distance, so a short series — a handful of
+  /// intraday bars, say — bunches up against the left edge and leaves the rest
+  /// of the chart empty. With this set the spacing is widened to whatever makes
+  /// the series span the plot, and [candleWidth] and [ChartStyle.volWidth] are
+  /// widened with it so the bars keep their proportions.
+  ///
+  /// Only ever widens: a series long enough to fill the plot, or one zoomed in
+  /// past it, is laid out on [pointWidth] as before.
+  final bool fitContent;
   final double candleLineWidth;
 
   ///vol column width
@@ -645,6 +658,7 @@ class ChartStyle {
     double? childPadding,
     double? pointWidth,
     double? candleWidth,
+    bool? fitContent,
     double? candleLineWidth,
     double? volWidth,
     double? macdWidth,
@@ -689,6 +703,7 @@ class ChartStyle {
       childPadding: childPadding ?? this.childPadding,
       pointWidth: pointWidth ?? this.pointWidth,
       candleWidth: candleWidth ?? this.candleWidth,
+      fitContent: fitContent ?? this.fitContent,
       candleLineWidth: candleLineWidth ?? this.candleLineWidth,
       volWidth: volWidth ?? this.volWidth,
       macdWidth: macdWidth ?? this.macdWidth,

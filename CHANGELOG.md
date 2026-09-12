@@ -1,3 +1,15 @@
+## Unreleased
+
+### Layout
+
+- **New `ChartStyle.fitContent` spreads a short series across the whole plot.**
+  `pointWidth` is a fixed distance, so a handful of intraday bars bunched up
+  against the left edge and left the rest of the chart empty. With this set the
+  spacing is widened to whatever fills the plot, and the candle and volume bars
+  widen with it so they keep their proportions. It only ever widens: a series
+  long enough to fill the plot, or one zoomed in past it, is laid out on
+  `pointWidth` as before, so the flag can stay on while history pages in.
+
 ## 2.4.0
 
 ### A chart that sits still

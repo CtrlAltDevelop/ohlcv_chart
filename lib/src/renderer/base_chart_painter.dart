@@ -171,6 +171,13 @@ abstract class BaseChartPainter extends CustomPainter {
   final ChartStyle chartStyle;
   late double mPointWidth;
 
+  /// The style the renderers draw from, which is [chartStyle] unless the
+  /// candles were spread to fill the plot — see [ChartStyle.fitContent].
+  ///
+  /// Worked out in [layout], since it takes a plot width to know whether the
+  /// series fills one.
+  late ChartStyle fittedStyle = chartStyle;
+
   // format time
   List<String> mFormats = [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn];
   double xFrontPadding;
@@ -225,6 +232,7 @@ abstract class BaseChartPainter extends CustomPainter {
     final gutter = chartStyle.priceAxisWidth.clamp(0.0, size.width / 2);
     mWidth = size.width - gutter;
     mPlotLeft = priceAxisOnLeft ? gutter : 0.0;
+    fitContent();
     initRect(size);
     calculateValue();
     initChartRenderer();
@@ -393,6 +401,42 @@ abstract class BaseChartPainter extends CustomPainter {
     }
   }
 
+  /// Whether the candles were spread to fill the plot on this layout.
+  ///
+  /// False when [ChartStyle.fitContent] is off, and when it is on but the
+  /// series is long enough to fill the plot at its own spacing.
+  bool contentFitted = false;
+
+  /// Widens the candle spacing to fill the plot when the series is too short
+  /// to reach the right edge on its own.
+  ///
+  /// The series is spread over the whole plot less [xFrontPadding], so the
+  /// last candle's body ends at the right edge rather than a fraction of the
+  /// way in.
+  void fitContent() {
+    mPointWidth = chartStyle.pointWidth;
+    fittedStyle = chartStyle;
+    contentFitted = false;
+    if (!chartStyle.fitContent || mItemCount == 0) {
+      mDataLen = mItemCount * mPointWidth;
+      return;
+    }
+
+    final available = mWidth / scaleX - xFrontPadding;
+    final fitted = available / mItemCount;
+    if (fitted > mPointWidth) {
+      final spread = fitted / mPointWidth;
+      mPointWidth = fitted;
+      contentFitted = true;
+      fittedStyle = chartStyle.copyWith(
+        pointWidth: fitted,
+        candleWidth: chartStyle.candleWidth * spread,
+        volWidth: chartStyle.volWidth * spread,
+      );
+    }
+    mDataLen = mItemCount * mPointWidth;
+  }
+
   /// calculate values
   void calculateValue() {
     if (candles == null) return;
@@ -549,6 +593,10 @@ abstract class BaseChartPainter extends CustomPainter {
 
   /// get the minimum value of translation
   double getMinTranslateX() {
+    // A fitted series is exactly as wide as the plot, so the half point the
+    // scroll normally leaves for the last candle's centre would be scrollable
+    // slack. There is nothing to scroll to; hold it at zero.
+    if (contentFitted) return 0.0;
     final x = -mDataLen + mWidth / scaleX - mPointWidth / 2 - xFrontPadding;
     return x >= 0 ? 0.0 : x;
   }

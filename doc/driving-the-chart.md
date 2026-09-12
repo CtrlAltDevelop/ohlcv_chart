@@ -129,9 +129,20 @@ chart.goToIndex(0);  // or somewhere particular
 
 `scrollEnabled: false` freezes the window wherever it happens to be, which is
 usually at the newest candle with the rest off to the left. For a chart that
-shows one fixed stretch, make the candles fit instead: `ChartStyle.pointWidth`
-is the space each candle takes — 8 by default — so roughly the chart's width
-divided by the number of candles puts the whole series on screen.
+shows one fixed stretch, make the candles fit instead. `ChartStyle.fitContent`
+does it without knowing the width: a series too short to fill the plot is
+spread over the whole of it, and the candle bodies widen to match.
+
+```dart
+chartStyle: ChartStyle(fitContent: true),
+```
+
+This only ever widens the spacing. A series long enough to fill the plot on
+`ChartStyle.pointWidth` — 8 by default — is laid out on that as before, so the
+flag can stay on while history pages in.
+
+Doing the arithmetic yourself works too, and is what to reach for when the
+spacing matters more than filling the box:
 
 ```dart
 chartStyle: ChartStyle(pointWidth: width / candles.length),
