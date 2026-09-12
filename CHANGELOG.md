@@ -1,4 +1,8 @@
-## Unreleased
+## 2.4.1
+
+Five changes, one for each point raised in
+[#3](https://github.com/CtrlAltDevelop/ohlcv_chart/issues/3) about the intraday
+chart.
 
 ### Fixed
 
