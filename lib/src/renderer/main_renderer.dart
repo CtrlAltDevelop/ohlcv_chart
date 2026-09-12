@@ -53,6 +53,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     this.averageClose,
     this.candleColor,
     this.priceFormatter,
+    this.secondaryScale,
+    this.secondaryGutter = 0.0,
     super.priceAxisGutter = 0.0,
     super.priceAxisGutterOnLeft = false,
   }) : super(
@@ -155,15 +157,33 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   /// price — percentage, indexed — writes that move itself.
   final String Function(double price)? priceFormatter;
 
+  /// A second reading of the same candles, drawn on the side the price axis
+  /// left free; null for the single axis the chart has always had.
+  ///
+  /// It marks its own round values — round percentages for a percentage axis —
+  /// so its labels are numbers worth reading rather than whatever the price
+  /// axis happened to land on. The grid stays ruled by the price axis: two sets
+  /// of lines over one set of candles would say nothing the second set of
+  /// labels does not.
+  final PriceAxisScale? secondaryScale;
+
+  /// Width held back for [secondaryScale]'s labels, or zero to draw them just
+  /// inside the plot the way the price axis does without a gutter.
+  final double secondaryGutter;
+
   /// Formats [price] the way the axis reads it.
   ///
   /// A percentage axis shows the move away from [percentBase] and an indexed one
   /// shows it with that base at 100; every other axis shows the price itself.
-  String formatAxis(double price) {
+  String formatAxis(double price) => formatAxisAs(priceScale, price);
+
+  /// [price] as [scale] reads it, which is what lets a second axis say the same
+  /// candle in another unit.
+  String formatAxisAs(PriceAxisScale scale, double price) {
     final base = percentBase;
     if (base == null || base == 0) return formatPrice(price);
 
-    return switch (priceScale) {
+    return switch (scale) {
       PriceAxisScale.percentage => () {
         final move = (price / base - 1) * 100;
         return '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
@@ -940,21 +960,23 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   /// evenly spaced pixels. A logarithmic axis steps by ratio, and a percentage
   /// or indexed one picks round percentages or index levels and converts them
   /// back to the prices they stand for.
-  List<double> priceTicks(int gridRows) {
-    final cached = _priceTicks;
-    if (cached != null) return cached;
+  List<double> priceTicks(int gridRows) =>
+      _priceTicks ??= ticksFor(priceScale, gridRows);
 
+  /// The prices [scale] would mark, which for a second axis are its own round
+  /// values rather than the price axis's.
+  List<double> ticksFor(PriceAxisScale scale, int gridRows) {
     final target = math.max(2, gridRows ~/ 2);
     final base = percentBase;
     final List<double> ticks;
-    if (priceScale == PriceAxisScale.percentage && base != null && base != 0) {
+    if (scale == PriceAxisScale.percentage && base != null && base != 0) {
       final low = (minValue / base - 1) * 100;
       final high = (maxValue / base - 1) * 100;
       ticks = [
         for (final move in niceTicks(low, high, target: target))
           base * (1 + move / 100),
       ];
-    } else if (priceScale == PriceAxisScale.indexedTo100 &&
+    } else if (scale == PriceAxisScale.indexedTo100 &&
         base != null &&
         base != 0) {
       // Round index levels — 100, 105, 110 — converted back to the prices they
@@ -965,7 +987,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
         for (final level in niceTicks(low, high, target: target))
           base * level / 100,
       ];
-    } else if (isLogarithmic) {
+    } else if (scale == PriceAxisScale.logarithmic && isLogarithmic) {
       ticks = niceLogTicks(minValue, maxValue, target: target);
     } else {
       ticks = niceTicks(minValue, maxValue, target: target);
@@ -973,18 +995,68 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
     // A range too flat to divide would otherwise leave the axis blank; fall
     // back to the two ends it does have.
-    return _priceTicks = ticks.isEmpty ? [minValue, maxValue] : ticks;
+    return ticks.isEmpty ? [minValue, maxValue] : ticks;
   }
 
   @override
   void drawVerticalText(Canvas canvas, TextStyle textStyle, int gridRows) {
+    _drawAxisLabels(
+      canvas,
+      textStyle,
+      priceTicks(gridRows),
+      priceScale,
+      (width, padding) => axisLabelX(
+        width,
+        padding,
+        onLeft: verticalTextAlignment == VerticalTextAlignment.left,
+      ),
+    );
+
+    final second = secondaryScale;
+    if (second == null) return;
+    _drawAxisLabels(
+      canvas,
+      textStyle,
+      ticksFor(second, gridRows),
+      second,
+      _secondaryLabelX,
+    );
+  }
+
+  /// Where a label [width] wide goes on the side the price axis left free.
+  ///
+  /// With a gutter it goes in it, and without one just inside the plot — the
+  /// same two placements the price axis has, mirrored.
+  double _secondaryLabelX(double width, double padding) {
+    final onLeft = verticalTextAlignment != VerticalTextAlignment.left;
+    if (secondaryGutter > 0) {
+      return onLeft
+          ? chartRect.left - secondaryGutter + padding
+          : chartRect.right + padding;
+    }
+    return onLeft
+        ? chartRect.left + padding
+        : chartRect.right - width - padding;
+  }
+
+  /// Writes one axis: [ticks] read as [scale] says, placed by [xOf].
+  void _drawAxisLabels(
+    Canvas canvas,
+    TextStyle textStyle,
+    List<double> ticks,
+    PriceAxisScale scale,
+    double Function(double width, double padding) xOf,
+  ) {
     final padding = chartStyle.axisLabelPadding;
 
-    for (final value in priceTicks(gridRows)) {
+    for (final value in ticks) {
       final y = getY(value);
       if (!y.isFinite) continue;
 
-      final TextSpan span = TextSpan(text: formatAxis(value), style: textStyle);
+      final TextSpan span = TextSpan(
+        text: formatAxisAs(scale, value),
+        style: textStyle,
+      );
       final TextPainter tp = TextPainter(
         text: span,
         textDirection: TextDirection.ltr,
@@ -1002,11 +1074,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       // print over that pane's legend.
       if (hasPanesBelow && chartRect.bottom - y < tp.height) continue;
 
-      final offsetX = axisLabelX(
-        tp.width,
-        padding,
-        onLeft: verticalTextAlignment == VerticalTextAlignment.left,
-      );
+      final offsetX = xOf(tp.width, padding);
 
       if (chartStyle.axisLabelBackground) {
         canvas.drawRRect(

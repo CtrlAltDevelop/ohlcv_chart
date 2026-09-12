@@ -141,7 +141,18 @@ abstract class BaseChartPainter extends CustomPainter {
   ///
   /// What the renderers are given, so where they put the labels and where the
   /// plot stops can never disagree.
-  double get priceAxisGutter => mCanvasWidth - mWidth;
+  double priceAxisGutter = 0.0;
+
+  /// Width held back on the other side for a second axis, after clamping.
+  ///
+  /// Zero unless the chart was given one; see [secondaryAxisWidth].
+  double secondaryAxisGutter = 0.0;
+
+  /// How wide a gutter the second axis asks for, before clamping.
+  ///
+  /// Concrete so a painter that draws no second axis need not care; the chart
+  /// painter overrides it from its own settings.
+  double get secondaryAxisWidth => 0.0;
 
   /// Left edge of the plot, which the gutter takes when the labels are on the
   /// left. 0 whenever they are on the right.
@@ -228,10 +239,16 @@ abstract class BaseChartPainter extends CustomPainter {
   void layout(Size size) {
     mDisplayHeight = size.height - mTopPadding - mBottomPadding;
     mCanvasWidth = size.width;
-    // Never so wide that there is no plot left to draw in.
-    final gutter = chartStyle.priceAxisWidth.clamp(0.0, size.width / 2);
-    mWidth = size.width - gutter;
-    mPlotLeft = priceAxisOnLeft ? gutter : 0.0;
+    // Never so wide that there is no plot left to draw in — the two gutters
+    // share that half between them, so a chart with an axis on either side is
+    // still mostly candles.
+    final room = size.width / 2;
+    priceAxisGutter = chartStyle.priceAxisWidth.clamp(0.0, room);
+    secondaryAxisGutter = secondaryAxisWidth.clamp(0.0, room - priceAxisGutter);
+    mWidth = size.width - priceAxisGutter - secondaryAxisGutter;
+    // The second axis takes the side the first one left, so whichever of them
+    // is on the left is what the plot starts after.
+    mPlotLeft = priceAxisOnLeft ? priceAxisGutter : secondaryAxisGutter;
     fitContent();
     initRect(size);
     calculateValue();

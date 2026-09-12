@@ -314,6 +314,16 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.priceAxisScale = v),
             ),
             _Toggle(
+              label: 'Change % down the other side',
+              subtitle: 'A second axis reading the move from the oldest candle',
+              value: state.secondaryPriceAxisScale != null,
+              onChanged: (v) => state.update(
+                () => state.secondaryPriceAxisScale = v
+                    ? PriceAxisScale.percentage
+                    : null,
+              ),
+            ),
+            _Toggle(
               label: 'Invert the price axis',
               subtitle: 'Higher prices lower down',
               value: state.invertPriceAxis,

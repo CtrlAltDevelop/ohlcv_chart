@@ -238,6 +238,7 @@ class KChartWidget extends StatefulWidget {
     this.crosshairOnHover = true,
     this.showOhlcLegend = false,
     this.priceAxisScale = PriceAxisScale.linear,
+    this.secondaryPriceAxisScale,
     this.chartType,
     this.baselinePrice,
     this.timeZoneOffset = Duration.zero,
@@ -819,6 +820,25 @@ class KChartWidget extends StatefulWidget {
   ///
   /// See [PriceAxisScale]. The volume and indicator panes stay linear.
   final PriceAxisScale priceAxisScale;
+
+  /// A second axis down the other side of the candles, reading the same prices
+  /// another way — `PriceAxisScale.percentage` for the change since the oldest
+  /// candle in view, next to the prices themselves.
+  ///
+  /// It marks its own round values rather than labelling the price axis's, so
+  /// a percentage axis reads +2%, +4%, +6% and not whatever percentages the
+  /// round prices happen to work out at. The grid stays ruled by the price
+  /// axis: a second set of lines over one set of candles would say nothing the
+  /// second set of labels does not.
+  ///
+  /// The crosshair, the current-price tag and the rest of the readouts follow
+  /// [priceAxisScale]; the second axis is an axis, not a second voice for
+  /// everything the chart says.
+  ///
+  /// `ChartStyle.secondaryPriceAxisWidth` is the gutter it is given, on the
+  /// side [verticalTextAlignment] left free. Null — the default — leaves the
+  /// chart with the one axis it has always had.
+  final PriceAxisScale? secondaryPriceAxisScale;
 
   /// Whether dragging the price axis stretches it.
   ///
@@ -2129,6 +2149,7 @@ class _KChartWidgetState extends State<KChartWidget>
           chartTranslations: widget.chartTranslations,
           showOhlcLegend: widget.showOhlcLegend,
           priceAxisScale: widget.priceAxisScale,
+          secondaryPriceAxisScale: widget.secondaryPriceAxisScale,
           priceZoom: _priceZoom,
           pricePan: _pricePan,
           fixedPriceMin: _lockedPriceRange?.$1,

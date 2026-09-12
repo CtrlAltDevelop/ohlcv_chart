@@ -13,6 +13,17 @@
 
 ### Price axis
 
+- **New `secondaryPriceAxisScale` draws a second axis down the other side.**
+  The chart had one price axis, so reading a move as a percentage meant giving
+  up the prices. A second axis reads the same candles another way —
+  `PriceAxisScale.percentage` for the change since the oldest candle in view —
+  in a gutter on the side `verticalTextAlignment` left free, sized by
+  `ChartStyle.secondaryPriceAxisWidth`. It marks its own round values rather
+  than labelling the price axis's, the grid stays ruled by the price axis, and
+  the crosshair and the price tags keep following `priceAxisScale`. The two
+  gutters share half the chart's width between them, so a second axis cannot
+  crowd the candles out.
+
 - **New `priceFormatter` writes the prices the chart shows.** `fixedLength`
   only said how many decimals to use, so a currency symbol, a thousands
   separator or a tick size had nowhere to go. It takes the writing over the way

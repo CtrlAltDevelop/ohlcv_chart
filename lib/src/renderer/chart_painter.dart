@@ -46,6 +46,7 @@ class ChartPainter extends BaseChartPainter {
     this.chartTranslations = const ChartTranslations(),
     this.showOhlcLegend = false,
     this.priceAxisScale = PriceAxisScale.linear,
+    this.secondaryPriceAxisScale,
     this.priceZoom = 1.0,
     this.pricePan = 0.0,
     CandleIndex? candleIndex,
@@ -222,6 +223,15 @@ class ChartPainter extends BaseChartPainter {
   /// How the candle area spaces and reads out its price axis.
   final PriceAxisScale priceAxisScale;
 
+  /// A second axis on the other side, or null for one axis; see
+  /// [KChartWidget.secondaryPriceAxisScale].
+  final PriceAxisScale? secondaryPriceAxisScale;
+
+  @override
+  double get secondaryAxisWidth => secondaryPriceAxisScale == null
+      ? 0.0
+      : chartStyle.secondaryPriceAxisWidth;
+
   /// How far the price axis is stretched away from the window it would fit.
   ///
   /// 1 is the auto-fitted range — exactly the highs and lows in view. Above 1
@@ -305,8 +315,12 @@ class ChartPainter extends BaseChartPainter {
   double? get _percentBase {
     // Both readouts measure from the same place: a percentage says how far the
     // market has moved from it, an index says the same thing with it at 100.
-    if (priceAxisScale != PriceAxisScale.percentage &&
-        priceAxisScale != PriceAxisScale.indexedTo100) {
+    bool measuresAMove(PriceAxisScale? scale) =>
+        scale == PriceAxisScale.percentage ||
+        scale == PriceAxisScale.indexedTo100;
+
+    if (!measuresAMove(priceAxisScale) &&
+        !measuresAMove(secondaryPriceAxisScale)) {
       return null;
     }
     final data = candles;
@@ -382,6 +396,8 @@ class ChartPainter extends BaseChartPainter {
       averageClose: showAverageClose ? _averageCloseInView : null,
       candleColor: candleColor,
       priceFormatter: priceFormatter,
+      secondaryScale: secondaryPriceAxisScale,
+      secondaryGutter: secondaryAxisGutter,
       priceAxisGutter: priceAxisGutter,
       priceAxisGutterOnLeft: priceAxisOnLeft,
     );

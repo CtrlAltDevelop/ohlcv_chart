@@ -132,6 +132,9 @@ class DemoState extends ChangeNotifier {
   /// How the price axis is spaced and read out.
   PriceAxisScale priceAxisScale = PriceAxisScale.linear;
 
+  /// A second axis down the other side, or null for the one axis.
+  PriceAxisScale? secondaryPriceAxisScale;
+
   /// How the candles are rewritten before they are drawn.
   Aggregation aggregation = Aggregation.none;
 

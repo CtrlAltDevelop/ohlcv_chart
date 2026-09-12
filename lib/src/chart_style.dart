@@ -477,6 +477,7 @@ class ChartStyle {
     this.axisLabelBackground = true,
     this.axisLabelPadding = 4.0,
     this.priceAxisWidth = 0.0,
+    this.secondaryPriceAxisWidth = 56.0,
     this.labelCornerRadius = 3.0,
     this.legendPadding = 4.0,
     this.legendSpacing = 2.0,
@@ -633,6 +634,15 @@ class ChartStyle {
   /// `KChartWidget.verticalTextAlignment`.
   final double priceAxisWidth;
 
+  /// Width of the gutter held back on the other side for a second axis.
+  ///
+  /// Only asked for when the chart was given a
+  /// `KChartWidget.secondaryPriceAxisScale`; the two gutters share half the
+  /// chart's width between them, so a second axis can never crowd the candles
+  /// out. Set it to 0 to draw the second axis over the candles the way the
+  /// price axis is drawn without a gutter.
+  final double secondaryPriceAxisWidth;
+
   /// Corner radius of the axis label and legend pills.
   final double labelCornerRadius;
 
@@ -690,6 +700,7 @@ class ChartStyle {
     bool? axisLabelBackground,
     double? axisLabelPadding,
     double? priceAxisWidth,
+    double? secondaryPriceAxisWidth,
     double? labelCornerRadius,
     double? legendPadding,
     double? legendSpacing,
@@ -735,6 +746,8 @@ class ChartStyle {
       axisLabelBackground: axisLabelBackground ?? this.axisLabelBackground,
       axisLabelPadding: axisLabelPadding ?? this.axisLabelPadding,
       priceAxisWidth: priceAxisWidth ?? this.priceAxisWidth,
+      secondaryPriceAxisWidth:
+          secondaryPriceAxisWidth ?? this.secondaryPriceAxisWidth,
       labelCornerRadius: labelCornerRadius ?? this.labelCornerRadius,
       legendPadding: legendPadding ?? this.legendPadding,
       legendSpacing: legendSpacing ?? this.legendSpacing,

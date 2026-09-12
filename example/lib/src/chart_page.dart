@@ -113,6 +113,7 @@ class _Chart extends StatelessWidget {
       drawingController: state.drawings,
       chartType: state.chartType,
       priceAxisScale: state.priceAxisScale,
+      secondaryPriceAxisScale: state.secondaryPriceAxisScale,
       session: state.tradingSession,
       candleColor: state.candleColor,
       invertPriceAxis: state.invertPriceAxis,

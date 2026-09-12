@@ -56,6 +56,38 @@ The same arithmetic is exported, for a caller drawing an axis of its own beside
 the chart: `niceStep`, `niceTicks` and `niceLogTicks` for values, `niceTimeStep`,
 `timeBucket` and `startsNewDay` for times.
 
+## A second axis down the other side
+
+`secondaryPriceAxisScale` puts another axis on the side the price axis left
+free — the change since the oldest candle in view, next to the prices
+themselves:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  secondaryPriceAxisScale: PriceAxisScale.percentage,
+  chartStyle: const ChartStyle(
+    priceAxisWidth: 56,
+    secondaryPriceAxisWidth: 56,
+  ),
+  // ...
+)
+```
+
+It marks its own round values, so a percentage axis reads +2%, +4%, +6% rather
+than whatever percentages the round prices happen to work out at. The grid
+stays ruled by the price axis: a second set of lines over one set of candles
+would say nothing the second set of labels does not.
+
+The two gutters share half the chart's width between them, so a second axis can
+never crowd the candles out, and `secondaryPriceAxisWidth: 0` draws its labels
+over the candles the way the price axis is drawn without a gutter.
+
+The crosshair, the current-price tag and the other readouts keep following
+`priceAxisScale`. The second axis is an axis, not a second voice for everything
+the chart says.
+
 ## Writing the prices yourself
 
 `fixedLength` is how many decimals a price is written to. `priceFormatter`
