@@ -288,6 +288,7 @@ class KChartWidget extends StatefulWidget {
     this.showNowPrice = true,
     this.showInfoDialog = true,
     this.lockPriceScale = false,
+    this.lockedScaleFollowsPrice = false,
     this.materialInfoDialog = true,
     this.chartStyle = const ChartStyle(),
     this.drawingStyle = const DrawingStyle(),
@@ -711,6 +712,22 @@ class KChartWidget extends StatefulWidget {
   /// another. Paging in history and live ticks need nothing, which is the
   /// point — they are what the lock is there to sit still through.
   final bool lockPriceScale;
+
+  /// Widens a locked range rather than letting the newest candle fall off it.
+  ///
+  /// A locked axis holds the range it was given, so a market that trades past
+  /// that range walks off the top or the bottom of the chart. With this set the
+  /// range grows just enough to keep the newest candle on screen, and never
+  /// shrinks back or refits to the window — so the axis still sits still while
+  /// scrolling, which is what the lock is for.
+  ///
+  /// Only the newest candle counts, and only while it is in view. Scrolling
+  /// back through history moves the window over candles the locked range need
+  /// not cover, and growing the axis to swallow them would undo the lock a
+  /// little at a time.
+  ///
+  /// Does nothing unless [lockPriceScale] is set.
+  final bool lockedScaleFollowsPrice;
 
   /// Uses the Material info dialog rather than the Cupertino-styled one.
   final bool materialInfoDialog;
@@ -2028,6 +2045,9 @@ class _KChartWidgetState extends State<KChartWidget>
           if (min.isFinite && max.isFinite && max > min) {
             _lockedPriceRange = (min, max);
           }
+        } else if (widget.lockedScaleFollowsPrice &&
+            _lockedPriceRange != null) {
+          _lockedPriceRange = _rangeFollowingPrice(_lockedPriceRange!);
         }
 
         _painterBuilt = true;
@@ -4134,6 +4154,30 @@ class _KChartWidgetState extends State<KChartWidget>
     // itself shrinks as the axis is stretched, so the shift has to be scaled
     // by the zoom to keep a drag tracking the pointer.
     _pricePan = (_pricePan + delta / height / _priceZoom).clamp(-5.0, 5.0);
+  }
+
+  /// [range] grown to cover the newest candle, for a locked axis that is not
+  /// meant to let the market trade off the top or the bottom of it.
+  ///
+  /// Only ever grows, and only for the newest candle while it is in view: the
+  /// window moving over older candles is exactly what the lock is there to sit
+  /// still through.
+  (double, double) _rangeFollowingPrice((double, double) range) {
+    final data = _candlesInPlay;
+    if (data == null || data.isEmpty || !_laidOut) return range;
+    // Off to the right of the window, the newest candle is not what the user is
+    // looking at, so the axis has no reason to move for it. Asked of the
+    // painter as it stands, which is last frame's window over last frame's
+    // candles — so a tick that has just arrived is measured against a window
+    // that was at the end of the series, not made to wait a frame for one.
+    if (painter.mStopIndex < painter.mItemCount - 1) return range;
+
+    final last = data.last;
+    final low = last.low;
+    final high = last.high;
+    if (!low.isFinite || !high.isFinite) return range;
+
+    return (math.min(range.$1, low), math.max(range.$2, high));
   }
 
   /// Hands the price axis back to the chart, which fits it to the window.

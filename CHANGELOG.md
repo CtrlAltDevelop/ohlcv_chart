@@ -11,6 +11,18 @@
   still be found. The current-price line, the signal lines and the trading tags
   are held to the same edge, and the trading lines already were.
 
+### Price axis
+
+- **New `lockedScaleFollowsPrice` keeps the newest candle on a locked axis.**
+  A locked axis holds the range it was given, so a market that trades past that
+  range walked off the top or the bottom of the chart until `resetPriceScale`
+  was called. With this set the locked range grows just enough to cover the
+  newest candle, and never shrinks back or refits to the window — so the axis
+  still sits still while scrolling, which is what the lock is for. Only the
+  newest candle counts, and only while it is in view: growing the axis to
+  swallow the history a scroll moves over would undo the lock a little at a
+  time. Off by default, and does nothing without `lockPriceScale`.
+
 ### Layout
 
 - **New `ChartStyle.fitContent` spreads a short series across the whole plot.**

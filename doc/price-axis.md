@@ -123,6 +123,30 @@ Because the range is held until it is reset, a chart that switches to another
 instrument should reset it — a range from one instrument means nothing on
 another. Paging in candles and live ticks need nothing, which is the point.
 
+### When the market trades past the locked range
+
+A held range is a range the market can leave. `lockedScaleFollowsPrice` grows
+it just enough to keep the newest candle on the chart:
+
+```dart
+KChartWidget(
+  data,
+  ChartColors(),
+  lockPriceScale: true,
+  lockedScaleFollowsPrice: true,
+  // ...
+)
+```
+
+It only ever grows, and never refits to the window, so the axis still sits
+still while the chart is scrolled. Only the newest candle counts, and only
+while it is in view — growing the axis to swallow the history a scroll moves
+over would undo the lock a little at a time.
+
+Left off, a price outside the range is not lost either: a level the axis cannot
+reach has its label pinned to the edge it went past, marked with an arrow,
+rather than being drawn outside the candle area where it cannot be seen.
+
 ## Holding a gutter back for it
 
 By default the price labels are drawn over the candles, and the candles scroll
