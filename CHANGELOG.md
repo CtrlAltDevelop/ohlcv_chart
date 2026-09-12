@@ -1,5 +1,16 @@
 ## Unreleased
 
+### Fixed
+
+- **A price the axis does not reach no longer escapes the candle area.** A
+  locked axis makes that ordinary — the range is held where it was, so a tick
+  beyond it had nowhere of its own to go and was drawn over the volume and
+  indicator panes, or off the canvas where it could not be seen at all. A
+  horizontal line at such a price is now left out of the plot and its label is
+  pinned to the edge the price went past, marked with an arrow so the level can
+  still be found. The current-price line, the signal lines and the trading tags
+  are held to the same edge, and the trading lines already were.
+
 ### Layout
 
 - **New `ChartStyle.fitContent` spreads a short series across the whole plot.**

@@ -696,7 +696,7 @@ class ChartPainter extends BaseChartPainter {
       drawPriceTag(
         canvas,
         getTextPainter(position.tagText, chartColors.nowPriceTextColor),
-        getMainY(position.entryPrice),
+        clampToMain(getMainY(position.entryPrice)),
         color,
       );
     }
@@ -707,7 +707,7 @@ class ChartPainter extends BaseChartPainter {
       drawPriceTag(
         canvas,
         getTextPainter(order.tagText, chartColors.nowPriceTextColor),
-        getMainY(order.price),
+        clampToMain(getMainY(order.price)),
         color,
       );
     }
@@ -724,7 +724,7 @@ class ChartPainter extends BaseChartPainter {
     final y = getMainY(price);
     // A line at a price the window does not reach would be drawn over another
     // pane, so it is left out rather than drawn in the wrong place.
-    if (y < mMainRect.top || y > mMainRect.bottom) return;
+    if (!withinMain(y)) return;
 
     final trading = chartStyle.trading;
     paintStyledLine(
@@ -992,6 +992,10 @@ class ChartPainter extends BaseChartPainter {
   void drawHorizontalLines(Canvas canvas, Size size) {
     for (final line in _withDraft(horizontalLines)) {
       final y = getMainY(line.price);
+      // Drawn at a price the axis does not reach it would land over another
+      // pane, or off the canvas entirely, so it is left out rather than drawn
+      // somewhere it does not mean. Its label still marks the edge.
+      if (!withinMain(y)) continue;
       // A ray starts at its own candle; a plain level spans the whole chart.
       final startX = horizontalRayStartX(line) ?? 0.0;
       if (startX > size.width) continue;
@@ -1023,7 +1027,14 @@ class ChartPainter extends BaseChartPainter {
 
       final y = getMainY(line.price);
       final title = line.title ?? line.price.toStringAsFixed(fixedLength);
-      final tp = getLabelPainter(title, line.color);
+      // Off the axis, the label is held at the edge the price is beyond and
+      // carries which way it went, so a level outside a locked range can still
+      // be found rather than silently disappearing.
+      final labelY = clampToMain(y);
+      final tp = getLabelPainter(
+        withinMain(y) ? title : '$title ${y < mMainRect.top ? '▲' : '▼'}',
+        line.color,
+      );
       final padding = drawingStyle.labelPadding;
 
       final rayStart = horizontalRayStartX(line);
@@ -1033,7 +1044,12 @@ class ChartPainter extends BaseChartPainter {
           ? size.width - tp.width - padding.right - 8
           : 8.0 + padding.left;
 
-      drawLineLabel(canvas, tp, Offset(textX, y - tp.height / 2), line.color);
+      drawLineLabel(
+        canvas,
+        tp,
+        Offset(textX, labelY - tp.height / 2),
+        line.color,
+      );
     }
   }
 
@@ -2963,6 +2979,9 @@ class ChartPainter extends BaseChartPainter {
 
     if (y > getMainY(mMainLowMinValue)) y = getMainY(mMainLowMinValue);
     if (y < getMainY(mMainHighMaxValue)) y = getMainY(mMainHighMaxValue);
+    // Those are the window's extremes, which a locked axis need not cover: a
+    // tick past the range it is held at would be drawn outside the pane.
+    y = clampToMain(y);
 
     nowPricePaint.color = value >= open
         ? chartColors.nowPriceUpColor
@@ -3051,6 +3070,7 @@ class ChartPainter extends BaseChartPainter {
 
       if (y > getMainY(mMainLowMinValue)) y = getMainY(mMainLowMinValue);
       if (y < getMainY(mMainHighMaxValue)) y = getMainY(mMainHighMaxValue);
+      y = clampToMain(y);
 
       final linePaint = Paint()
         ..color = signal.color
@@ -3156,6 +3176,17 @@ class ChartPainter extends BaseChartPainter {
       dateFormat((date ?? DateTime.now()).add(timeZoneOffset), mFormats);
 
   double getMainY(double y) => mMainRenderer.getY(y);
+
+  /// Whether [y] falls inside the candle area.
+  ///
+  /// A price the axis does not reach lands outside it, which a locked axis
+  /// makes ordinary: the range is held where it was, so a tick beyond it has
+  /// nowhere of its own to be drawn.
+  bool withinMain(double y) => y >= mMainRect.top && y <= mMainRect.bottom;
+
+  /// Pins [y] to the candle area, for a label that has to stay findable even
+  /// when the price it points at is off the top or the bottom of the axis.
+  double clampToMain(double y) => y.clamp(mMainRect.top, mMainRect.bottom);
 
   @override
   void drawWatermarkLogo(Canvas canvas, Size size) {
