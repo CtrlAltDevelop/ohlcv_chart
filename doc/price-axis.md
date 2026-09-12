@@ -56,6 +56,28 @@ The same arithmetic is exported, for a caller drawing an axis of its own beside
 the chart: `niceStep`, `niceTicks` and `niceLogTicks` for values, `niceTimeStep`,
 `timeBucket` and `startsNewDay` for times.
 
+## Writing the prices yourself
+
+`fixedLength` is how many decimals a price is written to. `priceFormatter`
+takes the writing over, the way `dateFormatter` does on the date axis:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  priceFormatter: (price) => NumberFormat.currency(symbol: r'$').format(price),
+  // ...
+)
+```
+
+It writes every price the chart says: the axis labels, the crosshair's price
+label, the current-price tag, the high, low and signal tags, and the OHLC
+legend. An axis that reads out a move rather than a price — `percentage`,
+`indexedTo100` — writes that move itself and does not ask.
+
+Drawings keep their own labels, which are yours to set through each one's
+`title`.
+
 ## Reading it the other way, and other extras
 
 ```dart

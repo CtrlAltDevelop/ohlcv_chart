@@ -52,6 +52,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     this.inverted = false,
     this.averageClose,
     this.candleColor,
+    this.priceFormatter,
     super.priceAxisGutter = 0.0,
     super.priceAxisGutterOnLeft = false,
   }) : super(
@@ -147,13 +148,20 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   /// Stands in for a price a logarithm cannot take.
   static const double _logFloor = 1e-9;
 
+  /// Writes a price the way the chart should read it out, in place of the
+  /// plain decimals [fixedLength] gives.
+  ///
+  /// Only ever asked about a price: an axis that reads out a move rather than a
+  /// price — percentage, indexed — writes that move itself.
+  final String Function(double price)? priceFormatter;
+
   /// Formats [price] the way the axis reads it.
   ///
   /// A percentage axis shows the move away from [percentBase] and an indexed one
   /// shows it with that base at 100; every other axis shows the price itself.
   String formatAxis(double price) {
     final base = percentBase;
-    if (base == null || base == 0) return format(price);
+    if (base == null || base == 0) return formatPrice(price);
 
     return switch (priceScale) {
       PriceAxisScale.percentage => () {
@@ -161,9 +169,14 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
         return '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
       }(),
       PriceAxisScale.indexedTo100 => (price / base * 100).toStringAsFixed(2),
-      _ => format(price),
+      _ => formatPrice(price),
     };
   }
+
+  /// [price] as the chart writes prices: through [priceFormatter] when one was
+  /// given, and as plain decimals otherwise.
+  String formatPrice(double price) =>
+      priceFormatter?.call(price) ?? format(price);
 
   late double mCandleWidth;
   late double mCandleLineWidth;

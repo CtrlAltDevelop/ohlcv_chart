@@ -13,6 +13,15 @@
 
 ### Price axis
 
+- **New `priceFormatter` writes the prices the chart shows.** `fixedLength`
+  only said how many decimals to use, so a currency symbol, a thousands
+  separator or a tick size had nowhere to go. It takes the writing over the way
+  `dateFormatter` does on the date axis, and covers every price the chart says:
+  the axis labels, the crosshair's price label, the current-price tag, the
+  high, low and signal tags, and the OHLC legend. An axis that reads out a move
+  rather than a price — `percentage`, `indexedTo100` — writes that move itself
+  and does not ask.
+
 - **New `lockedScaleFollowsPrice` keeps the newest candle on a locked axis.**
   A locked axis holds the range it was given, so a market that trades past that
   range walked off the top or the bottom of the chart until `resetPriceScale`

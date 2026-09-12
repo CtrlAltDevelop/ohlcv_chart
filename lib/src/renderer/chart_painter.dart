@@ -77,6 +77,7 @@ class ChartPainter extends BaseChartPainter {
     this.showNowPrice = true,
     this.fixedLength = 2,
     this.dateFormatter,
+    this.priceFormatter,
     super.repaint,
   }) : candleIndex = candleIndex ?? CandleIndex(),
        textCache = textCache ?? TextPainterCache() {
@@ -273,6 +274,10 @@ class ChartPainter extends BaseChartPainter {
   bool get priceAxisOnLeft =>
       verticalTextAlignment == VerticalTextAlignment.left;
   final String Function(KLineEntity entity, bool isCrossLine)? dateFormatter;
+
+  /// Writes the prices the axis and its readouts show; see
+  /// [KChartWidget.priceFormatter].
+  final String Function(double price)? priceFormatter;
   final vg.PictureInfo? watermarkPicture;
   final Duration timeFrame;
   int fixedLength;
@@ -376,6 +381,7 @@ class ChartPainter extends BaseChartPainter {
       inverted: invertPriceAxis,
       averageClose: showAverageClose ? _averageCloseInView : null,
       candleColor: candleColor,
+      priceFormatter: priceFormatter,
       priceAxisGutter: priceAxisGutter,
       priceAxisGutterOnLeft: priceAxisOnLeft,
     );
@@ -2877,7 +2883,7 @@ class ChartPainter extends BaseChartPainter {
         (labels.close, data.close),
       ])
         TextSpan(
-          text: '$label ${value.toStringAsFixed(fixedLength)}  ',
+          text: '$label ${mMainRenderer.formatPrice(value)}  ',
           style: getTextStyle(moveColor),
         ),
       TextSpan(
@@ -2948,7 +2954,7 @@ class ChartPainter extends BaseChartPainter {
 
     final x = translateXtoX(getX(index));
     final y = getMainY(value);
-    final tp = getTextPainter(value.toStringAsFixed(fixedLength), color);
+    final tp = getTextPainter(mMainRenderer.formatPrice(value), color);
     final linePaint = Paint()
       ..color = color
       ..strokeWidth = 1

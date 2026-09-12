@@ -296,6 +296,7 @@ class KChartWidget extends StatefulWidget {
     this.timeFormat = TimeFormat.YEAR_MONTH_DAY,
     this.infoDialogBuilder,
     this.dateFormatter,
+    this.priceFormatter,
     this.onLoadMore,
     this.fixedLength = 2,
     this.flingTime = 600,
@@ -755,6 +756,19 @@ class KChartWidget extends StatefulWidget {
 
   /// Overrides axis date formatting; the flag marks the long form.
   final String Function(KLineEntity, bool)? dateFormatter;
+
+  /// Writes the prices the price axis and its readouts show, in place of the
+  /// plain decimals [fixedLength] gives.
+  ///
+  /// Covers the axis labels, the crosshair's price label, the current-price tag
+  /// and the signal tags — everywhere the chart says what a price is. Use it
+  /// for a currency, a thousands separator, or a tick size the decimals alone
+  /// do not carry.
+  ///
+  /// An axis that reads out a move rather than a price — [PriceAxisScale
+  /// .percentage], [PriceAxisScale.indexedTo100] — writes that move itself and
+  /// does not ask.
+  final String Function(double price)? priceFormatter;
 
   /// Fires when the user scrolls past an edge; the flag is true at the right.
   final ValueChanged<bool>? onLoadMore;
@@ -2106,6 +2120,7 @@ class _KChartWidgetState extends State<KChartWidget>
           fixedLength: widget.fixedLength,
           verticalTextAlignment: widget.verticalTextAlignment,
           dateFormatter: widget.dateFormatter,
+          priceFormatter: widget.priceFormatter,
           watermarkPicture: _watermarkPicture,
           draftLine: _draft,
           selectedLine: _selected,
