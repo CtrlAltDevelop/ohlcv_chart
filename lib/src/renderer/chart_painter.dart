@@ -463,10 +463,13 @@ class ChartPainter extends BaseChartPainter {
   @override
   void drawBg(Canvas canvas, Size size) {
     final mBgPaint = Paint()..color = chartColors.bgColor;
+    // Every band is filled across the whole canvas, gutters included: an axis
+    // gutter is part of the chart, and a label drawn in one needs the chart's
+    // own background behind it rather than whatever is under the widget.
     final mainRect = Rect.fromLTRB(
       0,
       0,
-      mMainRect.width,
+      mCanvasWidth,
       mMainRect.height + mTopPadding,
     );
     canvas.drawRect(mainRect, mBgPaint);
@@ -475,7 +478,7 @@ class ChartPainter extends BaseChartPainter {
       final volRect = Rect.fromLTRB(
         0,
         mVolRect!.top - mChildPadding,
-        mVolRect!.width,
+        mCanvasWidth,
         mVolRect!.bottom,
       );
       canvas.drawRect(volRect, mBgPaint);
@@ -486,7 +489,7 @@ class ChartPainter extends BaseChartPainter {
       final secondaryRect = Rect.fromLTRB(
         0,
         mSecondaryRect.top - mChildPadding,
-        mSecondaryRect.width,
+        mCanvasWidth,
         mSecondaryRect.bottom,
       );
       canvas.drawRect(secondaryRect, mBgPaint);

@@ -440,6 +440,31 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.lockPriceScale = v),
             ),
             _Toggle(
+              label: 'Locked axis follows the price',
+              subtitle: 'Grows the locked range to keep the newest candle on',
+              value: state.lockedScaleFollowsPrice,
+              onChanged: (v) =>
+                  state.update(() => state.lockedScaleFollowsPrice = v),
+            ),
+            _Toggle(
+              label: 'Level off the axis',
+              subtitle: 'A line above every price — its label marks the edge',
+              value: state.levelOffTheAxis,
+              onChanged: (v) => state.update(() => state.toggleFarLevel(v)),
+            ),
+            _Toggle(
+              label: 'Fit the candles to the width',
+              subtitle: 'Spreads a short series over the whole plot',
+              value: state.fitContent,
+              onChanged: (v) => state.update(() => state.fitContent = v),
+            ),
+            _Toggle(
+              label: 'Prices as currency',
+              subtitle: r'priceFormatter writes them as $1234.50',
+              value: state.currencyPrices,
+              onChanged: (v) => state.update(() => state.currencyPrices = v),
+            ),
+            _Toggle(
               label: 'Now price and countdown',
               value: state.showNowPrice,
               onChanged: (v) => state.update(() => state.showNowPrice = v),

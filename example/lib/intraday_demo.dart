@@ -57,7 +57,7 @@ class _IntradayDemoState extends State<IntradayDemo> {
               title: const Text('Fit the whole session to the width'),
               subtitle: Text(
                 _fitWidth
-                    ? 'pointWidth = width / 78, so all 78 candles show'
+                    ? 'ChartStyle.fitContent: all 78 candles, evenly spread'
                     : 'Default spacing: only part of the session fits',
               ),
               value: _fitWidth,
@@ -67,44 +67,38 @@ class _IntradayDemoState extends State<IntradayDemo> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // The whole point: each candle gets an equal share of the
-                    // width, so the session fills the box exactly.
-                    final pointWidth = _fitWidth
-                        ? constraints.maxWidth / _session.length
-                        : 8.0;
+                child: KChartWidget(
+                  _session,
+                  ChartColors(),
+                  isTrendLine: false,
+                  watermarkAssetPath: 'assets/none.svg',
+                  timeFrame: const Duration(minutes: 5),
+                  chartType: ChartType.area,
 
-                    return KChartWidget(
-                      _session,
-                      ChartColors(),
-                      isTrendLine: false,
-                      watermarkAssetPath: 'assets/none.svg',
-                      timeFrame: const Duration(minutes: 5),
-                      chartType: ChartType.area,
+                  // What makes it sit still.
+                  scrollEnabled: !_static,
+                  zoomEnabled: !_static,
 
-                      // What makes it sit still.
-                      scrollEnabled: !_static,
-                      zoomEnabled: !_static,
+                  // The whole point: each candle takes an equal share of the
+                  // width, so the session fills the box exactly. The chart
+                  // works the spacing out from its own width, so nothing here
+                  // has to know how wide it ended up.
+                  chartStyle: ChartStyle(fitContent: _fitWidth),
+                  xFrontPadding: 0,
 
-                      chartStyle: ChartStyle(pointWidth: pointWidth),
-                      xFrontPadding: 0,
-
-                      // Everything else a plain intraday figure does not want.
-                      volHidden: true,
-                      hideGrid: true,
-                      showNowPrice: false,
-                      showInfoDialog: false,
-                      crosshairOnHover: false,
-                      showContextMenu: false,
-                      showScrollToNowButton: false,
-                      priceScaleDrag: false,
-                      // A page that never scrolls has nothing to page in.
-                      onLoadMore: (isRight) => debugPrint(
-                        'onLoadMore($isRight) — should never print while static',
-                      ),
-                    );
-                  },
+                  // Everything else a plain intraday figure does not want.
+                  volHidden: true,
+                  hideGrid: true,
+                  showNowPrice: false,
+                  showInfoDialog: false,
+                  crosshairOnHover: false,
+                  showContextMenu: false,
+                  showScrollToNowButton: false,
+                  priceScaleDrag: false,
+                  // A page that never scrolls has nothing to page in.
+                  onLoadMore: (isRight) => debugPrint(
+                    'onLoadMore($isRight) — should never print while static',
+                  ),
                 ),
               ),
             ),

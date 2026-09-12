@@ -2,6 +2,12 @@
 
 ### Fixed
 
+- **An axis gutter is painted in the chart's own background.** It was filled
+  from the canvas edge for the plot's width, which left a gutter on the right
+  showing whatever was under the widget, and shifted the fill when a gutter was
+  held back on the left. Every band now spans the whole canvas, so a label
+  drawn in a gutter has the chart behind it.
+
 - **A price the axis does not reach no longer escapes the candle area.** A
   locked axis makes that ordinary — the range is held where it was, so a tick
   beyond it had nowhere of its own to go and was drawn over the volume and
