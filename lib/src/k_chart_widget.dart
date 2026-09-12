@@ -238,6 +238,7 @@ class KChartWidget extends StatefulWidget {
     this.crosshairOnHover = true,
     this.showOhlcLegend = false,
     this.priceAxisScale = PriceAxisScale.linear,
+    this.secondaryPriceAxisScale,
     this.chartType,
     this.baselinePrice,
     this.timeZoneOffset = Duration.zero,
@@ -288,6 +289,7 @@ class KChartWidget extends StatefulWidget {
     this.showNowPrice = true,
     this.showInfoDialog = true,
     this.lockPriceScale = false,
+    this.lockedScaleFollowsPrice = false,
     this.materialInfoDialog = true,
     this.chartStyle = const ChartStyle(),
     this.drawingStyle = const DrawingStyle(),
@@ -295,6 +297,7 @@ class KChartWidget extends StatefulWidget {
     this.timeFormat = TimeFormat.YEAR_MONTH_DAY,
     this.infoDialogBuilder,
     this.dateFormatter,
+    this.priceFormatter,
     this.onLoadMore,
     this.fixedLength = 2,
     this.flingTime = 600,
@@ -712,6 +715,22 @@ class KChartWidget extends StatefulWidget {
   /// point — they are what the lock is there to sit still through.
   final bool lockPriceScale;
 
+  /// Widens a locked range rather than letting the newest candle fall off it.
+  ///
+  /// A locked axis holds the range it was given, so a market that trades past
+  /// that range walks off the top or the bottom of the chart. With this set the
+  /// range grows just enough to keep the newest candle on screen, and never
+  /// shrinks back or refits to the window — so the axis still sits still while
+  /// scrolling, which is what the lock is for.
+  ///
+  /// Only the newest candle counts, and only while it is in view. Scrolling
+  /// back through history moves the window over candles the locked range need
+  /// not cover, and growing the axis to swallow them would undo the lock a
+  /// little at a time.
+  ///
+  /// Does nothing unless [lockPriceScale] is set.
+  final bool lockedScaleFollowsPrice;
+
   /// Uses the Material info dialog rather than the Cupertino-styled one.
   final bool materialInfoDialog;
 
@@ -738,6 +757,19 @@ class KChartWidget extends StatefulWidget {
 
   /// Overrides axis date formatting; the flag marks the long form.
   final String Function(KLineEntity, bool)? dateFormatter;
+
+  /// Writes the prices the price axis and its readouts show, in place of the
+  /// plain decimals [fixedLength] gives.
+  ///
+  /// Covers the axis labels, the crosshair's price label, the current-price tag
+  /// and the signal tags — everywhere the chart says what a price is. Use it
+  /// for a currency, a thousands separator, or a tick size the decimals alone
+  /// do not carry.
+  ///
+  /// An axis that reads out a move rather than a price — [PriceAxisScale
+  /// .percentage], [PriceAxisScale.indexedTo100] — writes that move itself and
+  /// does not ask.
+  final String Function(double price)? priceFormatter;
 
   /// Fires when the user scrolls past an edge; the flag is true at the right.
   final ValueChanged<bool>? onLoadMore;
@@ -788,6 +820,25 @@ class KChartWidget extends StatefulWidget {
   ///
   /// See [PriceAxisScale]. The volume and indicator panes stay linear.
   final PriceAxisScale priceAxisScale;
+
+  /// A second axis down the other side of the candles, reading the same prices
+  /// another way — `PriceAxisScale.percentage` for the change since the oldest
+  /// candle in view, next to the prices themselves.
+  ///
+  /// It marks its own round values rather than labelling the price axis's, so
+  /// a percentage axis reads +2%, +4%, +6% and not whatever percentages the
+  /// round prices happen to work out at. The grid stays ruled by the price
+  /// axis: a second set of lines over one set of candles would say nothing the
+  /// second set of labels does not.
+  ///
+  /// The crosshair, the current-price tag and the rest of the readouts follow
+  /// [priceAxisScale]; the second axis is an axis, not a second voice for
+  /// everything the chart says.
+  ///
+  /// `ChartStyle.secondaryPriceAxisWidth` is the gutter it is given, on the
+  /// side [verticalTextAlignment] left free. Null — the default — leaves the
+  /// chart with the one axis it has always had.
+  final PriceAxisScale? secondaryPriceAxisScale;
 
   /// Whether dragging the price axis stretches it.
   ///
@@ -2028,6 +2079,9 @@ class _KChartWidgetState extends State<KChartWidget>
           if (min.isFinite && max.isFinite && max > min) {
             _lockedPriceRange = (min, max);
           }
+        } else if (widget.lockedScaleFollowsPrice &&
+            _lockedPriceRange != null) {
+          _lockedPriceRange = _rangeFollowingPrice(_lockedPriceRange!);
         }
 
         _painterBuilt = true;
@@ -2086,6 +2140,7 @@ class _KChartWidgetState extends State<KChartWidget>
           fixedLength: widget.fixedLength,
           verticalTextAlignment: widget.verticalTextAlignment,
           dateFormatter: widget.dateFormatter,
+          priceFormatter: widget.priceFormatter,
           watermarkPicture: _watermarkPicture,
           draftLine: _draft,
           selectedLine: _selected,
@@ -2094,6 +2149,7 @@ class _KChartWidgetState extends State<KChartWidget>
           chartTranslations: widget.chartTranslations,
           showOhlcLegend: widget.showOhlcLegend,
           priceAxisScale: widget.priceAxisScale,
+          secondaryPriceAxisScale: widget.secondaryPriceAxisScale,
           priceZoom: _priceZoom,
           pricePan: _pricePan,
           fixedPriceMin: _lockedPriceRange?.$1,
@@ -4134,6 +4190,30 @@ class _KChartWidgetState extends State<KChartWidget>
     // itself shrinks as the axis is stretched, so the shift has to be scaled
     // by the zoom to keep a drag tracking the pointer.
     _pricePan = (_pricePan + delta / height / _priceZoom).clamp(-5.0, 5.0);
+  }
+
+  /// [range] grown to cover the newest candle, for a locked axis that is not
+  /// meant to let the market trade off the top or the bottom of it.
+  ///
+  /// Only ever grows, and only for the newest candle while it is in view: the
+  /// window moving over older candles is exactly what the lock is there to sit
+  /// still through.
+  (double, double) _rangeFollowingPrice((double, double) range) {
+    final data = _candlesInPlay;
+    if (data == null || data.isEmpty || !_laidOut) return range;
+    // Off to the right of the window, the newest candle is not what the user is
+    // looking at, so the axis has no reason to move for it. Asked of the
+    // painter as it stands, which is last frame's window over last frame's
+    // candles — so a tick that has just arrived is measured against a window
+    // that was at the end of the series, not made to wait a frame for one.
+    if (painter.mStopIndex < painter.mItemCount - 1) return range;
+
+    final last = data.last;
+    final low = last.low;
+    final high = last.high;
+    if (!low.isFinite || !high.isFinite) return range;
+
+    return (math.min(range.$1, low), math.max(range.$2, high));
   }
 
   /// Hands the price axis back to the chart, which fits it to the window.

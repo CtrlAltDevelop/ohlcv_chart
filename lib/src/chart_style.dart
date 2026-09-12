@@ -445,6 +445,7 @@ class ChartStyle {
     this.childPadding = 12.0,
     this.pointWidth = 8,
     this.candleWidth = 6,
+    this.fitContent = false,
     this.candleLineWidth = 1.0,
     this.volWidth = 6,
     this.macdWidth = 1.5,
@@ -476,6 +477,7 @@ class ChartStyle {
     this.axisLabelBackground = true,
     this.axisLabelPadding = 4.0,
     this.priceAxisWidth = 0.0,
+    this.secondaryPriceAxisWidth = 56.0,
     this.labelCornerRadius = 3.0,
     this.legendPadding = 4.0,
     this.legendSpacing = 2.0,
@@ -493,6 +495,18 @@ class ChartStyle {
 
   ///candle width
   final double candleWidth;
+
+  /// Spreads the candles across the whole plot when they do not fill it.
+  ///
+  /// [pointWidth] is a fixed distance, so a short series — a handful of
+  /// intraday bars, say — bunches up against the left edge and leaves the rest
+  /// of the chart empty. With this set the spacing is widened to whatever makes
+  /// the series span the plot, and [candleWidth] and [ChartStyle.volWidth] are
+  /// widened with it so the bars keep their proportions.
+  ///
+  /// Only ever widens: a series long enough to fill the plot, or one zoomed in
+  /// past it, is laid out on [pointWidth] as before.
+  final bool fitContent;
   final double candleLineWidth;
 
   ///vol column width
@@ -620,6 +634,15 @@ class ChartStyle {
   /// `KChartWidget.verticalTextAlignment`.
   final double priceAxisWidth;
 
+  /// Width of the gutter held back on the other side for a second axis.
+  ///
+  /// Only asked for when the chart was given a
+  /// `KChartWidget.secondaryPriceAxisScale`; the two gutters share half the
+  /// chart's width between them, so a second axis can never crowd the candles
+  /// out. Set it to 0 to draw the second axis over the candles the way the
+  /// price axis is drawn without a gutter.
+  final double secondaryPriceAxisWidth;
+
   /// Corner radius of the axis label and legend pills.
   final double labelCornerRadius;
 
@@ -645,6 +668,7 @@ class ChartStyle {
     double? childPadding,
     double? pointWidth,
     double? candleWidth,
+    bool? fitContent,
     double? candleLineWidth,
     double? volWidth,
     double? macdWidth,
@@ -676,6 +700,7 @@ class ChartStyle {
     bool? axisLabelBackground,
     double? axisLabelPadding,
     double? priceAxisWidth,
+    double? secondaryPriceAxisWidth,
     double? labelCornerRadius,
     double? legendPadding,
     double? legendSpacing,
@@ -689,6 +714,7 @@ class ChartStyle {
       childPadding: childPadding ?? this.childPadding,
       pointWidth: pointWidth ?? this.pointWidth,
       candleWidth: candleWidth ?? this.candleWidth,
+      fitContent: fitContent ?? this.fitContent,
       candleLineWidth: candleLineWidth ?? this.candleLineWidth,
       volWidth: volWidth ?? this.volWidth,
       macdWidth: macdWidth ?? this.macdWidth,
@@ -720,6 +746,8 @@ class ChartStyle {
       axisLabelBackground: axisLabelBackground ?? this.axisLabelBackground,
       axisLabelPadding: axisLabelPadding ?? this.axisLabelPadding,
       priceAxisWidth: priceAxisWidth ?? this.priceAxisWidth,
+      secondaryPriceAxisWidth:
+          secondaryPriceAxisWidth ?? this.secondaryPriceAxisWidth,
       labelCornerRadius: labelCornerRadius ?? this.labelCornerRadius,
       legendPadding: legendPadding ?? this.legendPadding,
       legendSpacing: legendSpacing ?? this.legendSpacing,

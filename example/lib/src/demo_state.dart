@@ -132,6 +132,9 @@ class DemoState extends ChangeNotifier {
   /// How the price axis is spaced and read out.
   PriceAxisScale priceAxisScale = PriceAxisScale.linear;
 
+  /// A second axis down the other side, or null for the one axis.
+  PriceAxisScale? secondaryPriceAxisScale;
+
   /// How the candles are rewritten before they are drawn.
   Aggregation aggregation = Aggregation.none;
 
@@ -262,6 +265,20 @@ class DemoState extends ChangeNotifier {
   /// Holds the price axis at one range, so scrolling does not rescale it.
   bool lockPriceScale = false;
 
+  /// Grows a locked range rather than letting the newest candle walk off it.
+  bool lockedScaleFollowsPrice = false;
+
+  /// Spreads a short series over the whole plot rather than bunching it up on
+  /// the left at the fixed spacing.
+  bool fitContent = false;
+
+  /// Writes the prices as currency rather than as plain decimals.
+  bool currencyPrices = false;
+
+  /// Marks a level above everything on the chart, to show what an axis that
+  /// cannot reach a price does with it.
+  bool levelOffTheAxis = false;
+
   /// Lets the user scroll the chart sideways.
   bool scrollEnabled = true;
 
@@ -305,8 +322,44 @@ class DemoState extends ChangeNotifier {
     return base.copyWith(
       showSessionDividers: sessionDividers,
       priceAxisWidth: fixedPriceAxis ? 56.0 : 0.0,
+      fitContent: fitContent,
     );
   }
+
+  /// The far level [levelOffTheAxis] puts on the chart, so it can be taken
+  /// off again.
+  HorizontalLine? _farLevel;
+
+  /// Puts a level well above every price on the chart, or takes it off.
+  ///
+  /// Nothing on the axis reaches it, so the line itself is not drawn and its
+  /// label is pinned to the top edge with an arrow — which is what a price the
+  /// axis cannot reach is supposed to look like.
+  void toggleFarLevel(bool on) {
+    levelOffTheAxis = on;
+    final existing = _farLevel;
+    if (!on) {
+      if (existing != null) drawings.remove(existing);
+      _farLevel = null;
+      return;
+    }
+
+    final highest = candles.fold<double>(
+      0,
+      (top, c) => c.high > top ? c.high : top,
+    );
+    _farLevel = HorizontalLine(
+      price: highest * 1.5,
+      title: 'Off the axis',
+      showLabel: true,
+    );
+    drawings.save(_farLevel!);
+  }
+
+  /// Writes prices as currency, or null to leave them as plain decimals.
+  String Function(double)? get priceFormatter => currencyPrices
+      ? (price) => '\$${price.toStringAsFixed(fixedLength)}'
+      : null;
 
   /// The line editor's configuration.
   DrawingStyle get drawingStyle =>

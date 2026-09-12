@@ -46,6 +46,7 @@ class ChartPainter extends BaseChartPainter {
     this.chartTranslations = const ChartTranslations(),
     this.showOhlcLegend = false,
     this.priceAxisScale = PriceAxisScale.linear,
+    this.secondaryPriceAxisScale,
     this.priceZoom = 1.0,
     this.pricePan = 0.0,
     CandleIndex? candleIndex,
@@ -77,6 +78,7 @@ class ChartPainter extends BaseChartPainter {
     this.showNowPrice = true,
     this.fixedLength = 2,
     this.dateFormatter,
+    this.priceFormatter,
     super.repaint,
   }) : candleIndex = candleIndex ?? CandleIndex(),
        textCache = textCache ?? TextPainterCache() {
@@ -221,6 +223,15 @@ class ChartPainter extends BaseChartPainter {
   /// How the candle area spaces and reads out its price axis.
   final PriceAxisScale priceAxisScale;
 
+  /// A second axis on the other side, or null for one axis; see
+  /// [KChartWidget.secondaryPriceAxisScale].
+  final PriceAxisScale? secondaryPriceAxisScale;
+
+  @override
+  double get secondaryAxisWidth => secondaryPriceAxisScale == null
+      ? 0.0
+      : chartStyle.secondaryPriceAxisWidth;
+
   /// How far the price axis is stretched away from the window it would fit.
   ///
   /// 1 is the auto-fitted range — exactly the highs and lows in view. Above 1
@@ -273,6 +284,10 @@ class ChartPainter extends BaseChartPainter {
   bool get priceAxisOnLeft =>
       verticalTextAlignment == VerticalTextAlignment.left;
   final String Function(KLineEntity entity, bool isCrossLine)? dateFormatter;
+
+  /// Writes the prices the axis and its readouts show; see
+  /// [KChartWidget.priceFormatter].
+  final String Function(double price)? priceFormatter;
   final vg.PictureInfo? watermarkPicture;
   final Duration timeFrame;
   int fixedLength;
@@ -300,8 +315,12 @@ class ChartPainter extends BaseChartPainter {
   double? get _percentBase {
     // Both readouts measure from the same place: a percentage says how far the
     // market has moved from it, an index says the same thing with it at 100.
-    if (priceAxisScale != PriceAxisScale.percentage &&
-        priceAxisScale != PriceAxisScale.indexedTo100) {
+    bool measuresAMove(PriceAxisScale? scale) =>
+        scale == PriceAxisScale.percentage ||
+        scale == PriceAxisScale.indexedTo100;
+
+    if (!measuresAMove(priceAxisScale) &&
+        !measuresAMove(secondaryPriceAxisScale)) {
       return null;
     }
     final data = candles;
@@ -360,7 +379,7 @@ class ChartPainter extends BaseChartPainter {
       overlays,
       isLine,
       fixedLength,
-      chartStyle,
+      fittedStyle,
       chartColors,
       scaleX,
       verticalTextAlignment,
@@ -376,6 +395,9 @@ class ChartPainter extends BaseChartPainter {
       inverted: invertPriceAxis,
       averageClose: showAverageClose ? _averageCloseInView : null,
       candleColor: candleColor,
+      priceFormatter: priceFormatter,
+      secondaryScale: secondaryPriceAxisScale,
+      secondaryGutter: secondaryAxisGutter,
       priceAxisGutter: priceAxisGutter,
       priceAxisGutterOnLeft: priceAxisOnLeft,
     );
@@ -386,7 +408,7 @@ class ChartPainter extends BaseChartPainter {
         mVolMinValue,
         mChildPadding,
         fixedLength,
-        chartStyle,
+        fittedStyle,
         chartColors,
         priceAxisGutter: priceAxisGutter,
         priceAxisGutterOnLeft: priceAxisOnLeft,
@@ -441,10 +463,13 @@ class ChartPainter extends BaseChartPainter {
   @override
   void drawBg(Canvas canvas, Size size) {
     final mBgPaint = Paint()..color = chartColors.bgColor;
+    // Every band is filled across the whole canvas, gutters included: an axis
+    // gutter is part of the chart, and a label drawn in one needs the chart's
+    // own background behind it rather than whatever is under the widget.
     final mainRect = Rect.fromLTRB(
       0,
       0,
-      mMainRect.width,
+      mCanvasWidth,
       mMainRect.height + mTopPadding,
     );
     canvas.drawRect(mainRect, mBgPaint);
@@ -453,7 +478,7 @@ class ChartPainter extends BaseChartPainter {
       final volRect = Rect.fromLTRB(
         0,
         mVolRect!.top - mChildPadding,
-        mVolRect!.width,
+        mCanvasWidth,
         mVolRect!.bottom,
       );
       canvas.drawRect(volRect, mBgPaint);
@@ -464,7 +489,7 @@ class ChartPainter extends BaseChartPainter {
       final secondaryRect = Rect.fromLTRB(
         0,
         mSecondaryRect.top - mChildPadding,
-        mSecondaryRect.width,
+        mCanvasWidth,
         mSecondaryRect.bottom,
       );
       canvas.drawRect(secondaryRect, mBgPaint);
@@ -696,7 +721,7 @@ class ChartPainter extends BaseChartPainter {
       drawPriceTag(
         canvas,
         getTextPainter(position.tagText, chartColors.nowPriceTextColor),
-        getMainY(position.entryPrice),
+        clampToMain(getMainY(position.entryPrice)),
         color,
       );
     }
@@ -707,7 +732,7 @@ class ChartPainter extends BaseChartPainter {
       drawPriceTag(
         canvas,
         getTextPainter(order.tagText, chartColors.nowPriceTextColor),
-        getMainY(order.price),
+        clampToMain(getMainY(order.price)),
         color,
       );
     }
@@ -724,7 +749,7 @@ class ChartPainter extends BaseChartPainter {
     final y = getMainY(price);
     // A line at a price the window does not reach would be drawn over another
     // pane, so it is left out rather than drawn in the wrong place.
-    if (y < mMainRect.top || y > mMainRect.bottom) return;
+    if (!withinMain(y)) return;
 
     final trading = chartStyle.trading;
     paintStyledLine(
@@ -992,6 +1017,10 @@ class ChartPainter extends BaseChartPainter {
   void drawHorizontalLines(Canvas canvas, Size size) {
     for (final line in _withDraft(horizontalLines)) {
       final y = getMainY(line.price);
+      // Drawn at a price the axis does not reach it would land over another
+      // pane, or off the canvas entirely, so it is left out rather than drawn
+      // somewhere it does not mean. Its label still marks the edge.
+      if (!withinMain(y)) continue;
       // A ray starts at its own candle; a plain level spans the whole chart.
       final startX = horizontalRayStartX(line) ?? 0.0;
       if (startX > size.width) continue;
@@ -1023,7 +1052,14 @@ class ChartPainter extends BaseChartPainter {
 
       final y = getMainY(line.price);
       final title = line.title ?? line.price.toStringAsFixed(fixedLength);
-      final tp = getLabelPainter(title, line.color);
+      // Off the axis, the label is held at the edge the price is beyond and
+      // carries which way it went, so a level outside a locked range can still
+      // be found rather than silently disappearing.
+      final labelY = clampToMain(y);
+      final tp = getLabelPainter(
+        withinMain(y) ? title : '$title ${y < mMainRect.top ? '▲' : '▼'}',
+        line.color,
+      );
       final padding = drawingStyle.labelPadding;
 
       final rayStart = horizontalRayStartX(line);
@@ -1033,7 +1069,12 @@ class ChartPainter extends BaseChartPainter {
           ? size.width - tp.width - padding.right - 8
           : 8.0 + padding.left;
 
-      drawLineLabel(canvas, tp, Offset(textX, y - tp.height / 2), line.color);
+      drawLineLabel(
+        canvas,
+        tp,
+        Offset(textX, labelY - tp.height / 2),
+        line.color,
+      );
     }
   }
 
@@ -2861,7 +2902,7 @@ class ChartPainter extends BaseChartPainter {
         (labels.close, data.close),
       ])
         TextSpan(
-          text: '$label ${value.toStringAsFixed(fixedLength)}  ',
+          text: '$label ${mMainRenderer.formatPrice(value)}  ',
           style: getTextStyle(moveColor),
         ),
       TextSpan(
@@ -2932,7 +2973,7 @@ class ChartPainter extends BaseChartPainter {
 
     final x = translateXtoX(getX(index));
     final y = getMainY(value);
-    final tp = getTextPainter(value.toStringAsFixed(fixedLength), color);
+    final tp = getTextPainter(mMainRenderer.formatPrice(value), color);
     final linePaint = Paint()
       ..color = color
       ..strokeWidth = 1
@@ -2963,6 +3004,9 @@ class ChartPainter extends BaseChartPainter {
 
     if (y > getMainY(mMainLowMinValue)) y = getMainY(mMainLowMinValue);
     if (y < getMainY(mMainHighMaxValue)) y = getMainY(mMainHighMaxValue);
+    // Those are the window's extremes, which a locked axis need not cover: a
+    // tick past the range it is held at would be drawn outside the pane.
+    y = clampToMain(y);
 
     nowPricePaint.color = value >= open
         ? chartColors.nowPriceUpColor
@@ -3051,6 +3095,7 @@ class ChartPainter extends BaseChartPainter {
 
       if (y > getMainY(mMainLowMinValue)) y = getMainY(mMainLowMinValue);
       if (y < getMainY(mMainHighMaxValue)) y = getMainY(mMainHighMaxValue);
+      y = clampToMain(y);
 
       final linePaint = Paint()
         ..color = signal.color
@@ -3156,6 +3201,17 @@ class ChartPainter extends BaseChartPainter {
       dateFormat((date ?? DateTime.now()).add(timeZoneOffset), mFormats);
 
   double getMainY(double y) => mMainRenderer.getY(y);
+
+  /// Whether [y] falls inside the candle area.
+  ///
+  /// A price the axis does not reach lands outside it, which a locked axis
+  /// makes ordinary: the range is held where it was, so a tick beyond it has
+  /// nowhere of its own to be drawn.
+  bool withinMain(double y) => y >= mMainRect.top && y <= mMainRect.bottom;
+
+  /// Pins [y] to the candle area, for a label that has to stay findable even
+  /// when the price it points at is off the top or the bottom of the axis.
+  double clampToMain(double y) => y.clamp(mMainRect.top, mMainRect.bottom);
 
   @override
   void drawWatermarkLogo(Canvas canvas, Size size) {

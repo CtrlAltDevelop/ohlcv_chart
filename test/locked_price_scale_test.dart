@@ -22,6 +22,7 @@ Widget _chart({
   required bool lock,
   List<KLineEntity>? data,
   KChartController? controller,
+  bool followsPrice = false,
 }) => MaterialApp(
   home: Scaffold(
     body: SizedBox(
@@ -35,6 +36,7 @@ Widget _chart({
         timeFrame: const Duration(minutes: 15),
         showNowPrice: false,
         lockPriceScale: lock,
+        lockedScaleFollowsPrice: followsPrice,
         controller: controller,
       ),
     ),
@@ -205,6 +207,97 @@ void main() {
         closeTo(span / 2, span * 0.02),
         reason: 'zoom works off the locked range, not the window',
       );
+    });
+  });
+
+  group('a locked axis that follows the price', () {
+    /// [base] with one more candle, priced at [close].
+    List<KLineEntity> plus(List<KLineEntity> base, double close) {
+      final data = [...base, candle(close, minute: base.length)];
+      DataUtil.calculate(data);
+      return data;
+    }
+
+    /// Pumps [data] and leaves the axis locked onto it.
+    ///
+    /// The range is taken from the frame before, so the lock takes hold on the
+    /// second build rather than the first — a live chart gets there on its next
+    /// tick; a test has to ask for the frame.
+    Future<void> lockOnto(WidgetTester tester, List<KLineEntity> data) async {
+      await tester.pumpWidget(
+        _chart(lock: true, followsPrice: true, data: data),
+      );
+      await tester.pump();
+      await tester.pumpWidget(
+        _chart(lock: true, followsPrice: true, data: data),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('grows to keep a breakout on the chart', (tester) async {
+      final data = _trend();
+      await lockOnto(tester, data);
+      final locked = _range(tester);
+
+      // A tick well above everything the axis was locked onto.
+      final broken = plus(data, locked.max + 50);
+      await tester.pumpWidget(
+        _chart(lock: true, followsPrice: true, data: broken),
+      );
+      await tester.pumpAndSettle();
+
+      expect(_range(tester).max, greaterThanOrEqualTo(locked.max + 50));
+      expect(_range(tester).min, locked.min, reason: 'the floor does not move');
+    });
+
+    testWidgets('off, the breakout walks off the axis as before', (
+      tester,
+    ) async {
+      final data = _trend();
+      await tester.pumpWidget(_chart(lock: true, data: data));
+      await tester.pump();
+      final locked = _range(tester);
+
+      final broken = plus(data, locked.max + 50);
+      await tester.pumpWidget(_chart(lock: true, data: broken));
+      await tester.pumpAndSettle();
+
+      expect(_range(tester).max, locked.max);
+    });
+
+    testWidgets('never shrinks back once it has grown', (tester) async {
+      final data = _trend();
+      await lockOnto(tester, data);
+      final locked = _range(tester);
+
+      final broken = plus(data, locked.max + 50);
+      await tester.pumpWidget(
+        _chart(lock: true, followsPrice: true, data: broken),
+      );
+      await tester.pumpAndSettle();
+      final grown = _range(tester);
+
+      // Back to an ordinary price: the room the breakout needed stays.
+      final settled = plus(broken, locked.max - 10);
+      await tester.pumpWidget(
+        _chart(lock: true, followsPrice: true, data: settled),
+      );
+      await tester.pumpAndSettle();
+
+      expect(_range(tester).max, grown.max);
+    });
+
+    testWidgets('still sits still while the chart is scrolled', (tester) async {
+      await lockOnto(tester, _trend());
+      final locked = _range(tester);
+
+      // Scrolling moves the window over candles the locked range does not
+      // cover, and the axis must not grow to swallow them.
+      await tester.drag(find.byType(KChartWidget), const Offset(600, 0));
+      await tester.pumpAndSettle();
+
+      expect(_range(tester).min, locked.min);
+      expect(_range(tester).max, locked.max);
     });
   });
 }

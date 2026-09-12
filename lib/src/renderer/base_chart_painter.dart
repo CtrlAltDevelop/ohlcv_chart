@@ -141,7 +141,18 @@ abstract class BaseChartPainter extends CustomPainter {
   ///
   /// What the renderers are given, so where they put the labels and where the
   /// plot stops can never disagree.
-  double get priceAxisGutter => mCanvasWidth - mWidth;
+  double priceAxisGutter = 0.0;
+
+  /// Width held back on the other side for a second axis, after clamping.
+  ///
+  /// Zero unless the chart was given one; see [secondaryAxisWidth].
+  double secondaryAxisGutter = 0.0;
+
+  /// How wide a gutter the second axis asks for, before clamping.
+  ///
+  /// Concrete so a painter that draws no second axis need not care; the chart
+  /// painter overrides it from its own settings.
+  double get secondaryAxisWidth => 0.0;
 
   /// Left edge of the plot, which the gutter takes when the labels are on the
   /// left. 0 whenever they are on the right.
@@ -170,6 +181,13 @@ abstract class BaseChartPainter extends CustomPainter {
   double mDataLen = 0.0; // the data occupies the total length of the screen
   final ChartStyle chartStyle;
   late double mPointWidth;
+
+  /// The style the renderers draw from, which is [chartStyle] unless the
+  /// candles were spread to fill the plot — see [ChartStyle.fitContent].
+  ///
+  /// Worked out in [layout], since it takes a plot width to know whether the
+  /// series fills one.
+  late ChartStyle fittedStyle = chartStyle;
 
   // format time
   List<String> mFormats = [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn];
@@ -221,10 +239,17 @@ abstract class BaseChartPainter extends CustomPainter {
   void layout(Size size) {
     mDisplayHeight = size.height - mTopPadding - mBottomPadding;
     mCanvasWidth = size.width;
-    // Never so wide that there is no plot left to draw in.
-    final gutter = chartStyle.priceAxisWidth.clamp(0.0, size.width / 2);
-    mWidth = size.width - gutter;
-    mPlotLeft = priceAxisOnLeft ? gutter : 0.0;
+    // Never so wide that there is no plot left to draw in — the two gutters
+    // share that half between them, so a chart with an axis on either side is
+    // still mostly candles.
+    final room = size.width / 2;
+    priceAxisGutter = chartStyle.priceAxisWidth.clamp(0.0, room);
+    secondaryAxisGutter = secondaryAxisWidth.clamp(0.0, room - priceAxisGutter);
+    mWidth = size.width - priceAxisGutter - secondaryAxisGutter;
+    // The second axis takes the side the first one left, so whichever of them
+    // is on the left is what the plot starts after.
+    mPlotLeft = priceAxisOnLeft ? priceAxisGutter : secondaryAxisGutter;
+    fitContent();
     initRect(size);
     calculateValue();
     initChartRenderer();
@@ -393,6 +418,42 @@ abstract class BaseChartPainter extends CustomPainter {
     }
   }
 
+  /// Whether the candles were spread to fill the plot on this layout.
+  ///
+  /// False when [ChartStyle.fitContent] is off, and when it is on but the
+  /// series is long enough to fill the plot at its own spacing.
+  bool contentFitted = false;
+
+  /// Widens the candle spacing to fill the plot when the series is too short
+  /// to reach the right edge on its own.
+  ///
+  /// The series is spread over the whole plot less [xFrontPadding], so the
+  /// last candle's body ends at the right edge rather than a fraction of the
+  /// way in.
+  void fitContent() {
+    mPointWidth = chartStyle.pointWidth;
+    fittedStyle = chartStyle;
+    contentFitted = false;
+    if (!chartStyle.fitContent || mItemCount == 0) {
+      mDataLen = mItemCount * mPointWidth;
+      return;
+    }
+
+    final available = mWidth / scaleX - xFrontPadding;
+    final fitted = available / mItemCount;
+    if (fitted > mPointWidth) {
+      final spread = fitted / mPointWidth;
+      mPointWidth = fitted;
+      contentFitted = true;
+      fittedStyle = chartStyle.copyWith(
+        pointWidth: fitted,
+        candleWidth: chartStyle.candleWidth * spread,
+        volWidth: chartStyle.volWidth * spread,
+      );
+    }
+    mDataLen = mItemCount * mPointWidth;
+  }
+
   /// calculate values
   void calculateValue() {
     if (candles == null) return;
@@ -549,6 +610,10 @@ abstract class BaseChartPainter extends CustomPainter {
 
   /// get the minimum value of translation
   double getMinTranslateX() {
+    // A fitted series is exactly as wide as the plot, so the half point the
+    // scroll normally leaves for the last candle's centre would be scrollable
+    // slack. There is nothing to scroll to; hold it at zero.
+    if (contentFitted) return 0.0;
     final x = -mDataLen + mWidth / scaleX - mPointWidth / 2 - xFrontPadding;
     return x >= 0 ? 0.0 : x;
   }

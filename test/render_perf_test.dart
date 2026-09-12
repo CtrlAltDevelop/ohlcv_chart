@@ -214,9 +214,12 @@ void main() {
     ) async {
       final data = _market(count: 20000);
       final at = data[15000].dateTime!;
+      // Priced around the newest candle, so every one of them is on screen: a
+      // line the axis does not reach is not drawn, and so looks up no anchor.
+      final last = data.last.close;
       final drawings = <ChartLine>[
         for (var i = 0; i < 20; i++)
-          HorizontalLine(price: 100.0 + i, startTime: at),
+          HorizontalLine(price: last - 1 + i * 0.1, startTime: at),
       ];
 
       await tester.pumpWidget(_chart(data, drawings: drawings));

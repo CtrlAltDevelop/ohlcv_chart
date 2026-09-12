@@ -1,3 +1,68 @@
+## 2.4.1
+
+Five changes, one for each point raised in
+[#3](https://github.com/CtrlAltDevelop/ohlcv_chart/issues/3) about the intraday
+chart.
+
+### Fixed
+
+- **An axis gutter is painted in the chart's own background.** It was filled
+  from the canvas edge for the plot's width, which left a gutter on the right
+  showing whatever was under the widget, and shifted the fill when a gutter was
+  held back on the left. Every band now spans the whole canvas, so a label
+  drawn in a gutter has the chart behind it.
+
+- **A price the axis does not reach no longer escapes the candle area.** A
+  locked axis makes that ordinary — the range is held where it was, so a tick
+  beyond it had nowhere of its own to go and was drawn over the volume and
+  indicator panes, or off the canvas where it could not be seen at all. A
+  horizontal line at such a price is now left out of the plot and its label is
+  pinned to the edge the price went past, marked with an arrow so the level can
+  still be found. The current-price line, the signal lines and the trading tags
+  are held to the same edge, and the trading lines already were.
+
+### Price axis
+
+- **New `secondaryPriceAxisScale` draws a second axis down the other side.**
+  The chart had one price axis, so reading a move as a percentage meant giving
+  up the prices. A second axis reads the same candles another way —
+  `PriceAxisScale.percentage` for the change since the oldest candle in view —
+  in a gutter on the side `verticalTextAlignment` left free, sized by
+  `ChartStyle.secondaryPriceAxisWidth`. It marks its own round values rather
+  than labelling the price axis's, the grid stays ruled by the price axis, and
+  the crosshair and the price tags keep following `priceAxisScale`. The two
+  gutters share half the chart's width between them, so a second axis cannot
+  crowd the candles out.
+
+- **New `priceFormatter` writes the prices the chart shows.** `fixedLength`
+  only said how many decimals to use, so a currency symbol, a thousands
+  separator or a tick size had nowhere to go. It takes the writing over the way
+  `dateFormatter` does on the date axis, and covers every price the chart says:
+  the axis labels, the crosshair's price label, the current-price tag, the
+  high, low and signal tags, and the OHLC legend. An axis that reads out a move
+  rather than a price — `percentage`, `indexedTo100` — writes that move itself
+  and does not ask.
+
+- **New `lockedScaleFollowsPrice` keeps the newest candle on a locked axis.**
+  A locked axis holds the range it was given, so a market that trades past that
+  range walked off the top or the bottom of the chart until `resetPriceScale`
+  was called. With this set the locked range grows just enough to cover the
+  newest candle, and never shrinks back or refits to the window — so the axis
+  still sits still while scrolling, which is what the lock is for. Only the
+  newest candle counts, and only while it is in view: growing the axis to
+  swallow the history a scroll moves over would undo the lock a little at a
+  time. Off by default, and does nothing without `lockPriceScale`.
+
+### Layout
+
+- **New `ChartStyle.fitContent` spreads a short series across the whole plot.**
+  `pointWidth` is a fixed distance, so a handful of intraday bars bunched up
+  against the left edge and left the rest of the chart empty. With this set the
+  spacing is widened to whatever fills the plot, and the candle and volume bars
+  widen with it so they keep their proportions. It only ever widens: a series
+  long enough to fill the plot, or one zoomed in past it, is laid out on
+  `pointWidth` as before, so the flag can stay on while history pages in.
+
 ## 2.4.0
 
 ### A chart that sits still

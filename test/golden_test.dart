@@ -56,6 +56,8 @@ Widget _chart({
   ChartStyle style = const ChartStyle(),
   bool showOhlcLegend = false,
   bool volHidden = false,
+  PriceAxisScale? secondaryPriceAxisScale,
+  String Function(double)? priceFormatter,
 }) => _framed(
   KChartWidget(
     data ?? _market(),
@@ -67,6 +69,8 @@ Widget _chart({
     showScrollToNowButton: false,
     chartType: chartType,
     priceAxisScale: priceAxisScale,
+    secondaryPriceAxisScale: secondaryPriceAxisScale,
+    priceFormatter: priceFormatter,
     indicators: indicators,
     drawings: drawings,
     chartStyle: style,
@@ -247,6 +251,68 @@ void main() {
         ],
       ),
       'channel_and_position',
+    );
+  });
+
+  testWidgets('a short series bunched up at the fixed spacing', (tester) async {
+    await matches(
+      tester,
+      _chart(data: _market(count: 12), volHidden: true),
+      'short_series',
+    );
+  });
+
+  testWidgets('the same short series fitted to the width', (tester) async {
+    await matches(
+      tester,
+      _chart(
+        data: _market(count: 12),
+        volHidden: true,
+        style: const ChartStyle(fitContent: true),
+      ),
+      'fit_content',
+    );
+  });
+
+  testWidgets('a second axis reading the change in percent', (tester) async {
+    await matches(
+      tester,
+      _chart(
+        secondaryPriceAxisScale: PriceAxisScale.percentage,
+        style: const ChartStyle(
+          priceAxisWidth: 56,
+          secondaryPriceAxisWidth: 56,
+        ),
+        volHidden: true,
+      ),
+      'secondary_axis',
+    );
+  });
+
+  testWidgets('prices written as currency', (tester) async {
+    await matches(
+      tester,
+      _chart(
+        priceFormatter: (price) => '\$${price.toStringAsFixed(1)}',
+        showOhlcLegend: true,
+        volHidden: true,
+      ),
+      'price_formatter',
+    );
+  });
+
+  testWidgets('a level the axis cannot reach, marked at the edge', (
+    tester,
+  ) async {
+    await matches(
+      tester,
+      _chart(
+        drawings: [
+          HorizontalLine(price: 400, title: 'Off the axis', showLabel: true),
+        ],
+        volHidden: true,
+      ),
+      'level_off_axis',
     );
   });
 }
