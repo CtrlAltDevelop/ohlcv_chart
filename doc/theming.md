@@ -20,7 +20,7 @@ KChartWidget(
 `close`, `changeAmount`, `change`, `amount`, `vol`, `jumpToNow`), so localising
 the chart is a matter of building one from your own `AppLocalizations`. Its
 `drawing` field does the same for the line editor, the drawing manager and what
-each of the seventeen kinds is called:
+each kind of drawing is called:
 
 ```dart
 ChartTranslations(

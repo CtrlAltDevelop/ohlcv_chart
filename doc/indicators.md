@@ -336,7 +336,7 @@ class MyIndicator extends Indicator {
 ```
 
 `from` is the earliest index that can have moved. Return null — the default —
-and the series is computed in full, which is always correct and is what sixteen
+and the series is computed in full, which is always correct and is what seventeen
 of the built-in indicators still do: anything reading the whole series at once,
 such as a volume profile, a zigzag or the swing overlays built on it, has no
 tail to extend. The other fourteen resume, and a chart carrying a moving
