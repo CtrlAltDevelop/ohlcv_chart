@@ -15,7 +15,6 @@ Widget _chart(List<KLineEntity> data, {ChartReplayController? replay}) {
           data,
           ChartColors(),
           isTrendLine: false,
-          watermarkAssetPath: 'assets/none.svg',
           timeFrame: const Duration(minutes: 15),
           replay: replay,
           indicators: [MaIndicator(period: 5)],

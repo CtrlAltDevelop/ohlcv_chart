@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart' as vg;
 
 import '../drawing/line_painting.dart';
 import '../drawing/shape_geometry.dart';
@@ -24,7 +23,6 @@ class ChartPainter extends BaseChartPainter {
   ChartPainter(
     super.chartStyle,
     this.chartColors, {
-    required this.watermarkPicture,
     required this.drawings,
     required this.signals,
     required this.isTrendLine,
@@ -38,7 +36,7 @@ class ChartPainter extends BaseChartPainter {
     required super.xFrontPadding,
     required super.baseDimension,
     required this.verticalTextAlignment,
-    required this.timeFrame,
+    this.timeFrame,
     required this.draftLine,
     required this.selectedLine,
     this.selectedLines = const [],
@@ -288,8 +286,10 @@ class ChartPainter extends BaseChartPainter {
   /// Writes the prices the axis and its readouts show; see
   /// [KChartWidget.priceFormatter].
   final String Function(double price)? priceFormatter;
-  final vg.PictureInfo? watermarkPicture;
-  final Duration timeFrame;
+
+  /// Duration of one candle; null draws the current-price tag without a
+  /// countdown.
+  final Duration? timeFrame;
   int fixedLength;
 
   late MainRenderer mMainRenderer;
@@ -501,7 +501,6 @@ class ChartPainter extends BaseChartPainter {
       size.height,
     );
     canvas.drawRect(dateRect, mBgPaint);
-    drawWatermarkLogo(canvas, size);
   }
 
   @override
@@ -3031,9 +3030,19 @@ class ChartPainter extends BaseChartPainter {
     }
     canvas.drawLine(Offset(lastX, y), Offset(mPlotRight, y), nowPricePaint);
 
+    final frame = timeFrame;
+    if (frame == null) {
+      final tp = getTextPainter(
+        mMainRenderer.formatAxis(value),
+        chartColors.nowPriceTextColor,
+      );
+      drawPriceTag(canvas, tp, y, nowPricePaint.color);
+      return;
+    }
+
     String countdown = '00:00';
     if (last.dateTime != null) {
-      final closeTime = last.dateTime!.add(timeFrame);
+      final closeTime = last.dateTime!.add(frame);
       final now = DateTime.now().toUtc();
       final remaining = closeTime.difference(now);
       if (!remaining.isNegative) {
@@ -3212,39 +3221,6 @@ class ChartPainter extends BaseChartPainter {
   /// Pins [y] to the candle area, for a label that has to stay findable even
   /// when the price it points at is off the top or the bottom of the axis.
   double clampToMain(double y) => y.clamp(mMainRect.top, mMainRect.bottom);
-
-  @override
-  void drawWatermarkLogo(Canvas canvas, Size size) {
-    final picture = watermarkPicture;
-    if (picture == null) return;
-
-    final area = Rect.fromLTRB(
-      mPlotLeft,
-      mTopPadding,
-      mPlotRight,
-      mTopPadding + mMainRect.height,
-    );
-    final logoWidth =
-        math.min(area.width, area.height) * chartStyle.watermarkScale;
-    final scale = logoWidth / picture.size.width;
-    final logoHeight = picture.size.height * scale;
-
-    final spot = chartStyle.watermarkAlignment.inscribe(
-      Size(logoWidth, logoHeight),
-      area,
-    );
-
-    canvas.save();
-    canvas.saveLayer(
-      spot,
-      Paint()..color = chartColors.effectiveWatermarkColor,
-    );
-    canvas.translate(spot.left, spot.top);
-    canvas.scale(scale, scale);
-    canvas.drawPicture(picture.picture);
-    canvas.restore();
-    canvas.restore();
-  }
 }
 
 /// Draws the crosshair, its readouts and the legends, over the chart.

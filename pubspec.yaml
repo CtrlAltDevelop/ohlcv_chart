@@ -64,7 +64,6 @@ dependencies:
   flutter:
     sdk: flutter
   decimal: ^3.2.6
-  flutter_svg: ^2.3.0
   intl: ^0.20.3
 
 dev_dependencies:

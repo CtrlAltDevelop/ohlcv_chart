@@ -20,7 +20,6 @@ import 'drawing_template.dart';
 ///   candles,
 ///   ChartColors(),
 ///   isTrendLine: true,
-///   watermarkAssetPath: 'assets/logo.svg',
 ///   timeFrame: const Duration(minutes: 15),
 ///   drawingController: drawings,
 /// );

@@ -30,7 +30,6 @@ Widget _chart(
         data,
         colors ?? ChartColors(),
         isTrendLine: false,
-        watermarkAssetPath: 'assets/none.svg',
         timeFrame: const Duration(minutes: 1),
         showNowPrice: false,
         chartStyle: style ?? ChartStyle(),

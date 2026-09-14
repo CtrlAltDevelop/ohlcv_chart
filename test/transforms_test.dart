@@ -33,7 +33,6 @@ Widget _chart(List<KLineEntity> data) => MaterialApp(
         data,
         ChartColors(),
         isTrendLine: false,
-        watermarkAssetPath: 'assets/none.svg',
         timeFrame: const Duration(minutes: 15),
       ),
     ),

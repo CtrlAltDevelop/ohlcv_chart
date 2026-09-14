@@ -37,7 +37,6 @@ List<KLineEntity> _candles() {
         data,
         ChartColors(),
         isTrendLine: true,
-        watermarkAssetPath: 'assets/none.svg',
         timeFrame: const Duration(minutes: 15),
         showNowPrice: false,
         drawingStyle: style,

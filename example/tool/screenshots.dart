@@ -196,9 +196,7 @@ class ReplayBar extends StatelessWidget {
                     value: replay.length == 0 ? 0 : position / replay.length,
                     minHeight: 6,
                     backgroundColor: const Color(0xFF2A313C),
-                    valueColor: const AlwaysStoppedAnimation(
-                      Color(0xFF26A69A),
-                    ),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFF26A69A)),
                   ),
                 ),
               ),
@@ -250,15 +248,15 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
   late final List<Film> _films = _asked(buildFilms(), (f) => f.name);
 
   /// The entries [requestedScenes] names, or all of them when it names none.
-  List<T> _asked<T>(List<T> all, String Function(T) name) =>
-      _names.isEmpty ? all : all.where((e) => _names.contains(name(e))).toList();
+  List<T> _asked<T>(List<T> all, String Function(T) name) => _names.isEmpty
+      ? all
+      : all.where((e) => _names.contains(name(e))).toList();
 
   /// Where in the run we are: scenes first, then films.
   int _index = 0;
 
   /// What is on screen right now, whichever list it came from.
-  ({Size size, Widget Function() build}) get _showing =>
-      _index < _scenes.length
+  ({Size size, Widget Function() build}) get _showing => _index < _scenes.length
       ? (size: _scenes[_index].size, build: _scenes[_index].build)
       : (
           size: _films[_index - _scenes.length].size,
@@ -550,7 +548,9 @@ List<Scene> buildScenes() {
             rectangles.isNotEmpty ||
             fibRetracements.isNotEmpty ||
             drawings.isNotEmpty,
-        watermarkAssetPath: 'assets/watermark.svg',
+        watermark: const FittedBox(
+          child: Text('OHLCV', style: TextStyle(fontWeight: FontWeight.w900)),
+        ),
         timeFrame: MarketData.timeFrame,
         timeFormat: TimeFormat.YEAR_MONTH_DAY_WITH_HOUR,
         indicators: indicators,
@@ -1530,7 +1530,10 @@ List<Scene> buildScenes() {
           Expanded(
             child: titled(
               'ChartTheme.lightColors()',
-              chart(light: true, indicators: [BollIndicator(), MacdIndicator()]),
+              chart(
+                light: true,
+                indicators: [BollIndicator(), MacdIndicator()],
+              ),
               top: 30,
             ),
           ),
@@ -1620,7 +1623,12 @@ List<Film> buildFilms() {
                   colors,
                   chartStyle: ChartTheme.filled,
                   isTrendLine: false,
-                  watermarkAssetPath: 'assets/watermark.svg',
+                  watermark: const FittedBox(
+                    child: Text(
+                      'OHLCV',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ),
                   timeFrame: MarketData.timeFrame,
                   timeFormat: TimeFormat.YEAR_MONTH_DAY_WITH_HOUR,
                   indicators: [MaIndicator(period: 20), RsiIndicator()],

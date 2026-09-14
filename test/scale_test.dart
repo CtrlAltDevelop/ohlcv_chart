@@ -47,8 +47,6 @@ class _ProbePainter extends BaseChartPainter {
   void drawCrossLineText(Canvas canvas, Size size) {}
   @override
   void drawSignals(Canvas canvas) {}
-  @override
-  void drawWatermarkLogo(Canvas canvas, Size size) {}
 }
 
 /// Paints [data] with [indicators] enabled and returns the computed rects.

@@ -268,7 +268,6 @@ class IndicatorAlert {
 ///   candles,
 ///   ChartColors(),
 ///   isTrendLine: false,
-///   watermarkAssetPath: 'assets/logo.svg',
 ///   timeFrame: const Duration(minutes: 15),
 ///   indicators: [
 ///     MaIndicator(period: 50, color: Colors.amber),

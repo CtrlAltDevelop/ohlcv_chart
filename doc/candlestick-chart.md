@@ -14,7 +14,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   indicators: [MaIndicator(period: 20), BollIndicator(), MacdIndicator()],
   timeFormat: TimeFormat.YEAR_MONTH_DAY_WITH_HOUR,

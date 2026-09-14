@@ -70,7 +70,7 @@ Named for the open-high-low-close-volume bars it renders.
 - **Info dialog** on long press, either the built-in Material popup or your own builder.
 - **"Now price" line** with a live countdown to the close of the current candle.
 - **Session dividers and a display time zone**, so an intraday chart breaks where the trader's day does.
-- **SVG watermark** loaded from an asset path you supply.
+- **A watermark of your own** — any widget, such as an `Image.asset` of your logo, painted faintly in one colour over the candle area.
 - **Fully themeable** — `ChartStyle` for geometry, `ChartColors` for every colour, `DrawingStyle` for the drawing tools; `ChartTranslations` for every label. Filled or hollow candles, dashed or solid crosshair, pane separators, axis-label pills and a placed, tinted watermark.
 - **Fits its box** — the candles take whatever height the volume and indicator panes leave, so the chart works from a phone to a desktop window without arithmetic on your side.
 
@@ -141,8 +141,9 @@ One page per feature, in [`doc/`](doc/README.md):
 ## Notes
 
 - The zoom slider renders only where there is no pinch gesture — web and desktop.
-- `watermarkAssetPath` must point at an SVG registered in your app's `pubspec.yaml`
-  assets; a missing asset is ignored and the chart renders without a watermark.
+- `watermark` takes any widget and paints it in `ChartColors.watermarkColor`, so a
+  full-colour logo reads as a silhouette; the package no longer depends on
+  `flutter_svg` — pass `SvgPicture.asset(...)` from it yourself for an SVG.
 
 ## Credits
 

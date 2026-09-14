@@ -172,7 +172,6 @@ void main() {
                   ],
                   ChartColors(),
                   isTrendLine: true,
-                  watermarkAssetPath: 'assets/none.svg',
                   timeFrame: const Duration(minutes: 1),
                   showNowPrice: false,
                   drawingController: controller,

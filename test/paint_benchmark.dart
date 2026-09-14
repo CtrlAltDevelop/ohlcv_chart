@@ -82,7 +82,6 @@ void main() {
               data ?? _market(),
               ChartColors(),
               isTrendLine: false,
-              watermarkAssetPath: 'assets/none.svg',
               timeFrame: const Duration(minutes: 15),
               chartType: type,
               indicators: indicators,

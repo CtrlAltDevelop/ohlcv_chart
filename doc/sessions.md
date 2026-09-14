@@ -5,7 +5,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   chartStyle: const ChartStyle(showSessionDividers: true),
   timeZoneOffset: const Duration(hours: -5),
@@ -30,7 +29,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   timeZoneOffset: const Duration(hours: -5),
   session: const TradingSession(
@@ -58,7 +56,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   candleColor: (candle, index) {
     final range = candle.high - candle.low;

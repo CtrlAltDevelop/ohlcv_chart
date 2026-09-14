@@ -10,7 +10,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   controller: chart,
 );
@@ -63,7 +62,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   onVisibleRangeChanged: (range) {
     setState(() => barsOnScreen = range.length);
@@ -87,7 +85,6 @@ KChartWidget(
   sessionCandles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 5),
   chartType: ChartType.area,
   scrollEnabled: false,

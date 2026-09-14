@@ -5,7 +5,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(days: 1),
   priceAxisScale: PriceAxisScale.logarithmic,
 );
@@ -46,7 +45,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(days: 1),
   chartStyle: const ChartStyle(gridRows: 12),
 );
@@ -117,7 +115,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(days: 1),
   invertPriceAxis: true,     // higher prices lower down
   showAverageClose: true,    // a level at the mean close over the window
@@ -244,7 +241,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(days: 1),
   controller: chart,
   priceScaleDrag: true,
