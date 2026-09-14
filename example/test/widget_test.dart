@@ -71,14 +71,20 @@ void main() {
     addTearDown(state.dispose);
     await tester.pumpWidget(panel(state));
 
+    // The panel has outgrown the box and the sheet can be taller than the
+    // screen, so each control is scrolled into view before it is tapped.
+    Future<void> tapInView(Finder finder) async {
+      await tester.ensureVisible(finder);
+      await tester.pumpAndSettle();
+      await tester.tap(finder);
+      await tester.pumpAndSettle();
+    }
+
     Future<void> addAtr() async {
       // The panel's button, not the sheet's title, which reads the same.
-      await tester.tap(find.text('Add indicator').first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ChoiceChip, 'ATR'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Add'));
-      await tester.pumpAndSettle();
+      await tapInView(find.text('Add indicator').first);
+      await tapInView(find.widgetWithText(ChoiceChip, 'ATR'));
+      await tapInView(find.widgetWithText(FilledButton, 'Add'));
     }
 
     await addAtr();
