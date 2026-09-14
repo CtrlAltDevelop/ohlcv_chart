@@ -71,3 +71,17 @@ export './renderer/main_renderer.dart' show VerticalTextAlignment;
 export './utils/axis_ticks.dart';
 export './utils/candle_transforms.dart';
 export './utils/data_util.dart';
+export './series/series_axis.dart'
+    show
+        SeriesAxisSide,
+        SeriesBand,
+        SeriesDirection,
+        SeriesGrid,
+        SeriesLabelBuilder,
+        SeriesReferenceLine,
+        SeriesXAxis,
+        SeriesYAxis;
+export './series/series_chart.dart';
+export './series/series_data.dart' hide pointsOf;
+export './series/series_range_selector.dart';
+export './series/series_touch.dart';
