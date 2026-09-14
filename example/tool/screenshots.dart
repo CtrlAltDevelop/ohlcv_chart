@@ -1633,6 +1633,13 @@ List<Scene> buildScenes() {
       build: pieRadarScene,
     ),
     (
+      // A grid coloured by value: months of activity, and a week of hours.
+      name: 'heatmap',
+      size: shortWide,
+      act: null,
+      build: heatmapScene,
+    ),
+    (
       // Dots placed freely on both axes, read out one at a time.
       name: 'series-scatter',
       size: shortWide,
@@ -2349,6 +2356,117 @@ Widget seriesPanelsScene() {
 }
 
 /// Candles under a watermark that is a widget: an icon and a name.
+/// Half a year of activity beside a week of trading hours, both by value.
+Widget heatmapScene() {
+  // A contribution graph: a column per week, a row per weekday.
+  const weeks = 26;
+  final activity = [
+    for (var weekday = 0; weekday < 7; weekday++)
+      [
+        for (var week = 0; week < weeks; week++)
+          weekday >= 5 && week % 3 == 0
+              ? null
+              : (sin(week / 3.3) + 1.2) * (cos(weekday / 1.9) + 1.3) * 3 +
+                  (week * weekday % 4),
+      ],
+  ];
+  final byHourAndDay = [
+    for (var hour = 0; hour < 8; hour++)
+      [
+        for (var day = 0; day < 5; day++)
+          (sin(hour / 2.2) + 1.4) * (cos(day / 2.4 + 1) + 1.5) * 16 +
+              (hour * day % 5) * 3.0,
+      ],
+  ];
+
+  return ColoredBox(
+    color: _seriesBackground,
+    child: Padding(
+      padding: const EdgeInsets.all(6),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: seriesPanel(
+              'Six months of activity',
+              figure: '1,284 trades',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Square cells leave the grid shorter than the panel, so it
+                  // is given the height it actually needs and centred.
+                  SizedBox(
+                    height: 210,
+                    child: HeatmapChart.matrix(
+                      activity,
+                      scale: HeatmapGradientScale.of(_seriesGreen),
+                      xAxis: HeatmapAxis(
+                        interval: 5,
+                        style: _seriesAxis,
+                        labelBuilder: (index) =>
+                            _seriesMonths[(index ~/ 4.4).clamp(0, 11).toInt()],
+                      ),
+                      yAxis: const HeatmapAxis(
+                        size: 30,
+                        interval: 2,
+                        style: _seriesAxis,
+                        labels: ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'],
+                      ),
+                      spacing: 3,
+                      radius: 2,
+                      // A contribution graph wants squares, not columns.
+                      squareCells: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Spacer(),
+                      HeatmapLegend(
+                        scale: HeatmapGradientScale.of(_seriesGreen),
+                        low: 'Less',
+                        high: 'More',
+                        labelStyle: _seriesAxis,
+                        width: 90,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: seriesPanel(
+              'Orders by hour and weekday',
+              HeatmapChart.matrix(
+                byHourAndDay,
+                scale: const HeatmapGradientScale(
+                  colors: [_seriesPaper, _seriesBlue, _seriesAmber],
+                ),
+                xAxis: const HeatmapAxis(
+                  style: _seriesAxis,
+                  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                ),
+                yAxis: HeatmapAxis(
+                  size: 36,
+                  style: _seriesAxis,
+                  labelBuilder: (index) =>
+                      '${(index + 9).toString().padLeft(2, '0')}:00',
+                ),
+                spacing: 3,
+                radius: 3,
+                labelBuilder: (cell) => cell.value!.round().toString(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Two panels the axis charts cannot draw: a doughnut and a radar web.
 Widget pieRadarScene() {
   const holdings = [42.0, 26.0, 18.0, 14.0];

@@ -71,6 +71,8 @@ export './renderer/main_renderer.dart' show VerticalTextAlignment;
 export './utils/axis_ticks.dart';
 export './utils/candle_transforms.dart';
 export './utils/data_util.dart';
+export './heatmap/heatmap_chart.dart';
+export './heatmap/heatmap_data.dart';
 export './pie/pie_chart.dart';
 export './radar/radar_chart.dart';
 export './series/series_axis.dart'
