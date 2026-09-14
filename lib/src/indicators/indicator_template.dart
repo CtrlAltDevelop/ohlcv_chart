@@ -36,7 +36,8 @@ class IndicatorTemplate {
       indicators: [
         if (raw is List)
           for (final entry in raw)
-            if (entry is Map<String, dynamic>) ?indicatorFromJson(entry),
+            if (entry is Map<String, dynamic>)
+              if (indicatorFromJson(entry) case final v?) v,
       ],
     );
   }
@@ -60,7 +61,8 @@ class IndicatorTemplate {
   Map<String, dynamic> toJson() => {
     'name': name,
     'indicators': [
-      for (final indicator in indicators) ?indicatorToJson(indicator),
+      for (final indicator in indicators)
+        if (indicatorToJson(indicator) case final v?) v,
     ],
   };
 

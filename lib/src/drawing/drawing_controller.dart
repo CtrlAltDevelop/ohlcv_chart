@@ -102,8 +102,10 @@ class ChartDrawingController extends ChangeNotifier {
   /// One at most until something is added to the selection; the editor stays on
   /// [selected], and an edit made through it is applied to the rest by the
   /// chart.
-  List<ChartLine> get selection =>
-      List<ChartLine>.unmodifiable([..._alsoSelected, ?_selected]);
+  List<ChartLine> get selection => List<ChartLine>.unmodifiable([
+    ..._alsoSelected,
+    if (_selected case final v?) v,
+  ]);
 
   /// How many drawings are selected.
   int get selectionLength => _alsoSelected.length + (_selected == null ? 0 : 1);

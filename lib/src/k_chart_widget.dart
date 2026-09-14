@@ -993,7 +993,7 @@ class _KChartWidgetState extends State<KChartWidget>
   List<ChartLine> get _selection {
     final controller = widget.drawingController;
     if (controller != null) return controller.selection;
-    return [..._localAlsoSelected, ?_localSelection];
+    return [..._localAlsoSelected, if (_localSelection case final v?) v];
   }
 
   /// Adds [line] to the selection, or takes it out if it is already in.

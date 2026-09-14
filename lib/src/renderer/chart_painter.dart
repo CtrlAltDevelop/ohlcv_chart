@@ -2413,7 +2413,8 @@ class ChartPainter extends BaseChartPainter {
   void drawPaths(Canvas canvas, Size size) {
     for (final line in _withDraft(paths)) {
       final points = [
-        for (final point in line.points) ?_anchor(point.time, point.price),
+        for (final point in line.points)
+          if (_anchor(point.time, point.price) case final v?) v,
       ];
       if (points.isEmpty) continue;
       if (points.length == 1) {

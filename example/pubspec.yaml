@@ -4,8 +4,8 @@ publish_to: 'none'
 version: 1.0.0
 
 environment:
-  sdk: ^3.13.0
-  flutter: ">=3.47.0"
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
 
 dependencies:
   flutter:
@@ -14,8 +14,8 @@ dependencies:
     path: ../
 
 dev_dependencies:
-  flutter_lints: ^6.0.0
-  image: ^4.5.4
+  flutter_lints: ">=5.0.0 <7.0.0"
+  image: ">=4.0.0 <5.0.0"
   flutter_test:
     sdk: flutter
 

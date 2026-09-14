@@ -64,7 +64,8 @@ class ChartWorkspace {
       indicators: [
         if (rawIndicators is List)
           for (final entry in rawIndicators)
-            if (entry is Map<String, dynamic>) ?indicatorFromJson(entry),
+            if (entry is Map<String, dynamic>)
+              if (indicatorFromJson(entry) case final v?) v,
       ],
       drawings: switch (json['drawings']) {
         final Map<String, dynamic> saved => ChartDrawings.fromJson(saved),
@@ -113,7 +114,8 @@ class ChartWorkspace {
     return {
       'version': formatVersion,
       'indicators': [
-        for (final indicator in indicators) ?indicatorToJson(indicator),
+        for (final indicator in indicators)
+          if (indicatorToJson(indicator) case final v?) v,
       ],
       if (saved != null && saved.isNotEmpty) 'drawings': saved.toJson(),
       if (chartType != null) 'chartType': chartType!.name,

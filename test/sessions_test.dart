@@ -266,7 +266,7 @@ void main() {
 
     testWidgets('returning null leaves the usual colour', (tester) async {
       await tester.pumpWidget(
-        _chart(_halfHourly(_on(1, 0), 48), candleColor: (_, _) => null),
+        _chart(_halfHourly(_on(1, 0), 48), candleColor: (_, __) => null),
       );
       await tester.pumpAndSettle();
 
