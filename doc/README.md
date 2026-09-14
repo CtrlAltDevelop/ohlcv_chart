@@ -21,6 +21,9 @@ For installation, the feature list and support, see the
 
 - **[Radar chart](radar-chart.md)** — `RadarChart`: a web of features with one
   outline per series, drawn as a polygon or as rings.
+
+- **[Heatmap](heatmap-chart.md)** — `HeatmapChart`: a grid of squares coloured
+  by their value, with a scale, a legend and a readout per square.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   their APIs mapped onto this package's, with worked examples.
 

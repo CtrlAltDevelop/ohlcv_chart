@@ -77,6 +77,22 @@ class _SeriesPageState extends State<SeriesPage> {
 
   int? _slice;
   String? _corner;
+  HeatmapTouchDetails? _square;
+
+  /// Orders per weekday and hour of the day, for the heatmap.
+  static final _byHourAndDay = [
+    for (var hour = 0; hour < 12; hour++)
+      [
+        for (var day = 0; day < 7; day++)
+          hour < 2 && day > 4
+              ? null
+              : (math.sin(hour / 2.4) + 1.4) *
+                      (math.cos(day / 2.1 + 1) + 1.6) *
+                      14 +
+                  (hour * day % 5) * 2.0,
+      ],
+  ];
+  static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   static String _usd(double v) =>
       '\$${v.abs() >= 1000 ? '${(v / 1000).toStringAsFixed(1)}k' : v.toStringAsFixed(0)}';
@@ -421,6 +437,42 @@ class _SeriesPageState extends State<SeriesPage> {
                 ),
               ),
             ]),
+            _card(
+              context,
+              paper,
+              grid,
+              _square == null
+                  ? 'Orders by hour and weekday'
+                  : '${_weekdays[_square!.x]} '
+                      '${(_square!.y + 9).toString().padLeft(2, '0')}:00 — '
+                      '${_square!.value?.round() ?? 0} orders',
+              [
+                SizedBox(
+                  height: 280,
+                  child: HeatmapChart.matrix(
+                    _byHourAndDay,
+                    scale: HeatmapGradientScale.of(_blue),
+                    xAxis: const HeatmapAxis(labels: _weekdays),
+                    yAxis: HeatmapAxis(
+                      size: 36,
+                      labelBuilder: (index) =>
+                          '${(index + 9).toString().padLeft(2, '0')}:00',
+                    ),
+                    spacing: 3,
+                    radius: 3,
+                    onTouch: (d) => setState(() => _square = d),
+                    animationDuration: const Duration(milliseconds: 500),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                HeatmapLegend(
+                  scale: HeatmapGradientScale.of(_blue),
+                  low: 'Quiet',
+                  high: 'Busy',
+                  width: 120,
+                ),
+              ],
+            ),
             _card(
               context,
               paper,

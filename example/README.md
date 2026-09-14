@@ -87,8 +87,10 @@ and how far either side of the mid to look.
   slice pushes it out and names it.
 - **Two strategies scored** — a `RadarChart` over five measures, reporting the
   corner under the pointer.
+- **Orders by hour and weekday** — a `HeatmapChart` with a legend under it; the
+  card title reads out the square under the pointer.
 
-All eight follow the palette switch in the app bar.
+All nine follow the palette switch in the app bar.
 
 ## The intraday demo
 
