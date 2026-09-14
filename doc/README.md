@@ -10,6 +10,11 @@ For installation, the feature list and support, see the
 
 - **[Candlestick chart](candlestick-chart.md)** — the candles a `KChartWidget`
   needs, and the shape `KLineEntity` expects them in.
+- **[Series charts](series-chart.md)** — `SeriesChart` for values rather than
+  candles: lines, areas and bars, several at once, a touch readout of your own,
+  a range strip for long data, and animation between data sets.
+- **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
+  their APIs mapped onto this package's, with worked examples.
 
 ## Series and indicators
 

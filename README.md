@@ -32,6 +32,7 @@ Named for the open-high-low-close-volume bars it renders.
 
 ## Features
 
+- **Series charts for everything else** — `SeriesChart` draws plain values rather than candles: lines with four curves, areas that fade to a baseline and split colour where they cross it, rounded bars, several series at once, axes you write or hide, a tooltip of your own, one crosshair shared across charts, a range strip for long data and animated data changes. The [migration guide](doc/migrating-from-fl_chart.md) maps `fl_chart` and `candlesticks` onto it.
 - **Eight chart types** — candles, OHLC bars, a line, a step line, a filled area, an HLC area, a baseline chart and columns — plus Heikin-Ashi, Renko, three-line break, Kagi, point & figure and range bars as transforms of the candles themselves.
 - **31 indicators**, each a configured instance rather than a flag — so `ATR(8)`, `ATR(14)` and `ATR(20)` are three panes, with their own settings and colours.
 - **Main-chart overlays** — `MA`, `EMA`, `BOLL`, `SAR`, `VWAP` in three flavours — whole-series, anchored to a candle, or restarted each session with standard-deviation bands — Supertrend, Keltner and Donchian channels, the Ichimoku Cloud, pivot points and a volume profile.
