@@ -1,9 +1,9 @@
 name: ohlcv_chart
 description: >-
-  The most complete candlestick chart for Flutter: eight chart types, 31
-  indicators and 29 drawing tools, a market-depth chart, alerts and bar replay,
-  in pure CustomPainter.
-version: 2.4.1
+  The most complete candlestick chart for Flutter, plus depth, line, bar,
+  scatter, pie, radar and heatmap charts: 31 indicators, 29 drawing tools,
+  pure CustomPainter.
+version: 2.5.0
 homepage: https://github.com/CtrlAltDevelop
 repository: https://github.com/CtrlAltDevelop/ohlcv_chart
 issue_tracker: https://github.com/CtrlAltDevelop/ohlcv_chart/issues
@@ -13,6 +13,7 @@ topics:
   - candlestick
   - trading
   - finance
+  - data-visualization
 
 # Shown on the pub.dev listing. Up to 10 entries; png, jpg, gif or webp;
 # 4 MiB each at most. Regenerate them with example/tool/screenshots.dart.
@@ -22,29 +23,29 @@ screenshots:
       stop-loss markers, the volume pane and a MACD sub-chart.
     path: screenshots/candles.png
   - description: >-
+      Four charts a business screen asks for: a return split at zero, profit
+      bars, deposits and withdrawals with a tooltip, and a balance sparkline.
+    path: screenshots/series-charts.png
+  - description: >-
+      A doughnut of holdings with its total in the hole and a slice pulled
+      out, beside a radar web scoring two strategies over five measures.
+    path: screenshots/pie-radar.png
+  - description: >-
+      Six months of activity as a contribution graph, beside orders by hour
+      and weekday with the count written in each square.
+    path: screenshots/heatmap.png
+  - description: >-
       The Ichimoku cloud and Supertrend over the candles, with Stochastic RSI
       and the Awesome oscillator in their own panes.
     path: screenshots/overlays.png
   - description: >-
-      A volume profile drawn back from the axis, its point of control and
-      value area picked out, under an anchored VWAP.
-    path: screenshots/profile.png
-  - description: >-
-      A second instrument overlaid on the candles, rebased to the left of the
-      visible window so the two say relative performance.
-    path: screenshots/comparison.png
+      Bars floating between two values as a waterfall, beside a forecast
+      inside its band with error bars every few points.
+    path: screenshots/series-ranges.png
   - description: >-
       A working order and an open position, each drawn the width of the chart
       and tagged on the axis with its size and unrealised P&L.
     path: screenshots/trading.png
-  - description: >-
-      Earnings, a dividend, a split and a news mark, badged under the candles
-      they fell on.
-    path: screenshots/events.png
-  - description: >-
-      Two charts of the same market held on one window and one crosshair, so
-      moving or pointing at either carries the other with it.
-    path: screenshots/linked-charts.png
   - description: >-
       The same market as line break, Kagi, point & figure and range bars.
     path: screenshots/bar-types.png

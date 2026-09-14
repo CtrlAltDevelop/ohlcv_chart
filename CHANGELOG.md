@@ -1,3 +1,186 @@
+## 2.5.0
+
+One package for every chart an app draws. A balance over time, sign-ups per
+month or profit per trade had nowhere to go in a candlestick package, so an app
+carried `fl_chart` beside this one; and the candlestick chart itself asked for
+three arguments most charts had no use for.
+
+### Series charts
+
+- **New `SeriesChart` draws values against numbers, not candles against
+  time.** A `LineSeries` or a `BarSeries` takes `SeriesPoint(x, y)` — or plain
+  values through `.values`, placed at `x = 0, 1, 2, …` — with `null` for a gap.
+  Several series share one chart, bottom layer first, and a line and bars can
+  sit together.
+
+- **Lines are joined four ways.** `LineCurve.linear`, `smooth`, `step`, and
+  `monotone`, a curve through every point that never swings past its
+  neighbours, so a peak on the line is a peak in the data. A line can be dashed,
+  stroked with a gradient, dotted per point through `dotBuilder`, and drawn in
+  `negativeColor` below its `baseline`, split exactly where it crosses rather
+  than at the nearest point.
+
+- **An area fades to its baseline and never paints across it.** `SeriesFill`
+  measures its gradient from the line's highest point to the baseline, so the
+  wash is gone exactly at zero, and the part below uses `negativeGradient` — or
+  the same gradient turned upside down — so both halves fade away from the line.
+  `toBaseline: false` fills to the bottom of the plot instead.
+
+- **Bars grow up or down from their baseline, rounded on the far end.**
+  `radius` goes on the top of a bar above the baseline and the bottom of one
+  below it; width is fixed or a share of the room between two x values, held
+  between `minWidth` and `maxWidth`; colour comes from `negativeColor` or a
+  `colorBuilder`, with an optional full-height `trackColor` behind. Bars of the
+  same colour are drawn in one call however many there are.
+
+- **Axes that are written or hidden, not rebuilt.** `SeriesXAxis` labels from a
+  list — a blank entry prints nothing, so month starts space themselves — or
+  from `ticks`, an `interval` or a `labelBuilder`, and drops a label that would
+  run into the one before. `SeriesYAxis` takes a `formatter`, a side and a
+  `width`, which is what lines stacked charts up. Either can be `hidden`, and
+  the room it held goes to the plot. `SeriesGrid` rules dashed or solid lines
+  at the labels, `border` draws round the plot, and `SeriesReferenceLine` and
+  `SeriesBand` mark fixed levels and stretches without widening the range
+  unless asked.
+
+- **The value range fits what is in view.** Set `minX` and `maxX` to show a
+  window of a longer series and the values rescale to that window. The fitted
+  range gets a little room and ends on round ticks, and that room never pushes
+  a series that stays above zero below it. `minY`, `maxY` and `includeZero` pin
+  it.
+
+- **Touch reads out every series at once.** The crosshair snaps to the nearest
+  point on a `press` (while held), a `longPress` (leaving a swipe free to
+  scroll the page), a `tap` (it stays) or a mouse hovering. The default tooltip
+  lists each series in its colour; `SeriesTooltip.builder` replaces it and the
+  chart still places the result beside the crosshair or above the point, kept
+  inside the chart. `onTouch` reports the x and every series' value there, and
+  `null` when the crosshair goes.
+
+- **New `SeriesChartController` shares one crosshair between charts.** Give a
+  balance panel and a profit panel under it the same controller, and holding
+  either marks the same x on both.
+
+- **New `SeriesRangeSelector` puts a window over long data.** It draws the
+  whole data set small; dragging inside the window moves it and dragging a
+  handle moves that edge, measured from where the drag began so the window
+  stays under the finger.
+
+- **Data changes animate.** With `animationDuration` set, values move from
+  where they were when the number of points is unchanged, and grow out of the
+  baseline otherwise — including on the first build, which `fl_chart` never
+  animated.
+
+- **New `ScatterSeries` places dots on both axes at once.** A dot per point,
+  sized, coloured or shaped per point through `dotBuilder` — a circle, a
+  square, a diamond or a cross — and labelled through `labelBuilder`. Pair it
+  with `SeriesTouch(snap: SeriesTouchSnap.nearestPoint)`, which reads out the
+  one dot under the finger instead of everything at that x.
+
+- **Bars stack, float and carry labels.** Bar series that share a `stack` pile
+  up at each x — upwards above the baseline, downwards below it — and only the
+  outermost bar is rounded. A `SeriesPoint` with a `low` draws a bar that
+  floats between two values, which is a range or a waterfall step. `border`
+  outlines each bar and `labelBuilder` writes past its far end.
+
+- **A chart can be turned on its side.** `orientation:
+  SeriesOrientation.horizontal` runs the x axis down the chart and grows the
+  values rightwards, which is the horizontal bar chart, and everything else —
+  curves, fills, gradients, the crosshair and the tooltip — turns with it.
+
+- **Error bars, fills between lines, step position and a line shadow.**
+  `SeriesPoint.xError` and `yError` draw a capped bar either side of a value,
+  styled by `SeriesErrorBars`. `SeriesBetweenFill` shades the gap between two
+  lines — a high and a low, a plan and what happened. `LineSeries.stepPosition`
+  says where along the way a step changes, and `shadow` drops a blurred copy
+  under the line.
+
+- **Axes get names and a side of their own.** `SeriesXAxis.title` and
+  `SeriesYAxis.title` write beyond the labels, turned to read up an axis that
+  runs down the chart, and `SeriesXAxis.side` puts the x labels over the plot
+  instead of under it.
+
+- **Two new pages.** [Series charts](doc/series-chart.md) covers the widget,
+  and [Migrating from fl_chart and candlesticks](doc/migrating-from-fl_chart.md)
+  maps both packages' APIs onto this one, with worked examples.
+
+### Pie, radar and heatmap charts
+
+- **New `PieChart` draws a pie, a doughnut or a ring gauge.** Each `PieSection`
+  is worth a share, not an angle: the values are added up and each section gets
+  the part of the circle it is worth. Sections take a colour or a gradient, a
+  label placed anywhere between the inner and outer edge, their own `radius` so
+  one can stand out, an `offset` that explodes it out of the circle, a border,
+  and a `badge` widget pinned to it. `centerSpaceRadius` opens the middle and
+  `centerChild` fills it with a total or a title; `sectionsSpace`,
+  `startDegreeOffset` and `clockwise` place them. A touch names the section
+  under it, which grows by `touchedSectionGrowth` while it is held.
+
+- **New `RadarChart` compares several things over the same features.** A
+  `RadarSeries` carries one value per feature and is drawn as an outline with a
+  fill, optionally dashed and dotted; `features` names the corners. The web is
+  drawn as a polygon or as rings, with `tickCount` rings between `minValue` and
+  `maxValue`, spokes out to each corner, and ring values when `showTicks` is
+  on. `onTouch` reports the corner nearest the finger.
+
+- **New `HeatmapChart` colours a grid of squares by their value.** It takes a
+  matrix — a list of rows, each a list of columns — or sparse `HeatmapCell`s
+  when the data has holes in it, and colours each square through a
+  `HeatmapGradientScale` that fades between colours or a `HeatmapStepScale`
+  that paints whole bands. `HeatmapAxis` names the columns and the rows on
+  either side; `labelBuilder` writes inside the squares, in black or white by
+  how dark each one is, and leaves out a label that would not fit. A touch
+  names the square under it — including an empty one, which reports itself
+  with no value rather than as no touch — marks it with `hoverBorder` and can
+  raise a card through `tooltipBuilder`. `squareCells` keeps the squares
+  square, which is what a contribution graph wants, and `HeatmapLegend` draws
+  the scale as a bar. [Heatmap](doc/heatmap-chart.md) covers it.
+
+- **All three animate and all three are pure geometry underneath.**
+  `layOutPie`, `pieSectionAt`, `radarCorner`, `RadarLayout` and `HeatmapLayout`
+  are public, so the placement a chart uses can be tested, or reused to put a
+  widget exactly where a section, a corner or a square is.
+
+### Candlestick chart
+
+- **`isTrendLine` and `timeFrame` are optional.**
+  `KChartWidget(candles, ChartColors())` is now a whole chart. The drawing
+  tools stay off unless `isTrendLine` is set, and with no `timeFrame` the
+  current-price tag reads just the price, without a countdown and without the
+  one-second timer that kept it ticking. `timeFrame` is now a `Duration?`, so
+  code that reads it back off the widget as non-null needs a fallback.
+
+- **The watermark is a widget, and `flutter_svg` is gone.** `watermarkAssetPath`
+  took only an SVG asset, which tied every app to `flutter_svg` whether it
+  showed a watermark or not. It is replaced by `watermark`, which takes any
+  widget — an `Image.asset`, an icon, a line of text, or an `SvgPicture` from
+  `flutter_svg` in an app that still wants one — sized and placed by
+  `watermarkScale` and `watermarkAlignment` as before, and painted in
+  `ChartColors.watermarkColor`. It now sits over the candle area, faint and
+  ignoring touches, rather than under the candles. This removes a parameter,
+  so a chart passing `watermarkAssetPath` has to change: drop it, or pass the
+  image as `watermark`.
+
+### Requirements
+
+- **Runs on Flutter 3.27 and Dart 3.6 and later.** The package asked for
+  Flutter 3.47 and Dart 3.13, which shut out every app a few releases behind.
+  Nothing it draws needed them: the two newer language features it used — null-
+  aware list elements and `_` wildcard parameters — are written the older way,
+  and the lowest Flutter left is the one that brought `Color.withValues`.
+
+- **Dependencies float.** `decimal` is accepted from 3.0.0 and `intl` from
+  0.19.0 up to 0.21, instead of the latest of each, so the package resolves
+  beside the `intl` an app's own `flutter_localizations` pins. The test suite
+  passes on both the lowest and the newest versions. `flutter_svg` is no longer
+  a dependency at all.
+
+### Documentation
+
+- `theming.md` no longer counts the drawing kinds as seventeen, and
+  `indicators.md` counts the indicators that recompute in full as seventeen,
+  so the two groups add up to the 31 there are.
+
 ## 2.4.1
 
 Five changes, one for each point raised in
