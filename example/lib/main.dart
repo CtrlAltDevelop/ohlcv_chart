@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'src/chart_page.dart';
 import 'src/demo_state.dart';
 import 'src/depth_page.dart';
+import 'src/series_page.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -57,7 +58,7 @@ class _Home extends StatefulWidget {
 }
 
 class _HomeState extends State<_Home> with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 2, vsync: this);
+  late final TabController _tabs = TabController(length: 3, vsync: this);
 
   @override
   void dispose() {
@@ -88,6 +89,7 @@ class _HomeState extends State<_Home> with SingleTickerProviderStateMixin {
           tabs: const [
             Tab(icon: Icon(Icons.candlestick_chart_outlined), text: 'Candles'),
             Tab(icon: Icon(Icons.area_chart_outlined), text: 'Depth'),
+            Tab(icon: Icon(Icons.show_chart), text: 'Series'),
           ],
         ),
       ),
@@ -96,6 +98,7 @@ class _HomeState extends State<_Home> with SingleTickerProviderStateMixin {
         children: [
           ChartPage(state: widget.state),
           DepthPage(state: widget.state),
+          SeriesPage(state: widget.state),
         ],
       ),
     );
