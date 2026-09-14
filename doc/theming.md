@@ -53,6 +53,38 @@ The long-press readout sizes itself to its content between `infoDialogWidth` and
 `infoDialogMaxWidth`, and is never wider than the chart. Set
 `isTapShowInfoDialog` to open it on a plain tap as well.
 
+## Watermark
+
+![Candles under a watermark made of an icon and a name](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/watermark.png)
+
+`watermark` takes any widget — an `Image.asset` of your logo, an icon, a line of
+text — and draws it faintly over the candle area:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(watermarkColor: Colors.white.withValues(alpha: .06)),
+  watermark: Image.asset('assets/logo.png'),
+  chartStyle: const ChartStyle(
+    watermarkScale: .3,                       // width, as a share of the shorter side
+    watermarkAlignment: Alignment.bottomRight,
+  ),
+);
+```
+
+It is painted in one colour, `ChartColors.watermarkColor` — a very faint
+`defaultTextColor` when left null — so a full-colour logo reads as a quiet
+silhouette. It takes no touches, so the chart under it behaves as though it were
+not there. The package has no SVG dependency; an app that wants an SVG
+watermark passes an `SvgPicture.asset` from `flutter_svg` itself.
+
+## Series charts
+
+`SeriesChart` does not read `ChartColors` or `ChartStyle`: each series carries
+its own colour, and the axes, grid, tooltip and range selector take their styles
+directly, so a series chart picks up an app's theme from wherever the app keeps
+it. See [Series charts](series-chart.md).
+
 ---
 
 [← All docs](README.md) · [Package README](../README.md)

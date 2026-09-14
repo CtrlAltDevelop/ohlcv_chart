@@ -13,7 +13,6 @@ final replay = ChartReplayController(interval: const Duration(milliseconds: 300)
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   replay: replay,
 );

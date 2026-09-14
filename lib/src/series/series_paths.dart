@@ -1,11 +1,20 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'series_data.dart';
 
 /// Appends one unbroken run of [points], in pixels and left to right, to
 /// [path], joined as [curve] says.
-void addSeriesRun(Path path, List<Offset> points, LineCurve curve) {
+///
+/// [stepPosition] is where a [LineCurve.step] changes value between two
+/// points: 0 at the first, 1 at the second.
+void addSeriesRun(
+  Path path,
+  List<Offset> points,
+  LineCurve curve, {
+  double stepPosition = 1,
+}) {
   if (points.isEmpty) return;
   path.moveTo(points.first.dx, points.first.dy);
   if (points.length == 1) return;
@@ -15,9 +24,14 @@ void addSeriesRun(Path path, List<Offset> points, LineCurve curve) {
         path.lineTo(points[i].dx, points[i].dy);
       }
     case LineCurve.step:
+      final at = stepPosition.clamp(0.0, 1.0);
       for (var i = 1; i < points.length; i++) {
-        path.lineTo(points[i].dx, points[i - 1].dy);
-        path.lineTo(points[i].dx, points[i].dy);
+        final previous = points[i - 1];
+        final current = points[i];
+        final stepX = previous.dx + (current.dx - previous.dx) * at;
+        path.lineTo(stepX, previous.dy);
+        path.lineTo(stepX, current.dy);
+        path.lineTo(current.dx, current.dy);
       }
     case LineCurve.smooth:
       _smooth(path, points);
@@ -170,4 +184,89 @@ RRect? seriesBarShape({
     bottomLeft: up ? Radius.zero : r,
     bottomRight: up ? Radius.zero : r,
   );
+}
+
+/// The swap of a point's two coordinates, which turns a horizontal chart's
+/// pixels into the upright ones every curve is worked out in.
+final Float64List _swapAxes = Float64List.fromList(const <double>[
+  0, 1, 0, 0, //
+  1, 0, 0, 0, //
+  0, 0, 1, 0, //
+  0, 0, 0, 1, //
+]);
+
+/// One run of [points] as a path in pixels.
+///
+/// With [transpose] the run is worked out with its coordinates swapped and
+/// swapped back afterwards, so a horizontal chart curves and steps along its
+/// own x axis rather than along the screen's.
+Path seriesRunPath(
+  List<Offset> points,
+  LineCurve curve, {
+  double stepPosition = 1,
+  bool transpose = false,
+}) {
+  final path = Path();
+  if (!transpose) {
+    addSeriesRun(path, points, curve, stepPosition: stepPosition);
+    return path;
+  }
+  addSeriesRun(
+      path,
+      [
+        for (final p in points) Offset(p.dy, p.dx),
+      ],
+      curve,
+      stepPosition: stepPosition);
+  return path.transform(_swapAxes);
+}
+
+/// The shape of one bar filling [rect], rounded by [radius] on the end away
+/// from its baseline — the top of an upright bar above it, the right-hand end
+/// of a horizontal one.
+///
+/// Returns null for a bar with no width or no length.
+RRect? seriesBarBox({
+  required Rect rect,
+  required double radius,
+  required bool horizontal,
+  required bool positive,
+}) {
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  // Never more than half the bar's width, nor more than its whole length.
+  final across = horizontal ? rect.height : rect.width;
+  final along = horizontal ? rect.width : rect.height;
+  final r = Radius.circular(
+    math.max(0.0, math.min(radius, math.min(across / 2, along))),
+  );
+  final start = horizontal
+      ? (positive ? _Corners.right : _Corners.left)
+      : (positive ? _Corners.top : _Corners.bottom);
+  return RRect.fromRectAndCorners(
+    rect,
+    topLeft: start.topLeft ? r : Radius.zero,
+    topRight: start.topRight ? r : Radius.zero,
+    bottomLeft: start.bottomLeft ? r : Radius.zero,
+    bottomRight: start.bottomRight ? r : Radius.zero,
+  );
+}
+
+/// Which two corners of a bar are the rounded end.
+class _Corners {
+  const _Corners({
+    this.topLeft = false,
+    this.topRight = false,
+    this.bottomLeft = false,
+    this.bottomRight = false,
+  });
+
+  static const top = _Corners(topLeft: true, topRight: true);
+  static const bottom = _Corners(bottomLeft: true, bottomRight: true);
+  static const left = _Corners(topLeft: true, bottomLeft: true);
+  static const right = _Corners(topRight: true, bottomRight: true);
+
+  final bool topLeft;
+  final bool topRight;
+  final bool bottomLeft;
+  final bool bottomRight;
 }

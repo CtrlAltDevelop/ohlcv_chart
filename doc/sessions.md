@@ -4,7 +4,6 @@
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   chartStyle: const ChartStyle(showSessionDividers: true),
   timeZoneOffset: const Duration(hours: -5),
@@ -28,7 +27,6 @@ pre-market and the after-hours — are washed behind the candles:
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   timeZoneOffset: const Duration(hours: -5),
   session: const TradingSession(
@@ -55,7 +53,6 @@ to use it, or null to leave the up or down colour it would have had:
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   candleColor: (candle, index) {
     final range = candle.high - candle.low;

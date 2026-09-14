@@ -7,6 +7,8 @@ areas and bars, several series at once, axes you can write or hide, a touch
 readout you can replace, a range strip for long data, and animation between
 data sets.
 
+![A return split at zero, profit bars, deposits and withdrawals with a tooltip, and a balance sparkline — all SeriesChart](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-charts.png)
+
 ```dart
 SeriesChart(
   series: [
@@ -27,8 +29,8 @@ readable chart, and each section below changes one part of it.
 
 ## Series
 
-A chart takes a list of `PlotSeries`, drawn bottom layer first. There are two
-kinds, and one chart can mix them.
+A chart takes a list of `PlotSeries`, drawn bottom layer first. There are three
+kinds — lines, bars and scatter — and one chart can mix them.
 
 Points are `SeriesPoint(x, y)` and run from the lowest x to the highest. When
 your data is just a list of values, the `.values` constructors place them at
@@ -62,7 +64,9 @@ LineSeries(
 | `linear` | straight segments |
 | `smooth` | a curve through every point that can swing past a peak (`fl_chart`'s `isCurved`) |
 | `monotone` | a curve through every point that never swings past its neighbours (`isCurved` + `preventCurveOverShooting`) |
-| `step` | holds each value until the next point |
+| `step` | holds each value until the next point; `stepPosition` says where between two points it changes — 0 at the first, 0.5 halfway, 1 at the second |
+
+A line also takes a `shadow`, a blurred copy of it drawn underneath.
 
 ### Fills
 
@@ -107,6 +111,129 @@ Several bar series on one chart stand side by side at each x. When there are
 bars, the x range gets half a unit of room at either end, so the first and last
 bars are drawn whole.
 
+Bar series that share a `stack` are piled on each other instead: each one
+starts where the ones before it ended, upwards for values above the baseline
+and downwards for values below, and only the outermost bar is rounded. A stack
+takes one place in the row, so a stack and a plain series still stand side by
+side.
+
+```dart
+SeriesChart(
+  series: [
+    BarSeries.values(deposits, color: green, stack: 'flow', radius: 0),
+    BarSeries.values(withdrawals, color: red, stack: 'flow', radius: 3),
+  ],
+);
+```
+
+A point with a `low` draws a bar that floats between two values rather than
+growing from the baseline — a range, or a step of a waterfall:
+
+```dart
+BarSeries(
+  points: [SeriesPoint(0, 8, low: 4), SeriesPoint(1, 11, low: 8)],
+);
+```
+
+`border` outlines each bar, and `labelBuilder` writes past its far end:
+
+```dart
+BarSeries.values(
+  profits,
+  border: const BorderSide(color: outline),
+  labelBuilder: (index, point) => formatUsd(point.y!),
+);
+```
+
+### Scatter
+
+![Every trade as a dot, wins as circles and losses as crosses, one of them read out](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-scatter.png)
+
+A `ScatterSeries` places a dot per point, free on both axes:
+
+```dart
+SeriesChart(
+  series: [
+    ScatterSeries(
+      points: trades,
+      dotBuilder: (index, point) => SeriesDot(
+        radius: 3 + point.y! / 40,
+        shape: point.y! < 0 ? SeriesDotShape.cross : SeriesDotShape.circle,
+        color: point.y! < 0 ? red : green,
+      ),
+      labelBuilder: (index, point) => names[index],
+    ),
+  ],
+  touch: const SeriesTouch(snap: SeriesTouchSnap.nearestPoint),
+);
+```
+
+`SeriesTouchSnap.nearestPoint` reads out the one dot under the finger, within
+`SeriesTouch.threshold` pixels, instead of everything at that x — which is what
+a scatter plot wants and a line chart does not.
+
+A dot's `shape` is a `circle`, a `square`, a `diamond` or a `cross`.
+
+### Error bars
+
+A point can carry how far it might be off, on either axis:
+
+```dart
+SeriesPoint(
+  0,
+  5,
+  yError: const SeriesErrorRange(0.4, 0.9),   // below, above
+  xError: const SeriesErrorRange.symmetric(0.2),
+);
+```
+
+Any series draws them, styled by `errorBars: SeriesErrorBars(color, width,
+capLength)`; pass `errorBars: null` to leave them out. The value range makes
+room for them.
+
+### Filling between two lines
+
+![A waterfall of floating bars beside a forecast with its band and its error bars](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-ranges.png)
+
+The same picture shows both: floating bars on the left, and on the right a
+`betweenFills` band with error bars every few points.
+
+`betweenFills` shades the gap between two of the series — a high and a low, a
+plan and what happened:
+
+```dart
+SeriesChart(
+  series: [
+    LineSeries.values(high, color: blue),
+    LineSeries.values(low, color: blue),
+  ],
+  betweenFills: const [
+    SeriesBetweenFill(from: 0, to: 1, color: Color(0x2200A3FF)),
+  ],
+);
+```
+
+## Turning the chart on its side
+
+![Stacked in and out bars running rightwards, months down the left, values along the bottom](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-horizontal.png)
+
+`orientation: SeriesOrientation.horizontal` runs the x axis down the chart and
+grows the values rightwards, which is the horizontal bar chart:
+
+```dart
+SeriesChart(
+  orientation: SeriesOrientation.horizontal,
+  series: [BarSeries.values(byCategory, radius: 3)],
+  xAxis: SeriesXAxis(labels: categoryNames),
+);
+```
+
+Everything turns with it: curves and steps follow the x axis rather than the
+screen, gradients written for an upright chart still point at the high values,
+the crosshair reads down the chart, and the tooltip hangs off the far end of
+the values. `SeriesAxisSide.left` puts the value axis along the bottom and
+`SeriesXSide.bottom` puts the x labels down the left.
+
 ## Axes, grid and border
 
 ```dart
@@ -142,6 +269,18 @@ at, in this order:
 Labels that would overlap the one before are dropped, and `fitInside` slides
 the first and last labels in so their text is not cut off. Use `labelBuilder`
 to write a label from its x.
+
+Either axis takes a `title`, written beyond its labels and turned to read up an
+axis that runs down the chart, and a side of its own: `SeriesXSide.top` puts
+the x labels over the plot and `SeriesAxisSide.right` puts the values on the
+right.
+
+```dart
+SeriesChart(
+  xAxis: SeriesXAxis(labels: monthLabels, title: l10n.month),
+  yAxis: SeriesYAxis(formatter: formatUsdAxis, title: l10n.balance),
+);
+```
 
 `SeriesXAxis.hidden`, `SeriesYAxis.hidden` and `SeriesGrid.none` remove each
 part, along with the room it held. A 58-pixel sparkline is a chart with all
@@ -223,6 +362,8 @@ entirely.
 
 ### Several charts, one crosshair
 
+![A balance panel over a profit panel, one crosshair marking the same day in both](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-panels.png)
+
 A `SeriesChartController` shows or clears the crosshair from code. Give two
 charts the same controller, and touching either one marks the same x on both.
 For example, a balance panel and a profit panel under it:
@@ -241,6 +382,8 @@ Charts stacked like this line up as long as they give `SeriesYAxis` the same
 `width` and use the same x range.
 
 ## A window over long data
+
+![Three series over a window of five months, a day read out, and the range selector that moves the window](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-window.png)
 
 `SeriesRangeSelector` draws the whole data set small, with a window over it.
 Drag inside the window to move it, or drag a handle to move that edge. The

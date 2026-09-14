@@ -13,7 +13,6 @@ indicator legends, worded by `ChartTranslations`.
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   showOhlcLegend: true,
   crosshairOnHover: true,

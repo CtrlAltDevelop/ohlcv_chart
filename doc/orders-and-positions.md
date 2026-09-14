@@ -8,7 +8,6 @@ from the venue rather than from the user, and they are not saved with a layout.
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   positions: [
     ChartPosition(

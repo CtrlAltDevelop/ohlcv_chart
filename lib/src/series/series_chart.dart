@@ -54,6 +54,8 @@ class SeriesChart extends StatefulWidget {
     this.niceYRange = true,
     this.referenceLines = const [],
     this.bands = const [],
+    this.betweenFills = const [],
+    this.orientation = SeriesOrientation.vertical,
     this.touch = const SeriesTouch(),
     this.controller,
     this.onTouch,
@@ -116,6 +118,13 @@ class SeriesChart extends StatefulWidget {
   /// Shaded stretches of the plot.
   final List<SeriesBand> bands;
 
+  /// Areas filled between two of the [series], painted under them.
+  final List<SeriesBetweenFill> betweenFills;
+
+  /// Which way the chart is turned; [SeriesOrientation.horizontal] lays the x
+  /// axis down the side and grows the bars rightwards.
+  final SeriesOrientation orientation;
+
   /// How the chart answers touch and hover; null makes it ignore both.
   final SeriesTouch? touch;
 
@@ -174,19 +183,20 @@ class _SeriesChartState extends State<SeriesChart>
 
   SeriesGeometry? _geometry;
   double? _localX;
+  int? _localSeries;
+  int? _localPoint;
   double? _reportedX;
 
   @override
   void initState() {
     super.initState();
-    _animation =
-        AnimationController(
-            vsync: this,
-            duration: widget.animationDuration,
-            value: 1,
-          )
-          ..addListener(_onTick)
-          ..addStatusListener(_onStatus);
+    _animation = AnimationController(
+      vsync: this,
+      duration: widget.animationDuration,
+      value: 1,
+    )
+      ..addListener(_onTick)
+      ..addStatusListener(_onStatus);
     widget.controller?.addListener(_onController);
     if (widget.animateOnMount && widget.animationDuration > Duration.zero) {
       _growIn();
@@ -255,8 +265,9 @@ class _SeriesChartState extends State<SeriesChart>
   }
 
   static List<List<double?>> _targetValues(List<PlotSeries> series) => [
-    for (final s in series) [for (final p in s.points) p.isGap ? null : p.y],
-  ];
+        for (final s in series)
+          [for (final p in s.points) p.isGap ? null : p.y],
+      ];
 
   static bool _sameValues(List<PlotSeries> a, List<PlotSeries> b) {
     if (identical(a, b)) return true;
@@ -282,20 +293,20 @@ class _SeriesChartState extends State<SeriesChart>
   }
 
   SeriesViewport _fit(List<List<double?>> values) => fitSeriesViewport(
-    series: widget.series,
-    values: values,
-    xAxis: widget.xAxis,
-    yAxis: widget.yAxis,
-    referenceLines: widget.referenceLines,
-    minX: widget.minX,
-    maxX: widget.maxX,
-    xPadding: widget.xPadding,
-    minY: widget.minY,
-    maxY: widget.maxY,
-    includeZero: widget.includeZero,
-    yPadding: widget.yPadding,
-    niceYRange: widget.niceYRange,
-  );
+        series: widget.series,
+        values: values,
+        xAxis: widget.xAxis,
+        yAxis: widget.yAxis,
+        referenceLines: widget.referenceLines,
+        minX: widget.minX,
+        maxX: widget.maxX,
+        xPadding: widget.xPadding,
+        minY: widget.minY,
+        maxY: widget.maxY,
+        includeZero: widget.includeZero,
+        yPadding: widget.yPadding,
+        niceYRange: widget.niceYRange,
+      );
 
   // ── Touch ───────────────────────────────────────────────────────────────
 
@@ -304,23 +315,56 @@ class _SeriesChartState extends State<SeriesChart>
     return controller != null ? controller.x : _localX;
   }
 
+  int? get _touchSeries {
+    final controller = widget.controller;
+    return controller != null ? controller.seriesIndex : _localSeries;
+  }
+
+  int? get _touchPoint {
+    final controller = widget.controller;
+    return controller != null ? controller.pointIndex : _localPoint;
+  }
+
   void _showAt(Offset local) {
     final geometry = _geometry;
     if (geometry == null) return;
-    final x = _snap(geometry, local.dx);
+    final touch = widget.touch;
+    if (touch != null && touch.snap == SeriesTouchSnap.nearestPoint) {
+      final hit = _nearestPoint(geometry, local, touch.threshold);
+      if (hit == null) return;
+      final (x, seriesIndex, pointIndex) = hit;
+      final controller = widget.controller;
+      if (controller != null) {
+        controller.show(x, seriesIndex: seriesIndex, pointIndex: pointIndex);
+      } else if (_localX != x ||
+          _localSeries != seriesIndex ||
+          _localPoint != pointIndex) {
+        setState(() {
+          _localX = x;
+          _localSeries = seriesIndex;
+          _localPoint = pointIndex;
+        });
+      }
+      return;
+    }
+    final x = _snap(geometry, geometry.pxToXAt(local));
     if (x == null) return;
     final controller = widget.controller;
     if (controller != null) {
       controller.show(x);
-    } else if (_localX != x) {
-      setState(() => _localX = x);
+    } else if (_localX != x || _localSeries != null) {
+      setState(() {
+        _localX = x;
+        _localSeries = null;
+        _localPoint = null;
+      });
     }
   }
 
   void _toggleAt(Offset local) {
     final geometry = _geometry;
     if (geometry == null) return;
-    final x = _snap(geometry, local.dx);
+    final x = _snap(geometry, geometry.pxToXAt(local));
     if (x != null && x == _touchX) {
       _release();
     } else {
@@ -333,13 +377,49 @@ class _SeriesChartState extends State<SeriesChart>
     if (controller != null) {
       controller.clear();
     } else if (_localX != null) {
-      setState(() => _localX = null);
+      setState(() {
+        _localX = null;
+        _localSeries = null;
+        _localPoint = null;
+      });
     }
   }
 
-  /// The x of the point nearest pixel column [px], among those in view.
-  double? _snap(SeriesGeometry geometry, double px) {
-    final wanted = geometry.pxToX(px);
+  /// The point nearest [local], and its series, within [threshold] pixels.
+  (double, int, int)? _nearestPoint(
+    SeriesGeometry geometry,
+    Offset local,
+    double threshold,
+  ) {
+    final viewport = geometry.viewport;
+    (double, int, int)? best;
+    var bestDistance = threshold * threshold;
+    for (var i = 0; i < widget.series.length; i++) {
+      final s = widget.series[i];
+      if (!s.showInTooltip) continue;
+      final row = _drawnValues != null && i < _drawnValues!.length
+          ? _drawnValues![i]
+          : const <double?>[];
+      for (var j = 0; j < s.points.length; j++) {
+        final point = s.points[j];
+        if (point.isGap || point.x < viewport.minX || point.x > viewport.maxX) {
+          continue;
+        }
+        final y = j < row.length ? row[j] : point.y;
+        if (y == null || !y.isFinite) continue;
+        final at = geometry.point(point.x, y);
+        final distance = (at - local).distanceSquared;
+        if (distance <= bestDistance) {
+          bestDistance = distance;
+          best = (point.x, i, j);
+        }
+      }
+    }
+    return best;
+  }
+
+  /// The x of the point nearest [wanted], among those in view.
+  double? _snap(SeriesGeometry geometry, double wanted) {
     final viewport = geometry.viewport;
     double? best;
     var bestDistance = double.infinity;
@@ -388,17 +468,20 @@ class _SeriesChartState extends State<SeriesChart>
   SeriesTouchDetails _detailsAt(
     SeriesGeometry geometry,
     List<List<double?>> values,
-    double x,
-  ) {
+    double x, {
+    int? onlySeries,
+    int? onlyPoint,
+  }) {
     final touched = <SeriesTouchValue>[];
-    final px = geometry.xToPx(x);
     for (var i = 0; i < widget.series.length; i++) {
+      if (onlySeries != null && i != onlySeries) continue;
       final s = widget.series[i];
       if (!s.showInTooltip) continue;
-      final j = _indexAt(s.points, x);
-      if (j < 0) continue;
+      final j = onlyPoint ?? _indexAt(s.points, x);
+      if (j < 0 || j >= s.points.length) continue;
       final point = s.points[j];
-      final drawn = j < values[i].length ? values[i][j] : null;
+      final row = i < values.length ? values[i] : const <double?>[];
+      final drawn = j < row.length ? row[j] : null;
       if (point.isGap || drawn == null) continue;
       touched.add(
         SeriesTouchValue(
@@ -406,21 +489,34 @@ class _SeriesChartState extends State<SeriesChart>
           series: s,
           pointIndex: j,
           point: point,
-          position: Offset(px, geometry.yToPx(drawn)),
+          position: geometry.point(point.x, drawn),
           color: switch (s) {
             final BarSeries bars => bars.barColorAt(j, point),
+            final ScatterSeries dots =>
+              dots.dotAt(j, point)?.color ?? s.colorAt(point.y!),
             LineSeries() => s.colorAt(point.y!),
           },
         ),
       );
     }
-    final top = touched.isEmpty
-        ? geometry.plot.top
-        : touched.map((v) => v.position.dy).reduce(math.min);
+    // The tooltip hangs off the furthest value along the value axis, so it
+    // never sits on top of what was touched.
+    final Offset anchor;
+    if (geometry.isHorizontal) {
+      final right = touched.isEmpty
+          ? geometry.plot.left
+          : touched.map((v) => v.position.dx).reduce(math.max);
+      anchor = Offset(right, geometry.xToPx(x));
+    } else {
+      final top = touched.isEmpty
+          ? geometry.plot.top
+          : touched.map((v) => v.position.dy).reduce(math.min);
+      anchor = Offset(geometry.xToPx(x), top);
+    }
     return SeriesTouchDetails(
       x: x,
       values: touched,
-      position: Offset(px, top),
+      position: anchor,
       plotRect: geometry.plot,
     );
   }
@@ -442,9 +538,8 @@ class _SeriesChartState extends State<SeriesChart>
   Widget build(BuildContext context) {
     final target = _targetValues(widget.series);
     final from = _fromValues;
-    final t = from == null
-        ? 1.0
-        : widget.animationCurve.transform(_animation.value);
+    final t =
+        from == null ? 1.0 : widget.animationCurve.transform(_animation.value);
     final values = from == null || !_sameShape(from, widget.series)
         ? target
         : [
@@ -477,20 +572,29 @@ class _SeriesChartState extends State<SeriesChart>
           xAxis: widget.xAxis,
           yAxis: widget.yAxis,
           viewport: viewport,
+          orientation: widget.orientation,
         );
         _geometry = geometry;
 
         final touch = widget.touch;
         final x = _touchX;
-        final details = x == null ? null : _detailsAt(geometry, values, x);
+        final details = x == null
+            ? null
+            : _detailsAt(
+                geometry,
+                values,
+                x,
+                onlySeries: _touchSeries,
+                onlyPoint: _touchPoint,
+              );
         _report(details);
 
         final tooltip = touch?.tooltip;
         final tooltipChild = details == null || tooltip == null
             ? null
             : (tooltip.builder != null
-                  ? tooltip.builder!(context, details)
-                  : _defaultTooltip(tooltip, details, viewport));
+                ? tooltip.builder!(context, details)
+                : _defaultTooltip(tooltip, details, viewport));
 
         return SizedBox(
           width: width,
@@ -510,6 +614,7 @@ class _SeriesChartState extends State<SeriesChart>
                     border: widget.border,
                     referenceLines: widget.referenceLines,
                     bands: widget.bands,
+                    betweenFills: widget.betweenFills,
                     backgroundColor: widget.backgroundColor,
                     clipToPlot: widget.clipToPlot,
                     textCache: _text,
@@ -559,34 +664,46 @@ class _SeriesChartState extends State<SeriesChart>
   Widget _withGestures(Widget child) {
     final touch = widget.touch;
     if (touch == null) return child;
+    // A horizontal chart is read by dragging down it, an upright one across.
+    final dragsDown = widget.orientation == SeriesOrientation.horizontal;
 
     Widget result = switch (touch.trigger) {
       SeriesTouchTrigger.press => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (d) => _showAt(d.localPosition),
-        onTapUp: (_) => _release(),
-        onTapCancel: _release,
-        onHorizontalDragStart: (d) => _showAt(d.localPosition),
-        onHorizontalDragUpdate: (d) => _showAt(d.localPosition),
-        onHorizontalDragEnd: (_) => _release(),
-        onHorizontalDragCancel: _release,
-        child: child,
-      ),
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (d) => _showAt(d.localPosition),
+          onTapUp: (_) => _release(),
+          onTapCancel: _release,
+          onHorizontalDragStart: (d) => _showAt(d.localPosition),
+          onHorizontalDragUpdate: (d) => _showAt(d.localPosition),
+          onHorizontalDragEnd: (_) => _release(),
+          onHorizontalDragCancel: _release,
+          onVerticalDragStart:
+              dragsDown ? (d) => _showAt(d.localPosition) : null,
+          onVerticalDragUpdate:
+              dragsDown ? (d) => _showAt(d.localPosition) : null,
+          onVerticalDragEnd: dragsDown ? (_) => _release() : null,
+          onVerticalDragCancel: dragsDown ? _release : null,
+          child: child,
+        ),
       SeriesTouchTrigger.longPress => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onLongPressStart: (d) => _showAt(d.localPosition),
-        onLongPressMoveUpdate: (d) => _showAt(d.localPosition),
-        onLongPressEnd: (_) => _release(),
-        onLongPressCancel: _release,
-        child: child,
-      ),
+          behavior: HitTestBehavior.opaque,
+          onLongPressStart: (d) => _showAt(d.localPosition),
+          onLongPressMoveUpdate: (d) => _showAt(d.localPosition),
+          onLongPressEnd: (_) => _release(),
+          onLongPressCancel: _release,
+          child: child,
+        ),
       SeriesTouchTrigger.tap => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapUp: (d) => _toggleAt(d.localPosition),
-        onHorizontalDragStart: (d) => _showAt(d.localPosition),
-        onHorizontalDragUpdate: (d) => _showAt(d.localPosition),
-        child: child,
-      ),
+          behavior: HitTestBehavior.opaque,
+          onTapUp: (d) => _toggleAt(d.localPosition),
+          onHorizontalDragStart: (d) => _showAt(d.localPosition),
+          onHorizontalDragUpdate: (d) => _showAt(d.localPosition),
+          onVerticalDragStart:
+              dragsDown ? (d) => _showAt(d.localPosition) : null,
+          onVerticalDragUpdate:
+              dragsDown ? (d) => _showAt(d.localPosition) : null,
+          child: child,
+        ),
       SeriesTouchTrigger.none => child,
     };
 
@@ -672,8 +789,8 @@ class _SeriesChartState extends State<SeriesChart>
     final text = formatter != null
         ? formatter(value)
         : axisFormatter != null
-        ? axisFormatter(value.value)
-        : _plainNumber(value.value);
+            ? axisFormatter(value.value)
+            : _plainNumber(value.value);
     final label = value.series.label;
     return tooltip.showSeriesLabels && label != null && label.isNotEmpty
         ? '$label: $text'
