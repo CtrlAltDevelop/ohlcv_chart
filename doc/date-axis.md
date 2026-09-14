@@ -18,8 +18,6 @@ marking the long form the crosshair wants:
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   dateFormatter: (candle, longForm) => DateFormat(
     longForm ? 'EEE d MMM HH:mm' : 'HH:mm',

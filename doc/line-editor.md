@@ -10,7 +10,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: true,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   drawingStyle: const DrawingStyle(
     // What the user may pick

@@ -354,8 +354,6 @@ abstract class BaseChartPainter extends CustomPainter {
 
   void drawSignals(Canvas canvas);
 
-  void drawWatermarkLogo(Canvas canvas, Size size);
-
   /// Smallest the candle area may become before the panes below it give way.
   static const double minMainHeight = 60.0;
 

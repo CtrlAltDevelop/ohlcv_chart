@@ -23,8 +23,10 @@ If it saves you some work, all I ask in return is:
 
 That is the whole price, and it is what keeps the weekly updates coming.
 
-A candlestick (K-line) and market-depth chart for Flutter, drawn entirely with
-`CustomPainter` — no WebView, no JavaScript bridge.
+A candlestick (K-line) chart, a market-depth chart, and line, bar, scatter,
+pie, radar and heatmap charts for Flutter, drawn entirely with `CustomPainter`
+— no WebView, no JavaScript bridge. One package for the trading screen and for the balance,
+growth and report charts around it.
 
 Named for the open-high-low-close-volume bars it renders.
 
@@ -32,6 +34,9 @@ Named for the open-high-low-close-volume bars it renders.
 
 ## Features
 
+- **Series charts for everything else** — `SeriesChart` draws plain values rather than candles: lines with four curves, areas that fade to a baseline and split colour where they cross it, bars that group, stack or float, scatter plots, error bars, a band between two lines, axes you write, name or hide, a chart you can turn on its side, a tooltip of your own, one crosshair shared across charts, a range strip for long data and animated data changes. The [migration guide](doc/migrating-from-fl_chart.md) maps `fl_chart` and `candlesticks` onto it.
+- **A pie chart and a radar chart** — `PieChart` for a pie, a doughnut with a widget in its hole or a ring gauge, with exploded slices and badges; `RadarChart` for a web of features with one outline per series. The two shapes an axis cannot draw, in the same package as the rest.
+- **A heatmap** — `HeatmapChart` colours a grid of squares by their value, from a matrix or from sparse cells: a fading or a stepped colour scale, labels in the squares and down both sides, a legend, and a readout for the square under the pointer. A contribution graph, a correlation matrix or sales by weekday and hour.
 - **Eight chart types** — candles, OHLC bars, a line, a step line, a filled area, an HLC area, a baseline chart and columns — plus Heikin-Ashi, Renko, three-line break, Kagi, point & figure and range bars as transforms of the candles themselves.
 - **31 indicators**, each a configured instance rather than a flag — so `ATR(8)`, `ATR(14)` and `ATR(20)` are three panes, with their own settings and colours.
 - **Main-chart overlays** — `MA`, `EMA`, `BOLL`, `SAR`, `VWAP` in three flavours — whole-series, anchored to a candle, or restarted each session with standard-deviation bands — Supertrend, Keltner and Donchian channels, the Ichimoku Cloud, pivot points and a volume profile.
@@ -70,21 +75,125 @@ Named for the open-high-low-close-volume bars it renders.
 - **Info dialog** on long press, either the built-in Material popup or your own builder.
 - **"Now price" line** with a live countdown to the close of the current candle.
 - **Session dividers and a display time zone**, so an intraday chart breaks where the trader's day does.
-- **SVG watermark** loaded from an asset path you supply.
+- **A watermark of your own** — any widget, such as an `Image.asset` of your logo, painted faintly in one colour over the candle area.
 - **Fully themeable** — `ChartStyle` for geometry, `ChartColors` for every colour, `DrawingStyle` for the drawing tools; `ChartTranslations` for every label. Filled or hollow candles, dashed or solid crosshair, pane separators, axis-label pills and a placed, tinted watermark.
 - **Fits its box** — the candles take whatever height the volume and indicator panes leave, so the chart works from a phone to a desktop window without arithmetic on your side.
 
-![The overview strip under a chart, with the visible window lit on it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/overview.png)
+## The whole package in pictures
 
-![Two linked charts sharing one crosshair](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/linked-charts.png)
+Every widget, every chart type and every tool below is in this one package, and
+each picture links to the page that covers it.
 
-![Bar replay stepping the market forward a candle at a time](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-replay.gif)
+### Series, pie, radar and heatmap charts
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/series-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-charts.png" width="100%" alt="Four business charts"></a><br /><sub><b><a href="doc/series-chart.md">Four business charts</a></b><br />A return split at zero, profit bars, flows with a tooltip and a sparkline.</sub></td>
+<td width="33%" valign="top"><a href="doc/pie-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/pie-radar.png" width="100%" alt="Pie and radar"></a><br /><sub><b><a href="doc/pie-chart.md">Pie and radar</a></b><br />A doughnut with its total in the hole, and a web scoring two strategies.</sub></td>
+<td width="33%" valign="top"><a href="doc/heatmap-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/heatmap.png" width="100%" alt="Heatmap"></a><br /><sub><b><a href="doc/heatmap-chart.md">Heatmap</a></b><br />Six months of activity, and orders by hour and weekday, by value.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/series-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-scatter.png" width="100%" alt="Scatter"></a><br /><sub><b><a href="doc/series-chart.md">Scatter</a></b><br />A dot per trade, shaped and coloured by the point, read out one at a time.</sub></td>
+<td width="33%" valign="top"><a href="doc/series-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-horizontal.png" width="100%" alt="Stacked and turned"></a><br /><sub><b><a href="doc/series-chart.md">Stacked and turned</a></b><br />Bars piled on each other on a chart running rightwards, both axes named.</sub></td>
+<td width="33%" valign="top"><a href="doc/series-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-ranges.png" width="100%" alt="Floating bars and bands"></a><br /><sub><b><a href="doc/series-chart.md">Floating bars and bands</a></b><br />A waterfall, and a forecast inside its band with error bars.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/series-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-window.png" width="100%" alt="A window over long data"></a><br /><sub><b><a href="doc/series-chart.md">A window over long data</a></b><br />Three series over five months, with the strip that moves the window.</sub></td>
+<td width="33%" valign="top"><a href="doc/series-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-panels.png" width="100%" alt="One crosshair, two panels"></a><br /><sub><b><a href="doc/series-chart.md">One crosshair, two panels</a></b><br />A balance panel over a profit panel, marking the same day in both.</sub></td>
+<td width="33%" valign="top"><a href="doc/depth-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/depth.png" width="100%" alt="Depth chart"></a><br /><sub><b><a href="doc/depth-chart.md">Depth chart</a></b><br />Cumulative bid and ask depth from the order book.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/depth-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/depth-modes.png" width="100%" alt="Depth, four ways"></a><br /><sub><b><a href="doc/depth-chart.md">Depth, four ways</a></b><br />The curve, the per-rung bars, both at once, or a numeric ladder.</sub></td>
+<td width="33%" valign="top"><a href="doc/depth-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/depth-ratio.png" width="100%" alt="The bid/ask ratio bar"></a><br /><sub><b><a href="doc/depth-chart.md">The bid/ask ratio bar</a></b><br />Which way the resting orders lean, under the depth chart.</sub></td>
+<td width="33%"></td>
+</tr>
+</table>
+
+### Candles, and the ways to draw them
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/chart-types.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/chart-types.png" width="100%" alt="Eight chart types"></a><br /><sub><b><a href="doc/chart-types.md">Eight chart types</a></b><br />Bars, baseline, area, step line, HLC area and columns.</sub></td>
+<td width="33%" valign="top"><a href="doc/chart-types.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-types.png" width="100%" alt="Four bar transforms"></a><br /><sub><b><a href="doc/chart-types.md">Four bar transforms</a></b><br />Line break, Kagi, point & figure and range bars.</sub></td>
+<td width="33%" valign="top"><a href="doc/chart-types.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/aggregations.png" width="100%" alt="Heikin-Ashi and Renko"></a><br /><sub><b><a href="doc/chart-types.md">Heikin-Ashi and Renko</a></b><br />The same market re-aggregated before it is drawn.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/comparison.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/comparison.png" width="100%" alt="A second instrument"></a><br /><sub><b><a href="doc/comparison.md">A second instrument</a></b><br />Another series over the same window, rebased or at its own prices.</sub></td>
+<td width="33%" valign="top"><a href="doc/theming.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/theming.png" width="100%" alt="Dark and light"></a><br /><sub><b><a href="doc/theming.md">Dark and light</a></b><br />The same chart under both palettes, every colour yours.</sub></td>
+<td width="33%"></td>
+</tr>
+</table>
+
+### 31 indicators
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/indicators.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/overlays.png" width="100%" alt="Main-chart overlays"></a><br /><sub><b><a href="doc/indicators.md">Main-chart overlays</a></b><br />The Ichimoku cloud and Supertrend, over Stochastic RSI and Awesome.</sub></td>
+<td width="33%" valign="top"><a href="doc/indicators.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/profile.png" width="100%" alt="Profile and anchored VWAP"></a><br /><sub><b><a href="doc/indicators.md">Profile and anchored VWAP</a></b><br />A volume profile and a VWAP anchored to a candle.</sub></td>
+<td width="33%" valign="top"><a href="doc/indicators.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/swings.png" width="100%" alt="Swing readers"></a><br /><sub><b><a href="doc/indicators.md">Swing readers</a></b><br />A zigzag, a Fibonacci retracement and Elliott wave labels.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/panes.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes.png" width="100%" alt="Stacked panes"></a><br /><sub><b><a href="doc/panes.md">Stacked panes</a></b><br />Three ATRs at different periods, each in its own resizable pane.</sub></td>
+<td width="33%" valign="top"><a href="doc/indicators.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/higher-timeframe.png" width="100%" alt="Higher timeframes"></a><br /><sub><b><a href="doc/indicators.md">Higher timeframes</a></b><br />A four-hour average and RSI over fifteen-minute candles.</sub></td>
+<td width="33%" valign="top"><a href="doc/indicators.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/indicator-settings.png" width="100%" alt="Built from the catalogue"></a><br /><sub><b><a href="doc/indicators.md">Built from the catalogue</a></b><br />The example app's add-indicator sheet, generated from it.</sub></td>
+</tr>
+</table>
+
+### Drawing tools, orders and events
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/drawing-tools.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/drawing.png" width="100%" alt="29 drawing tools"></a><br /><sub><b><a href="doc/drawing-tools.md">29 drawing tools</a></b><br />Trend and horizontal lines with labels, snapped and persisted.</sub></td>
+<td width="33%" valign="top"><a href="doc/drawing-tools.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/shapes.png" width="100%" alt="Rays, boxes and fibs"></a><br /><sub><b><a href="doc/drawing-tools.md">Rays, boxes and fibs</a></b><br />A ray, an arrow, a horizontal ray, a range box and a retracement.</sub></td>
+<td width="33%" valign="top"><a href="doc/line-editor.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/line-editor.png" width="100%" alt="The line editor"></a><br /><sub><b><a href="doc/line-editor.md">The line editor</a></b><br />Every control of a selected drawing, styled by DrawingStyle.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/orders-and-positions.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/trading.png" width="100%" alt="Orders and positions"></a><br /><sub><b><a href="doc/orders-and-positions.md">Orders and positions</a></b><br />A working order and an open position, each tagged on the axis.</sub></td>
+<td width="33%" valign="top"><a href="doc/orders-and-positions.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/planning.png" width="100%" alt="Planning a trade"></a><br /><sub><b><a href="doc/orders-and-positions.md">Planning a trade</a></b><br />A planned position with its risk-to-reward, inside a channel.</sub></td>
+<td width="33%" valign="top"><a href="doc/event-marks.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/events.png" width="100%" alt="Event marks"></a><br /><sub><b><a href="doc/event-marks.md">Event marks</a></b><br />Earnings, a dividend, a split and news under the candles.</sub></td>
+</tr>
+</table>
+
+### Reading it, and driving it
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/legend-and-crosshair.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/legend-and-crosshair.png" width="100%" alt="Legend and crosshair"></a><br /><sub><b><a href="doc/legend-and-crosshair.md">Legend and crosshair</a></b><br />The OHLC row above the chart, reading from the crosshair.</sub></td>
+<td width="33%" valign="top"><a href="doc/readout.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/readout.png" width="100%" alt="The long-press readout"></a><br /><sub><b><a href="doc/readout.md">The long-press readout</a></b><br />The card over a held candle, or a builder of your own.</sub></td>
+<td width="33%" valign="top"><a href="doc/driving-the-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/overview.png" width="100%" alt="The overview strip"></a><br /><sub><b><a href="doc/driving-the-chart.md">The overview strip</a></b><br />The whole series under the chart, with the visible window lit.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/driving-the-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/linked-charts.png" width="100%" alt="Linked charts"></a><br /><sub><b><a href="doc/driving-the-chart.md">Linked charts</a></b><br />Two charts sharing one crosshair.</sub></td>
+<td width="33%" valign="top"><a href="doc/bar-replay.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-replay.gif" width="100%" alt="Bar replay"></a><br /><sub><b><a href="doc/bar-replay.md">Bar replay</a></b><br />Rewind, then step or play the market forward.</sub></td>
+<td width="33%" valign="top"><a href="doc/bar-replay.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-replay.png" width="100%" alt="Held mid-replay"></a><br /><sub><b><a href="doc/bar-replay.md">Held mid-replay</a></b><br />The chart stopped at the 150th candle of 420, under a transport bar.</sub></td>
+</tr>
+</table>
+
+### The axes, the session and the box
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/price-axis.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/price-scales.png" width="100%" alt="Four price axes"></a><br /><sub><b><a href="doc/price-axis.md">Four price axes</a></b><br />Linear, log, percentage or indexed to 100 — and invertible.</sub></td>
+<td width="33%" valign="top"><a href="doc/price-axis.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/log-axis.png" width="100%" alt="A log axis"></a><br /><sub><b><a href="doc/price-axis.md">A log axis</a></b><br />Stepping by ratio, so a decade of compounding reads evenly.</sub></td>
+<td width="33%" valign="top"><a href="doc/date-axis.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/date-axis.png" width="100%" alt="The date axis"></a><br /><sub><b><a href="doc/date-axis.md">The date axis</a></b><br />The round time values the chart picks, or your own formatter.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/sessions.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sessions.png" width="100%" alt="Sessions and time zones"></a><br /><sub><b><a href="doc/sessions.md">Sessions and time zones</a></b><br />Pre-market and after-hours washed behind the candles.</sub></td>
+<td width="33%" valign="top"><a href="doc/sessions.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/session-vwap.png" width="100%" alt="Session VWAP"></a><br /><sub><b><a href="doc/sessions.md">Session VWAP</a></b><br />A VWAP restarted each session, with its standard-deviation band.</sub></td>
+<td width="33%" valign="top"><a href="doc/sizing.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sizing.png" width="100%" alt="Fits its box"></a><br /><sub><b><a href="doc/sizing.md">Fits its box</a></b><br />The candle area filling the box, and pinned to a height.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/theming.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/watermark.png" width="100%" alt="A watermark of your own"></a><br /><sub><b><a href="doc/theming.md">A watermark of your own</a></b><br />Any widget, painted faintly over the candle area.</sub></td>
+<td width="33%"></td>
+<td width="33%"></td>
+</tr>
+</table>
 
 ## Install
 
 ```yaml
 dependencies:
-  ohlcv_chart: ^2.4.1
+  ohlcv_chart: ^2.5.0
 ```
 
 ## Quick start
@@ -100,7 +209,6 @@ DataUtil.calculate(candles);
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   indicators: [MaIndicator(period: 20), MacdIndicator()],
   fixedLength: 2,
@@ -118,6 +226,10 @@ One page per feature, in [`doc/`](doc/README.md):
 | | |
 | --- | --- |
 | [Candlestick chart](doc/candlestick-chart.md) | The candles, and the shape `KLineEntity` expects |
+| [Series charts](doc/series-chart.md) | `SeriesChart` for values: lines, areas, bars, scatter, touch, a range strip, animation |
+| [Pie chart](doc/pie-chart.md) | `PieChart`: sections, a doughnut hole, badges, touch |
+| [Radar chart](doc/radar-chart.md) | `RadarChart`: a web of features with an outline per series |
+| [Heatmap](doc/heatmap-chart.md) | `HeatmapChart`: a grid coloured by value, with a scale and a legend |
 | [Indicators](doc/indicators.md) | 31 of them as instances, the catalogue, pane scales, chaining, higher timeframes, alerts |
 | [Comparing a second instrument](doc/comparison.md) | Other series over the same window, rebased or at their own prices |
 | [Chart types](doc/chart-types.md) | Eight ways to draw a series, and six transforms of the candles |
@@ -137,12 +249,15 @@ One page per feature, in [`doc/`](doc/README.md):
 | [Depth chart](doc/depth-chart.md) | The order-book widget: four modes, three axes |
 | [Theming](doc/theming.md) | `ChartStyle`, `ChartColors` and `ChartTranslations` |
 | [Migrating from 1.x](doc/migrating-from-1.x.md) | What changed, and what to use instead |
+| [Migrating from fl_chart and candlesticks](doc/migrating-from-fl_chart.md) | Their APIs mapped onto this package's, with worked examples |
 
 ## Notes
 
+- Needs Dart 3.6 and Flutter 3.27 or later.
 - The zoom slider renders only where there is no pinch gesture — web and desktop.
-- `watermarkAssetPath` must point at an SVG registered in your app's `pubspec.yaml`
-  assets; a missing asset is ignored and the chart renders without a watermark.
+- `watermark` takes any widget and paints it in `ChartColors.watermarkColor`, so a
+  full-colour logo reads as a silhouette; the package no longer depends on
+  `flutter_svg` — pass `SvgPicture.asset(...)` from it yourself for an SVG.
 
 ## Credits
 

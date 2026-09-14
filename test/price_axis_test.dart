@@ -48,7 +48,6 @@ Widget _chart({
           data,
           ChartColors(),
           isTrendLine: false,
-          watermarkAssetPath: 'assets/none.svg',
           timeFrame: const Duration(minutes: 15),
           priceAxisScale: scale,
         ),

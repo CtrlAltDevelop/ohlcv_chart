@@ -8,8 +8,6 @@ the candles; everything else takes a pane of its own, stacked in the order given
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   indicators: [
     MaIndicator(period: 7),
@@ -127,7 +125,6 @@ intraday chart reads what has been paid on average *today*.
 KChartWidget(
   data,
   ChartColors(),
-  isTrendLine: false,
   indicators: [
     SessionVwapIndicator(),                              // resets daily, ±1σ
     SessionVwapIndicator(session: PivotSession.week),    // resets on the Monday
@@ -156,7 +153,6 @@ re-measures as the window moves:
 KChartWidget(
   data,
   ChartColors(),
-  isTrendLine: false,
   indicators: [AnchoredVwapIndicator(anchor: firstVisible)],
   onVisibleRangeChanged: (range) =>
       setState(() => firstVisible = range.firstIndex),
@@ -232,7 +228,6 @@ drawn at, so a daily moving average can be read on a fifteen-minute chart:
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   indicators: [
     MaIndicator(period: 20),
@@ -337,7 +332,7 @@ class MyIndicator extends Indicator {
 ```
 
 `from` is the earliest index that can have moved. Return null — the default —
-and the series is computed in full, which is always correct and is what sixteen
+and the series is computed in full, which is always correct and is what seventeen
 of the built-in indicators still do: anything reading the whole series at once,
 such as a volume profile, a zigzag or the swing overlays built on it, has no
 tail to extend. The other fourteen resume, and a chart carrying a moving

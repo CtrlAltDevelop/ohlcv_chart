@@ -10,6 +10,22 @@ For installation, the feature list and support, see the
 
 - **[Candlestick chart](candlestick-chart.md)** — the candles a `KChartWidget`
   needs, and the shape `KLineEntity` expects them in.
+- **[Series charts](series-chart.md)** — `SeriesChart` for values rather than
+  candles: lines, areas, bars that group, stack or float, and scatter plots,
+  several at once, a chart you can turn on its side, a touch readout of your
+  own, a range strip for long data, and animation between data sets.
+
+- **[Pie chart](pie-chart.md)** — `PieChart`: sections worth a share of the
+  whole, a doughnut hole with a widget in it, exploded slices, badges and
+  touch.
+
+- **[Radar chart](radar-chart.md)** — `RadarChart`: a web of features with one
+  outline per series, drawn as a polygon or as rings.
+
+- **[Heatmap](heatmap-chart.md)** — `HeatmapChart`: a grid of squares coloured
+  by their value, with a scale, a legend and a readout per square.
+- **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
+  their APIs mapped onto this package's, with worked examples.
 
 ## Series and indicators
 

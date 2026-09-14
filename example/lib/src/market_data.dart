@@ -98,10 +98,17 @@ class MarketData {
     }
 
     return [
-      ?at(over.length - 180, ChartEventKind.earnings, 'Q3 — beat by a cent'),
-      ?at(over.length - 120, ChartEventKind.dividend, r'$0.24 going ex'),
-      ?at(over.length - 70, ChartEventKind.split, '4-for-1'),
-      ?at(over.length - 30, ChartEventKind.news, 'Listed on another venue'),
+      if (at(over.length - 180, ChartEventKind.earnings, 'Q3 — beat by a cent')
+          case final v?)
+        v,
+      if (at(over.length - 120, ChartEventKind.dividend, r'$0.24 going ex')
+          case final v?)
+        v,
+      if (at(over.length - 70, ChartEventKind.split, '4-for-1') case final v?)
+        v,
+      if (at(over.length - 30, ChartEventKind.news, 'Listed on another venue')
+          case final v?)
+        v,
     ];
   }
 

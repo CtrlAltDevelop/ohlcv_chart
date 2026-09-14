@@ -333,7 +333,7 @@ class ChartColors {
   /// Defaults to a translucent [bgColor] when null.
   Color? legendBgColor;
 
-  /// Tint of the SVG watermark.
+  /// The one colour the watermark widget is painted in.
   ///
   /// Defaults to a very faint [defaultTextColor] when null.
   Color? watermarkColor;

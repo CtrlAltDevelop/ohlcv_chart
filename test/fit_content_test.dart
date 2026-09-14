@@ -25,7 +25,6 @@ Widget _chart({required bool fitContent, int count = 10}) {
           data,
           ChartColors(),
           isTrendLine: false,
-          watermarkAssetPath: 'assets/none.svg',
           timeFrame: const Duration(minutes: 5),
           xFrontPadding: 0,
           volHidden: true,

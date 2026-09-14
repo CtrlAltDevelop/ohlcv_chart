@@ -13,8 +13,6 @@ DataUtil.calculate(candles);
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   indicators: [MaIndicator(period: 20), BollIndicator(), MacdIndicator()],
   timeFormat: TimeFormat.YEAR_MONTH_DAY_WITH_HOUR,
@@ -24,6 +22,12 @@ KChartWidget(
   },
 );
 ```
+
+Only the candles and the colours are required, so `KChartWidget(candles,
+ChartColors())` is a whole chart. `timeFrame` adds a countdown to the close on
+the current-price tag, `isTrendLine: true` turns the drawing tools on, and
+`watermark` takes any widget to draw faintly behind the reading (see
+[Theming](theming.md#watermark)).
 
 `KLineEntity.fromJson` accepts the usual OHLCV shape (`open`, `high`, `low`,
 `close`, `vol`, `time`/`id`), or build the entity directly.

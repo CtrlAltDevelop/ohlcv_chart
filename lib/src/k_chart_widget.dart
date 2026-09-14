@@ -7,7 +7,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import 'chart_controller.dart';
 import 'chart_event.dart';
@@ -186,6 +185,47 @@ class TimeFormat {
   ];
 }
 
+/// Sizes the watermark to `ChartStyle.watermarkScale` of the candle area's
+/// shorter side and places it by `ChartStyle.watermarkAlignment`, measuring
+/// that area the way [painter] lays it out.
+class _WatermarkLayout extends SingleChildLayoutDelegate {
+  _WatermarkLayout(this.painter);
+
+  final ChartPainter painter;
+
+  Rect _area(Size size) {
+    // The same layout the painter runs when it paints this size, so the
+    // watermark and the candles agree on where the candle area is.
+    painter.layout(size);
+    return painter.mMainRect;
+  }
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    final area = _area(constraints.biggest);
+    final width = math.max(
+      0.0,
+      math.min(area.width, area.height) * painter.chartStyle.watermarkScale,
+    );
+    return BoxConstraints(
+      minWidth: width,
+      maxWidth: width,
+      maxHeight: math.max(0.0, area.height),
+    );
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) => painter
+      .chartStyle
+      .watermarkAlignment
+      .inscribe(childSize, painter.mMainRect)
+      .topLeft;
+
+  @override
+  bool shouldRelayout(_WatermarkLayout oldDelegate) =>
+      !identical(oldDelegate.painter, painter);
+}
+
 /// An interactive candlestick chart.
 ///
 /// Pass the candles positionally along with a [ChartColors]. Run
@@ -204,8 +244,6 @@ class TimeFormat {
 /// KChartWidget(
 ///   candles,
 ///   ChartColors(),
-///   isTrendLine: false,
-///   watermarkAssetPath: 'assets/logo.svg',
 ///   timeFrame: const Duration(minutes: 15),
 ///   indicators: [MaIndicator(period: 20), MacdIndicator()],
 /// );
@@ -215,9 +253,9 @@ class KChartWidget extends StatefulWidget {
   const KChartWidget(
     this.candles,
     this.chartColors, {
-    required this.isTrendLine,
-    required this.watermarkAssetPath,
-    required this.timeFrame,
+    this.isTrendLine = false,
+    this.watermark,
+    this.timeFrame,
     this.xFrontPadding = 80,
     this.signals = const <SignalEntity>[],
     this.verticalLines = const <VerticalLine>[],
@@ -593,8 +631,11 @@ class KChartWidget extends StatefulWidget {
   /// between each one.
   final bool selectAfterDrawing;
 
-  /// Duration of one candle, used to place lines and count down the close.
-  final Duration timeFrame;
+  /// Duration of one candle, which the current-price tag counts down to.
+  ///
+  /// Null — the default — draws the current-price line and tag without a
+  /// countdown, since nothing else is known about when the candle closes.
+  final Duration? timeFrame;
 
   /// Draws a filled close-price line instead of candles.
   ///
@@ -801,7 +842,7 @@ class KChartWidget extends StatefulWidget {
   /// Which side the price axis labels sit on.
   final VerticalTextAlignment verticalTextAlignment;
 
-  /// Enables the drawing tools and their edit panel.
+  /// Enables the drawing tools and their edit panel. Off by default.
   final bool isTrendLine;
 
   /// Hides the volume pane.
@@ -876,8 +917,14 @@ class KChartWidget extends StatefulWidget {
   /// Empty space kept to the right of the newest candle.
   final double xFrontPadding;
 
-  /// Asset path of an SVG watermark; a missing asset is ignored.
-  final String watermarkAssetPath;
+  /// A watermark drawn faintly over the candle area — an `Image.asset`, an
+  /// icon, a line of text, any widget.
+  ///
+  /// It is painted in one colour, [ChartColors.effectiveWatermarkColor], so a
+  /// full-colour logo reads as a quiet silhouette; `ChartStyle.watermarkScale`
+  /// sets its width and `ChartStyle.watermarkAlignment` where it sits. It takes
+  /// no touches. Null — the default — draws none.
+  final Widget? watermark;
 
   /// Narrowest the long-press info dialog may be.
   final double infoDialogWidth;
@@ -946,7 +993,7 @@ class _KChartWidgetState extends State<KChartWidget>
   List<ChartLine> get _selection {
     final controller = widget.drawingController;
     if (controller != null) return controller.selection;
-    return [..._localAlsoSelected, ?_localSelection];
+    return [..._localAlsoSelected, if (_localSelection case final v?) v];
   }
 
   /// Adds [line] to the selection, or takes it out if it is already in.
@@ -1050,7 +1097,6 @@ class _KChartWidgetState extends State<KChartWidget>
   Animation<double>? aniX;
   Timer? _countdownTimer;
 
-  PictureInfo? _watermarkPicture;
   late Offset _toolbarOffset;
 
   /// The height of each indicator pane, once the user has dragged one.
@@ -1116,7 +1162,6 @@ class _KChartWidgetState extends State<KChartWidget>
   void initState() {
     super.initState();
     _toolbarOffset = widget.drawingStyle.toolbarInitialOffset;
-    _loadWatermark();
     _syncCountdownTimer();
     _resolveIndicators();
     widget.drawingController?.addListener(_onDrawingsChanged);
@@ -1558,7 +1603,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Runs the one-second repaint only while the now-price countdown is shown.
   void _syncCountdownTimer() {
-    if (widget.showNowPrice) {
+    if (widget.showNowPrice && widget.timeFrame != null) {
       _countdownTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
       });
@@ -1568,26 +1613,11 @@ class _KChartWidgetState extends State<KChartWidget>
     }
   }
 
-  Future<void> _loadWatermark() async {
-    try {
-      final info = await vg.loadPicture(
-        SvgAssetLoader(widget.watermarkAssetPath),
-        null,
-      );
-      if (mounted) setState(() => _watermarkPicture = info);
-    } catch (_) {
-      // A missing or malformed watermark asset simply leaves the chart
-      // unwatermarked; it must never break the chart itself.
-    }
-  }
-
   @override
   void didUpdateWidget(covariant KChartWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.watermarkAssetPath != widget.watermarkAssetPath) {
-      _loadWatermark();
-    }
-    if (oldWidget.showNowPrice != widget.showNowPrice) {
+    if (oldWidget.showNowPrice != widget.showNowPrice ||
+        (oldWidget.timeFrame == null) != (widget.timeFrame == null)) {
       _syncCountdownTimer();
     }
     if (oldWidget.controller != widget.controller) {
@@ -2141,7 +2171,6 @@ class _KChartWidgetState extends State<KChartWidget>
           verticalTextAlignment: widget.verticalTextAlignment,
           dateFormatter: widget.dateFormatter,
           priceFormatter: widget.priceFormatter,
-          watermarkPicture: _watermarkPicture,
           draftLine: _draft,
           selectedLine: _selected,
           selectedLines: _selection,
@@ -2427,6 +2456,25 @@ class _KChartWidgetState extends State<KChartWidget>
                                 painter: painter,
                               ),
                             ),
+                            if (widget.watermark case final watermark?)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: RepaintBoundary(
+                                    child: CustomSingleChildLayout(
+                                      delegate: _WatermarkLayout(painter),
+                                      child: ColorFiltered(
+                                        colorFilter: ColorFilter.mode(
+                                          widget
+                                              .chartColors
+                                              .effectiveWatermarkColor,
+                                          BlendMode.srcIn,
+                                        ),
+                                        child: watermark,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             RepaintBoundary(
                               child: CustomPaint(
                                 size: Size.fromHeight(

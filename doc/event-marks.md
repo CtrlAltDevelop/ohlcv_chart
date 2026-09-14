@@ -9,8 +9,6 @@ the price it happened at:
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(days: 1),
   events: [
     ChartEvent(time: reportedAt, kind: ChartEventKind.earnings),

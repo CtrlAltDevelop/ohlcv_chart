@@ -9,8 +9,6 @@ final chart = KChartController();
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   controller: chart,
 );
@@ -62,8 +60,6 @@ candle says nothing:
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   onVisibleRangeChanged: (range) {
     setState(() => barsOnScreen = range.length);
@@ -86,8 +82,6 @@ chart's own gestures away.
 KChartWidget(
   sessionCandles,
   ChartColors(),
-  isTrendLine: false,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 5),
   chartType: ChartType.area,
   scrollEnabled: false,
@@ -258,7 +252,6 @@ Column(
       child: KChartWidget(
         candles,
         ChartColors(),
-        isTrendLine: false,
         timeFrame: const Duration(minutes: 15),
         controller: chart,
       ),

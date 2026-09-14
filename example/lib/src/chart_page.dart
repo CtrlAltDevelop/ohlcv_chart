@@ -87,7 +87,9 @@ class _Chart extends StatelessWidget {
       // Drawing tools stay enabled so a line can be selected and restyled at
       // any time; `tool` decides what the next tap or drag places.
       isTrendLine: true,
-      watermarkAssetPath: 'assets/watermark.svg',
+      watermark: const FittedBox(
+        child: Text('OHLCV', style: TextStyle(fontWeight: FontWeight.w900)),
+      ),
       timeFrame: MarketData.timeFrame,
       chartStyle: state.style,
       lockPriceScale: state.lockPriceScale,

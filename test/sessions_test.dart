@@ -46,7 +46,6 @@ Widget _chart(
         data,
         colors ?? ChartColors(),
         isTrendLine: false,
-        watermarkAssetPath: 'assets/none.svg',
         timeFrame: const Duration(minutes: 30),
         showNowPrice: false,
         chartType: type,
@@ -267,7 +266,7 @@ void main() {
 
     testWidgets('returning null leaves the usual colour', (tester) async {
       await tester.pumpWidget(
-        _chart(_halfHourly(_on(1, 0), 48), candleColor: (_, _) => null),
+        _chart(_halfHourly(_on(1, 0), 48), candleColor: (_, __) => null),
       );
       await tester.pumpAndSettle();
 
@@ -333,7 +332,6 @@ void main() {
                 data,
                 ChartColors(),
                 isTrendLine: false,
-                watermarkAssetPath: 'assets/none.svg',
                 timeFrame: const Duration(minutes: 30),
                 showNowPrice: false,
                 invertPriceAxis: true,

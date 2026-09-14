@@ -19,7 +19,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: true,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   currentDrawingTool: DrawingTool.trend,
   trendLines: savedTrendLines,
@@ -256,7 +255,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: true,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   drawingController: drawings,
 );
@@ -385,7 +383,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: true,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   contextMenuBuilder: (request) => [
     ...request.defaults,
@@ -434,7 +431,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: true,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   drawings: [HorizontalLine(price: 42_000, alert: true)],
   onAlertCrossed: (line, candle) => notifier.push('crossed ${line.price}'),
@@ -455,7 +451,6 @@ KChartWidget(
   candles,
   ChartColors(),
   isTrendLine: true,
-  watermarkAssetPath: 'assets/logo.svg',
   timeFrame: const Duration(minutes: 15),
   drawings: [
     TrendLine(

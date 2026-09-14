@@ -76,7 +76,10 @@ class FibRetracement extends TwoPointDrawing implements AlertingDrawing {
     // used: what matters is where price goes after the move, not during it.
     final from = time1.isBefore(time2!) ? time1 : time2!;
     if (time.isBefore(from)) return const [];
-    return [for (final ratio in levels) ?priceAt(ratio)];
+    return [
+      for (final ratio in levels)
+        if (priceAt(ratio) case final v?) v,
+    ];
   }
 
   /// The price at [ratio] of the way from the first anchor to the second.

@@ -32,7 +32,6 @@ Widget _chart({
         data ?? _trend(),
         ChartColors(),
         isTrendLine: false,
-        watermarkAssetPath: 'assets/none.svg',
         timeFrame: const Duration(minutes: 15),
         showNowPrice: false,
         lockPriceScale: lock,

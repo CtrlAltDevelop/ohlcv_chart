@@ -40,7 +40,6 @@ const List<double> kDefaultDrawingThicknesses = <double>[
 ///   candles,
 ///   ChartColors(),
 ///   isTrendLine: true,
-///   watermarkAssetPath: 'assets/logo.svg',
 ///   timeFrame: const Duration(minutes: 15),
 ///   drawingStyle: const DrawingStyle(
 ///     colorOptions: [Colors.tealAccent, Colors.orangeAccent],

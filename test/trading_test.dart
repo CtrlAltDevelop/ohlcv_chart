@@ -30,7 +30,6 @@ Widget _chart(
         data,
         ChartColors(),
         isTrendLine: false,
-        watermarkAssetPath: 'assets/none.svg',
         timeFrame: const Duration(minutes: 1),
         showNowPrice: false,
         chartStyle: style ?? ChartStyle(),
@@ -338,7 +337,7 @@ void main() {
       final order = ChartOrder(id: '1', price: price, side: TradeSide.buy);
 
       await tester.pumpWidget(
-        _chart(_candles(), orders: [order], onOrderMoved: (_, _) {}),
+        _chart(_candles(), orders: [order], onOrderMoved: (_, __) {}),
       );
       await tester.pumpAndSettle();
 
@@ -364,7 +363,7 @@ void main() {
               draggable: false,
             ),
           ],
-          onOrderMoved: (_, _) {},
+          onOrderMoved: (_, __) {},
         ),
       );
       await tester.pumpAndSettle();
@@ -384,7 +383,7 @@ void main() {
         _chart(
           _candles(),
           orders: [far, near],
-          onOrderMoved: (_, _) {},
+          onOrderMoved: (_, __) {},
           style: ChartStyle(trading: const TradingStyle(grabTolerance: 200)),
         ),
       );

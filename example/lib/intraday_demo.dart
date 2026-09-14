@@ -71,7 +71,6 @@ class _IntradayDemoState extends State<IntradayDemo> {
                   _session,
                   ChartColors(),
                   isTrendLine: false,
-                  watermarkAssetPath: 'assets/none.svg',
                   timeFrame: const Duration(minutes: 5),
                   chartType: ChartType.area,
 

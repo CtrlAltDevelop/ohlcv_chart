@@ -26,7 +26,6 @@ Widget _chart(
         data,
         ChartColors(),
         isTrendLine: false,
-        watermarkAssetPath: 'assets/none.svg',
         timeFrame: const Duration(minutes: 1),
         showNowPrice: false,
         indicators: indicators,
@@ -432,7 +431,7 @@ void main() {
           List<double?>.filled(30, value),
           alerts: const [IndicatorAlert(level: 50)],
         ),
-      ], onIndicatorAlert: (_, _, _, v) => reports.add(v));
+      ], onIndicatorAlert: (_, __, ___, v) => reports.add(v));
 
       await tester.pumpWidget(chart(10));
       await tester.pumpAndSettle();
@@ -453,7 +452,7 @@ void main() {
           List<double?>.filled(30, value),
           alerts: const [IndicatorAlert(level: 50)],
         ),
-      ], onIndicatorAlert: (_, _, _, v) => reports.add(v));
+      ], onIndicatorAlert: (_, __, ___, v) => reports.add(v));
 
       await tester.pumpWidget(chart(10));
       await tester.pumpAndSettle();
@@ -471,7 +470,7 @@ void main() {
             List<double?>.filled(30, null),
             alerts: const [IndicatorAlert(level: 50)],
           ),
-        ], onIndicatorAlert: (_, _, _, v) => reports.add(v)),
+        ], onIndicatorAlert: (_, __, ___, v) => reports.add(v)),
       );
       await tester.pumpAndSettle();
 
