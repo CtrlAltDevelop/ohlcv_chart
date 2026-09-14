@@ -8,6 +8,8 @@ One package can draw both kinds of chart an app usually needs.
 The tables below map each API onto its replacement, and the worked examples
 show the patterns apps build most often.
 
+![A return split at zero, profit bars, deposits and withdrawals with a tooltip, and a balance sparkline — all SeriesChart](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-charts.png)
+
 ## From fl_chart
 
 ### Data
@@ -38,6 +40,10 @@ show the patterns apps build most often.
 | `belowBarData` + `aboveBarData` cut off at `cutOffY: 0` | `fill: SeriesFill(gradient: ...)` with `baseline: 0`; the lower half mirrors itself |
 | a stroke gradient split at zero | `negativeColor` |
 | `showingIndicators` | `SeriesChartController.show(x)` |
+| `isStepLineChart` + `lineChartStepData.stepDirection` | `curve: LineCurve.step` + `stepPosition` |
+| `shadow` | `shadow` |
+| `betweenBarsData: BetweenBarsData(fromIndex, toIndex)` | `betweenFills: [SeriesBetweenFill(from:, to:)]` |
+| `errorIndicatorData` + `FlErrorRange` | `SeriesPoint(x, y, yError: SeriesErrorRange(...))` + `errorBars` |
 
 ### Bars
 
@@ -50,6 +56,10 @@ show the patterns apps build most often.
 | `borderRadius` rounded away from zero | `radius` — always on the end away from the baseline |
 | `backDrawRodData` | `trackColor` |
 | `gradient` | `gradient` |
+| `fromY` per rod, for a floating bar | `SeriesPoint(x, y, low: ...)` |
+| `BarChartRodStackItem` | one `BarSeries` per layer, sharing a `stack` |
+| `borderSide` | `border` |
+| `showingTooltipIndicators` on a rod | `labelBuilder` for a permanent label |
 
 ### The chart around the series
 
@@ -71,6 +81,23 @@ show the patterns apps build most often.
 | `rangeAnnotations` | `bands: [SeriesBand.horizontal(...)]` / `SeriesBand.vertical(...)` |
 | `clipData: FlClipData.all()` | the default, `clipToPlot: true` |
 | `duration`, `curve` | `animationDuration`, `animationCurve`; the first build animates too |
+| `rotationQuarterTurns: 1` on a bar chart | `orientation: SeriesOrientation.horizontal` |
+| `axisNameWidget: AxisTitle(...)` | `xAxis: SeriesXAxis(title: ...)`, `yAxis: SeriesYAxis(title: ...)` |
+| `topTitles` | `xAxis: SeriesXAxis(side: SeriesXSide.top)` |
+
+### The other chart types
+
+| fl_chart | ohlcv_chart |
+| --- | --- |
+| `ScatterChart(scatterSpots: [ScatterSpot(x, y, dotPainter: ...)])` | `SeriesChart(series: [ScatterSeries(points: ...)])` with `SeriesTouchSnap.nearestPoint` |
+| `FlDotCirclePainter`, `FlDotSquarePainter`, `FlDotCrossPainter` | `SeriesDot(shape: SeriesDotShape.circle / square / diamond / cross)` |
+| `PieChart(PieChartData(sections: [PieChartSectionData(value, title, radius)]))` | [`PieChart(sections: [PieSection(value:, label:, radius:)])`](pie-chart.md) |
+| `centerSpaceRadius`, `centerSpaceColor` | the same names; `centerChild` also puts a widget in the hole |
+| `PieChartSectionData.badgeWidget`, `badgePositionPercentageOffset` | `PieSection.badge`, `badgePosition` |
+| `RadarChart(RadarChartData(dataSets: [RadarDataSet(dataEntries: ...)]))` | [`RadarChart(series: [RadarSeries(values: ...)])`](radar-chart.md) |
+| `getTitle` per feature | `features: ['Speed', ...]` |
+| `radarShape: RadarShape.circle` | `shape: RadarShape.circle` |
+| `tickCount`, `ticksTextStyle` | `tickCount`, `tickStyle` with `showTicks` |
 
 ### Touch
 
@@ -135,6 +162,8 @@ SizedBox(
 
 ### A multi-series chart over a window of long data
 
+![Three series over a window of five months, a day read out, and the range selector that moves the window](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-window.png)
+
 This replaces a `LineChart`, a separate y-axis `LineChart`, a long-press
 overlay and a range selector built from a third `LineChart`, all with one
 chart and one strip.
@@ -186,6 +215,8 @@ Column(
 ```
 
 ### Two panels with one crosshair
+
+![A balance panel over a profit panel, one crosshair marking the same day in both](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-panels.png)
 
 A balance line with its average dashed over it, and profit bars underneath.
 Holding either panel marks the same row in both.

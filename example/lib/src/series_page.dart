@@ -58,11 +58,25 @@ class _SeriesPageState extends State<SeriesPage> {
   ];
 
   static List<double> _walk(double base, double swing, double phase) => [
-    for (var i = 0; i < _days; i++)
-      base +
-          math.sin(i / 9 + phase) * base * swing +
-          math.cos(i / 2.5 + phase) * base * swing * 0.3,
+        for (var i = 0; i < _days; i++)
+          base +
+              math.sin(i / 9 + phase) * base * swing +
+              math.cos(i / 2.5 + phase) * base * swing * 0.3,
+      ];
+
+  /// What each asset is worth, for the pie.
+  static const _holdings = [42.0, 26.0, 18.0, 14.0];
+  static const _holdingNames = ['BTC', 'ETH', 'SOL', 'Cash'];
+
+  /// Two strategies scored over the same five measures, for the radar.
+  static const _scores = [
+    [4.4, 3.1, 4.8, 2.2, 3.6],
+    [3.0, 4.7, 2.4, 4.1, 4.4],
   ];
+  static const _measures = ['Return', 'Sharpe', 'Win rate', 'Cost', 'Drawdown'];
+
+  int? _slice;
+  String? _corner;
 
   static String _usd(double v) =>
       '\$${v.abs() >= 1000 ? '${(v / 1000).toStringAsFixed(1)}k' : v.toStringAsFixed(0)}';
@@ -112,8 +126,8 @@ class _SeriesPageState extends State<SeriesPage> {
                       dotBuilder: _sparkIndex == null
                           ? null
                           : (i, _) => i == _sparkIndex
-                                ? const SeriesDot(radius: 3)
-                                : null,
+                              ? const SeriesDot(radius: 3)
+                              : null,
                     ),
                   ],
                   xAxis: SeriesXAxis.hidden,
@@ -307,6 +321,145 @@ class _SeriesPageState extends State<SeriesPage> {
                 ),
               ),
             ]),
+            _card(context, paper, grid, 'Flows per month, stacked and turned', [
+              SizedBox(
+                height: 200,
+                child: SeriesChart(
+                  orientation: SeriesOrientation.horizontal,
+                  series: [
+                    BarSeries.values(
+                      const [3.2, 4.1, 2.6, 5.4, 4.8, 6.1],
+                      color: _green,
+                      stack: 'flow',
+                      label: 'In',
+                    ),
+                    BarSeries.values(
+                      const [1.4, 2.2, 3.1, 1.8, 2.6, 2.1],
+                      color: _red,
+                      stack: 'flow',
+                      radius: 3,
+                      label: 'Out',
+                    ),
+                  ],
+                  xAxis: SeriesXAxis(
+                    labels: _months.take(6).toList(),
+                    title: 'Month',
+                  ),
+                  yAxis: SeriesYAxis(
+                    formatter: (v) => '${v.toStringAsFixed(0)}k',
+                    title: 'Flow',
+                  ),
+                  grid: SeriesGrid(color: grid, dashPattern: const [4, 4]),
+                  animationDuration: const Duration(milliseconds: 400),
+                ),
+              ),
+            ]),
+            _card(context, paper, grid, 'Trades: size against return', [
+              SizedBox(
+                height: 220,
+                child: SeriesChart(
+                  series: [
+                    ScatterSeries(
+                      points: [
+                        for (var i = 0; i < 40; i++)
+                          SeriesPoint(
+                            1 + (i * 7 % 23).toDouble(),
+                            math.sin(i / 3) * 8 + math.cos(i / 1.7) * 4,
+                          ),
+                      ],
+                      dotBuilder: (index, point) => SeriesDot(
+                        radius: 3 + (point.x / 12),
+                        shape: point.y! < 0
+                            ? SeriesDotShape.cross
+                            : SeriesDotShape.circle,
+                        color: point.y! < 0 ? _red : _green,
+                      ),
+                    ),
+                  ],
+                  xAxis: SeriesXAxis(
+                    tickCount: 5,
+                    title: 'Size',
+                    labelBuilder: (v) => v.toStringAsFixed(0),
+                  ),
+                  yAxis: SeriesYAxis(
+                    title: 'Return',
+                    formatter: (v) => '${v.toStringAsFixed(0)}%',
+                  ),
+                  grid: SeriesGrid(color: grid),
+                  referenceLines: [
+                    SeriesReferenceLine.horizontal(0, color: grid, width: 1),
+                  ],
+                  touch: const SeriesTouch(
+                    snap: SeriesTouchSnap.nearestPoint,
+                    tooltip: SeriesTooltip(),
+                  ),
+                ),
+              ),
+            ]),
+            _card(context, paper, grid, 'Holdings — hover a slice', [
+              SizedBox(
+                height: 220,
+                child: PieChart(
+                  sections: [
+                    for (var i = 0; i < _holdings.length; i++)
+                      PieSection(
+                        value: _holdings[i],
+                        color: [_purple, _blue, _amber, _green][i],
+                        label: '${_holdings[i].toStringAsFixed(0)}%',
+                        offset: i == _slice ? 6 : 0,
+                      ),
+                  ],
+                  centerSpaceRadius: 46,
+                  centerSpaceColor: paper,
+                  centerChild: Text(
+                    _slice == null ? 'Holdings' : _holdingNames[_slice!],
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  sectionsSpace: 2,
+                  onTouch: (d) => setState(() => _slice = d?.index),
+                  animationDuration: const Duration(milliseconds: 600),
+                ),
+              ),
+            ]),
+            _card(
+              context,
+              paper,
+              grid,
+              _corner == null ? 'Two strategies scored' : 'Scored: $_corner',
+              [
+                SizedBox(
+                  height: 260,
+                  child: RadarChart(
+                    features: _measures,
+                    series: [
+                      RadarSeries(
+                        values: _scores[0],
+                        color: _blue,
+                        label: 'Momentum',
+                        dot: const SeriesDot(radius: 2.5),
+                      ),
+                      RadarSeries(
+                        values: _scores[1],
+                        color: _amber,
+                        label: 'Mean reversion',
+                        dot: const SeriesDot(radius: 2.5),
+                      ),
+                    ],
+                    maxValue: 5,
+                    gridColor: grid,
+                    spokeColor: grid,
+                    showTicks: true,
+                    onTouch: (d) => setState(
+                      () => _corner = d == null
+                          ? null
+                          : '${_measures[d.featureIndex]} '
+                              '${d.value.toStringAsFixed(1)}',
+                    ),
+                    animationDuration: const Duration(milliseconds: 600),
+                  ),
+                ),
+              ],
+            ),
           ],
         );
       },
@@ -325,21 +478,22 @@ class _SeriesPageState extends State<SeriesPage> {
     Color border,
     String title,
     List<Widget> children,
-  ) => Container(
-    margin: const EdgeInsets.only(bottom: 16),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: paper,
-      border: Border.all(color: border),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 12),
-        ...children,
-      ],
-    ),
-  );
+  ) =>
+      Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: paper,
+          border: Border.all(color: border),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 12),
+            ...children,
+          ],
+        ),
+      );
 }

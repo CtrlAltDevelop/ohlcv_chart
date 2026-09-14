@@ -9,7 +9,6 @@ down the stack by dragging its legend row:
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   indicators: [MacdIndicator(), RsiIndicator()],
   resizablePanes: true,

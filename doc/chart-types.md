@@ -6,7 +6,6 @@
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   chartType: ChartType.bars,       // candles, bars, line, area, baseline
   baselinePrice: 42_000,           // baseline only; defaults to the oldest close in view

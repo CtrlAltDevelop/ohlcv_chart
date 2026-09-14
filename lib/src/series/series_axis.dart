@@ -7,7 +7,23 @@ const Color seriesAxisTextColor = Color(0xFF909196);
 /// The grid colour when none is given.
 const Color seriesGridColor = Color(0x33909196);
 
+/// The style axis labels start from, before an axis's own style.
+const TextStyle seriesAxisLabelStyle = TextStyle(
+  fontSize: 10,
+  color: seriesAxisTextColor,
+);
+
+/// The style axis titles start from, before an axis's own title style.
+const TextStyle seriesAxisTitleStyle = TextStyle(
+  fontSize: 11,
+  color: seriesAxisTextColor,
+  fontWeight: FontWeight.w600,
+);
+
 /// Which side of the plot the value axis sits on.
+///
+/// In a horizontal chart, where the value axis runs across the plot, `left`
+/// puts it along the bottom and `right` along the top.
 enum SeriesAxisSide {
   /// Labels to the left of the plot, right-aligned against it.
   left,
@@ -16,22 +32,35 @@ enum SeriesAxisSide {
   right,
 }
 
+/// Which side of the plot the x axis sits on.
+///
+/// In a horizontal chart, where the x axis runs down the plot, `bottom` puts
+/// it on the left and `top` on the right.
+enum SeriesXSide {
+  /// Labels under the plot.
+  bottom,
+
+  /// Labels over the plot.
+  top,
+}
+
 /// Writes the label for one position on an axis; null or empty prints none.
 typedef SeriesLabelBuilder = String? Function(double value);
 
-/// The horizontal axis of a [SeriesChart].
+/// The x axis of a [SeriesChart].
 ///
-/// Which x values get a label — and a vertical grid line — is decided in this
-/// order: [ticks] if given; otherwise every index whose entry in [labels] is
-/// not empty, thinned to multiples of [interval] when that is set; otherwise
-/// every [interval]; otherwise about [tickCount] round values. Labels that
-/// would overlap the one before are dropped.
+/// Which x values get a label — and a grid line — is decided in this order:
+/// [ticks] if given; otherwise every index whose entry in [labels] is not
+/// empty, thinned to multiples of [interval] when that is set; otherwise every
+/// [interval]; otherwise about [tickCount] round values. Labels that would
+/// overlap the one before are dropped.
 @immutable
 class SeriesXAxis {
-  /// Creates a horizontal axis.
+  /// Creates an x axis.
   const SeriesXAxis({
     this.show = true,
     this.height = 22,
+    this.side = SeriesXSide.bottom,
     this.labels,
     this.labelBuilder,
     this.ticks,
@@ -40,6 +69,8 @@ class SeriesXAxis {
     this.style,
     this.gap = 4,
     this.fitInside = true,
+    this.title,
+    this.titleStyle,
   });
 
   /// No labels and no room held for them.
@@ -48,8 +79,12 @@ class SeriesXAxis {
   /// Whether labels are drawn and room is held for them.
   final bool show;
 
-  /// Room below the plot for the labels.
+  /// Room held for the labels, measured across the axis. A horizontal chart
+  /// holds at least this beside the plot, and more when a label needs it.
   final double height;
+
+  /// Which side of the plot the labels sit on.
+  final SeriesXSide side;
 
   /// A label per index — `labels[i]` names `x = i`. An empty string prints
   /// nothing, so a list that only names month starts spaces itself.
@@ -76,6 +111,12 @@ class SeriesXAxis {
   /// Slides the first and last labels inward so they are not cut off.
   final bool fitInside;
 
+  /// A name for the whole axis, written beyond its labels.
+  final String? title;
+
+  /// Style of [title].
+  final TextStyle? titleStyle;
+
   /// The label for [x], or null when there is none.
   ///
   /// [step] is the distance between two labels, which decides how many
@@ -95,10 +136,10 @@ class SeriesXAxis {
   }
 }
 
-/// The vertical axis of a [SeriesChart].
+/// The value axis of a [SeriesChart].
 @immutable
 class SeriesYAxis {
-  /// Creates a vertical axis.
+  /// Creates a value axis.
   const SeriesYAxis({
     this.show = true,
     this.side = SeriesAxisSide.left,
@@ -109,6 +150,8 @@ class SeriesYAxis {
     this.tickCount = 5,
     this.style,
     this.gap = 4,
+    this.title,
+    this.titleStyle,
   });
 
   /// No labels and no room held for them.
@@ -121,7 +164,8 @@ class SeriesYAxis {
   final SeriesAxisSide side;
 
   /// Room beside the plot for the labels. Charts stacked one above another
-  /// line up when they share it.
+  /// line up when they share it. A horizontal chart measures its value labels
+  /// instead.
   final double width;
 
   /// Writes a value as its label; it also writes the default tooltip's values.
@@ -142,6 +186,12 @@ class SeriesYAxis {
   /// Space between the plot and the labels.
   final double gap;
 
+  /// A name for the whole axis, written beyond its labels.
+  final String? title;
+
+  /// Style of [title].
+  final TextStyle? titleStyle;
+
   /// Writes [value], using [formatter] when there is one and otherwise as many
   /// decimals as [step] needs.
   String format(double value, double step) {
@@ -151,6 +201,9 @@ class SeriesYAxis {
 }
 
 /// The lines ruled across the plot at the axis labels.
+///
+/// Named for an upright chart: [horizontal] lines sit at the values and
+/// [vertical] lines at the x labels, whichever way the chart is turned.
 @immutable
 class SeriesGrid {
   /// Creates a grid.
@@ -167,10 +220,10 @@ class SeriesGrid {
   /// No grid lines.
   static const none = SeriesGrid(horizontal: false, vertical: false);
 
-  /// Lines across the plot at the value-axis ticks.
+  /// Lines at the value-axis ticks.
   final bool horizontal;
 
-  /// Lines down the plot at the x-axis ticks.
+  /// Lines at the x-axis ticks.
   final bool vertical;
 
   /// Line colour.
@@ -182,19 +235,20 @@ class SeriesGrid {
   /// Dash and gap lengths, such as `[4, 4]`; null draws solid lines.
   final List<double>? dashPattern;
 
-  /// Colour of the vertical lines; null follows [color].
+  /// Colour of the lines at the x ticks; null follows [color].
   final Color? verticalColor;
 
-  /// Dashes of the vertical lines; null follows [dashPattern].
+  /// Dashes of the lines at the x ticks; null follows [dashPattern].
   final List<double>? verticalDashPattern;
 }
 
-/// The direction a [SeriesReferenceLine] or [SeriesBand] runs.
+/// Where a [SeriesReferenceLine] or [SeriesBand] is measured, named for an
+/// upright chart.
 enum SeriesDirection {
-  /// Across the plot, at a value.
+  /// At a value — across an upright chart, down a horizontal one.
   horizontal,
 
-  /// Down the plot, at an x.
+  /// At an x — down an upright chart, across a horizontal one.
   vertical,
 }
 
@@ -205,7 +259,7 @@ enum SeriesDirection {
 /// [extendsRange] says so — a far-off target would otherwise flatten the data.
 @immutable
 class SeriesReferenceLine {
-  /// A line across the plot at [value].
+  /// A line at the value [value].
   const SeriesReferenceLine.horizontal(
     this.value, {
     this.color = const Color(0x99909196),
@@ -218,7 +272,7 @@ class SeriesReferenceLine {
     this.extendsRange = false,
   }) : direction = SeriesDirection.horizontal;
 
-  /// A line down the plot at x = [value].
+  /// A line at x = [value].
   const SeriesReferenceLine.vertical(
     this.value, {
     this.color = const Color(0x99909196),
@@ -228,10 +282,10 @@ class SeriesReferenceLine {
     this.labelStyle,
     this.labelAlignment = Alignment.topRight,
     this.aboveSeries = false,
-  }) : direction = SeriesDirection.vertical,
-       extendsRange = false;
+  })  : direction = SeriesDirection.vertical,
+        extendsRange = false;
 
-  /// Which way the line runs.
+  /// What the line is measured at.
   final SeriesDirection direction;
 
   /// The value (horizontal) or x (vertical) it is drawn at.
@@ -252,29 +306,29 @@ class SeriesReferenceLine {
   /// Style of [label].
   final TextStyle? labelStyle;
 
-  /// Where along and beside the line [label] sits: `topRight` puts it above
-  /// the right end of a horizontal line.
+  /// Where along and beside the line [label] sits, as it runs on screen:
+  /// `topRight` puts it above the right end of a line across the plot.
   final Alignment labelAlignment;
 
   /// Whether it is drawn over the series rather than under them.
   final bool aboveSeries;
 
-  /// Whether the value range grows to include a horizontal line.
+  /// Whether the value range grows to include a line at a value.
   final bool extendsRange;
 }
 
 /// A shaded stretch of the plot between two values or two x positions.
 @immutable
 class SeriesBand {
-  /// A band across the plot between the values [from] and [to].
-  const SeriesBand.horizontal(this.from, this.to, {required this.color})
-    : direction = SeriesDirection.horizontal;
+  /// A band between the values [from] and [to].
+  const SeriesBand.horizontal(this.from, this.to, {this.color, this.gradient})
+      : direction = SeriesDirection.horizontal;
 
-  /// A band down the plot between x = [from] and x = [to].
-  const SeriesBand.vertical(this.from, this.to, {required this.color})
-    : direction = SeriesDirection.vertical;
+  /// A band between x = [from] and x = [to].
+  const SeriesBand.vertical(this.from, this.to, {this.color, this.gradient})
+      : direction = SeriesDirection.vertical;
 
-  /// Which way the band runs.
+  /// What the band is measured at.
   final SeriesDirection direction;
 
   /// One edge.
@@ -283,8 +337,11 @@ class SeriesBand {
   /// The other edge.
   final double to;
 
-  /// Fill colour.
-  final Color color;
+  /// Fill colour; ignored when [gradient] is set.
+  final Color? color;
+
+  /// Gradient laid over the band as it is drawn.
+  final Gradient? gradient;
 }
 
 /// Writes [value] with as many decimals as a step of [step] needs to tell its

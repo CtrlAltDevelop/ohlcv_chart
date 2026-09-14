@@ -6,7 +6,7 @@ Run it with:
 flutter run
 ```
 
-A tour of the whole package in two tabs. The market data is generated locally,
+A tour of the whole package in three tabs. The market data is generated locally,
 so the demo needs no network.
 
 ## The Candles tab
@@ -64,6 +64,31 @@ The matching order book, rendered with `DepthChart` and built from raw rungs
 through `DepthEntity.bids` and `DepthEntity.asks`, with chips for its four modes
 — curve, bars, both and the numeric ladder — its linear, log and percent axes,
 and how far either side of the mid to look.
+
+## The Series tab
+
+`SeriesChart` drawing the charts a business app asks for, each in its own card:
+
+- **A sparkline** — 58 pixels high with no axes, a monotone line over a fading
+  fill; press and drag for a tooltip above the point.
+- **Deposits and withdrawals** — two filled series over a 30-day window of 120
+  days, with a long-press tooltip and a `SeriesRangeSelector` underneath to move
+  and resize the window.
+- **Balance and profit** — a balance line with its dashed average over rounded
+  green and red profit bars, the two panels sharing one `SeriesChartController`
+  so holding either marks the same day on both.
+- **ROI** — a line and its fill split green and red exactly at a dashed zero
+  line.
+- **Flows per month** — two bar series stacked on each other, on a chart turned
+  on its side, with both axes named.
+- **Trades** — a scatter plot whose dots take their size, shape and colour from
+  the point, read out one dot at a time.
+- **Holdings** — a `PieChart` doughnut with a total in the hole; hovering a
+  slice pushes it out and names it.
+- **Two strategies scored** — a `RadarChart` over five measures, reporting the
+  corner under the pointer.
+
+All eight follow the palette switch in the app bar.
 
 ## The intraday demo
 

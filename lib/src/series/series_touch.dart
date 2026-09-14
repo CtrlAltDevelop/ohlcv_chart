@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'series_data.dart';
 
-/// The gesture that shows a [SeriesChart]'s crosshair and tooltip.
+/// The gesture that shows a chart's crosshair and tooltip.
 enum SeriesTouchTrigger {
   /// Shown while a finger is down or dragging across the chart, gone when it
   /// lifts — `fl_chart`'s default.
@@ -18,6 +18,17 @@ enum SeriesTouchTrigger {
 
   /// Only a mouse hovering, or the controller, shows it.
   none,
+}
+
+/// What a touch picks out on a [SeriesChart].
+enum SeriesTouchSnap {
+  /// The x nearest the finger, and every series' value there — right for
+  /// lines and bars over a shared x.
+  x,
+
+  /// The single point nearest the finger, within `SeriesTouch.threshold` —
+  /// right for a scatter plot.
+  nearestPoint,
 }
 
 /// Where the tooltip sits relative to the touched point.
@@ -56,9 +67,7 @@ typedef SeriesMarkerBuilder = SeriesDot? Function(SeriesTouchValue value);
 
 /// Builds a tooltip for the touched values; return null to show none.
 typedef SeriesTooltipBuilder = Widget? Function(
-  BuildContext context,
-  SeriesTouchDetails details,
-);
+    BuildContext context, SeriesTouchDetails details);
 
 /// The card that names the touched values.
 @immutable
@@ -133,6 +142,8 @@ class SeriesTouch {
   const SeriesTouch({
     this.trigger = SeriesTouchTrigger.press,
     this.hover = true,
+    this.snap = SeriesTouchSnap.x,
+    this.threshold = 24,
     this.line = const SeriesCrosshairLine(),
     this.horizontalLine,
     this.showMarkers = true,
@@ -146,10 +157,18 @@ class SeriesTouch {
   /// Whether a hovering mouse shows it too.
   final bool hover;
 
-  /// The vertical line through the touched x; null draws none.
+  /// Whether a touch picks an x or a single point.
+  final SeriesTouchSnap snap;
+
+  /// How close, in logical pixels, a point has to be for
+  /// [SeriesTouchSnap.nearestPoint] to pick it.
+  final double threshold;
+
+  /// The line through the touched x, across the values; null draws none.
   final SeriesCrosshairLine? line;
 
-  /// A horizontal line through the first touched value; null draws none.
+  /// A line through the first touched value, across the x axis; null draws
+  /// none.
   final SeriesCrosshairLine? horizontalLine;
 
   /// Whether each touched value gets a marker.
@@ -188,7 +207,8 @@ class SeriesTouchValue {
   /// The point.
   final SeriesPoint point;
 
-  /// The point on the chart, in the chart's local pixels.
+  /// The point on the chart, in the chart's local pixels — the far end of a
+  /// bar.
   final Offset position;
 
   /// The series colour at this value.
@@ -212,12 +232,14 @@ class SeriesTouchDetails {
   /// The touched x, snapped to the nearest point.
   final double x;
 
-  /// Every series with a value at [x], in series order. Series with
+  /// Every series with a value at [x], in series order — or, for
+  /// [SeriesTouchSnap.nearestPoint], the one point touched. Series with
   /// `showInTooltip` off and series with a gap here are left out.
   final List<SeriesTouchValue> values;
 
-  /// The crosshair on the chart: its x, and the height of the highest touched
-  /// value (or the top of the plot when nothing has a value).
+  /// Where the tooltip is anchored: on an upright chart the crosshair's x at
+  /// the height of the highest touched value; on a horizontal one the
+  /// crosshair's y beside the furthest value.
   final Offset position;
 
   /// The plot area, in the chart's local pixels.
@@ -241,14 +263,27 @@ class SeriesTouchDetails {
 /// on both — a price panel and a volume panel under it, say.
 class SeriesChartController extends ChangeNotifier {
   double? _x;
+  int? _seriesIndex;
+  int? _pointIndex;
 
   /// The x under the crosshair, or null when it is hidden.
   double? get x => _x;
 
-  /// Shows the crosshair at [x].
-  void show(double x) {
-    if (_x == x) return;
+  /// The series of the single point shown, when one was named.
+  int? get seriesIndex => _seriesIndex;
+
+  /// The index of the single point shown, when one was named.
+  int? get pointIndex => _pointIndex;
+
+  /// Shows the crosshair at [x] — or, given [seriesIndex] and [pointIndex],
+  /// on that one point.
+  void show(double x, {int? seriesIndex, int? pointIndex}) {
+    if (_x == x && _seriesIndex == seriesIndex && _pointIndex == pointIndex) {
+      return;
+    }
     _x = x;
+    _seriesIndex = seriesIndex;
+    _pointIndex = pointIndex;
     notifyListeners();
   }
 
@@ -256,6 +291,8 @@ class SeriesChartController extends ChangeNotifier {
   void clear() {
     if (_x == null) return;
     _x = null;
+    _seriesIndex = null;
+    _pointIndex = null;
     notifyListeners();
   }
 }

@@ -4,7 +4,6 @@
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(days: 1),
   priceAxisScale: PriceAxisScale.logarithmic,
 );
@@ -44,7 +43,6 @@ a denser axis and lower it for a sparser one.
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(days: 1),
   chartStyle: const ChartStyle(gridRows: 12),
 );
@@ -114,7 +112,6 @@ Drawings keep their own labels, which are yours to set through each one's
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(days: 1),
   invertPriceAxis: true,     // higher prices lower down
   showAverageClose: true,    // a level at the mean close over the window
@@ -240,7 +237,6 @@ the labels hands the axis back to the chart.
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(days: 1),
   controller: chart,
   priceScaleDrag: true,

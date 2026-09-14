@@ -8,7 +8,6 @@ the candles; everything else takes a pane of its own, stacked in the order given
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   indicators: [
     MaIndicator(period: 7),
@@ -126,7 +125,6 @@ intraday chart reads what has been paid on average *today*.
 KChartWidget(
   data,
   ChartColors(),
-  isTrendLine: false,
   indicators: [
     SessionVwapIndicator(),                              // resets daily, ±1σ
     SessionVwapIndicator(session: PivotSession.week),    // resets on the Monday
@@ -155,7 +153,6 @@ re-measures as the window moves:
 KChartWidget(
   data,
   ChartColors(),
-  isTrendLine: false,
   indicators: [AnchoredVwapIndicator(anchor: firstVisible)],
   onVisibleRangeChanged: (range) =>
       setState(() => firstVisible = range.firstIndex),
@@ -231,7 +228,6 @@ drawn at, so a daily moving average can be read on a fifteen-minute chart:
 KChartWidget(
   candles,
   ChartColors(),
-  isTrendLine: false,
   timeFrame: const Duration(minutes: 15),
   indicators: [
     MaIndicator(period: 20),
