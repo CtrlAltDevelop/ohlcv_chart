@@ -121,6 +121,13 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`SparklineGrid`** — small multiples: a name, a little line and a number
+  per tile, laid out in columns, every tile scaled to its own series unless
+  told to share one, with breaks where values are missing, a dot at each
+  line's end, an optional baseline at its first value, per-sample touch,
+  tooltips and a draw-in animation. `SparklineTile`, `SparklineGridLayout`,
+  `SparklineTileLayout` and `layOutSparklineGrid` are public. See
+  [Sparkline grid](doc/sparkline-grid.md).
 - **`ParallelChart`** — many things compared on many measures at once: an axis
   per measure with its own scale, invertible so the best is always highest,
   broken lines where a value is missing, the held line drawn over the rest,

@@ -62,6 +62,8 @@ For installation and an overview of features, see the
   equity paths as percentile bands, with the odds of loss and ruin.
 - **[Seasonality](seasonality-chart.md)** — `SeasonalityChart`: results by month
   and year, or weekday and hour, with totals and averages.
+- **[Sparkline grid](sparkline-grid.md)** — `SparklineGrid`: small multiples
+  for a watchlist, a name and a shape each.
 - **[Parallel coordinates](parallel-chart.md)** — `ParallelChart`: many things
   compared on many measures, an axis each.
 - **[Chord](chord-chart.md)** — `ChordChart`: flow between nodes both ways
