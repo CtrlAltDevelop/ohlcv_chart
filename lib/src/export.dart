@@ -77,6 +77,7 @@ export './heatmap/seasonality_chart.dart';
 export './bullet/bullet_chart.dart';
 export './dumbbell/dumbbell_chart.dart';
 export './slope/slope_chart.dart';
+export './stream/stream_chart.dart';
 export './violin/violin_chart.dart';
 export './waffle/waffle_chart.dart';
 export './pairs/pair_spread_chart.dart';

@@ -62,6 +62,8 @@ For installation and an overview of features, see the
   equity paths as percentile bands, with the odds of loss and ruin.
 - **[Seasonality](seasonality-chart.md)** — `SeasonalityChart`: results by month
   and year, or weekday and hour, with totals and averages.
+- **[Stream graph](stream-chart.md)** — `StreamChart`: how a whole was made up
+  over time, on a wiggle baseline.
 - **[Violin and ridgeline](violin-chart.md)** — `ViolinChart`: the shape of a
   distribution, side by side or stacked as a ridgeline.
 - **[Slope and bump](slope-chart.md)** — `SlopeChart`: how things moved between

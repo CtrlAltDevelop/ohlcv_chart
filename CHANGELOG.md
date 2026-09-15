@@ -121,6 +121,14 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`StreamChart`** — a stack that flows: bands stacked on a wiggle,
+  silhouette or zero baseline, ordered inside-out so the busiest bands sit
+  where the stack moves least, with eased edges, names written in each band's
+  thickest period, a period crosshair, fading, tooltips and a draw-in
+  animation. `stackStream` works out the baseline the Byron and Wattenberg
+  way; `StreamSeries`, `StreamBaseline`, `StreamOrder`, `StreamStack`,
+  `StreamLayout`, `StreamSeriesLayout` and `layOutStream` are public. See
+  [Stream graph](doc/stream-chart.md).
 - **`ViolinChart`** — the shape of a distribution rather than only its
   quartiles, as violins side by side or as an overlapping ridgeline, every
   shape measured against the tallest peak so their areas compare, with the
