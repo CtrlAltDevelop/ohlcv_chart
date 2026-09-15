@@ -96,6 +96,13 @@
   connectors, values over the bars, touch, tooltips and grow-in animation.
   `WaterfallStep`, `waterfallTotals`, `waterfallRange`, `layOutWaterfall` and
   `waterfallBarAt` are public. See [Waterfall](doc/waterfall-chart.md).
+- **`TradeTimelineChart`** — when an account was in the market: each trade a bar
+  from entry to exit in a lane per symbol, overlapping trades packed into rows,
+  coloured and shaded by result, long or short arrows, open trades running to
+  now, an open-trade count strip, a crosshair, tooltips and animation.
+  `TimelineTrade`, `tradeTimelineRange`, `packTradeRows`,
+  `tradeTimelineExposure` and `layOutTradeTimeline` are public. See
+  [Trade timeline](doc/trade-timeline-chart.md).
 
 ### Fixed
 

@@ -54,6 +54,8 @@ For installation and an overview of features, see the
   liquidity over time, walls as bright lines.
 - **[Cumulative delta](cumulative-delta-chart.md)** — `CumulativeDeltaChart`:
   buying less selling, with divergences against price marked.
+- **[Trade timeline](trade-timeline-chart.md)** — `TradeTimelineChart`: each
+  trade from entry to exit, a lane per symbol, coloured by result.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
