@@ -121,6 +121,13 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`ParallelChart`** — many things compared on many measures at once: an axis
+  per measure with its own scale, invertible so the best is always highest,
+  broken lines where a value is missing, the held line drawn over the rest,
+  each axis' ends written, tooltips and a draw-in animation. `ParallelAxis`,
+  `ParallelLine`, `ParallelScale`, `parallelScales`, `ParallelLayout`,
+  `ParallelLineLayout` and `layOutParallel` are public. See
+  [Parallel coordinates](doc/parallel-chart.md).
 - **`ChordChart`** — flow between nodes both ways round a ring, cycles drawn
   rather than broken: arcs as long as everything passing through their node,
   pads taken out of the turn before the arcs share it, ribbons bending through

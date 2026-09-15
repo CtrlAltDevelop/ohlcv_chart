@@ -78,6 +78,7 @@ export './bullet/bullet_chart.dart';
 export './dumbbell/dumbbell_chart.dart';
 export './slope/slope_chart.dart';
 export './chord/chord_chart.dart';
+export './parallel/parallel_chart.dart';
 export './marimekko/marimekko_chart.dart';
 export './stream/stream_chart.dart';
 export './violin/violin_chart.dart';
