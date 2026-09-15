@@ -30,6 +30,12 @@
   column-wide touch, tooltips and grow-in animation. `BoxPlotStats`,
   `boxPlotRange`, `layOutBoxPlot` and `boxPlotBoxAt` are public. See
   [Box plot](doc/box-plot-chart.md).
+- **`HistogramChart`** — the shape of a distribution, with `histogramBins`
+  counting raw samples by bin count, bin width or the square-root rule, a
+  separate colour for bins below zero, reference lines, both axes, a grid,
+  column-wide touch, tooltips and grow-up animation. `HistogramBin`,
+  `layOutHistogram` and `histogramBarAt` are public. See
+  [Histogram](doc/histogram-chart.md).
 
 ### Fixed
 

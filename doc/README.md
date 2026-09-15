@@ -32,6 +32,8 @@ For installation and an overview of features, see the
   round a centre, one ring per level.
 - **[Box plot](box-plot-chart.md)** — `BoxPlotChart`: quartiles, whiskers and
   outliers, comparing distributions side by side.
+- **[Histogram](histogram-chart.md)** — `HistogramChart`: how often values fall
+  in each part of their range, with binning done for you.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 

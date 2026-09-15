@@ -79,6 +79,7 @@ export './funnel/funnel_chart.dart';
 export './sankey/sankey_chart.dart';
 export './sunburst/sunburst_chart.dart';
 export './distribution/box_plot_chart.dart';
+export './distribution/histogram_chart.dart';
 export './gauge/gauge_chart.dart';
 export './treemap/treemap_chart.dart';
 export './treemap/treemap_data.dart';
