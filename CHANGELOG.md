@@ -24,6 +24,12 @@
   limit, curved upright labels, a centre widget, touch that picks the deepest
   ring, tooltips and sweep-in animation. `layOutSunburst` and `sunburstArcAt`
   are public. See [Sunburst](doc/sunburst-chart.md).
+- **`BoxPlotChart`** — quartiles, median, whiskers, mean and outliers for
+  several sets of numbers side by side, with `BoxPlotStats.fromSamples` doing
+  the statistics (interpolated quartiles, Tukey whiskers), a value axis, grid,
+  column-wide touch, tooltips and grow-in animation. `BoxPlotStats`,
+  `boxPlotRange`, `layOutBoxPlot` and `boxPlotBoxAt` are public. See
+  [Box plot](doc/box-plot-chart.md).
 
 ### Fixed
 

@@ -30,6 +30,8 @@ For installation and an overview of features, see the
   as thick as the quantity moved.
 - **[Sunburst](sunburst-chart.md)** — `SunburstChart`: a hierarchy as rings
   round a centre, one ring per level.
+- **[Box plot](box-plot-chart.md)** — `BoxPlotChart`: quartiles, whiskers and
+  outliers, comparing distributions side by side.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
