@@ -50,7 +50,8 @@ Bands are drawn `bandWidth` deviations either side of the mean (default `2`).
 ## Signals
 
 `pairSignals(zScores, entry:, exit:)` reads trades off the z-score, one at a
-time:
+time, and returns a `PairSignal` per crossing — the `index` it happened at and
+its `PairSignalKind`:
 
 - **enterShort** — the z-score reaches `entry`: sell `a`, buy `b`.
 - **enterLong** — it reaches `-entry`: buy `a`, sell `b`.

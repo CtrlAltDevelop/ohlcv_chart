@@ -461,7 +461,7 @@ class _WaffleChartState extends State<WaffleChart>
           );
     // Over the first cell the slice holds, so the card points at the run of
     // colour it describes.
-    final cell = layoutCellOf(_layout, index);
+    final cell = _cellOf(_layout, index);
     return Positioned(
       left: cell?.left ?? 0,
       top: math.max(0, (cell?.top ?? 0) - 24),
@@ -471,8 +471,7 @@ class _WaffleChartState extends State<WaffleChart>
 }
 
 /// The first cell [slice] holds in [layout]; null when it holds none.
-@visibleForTesting
-Rect? layoutCellOf(WaffleLayout layout, int slice) {
+Rect? _cellOf(WaffleLayout layout, int slice) {
   for (var i = 0; i < layout.cells.length; i++) {
     if (layout.owners[i] == slice) return layout.cells[i];
   }
