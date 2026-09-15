@@ -121,6 +121,14 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`ViolinChart`** — the shape of a distribution rather than only its
+  quartiles, as violins side by side or as an overlapping ridgeline, every
+  shape measured against the tallest peak so their areas compare, with the
+  box-plot quartiles inside them, a value axis, tooltips and a draw-in
+  animation. `kernelDensity` estimates the shape with a Gaussian kernel and
+  Silverman's bandwidth; `DensityCurve`, `ViolinSeries`, `ViolinShape`,
+  `ViolinLayout`, `ViolinSeriesLayout` and `layOutViolin` are public. See
+  [Violin and ridgeline](doc/violin-chart.md).
 - **`SlopeChart`** — how things moved between periods, as a slope chart on a
   value scale or a bump chart on a rank one, with eased crossings, labels and
   values at both ends of every line, broken lines where a series has no value,
