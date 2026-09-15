@@ -20,6 +20,8 @@ For installation and an overview of features, see the
   polygonal or circular grid.
 - **[Heatmap](heatmap-chart.md)** — `HeatmapChart`: value-coloured grids with
   colour scales, legends and hover readouts.
+- **[Treemap](treemap-chart.md)** — `TreemapChart`: squarified tiles sized by
+  value, nested groups and colour scales for market maps.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 

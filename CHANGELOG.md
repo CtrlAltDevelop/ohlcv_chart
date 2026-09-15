@@ -1,5 +1,12 @@
 ## Unreleased
 
+### Added
+
+- **`TreemapChart`** — tiles sized by value using the squarified layout, with
+  nested groups and headers, colour by `HeatmapScale` or palette, fitted
+  labels, touch, tooltips and grow-in animation. `layOutTreemap` and
+  `treemapTileAt` are public. See [Treemap](doc/treemap-chart.md).
+
 ### Fixed
 
 - **Backspace no longer deletes a selected drawing while typing.** The

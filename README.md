@@ -133,6 +133,8 @@ indicator and drawing tool is included; there is no paid tier.
   with continuous or stepped colour scales, cell and axis labels, a legend and
   a hover readout. Suited to contribution graphs, correlation matrices and
   time-of-day breakdowns.
+- **`TreemapChart`** — squarified tiles sized by value, with nested groups,
+  colour scales for market maps, labels, touch and tooltips.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -300,6 +302,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Pie chart](doc/pie-chart.md) | `PieChart`: sections, doughnut charts, badges and touch |
 | [Radar chart](doc/radar-chart.md) | `RadarChart`: multi-series comparison across features |
 | [Heatmap](doc/heatmap-chart.md) | `HeatmapChart`: value-coloured grids, colour scales and legends |
+| [Treemap](doc/treemap-chart.md) | `TreemapChart`: tiles sized by value, groups and market maps |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |
