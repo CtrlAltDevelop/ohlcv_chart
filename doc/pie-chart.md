@@ -2,9 +2,10 @@
 
 ![A doughnut of holdings with a total in the hole, its biggest slice pulled out and badged](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/pie-radar.png)
 
-`PieChart` draws a ring of sections, each as wide as its share of the whole: a
-pie, a doughnut when the middle is left open, or a single-section gauge. (The
-radar beside it is [its own page](radar-chart.md).)
+`PieChart` renders sections proportional to their share of the total. It
+supports pie charts, doughnut charts (with an open centre) and single-section
+ring gauges. The radar chart in the screenshot is covered in
+[Radar chart](radar-chart.md).
 
 ```dart
 PieChart(
@@ -18,45 +19,45 @@ PieChart(
 );
 ```
 
-The chart fills the box it is given, and is `defaultSize` square in a box that
-sets no size of its own.
+The chart fills its constraints. When unconstrained, it is a square of
+`defaultSize`.
 
 ## Sections
 
-A section's `value` is a share, not an angle. The values are added up and each
-section gets the part of the circle it is worth, so `[40, 35, 25]` and
-`[8, 7, 5]` draw the same pie. A section worth nothing is left out, and a set of
-sections worth nothing at all draws nothing.
+`value` is a relative share, not an angle. Values are summed and each section
+is sized proportionally, so `[40, 35, 25]` and `[8, 7, 5]` produce the same
+chart. Sections with a value of zero are omitted; if all values are zero, nothing
+is drawn.
 
-| Field | What it does |
+| Field | Description |
 | --- | --- |
 | `color` | Fill colour |
-| `gradient` | Fill gradient, measured over the section; it wins over `color` |
-| `label`, `labelStyle` | Written on the section |
-| `labelPosition` | Where the label sits: 0 at the inner edge, 1 at the outer one |
-| `radius` | How far this one section reaches, so it can stand out |
-| `border` | An outline round it |
-| `offset` | How far it is pushed out of the circle — the exploded slice |
-| `badge`, `badgePosition` | A widget pinned to the section |
+| `gradient` | Fill gradient across the section; takes precedence over `color` |
+| `label`, `labelStyle` | Section label and style |
+| `labelPosition` | Label position from `0` (inner edge) to `1` (outer edge) |
+| `radius` | Radius of this section, to make it stand out |
+| `border` | Section outline |
+| `offset` | Distance the section is pushed outwards (exploded slice) |
+| `badge`, `badgePosition` | Widget attached to the section |
 
-## The circle
+## Layout
 
-| Field | What it does |
+| Field | Description |
 | --- | --- |
-| `radius` | How far the sections reach; null fills the box |
-| `centerSpaceRadius` | The hole in the middle; 0 draws a full pie |
-| `centerSpaceColor` | Painted in the hole |
-| `centerChild` | A widget centred in the hole — a total, a title, a button |
-| `sectionsSpace` | The gap between two sections, in pixels round the outer edge |
-| `startDegreeOffset` | Where the first section starts, clockwise from twelve |
-| `clockwise` | Whether the sections go round clockwise |
+| `radius` | Outer radius; `null` fills the available space |
+| `centerSpaceRadius` | Radius of the centre hole; `0` draws a full pie |
+| `centerSpaceColor` | Fill colour of the centre hole |
+| `centerChild` | Widget centred in the hole, such as a total or title |
+| `sectionsSpace` | Gap between sections, in pixels at the outer edge |
+| `startDegreeOffset` | Start angle of the first section, clockwise from 12 o'clock |
+| `clockwise` | Direction of section order |
 
 ## Touch
 
-A touch or a hovering mouse names the section under it. That section grows by
-`touchedSectionGrowth` while it is held — the room for it is taken off the
-radius, so nothing is cut off at the edge — and `onTouch` reports which one it
-is, with `null` when the touch leaves.
+Touch or mouse hover identifies the section under the pointer. The active
+section grows by `touchedSectionGrowth` (the radius is reduced to make room, so
+nothing is clipped), and `onTouch` reports its index, or `null` when the touch
+ends.
 
 ```dart
 PieChart(
@@ -65,9 +66,10 @@ PieChart(
 );
 ```
 
-## Placing your own widgets
+## Positioning custom widgets
 
-The geometry is public, so anything can be put exactly where a section is:
+The layout functions are public, so you can position widgets relative to a
+section:
 
 ```dart
 final slices = layOutPie(
@@ -78,11 +80,10 @@ final slices = layOutPie(
 final at = slices[1].pointAt(centre, 0.5); // the middle of the second section
 ```
 
-`pieSectionAt` answers the other question — which section a point is inside,
-and `null` for the hole or the space around the circle.
+`pieSectionAt` performs the reverse lookup: it returns the section containing a
+point, or `null` for the centre hole and the area outside the chart.
 
 ## Animation
 
-With `animationDuration` set, the sections sweep open from the start angle,
-each one keeping its place. `animateOnMount: false` draws the first build
-whole.
+When `animationDuration` is set, sections sweep in from the start angle.
+Set `animateOnMount: false` to skip the animation on the first build.

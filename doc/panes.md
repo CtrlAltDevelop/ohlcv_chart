@@ -2,8 +2,8 @@
 
 ![Three ATR panes stacked under the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes.png)
 
-An indicator pane can be made taller by dragging its lower edge, and moved up or
-down the stack by dragging its legend row:
+Indicator panes can be resized by dragging their lower edge and reordered by
+dragging their legend row:
 
 ```dart
 KChartWidget(
@@ -19,19 +19,25 @@ KChartWidget(
 );
 ```
 
-Each pane is ruled and labelled at round values of its own, rather than showing
-only its highest and lowest — which is what lets three ATRs at three periods be
-read against each other instead of being three unlabelled squiggles. A pane with
-a range it already knows — RSI, KDJ, WR — keeps its guides instead. MACD and the
-Awesome oscillator draw their zero line, the axis their histogram changes colour
-across, and the volume pane marks a round level part-way up so a bar can be read
-against something.
+## Scales and guides
 
-Heights live in the chart, between `ChartStyle.minPaneHeight` and
-`maxPaneHeight`, and are given up whenever the panes themselves change. The order
-does not: the indicators own that, so the chart reports where a pane was dropped
-and leaves the move to you. `ChartStyle.paneResizeTolerance` and `paneGrabHeight`
-decide how big each target is.
+- Each pane has its own gridlines and labels at round values, so panes such as
+  ATRs with different periods can be compared directly.
+- Indicators with a fixed range (RSI, KDJ, WR) show their guide levels instead.
+- MACD and Awesome Oscillator panes draw a zero line.
+- The volume pane shows a round reference level.
+
+## Height and order
+
+Pane heights are managed by the chart, constrained between
+`ChartStyle.minPaneHeight` and `maxPaneHeight`, and reset when the set of panes
+changes.
+
+Pane order is owned by your indicator list. The chart reports the move through
+`onReorderPane`, and your code applies it.
+
+`ChartStyle.paneResizeTolerance` and `paneGrabHeight` set the size of the
+resize and reorder hit areas.
 
 ---
 

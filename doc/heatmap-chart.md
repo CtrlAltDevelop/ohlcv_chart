@@ -2,9 +2,9 @@
 
 ![Six months of activity as a contribution graph, beside orders by hour and weekday](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/heatmap.png)
 
-`HeatmapChart` draws a grid of squares coloured by their value — the thing a
-table of numbers hides. A contribution graph, a correlation matrix, sales by
-weekday and hour, a risk grid.
+`HeatmapChart` renders a grid of cells coloured by value, making patterns in
+tabular data easy to see. Typical uses include contribution graphs, correlation
+matrices, sales by weekday and hour, and risk grids.
 
 ```dart
 HeatmapChart.matrix(
@@ -17,15 +17,16 @@ HeatmapChart.matrix(
 );
 ```
 
-The chart fills the box it is given, and is `defaultHeight` high in a box with
-no height of its own.
+The chart fills its constraints. When the height is unbounded, it uses
+`defaultHeight`.
 
-## The squares
+## Data
 
-`HeatmapChart.matrix` reads a list of rows, each holding its columns — a row
-shorter than the widest one simply has no squares past its end. Give the cells
-yourself when the data is sparse, or when a square needs a colour or a label
-of its own:
+`HeatmapChart.matrix` accepts a list of rows, each containing column values.
+Rows shorter than the widest row have no cells beyond their length.
+
+For sparse data, or when individual cells need a custom colour or label, pass
+cells directly:
 
 ```dart
 HeatmapChart(
@@ -39,29 +40,27 @@ HeatmapChart(
 );
 ```
 
-A cell with a `null` value is empty and takes the scale's `emptyColor`, which
-is what a month that has not happened yet should look like. Two cells at the
-same position draw the later one. `columns` and `rows` are fitted from the
-cells unless they are given, so a grid that must keep its shape while the data
-fills in should name them.
+- A cell with a `null` value is empty and uses the scale's `emptyColor`.
+- If two cells share a position, the later one is drawn.
+- `columns` and `rows` are inferred from the cells unless specified. Set them
+  explicitly to keep the grid size stable while data loads.
 
-## Colour
+## Colour scales
 
-| Scale | Draws |
+| Scale | Rendering |
 | --- | --- |
-| `HeatmapGradientScale(colors: [...], stops: [...])` | a fade through the colours, spread over the value range |
-| `HeatmapGradientScale.of(color)` | one colour deepening from faint to full — the contribution graph |
-| `HeatmapStepScale(steps: [HeatmapStep(from, color)])` | whole bands: under 0, 0 to 5, 5 and up |
+| `HeatmapGradientScale(colors: [...], stops: [...])` | Continuous gradient across the value range |
+| `HeatmapGradientScale.of(color)` | Single colour from faint to full intensity, as in contribution graphs |
+| `HeatmapStepScale(steps: [HeatmapStep(from, color)])` | Discrete colour bands by threshold |
 
-The range the scale is spread over is the lowest and highest value among the
-cells, or `minValue` and `maxValue` when those are set — which is what keeps
-two heatmaps beside each other comparable.
+The scale spans the minimum and maximum cell values, or `minValue` and
+`maxValue` when set. Set them explicitly to keep multiple heatmaps comparable.
 
-A `HeatmapCell.color` overrules the scale for that one square.
+`HeatmapCell.color` overrides the scale for an individual cell.
 
 ## Labels
 
-`HeatmapAxis` names the columns and the rows:
+`HeatmapAxis` labels columns and rows:
 
 ```dart
 HeatmapChart(
@@ -71,25 +70,24 @@ HeatmapChart(
 );
 ```
 
-| Field | What it does |
+| Field | Description |
 | --- | --- |
-| `labels`, `labelBuilder` | What each column or row is called |
-| `interval` | Label only every nth one |
-| `side` | `start` — under the grid, or left of it — or `end` |
-| `size`, `gap`, `style` | The room held, the space before it, and the text |
+| `labels`, `labelBuilder` | Label text for each column or row |
+| `interval` | Show every nth label |
+| `side` | `start` (below or left of the grid) or `end` |
+| `size`, `gap`, `style` | Reserved space, spacing and text style |
 
-`HeatmapAxis.hidden` removes an axis along with its room.
+`HeatmapAxis.hidden` removes an axis and its reserved space.
 
-`labelBuilder` on the chart writes inside the squares, and a `HeatmapCell`'s
-own `label` wins over it. With no `labelStyle` the text is black or white by
-how dark its square is, and a label too big for its square is left out rather
-than drawn over the next one.
+The chart's `labelBuilder` adds text inside cells; `HeatmapCell.label` takes
+precedence. Without a `labelStyle`, text is black or white depending on cell
+brightness. Labels that do not fit their cell are omitted.
 
 ## Touch
 
-A touch or a hovering mouse names the square under it. `hoverBorder` marks it,
-`onTouch` reports it — column, row, cell and the square in pixels — and
-`tooltipBuilder` puts a card above it:
+Touch or mouse hover identifies the cell under the pointer. `hoverBorder`
+highlights it, `onTouch` reports the column, row, cell and cell bounds, and
+`tooltipBuilder` shows a widget above it:
 
 ```dart
 HeatmapChart(
@@ -101,22 +99,22 @@ HeatmapChart(
 );
 ```
 
-A square with no cell still reports itself, with a `null` cell and value, so an
-empty day reads as "nothing here" rather than as no touch at all.
+Positions without a cell are still reported, with `null` cell and value, so
+empty cells can be distinguished from no touch.
 
-## The legend
+## Legend
 
-`HeatmapLegend` draws the scale as a bar, with a word at either end:
+`HeatmapLegend` displays the colour scale as a bar with labels at each end:
 
 ```dart
 HeatmapLegend(scale: scale, low: 'Less', high: 'More', width: 90);
 ```
 
-Left without a `width` it fills the row it is in.
+Without `width`, the legend fills the available width.
 
-## Shape and animation
+## Layout and animation
 
-`squareCells` keeps the squares square, leaving the grid smaller than the box
-when the two are not the same shape — a contribution graph wants this. With
-`animationDuration` set, the squares come up from the empty colour to their
-own.
+- `squareCells` keeps cells square, shrinking the grid within its bounds if
+  needed. Recommended for contribution graphs.
+- When `animationDuration` is set, cells animate from the empty colour to their
+  value colour.

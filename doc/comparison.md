@@ -1,11 +1,10 @@
-# Comparing a second instrument
+# Symbol comparison
 
-Hand `comparisons` a list of `ComparisonSeries` and each is drawn as a line over
-the candles. By default it is *rebased*: pinned to the main series at the left
-edge of the visible window, so the two lines start together and diverge by how
-differently they moved. That is what comparing two instruments means — relative
-performance, not price — and panning the chart moves the pin along with the
-window, so what is read is always the move over what is on screen.
+`comparisons` overlays other instruments on the main chart as lines. Each
+`ComparisonSeries` is **rebased** by default: aligned to the main series at the
+left edge of the visible window, so both lines start together and their
+divergence shows relative performance. The anchor moves as you pan, so the
+comparison always reflects the visible period.
 
 ```dart
 KChartWidget(
@@ -25,23 +24,36 @@ KChartWidget(
 
 ![A second instrument rebased over the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/comparison.png)
 
-`ComparisonScale.price` draws it at its own prices on the same axis instead,
-which is right where the two are quoted in the same units — a future against its
-spot, two tenors of one curve — and misleading where they are not.
+## Scale
 
-Points are matched to candles by time rather than by position, so a compared
-instrument on a different bar still lines up: each candle takes the last point
-at or before its own time, and holds it until the next one arrives. A gap breaks
-the line rather than drawing across it, and candles before the comparison starts
-draw nothing at all. The price scale opens up to hold whatever the comparison
-does, and each one reads out its own move as a percentage on a legend row of its
-own. Colours come from `ChartColors.comparisonColors`, taken in turn, unless the
-series names its own.
+`ComparisonScale.price` plots the series at its actual prices on the same axis.
+Use it only when both instruments share units — for example, a future and its
+spot price, or two tenors of the same curve.
 
-The arithmetic is exported if you would rather do the drawing yourself:
-`alignComparison` lines a series up against a list of candles,
-`comparisonAnchor` works out where a rebased one is pinned over a window, and
-`comparisonPriceAt` maps one value to the price it draws at.
+## Alignment
+
+- Points are matched to candles by timestamp, not position, so instruments with
+  different bar schedules align correctly. Each candle uses the last point at
+  or before its time.
+- Gaps in the data break the line.
+- Candles before the comparison's first point show no value.
+
+## Display
+
+- The price range expands to include all comparisons.
+- Each comparison has its own legend row showing its percentage change.
+- Colours are assigned from `ChartColors.comparisonColors` unless the series
+  specifies one.
+
+## Helpers
+
+For custom rendering, the following functions are exported:
+
+| Function | Purpose |
+| --- | --- |
+| `alignComparison` | Aligns a series to a list of candles |
+| `comparisonAnchor` | Computes the rebasing anchor for a window |
+| `comparisonPriceAt` | Maps a value to its plotted price |
 
 ---
 

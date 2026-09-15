@@ -1,8 +1,8 @@
 name: ohlcv_chart
 description: >-
-  The most complete candlestick chart for Flutter, plus depth, line, bar,
-  scatter, pie, radar and heatmap charts: 31 indicators, 29 drawing tools,
-  pure CustomPainter.
+  Candlestick charts for Flutter with 31 indicators and 29 drawing tools,
+  plus depth, line, bar, scatter, pie, radar and heatmap charts. Pure
+  CustomPainter, no WebView.
 version: 2.5.0
 homepage: https://github.com/CtrlAltDevelop
 repository: https://github.com/CtrlAltDevelop/ohlcv_chart
@@ -23,16 +23,16 @@ screenshots:
       stop-loss markers, the volume pane and a MACD sub-chart.
     path: screenshots/candles.png
   - description: >-
-      Four charts a business screen asks for: a return split at zero, profit
-      bars, deposits and withdrawals with a tooltip, and a balance sparkline.
+      Business charts: returns coloured above and below zero, profit bars,
+      deposits and withdrawals with a tooltip, and a balance sparkline.
     path: screenshots/series-charts.png
   - description: >-
-      A doughnut of holdings with its total in the hole and a slice pulled
-      out, beside a radar web scoring two strategies over five measures.
+      A doughnut chart of holdings with the total in the centre and one slice
+      exploded, beside a radar chart comparing two strategies on five metrics.
     path: screenshots/pie-radar.png
   - description: >-
       Six months of activity as a contribution graph, beside orders by hour
-      and weekday with the count written in each square.
+      and weekday with the count shown in each cell.
     path: screenshots/heatmap.png
   - description: >-
       The Ichimoku cloud and Supertrend over the candles, with Stochastic RSI
@@ -43,8 +43,8 @@ screenshots:
       inside its band with error bars every few points.
     path: screenshots/series-ranges.png
   - description: >-
-      A working order and an open position, each drawn the width of the chart
-      and tagged on the axis with its size and unrealised P&L.
+      A working order and an open position, each drawn as a full-width line
+      tagged on the axis with its size and unrealised P&L.
     path: screenshots/trading.png
   - description: >-
       The same market as line break, Kagi, point & figure and range bars.

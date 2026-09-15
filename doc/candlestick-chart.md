@@ -2,8 +2,9 @@
 
 ![Candles with moving averages, volume and MACD](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/candles.png)
 
-Feed it a `List<KLineEntity>`. Indicator values are computed in place by
-`DataUtil.calculate` before the first paint, and again whenever new candles arrive:
+`KChartWidget` takes a `List<KLineEntity>`. Call `DataUtil.calculate` before the
+first build, and again whenever new candles arrive, to compute indicator values
+in place:
 
 ```dart
 import 'package:ohlcv_chart/ohlcv_chart.dart';
@@ -23,20 +24,31 @@ KChartWidget(
 );
 ```
 
-Only the candles and the colours are required, so `KChartWidget(candles,
-ChartColors())` is a whole chart. `timeFrame` adds a countdown to the close on
-the current-price tag, `isTrendLine: true` turns the drawing tools on, and
-`watermark` takes any widget to draw faintly behind the reading (see
-[Theming](theming.md#watermark)).
+## Required and common parameters
 
-`KLineEntity.fromJson` accepts the usual OHLCV shape (`open`, `high`, `low`,
-`close`, `vol`, `time`/`id`), or build the entity directly.
+Only the candles and colours are required: `KChartWidget(candles,
+ChartColors())` is a complete chart.
 
-`onLoadMore` fires when the scroll lands on an edge — `false` at the oldest
-candle, `true` at the newest — once when it arrives rather than on every frame
-the drag spends there, and again if the user comes away and goes back. Prepend
-the older candles you fetch and hand the chart the longer list; it keeps its
-place in the data, so the window does not jump.
+| Parameter | Purpose |
+| --- | --- |
+| `timeFrame` | Adds a countdown to candle close on the current-price tag |
+| `isTrendLine` | Enables the drawing tools when `true` |
+| `watermark` | Any widget, drawn faintly over the chart — see [Theming](theming.md#watermark) |
+
+## Data model
+
+`KLineEntity.fromJson` accepts the common OHLCV shape (`open`, `high`, `low`,
+`close`, `vol`, `time`/`id`). You can also construct entities directly.
+
+## Loading history
+
+`onLoadMore` is called when scrolling reaches an edge: `false` at the oldest
+candle and `true` at the newest. It fires once per arrival at an edge, not on
+every frame.
+
+To load older data, prepend the fetched candles and pass the longer list to the
+chart. The chart preserves its position in the data, so the view does not
+jump.
 
 ---
 

@@ -1,10 +1,14 @@
 # Sizing
 
-`mBaseHeight` is the candle area alone; the volume pane (60px) and each indicator
-pane (100px, until one is dragged) are stacked underneath. Left unset it is
-derived from the widget's box, so the whole stack fits — put the chart in an
-`Expanded` and it fills the space. Pass a number to pin the candle area instead, for instance inside a scroll
-view where there is no height to divide up.
+`mBaseHeight` sets the height of the candle area only. The volume pane (60 px)
+and each indicator pane (100 px by default, or its resized height) are stacked
+below it.
+
+- **Unset (recommended):** the candle area is derived from the widget's
+  constraints so the whole stack fits. Place the chart in an `Expanded` to fill
+  the available space.
+- **Set:** the candle area has a fixed height. Use this when there is no
+  bounded height to divide, such as inside a scroll view.
 
 ![The candle area filling the box, and pinned to 220](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sizing.png)
 

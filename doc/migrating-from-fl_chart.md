@@ -1,12 +1,15 @@
 # Migrating from fl_chart and candlesticks
 
-One package can draw both kinds of chart an app usually needs.
+`ohlcv_chart` covers both financial and general-purpose charts, so apps using
+`fl_chart` and `candlesticks` can consolidate on a single package.
 
-- Replace `fl_chart`'s line and bar charts with [`SeriesChart`](series-chart.md).
+- Replace `fl_chart` line, bar, scatter, pie and radar charts with
+  [`SeriesChart`](series-chart.md), [`PieChart`](pie-chart.md) and
+  [`RadarChart`](radar-chart.md).
 - Replace `candlesticks` with [`KChartWidget`](candlestick-chart.md).
 
-The tables below map each API onto its replacement, and the worked examples
-show the patterns apps build most often.
+The tables below map each API to its equivalent, followed by examples of common
+patterns.
 
 ![A return split at zero, profit bars, deposits and withdrawals with a tooltip, and a balance sparkline — all SeriesChart](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-charts.png)
 
@@ -22,7 +25,7 @@ show the patterns apps build most often.
 | `LineChartData(lineBarsData: [...])` | `SeriesChart(series: [LineSeries(...), ...])` |
 | `BarChartData(barGroups: [...])` | `SeriesChart(series: [BarSeries(...)])` — one `BarSeries` per rod position in a group |
 
-### A line
+### Lines
 
 | `LineChartBarData` | `LineSeries` |
 | --- | --- |
@@ -61,7 +64,7 @@ show the patterns apps build most often.
 | `borderSide` | `border` |
 | `showingTooltipIndicators` on a rod | `labelBuilder` for a permanent label |
 
-### The chart around the series
+### Chart configuration
 
 | fl_chart | `SeriesChart` |
 | --- | --- |
@@ -85,7 +88,7 @@ show the patterns apps build most often.
 | `axisNameWidget: AxisTitle(...)` | `xAxis: SeriesXAxis(title: ...)`, `yAxis: SeriesYAxis(title: ...)` |
 | `topTitles` | `xAxis: SeriesXAxis(side: SeriesXSide.top)` |
 
-### The other chart types
+### Other chart types
 
 | fl_chart | ohlcv_chart |
 | --- | --- |
@@ -114,13 +117,13 @@ show the patterns apps build most often.
 | `getTouchedSpotIndicator` → `TouchedSpotIndicatorData(FlLine, FlDotData)` | `SeriesTouch(line: SeriesCrosshairLine(...), markerBuilder: ...)` |
 | two charts kept in step by hand | one `SeriesChartController` given to both |
 
-`handleBuiltInTouches` has no equivalent, because touch is always handled by the
-chart. To react to a touch without showing a tooltip, pass `tooltip: null` and
-use `onTouch`.
+`handleBuiltInTouches` has no equivalent because touch handling is always built
+in. To respond to touch without a tooltip, pass `tooltip: null` and use
+`onTouch`.
 
 ## Worked examples
 
-### A sparkline with a press tooltip
+### Sparkline with tooltip
 
 ```dart
 SizedBox(
@@ -160,13 +163,13 @@ SizedBox(
 );
 ```
 
-### A multi-series chart over a window of long data
+### Multi-series chart with range selector
 
 ![Three series over a window of five months, a day read out, and the range selector that moves the window](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-window.png)
 
-This replaces a `LineChart`, a separate y-axis `LineChart`, a long-press
-overlay and a range selector built from a third `LineChart`, all with one
-chart and one strip.
+A single `SeriesChart` and `SeriesRangeSelector` replace a typical `fl_chart`
+setup of a main `LineChart`, a separate y-axis `LineChart`, a long-press overlay
+and a range selector built from a third `LineChart`.
 
 ```dart
 Column(
@@ -214,12 +217,12 @@ Column(
 );
 ```
 
-### Two panels with one crosshair
+### Synchronised panels
 
 ![A balance panel over a profit panel, one crosshair marking the same day in both](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-panels.png)
 
-A balance line with its average dashed over it, and profit bars underneath.
-Holding either panel marks the same row in both.
+A balance line with a dashed average, above a profit bar chart. A shared
+`SeriesChartController` synchronises the crosshair across both panels.
 
 ```dart
 final crosshair = SeriesChartController();
@@ -252,7 +255,7 @@ SeriesChart(
 );
 ```
 
-### Green above zero, red below
+### Positive and negative colouring
 
 ```dart
 SeriesChart(
@@ -284,15 +287,14 @@ SeriesChart(
 );
 ```
 
-The `zeroStop` arithmetic an `fl_chart` stroke gradient needs is gone: the
-line changes colour exactly where it crosses its baseline.
+No `zeroStop` gradient calculation is needed: `negativeColor` changes the line
+colour exactly where it crosses the baseline.
 
-### Draw-in on mount
+### Initial animation
 
-Code like `ChartDrawIn`, which renders a flat frame first and pushes the real
-values a frame later, is no longer needed. A non-zero `animationDuration` grows
-the first build out of the baseline by itself (`animateOnMount`, on by
-default).
+Workarounds that render a flat frame and then update to real values are not
+needed. With a non-zero `animationDuration`, the first build animates from the
+baseline automatically (`animateOnMount`, enabled by default).
 
 ## From candlesticks
 
@@ -334,10 +336,9 @@ KChartWidget(
 );
 ```
 
-`isTrendLine` and `timeFrame` are optional since 2.5.0, and a watermark is any
-widget passed as `watermark`.
-Pass `timeFrame` to get a countdown on the current-price tag, and
-`isTrendLine: true` to turn on the drawing tools.
+Since 2.5.0, `isTrendLine` and `timeFrame` are optional, and `watermark` accepts
+any widget. Pass `timeFrame` to show a countdown on the current-price tag, and
+`isTrendLine: true` to enable drawing tools.
 
 | `CandleSticksStyle` | `ChartColors` |
 | --- | --- |
@@ -353,6 +354,6 @@ Pass `timeFrame` to get a countdown on the current-price tag, and
 | `priceIndicatorTextColor` | `nowPriceTextColor` |
 | `loadingIndicatorColor` | your own loading widget |
 
-`candlesticks` builds its own zoom buttons in a toolbar. `KChartWidget` zooms
-by pinch and scroll, and a host that wants buttons calls `KChartController`'s
-`zoomIn` and `zoomOut` from its own.
+`candlesticks` includes built-in zoom buttons. `KChartWidget` zooms with pinch
+and scroll; to add buttons, call `KChartController.zoomIn` and `zoomOut` from
+your own UI.

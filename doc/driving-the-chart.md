@@ -1,7 +1,7 @@
 # Driving the chart
 
-`KChartController` reaches into the chart from your own code: how far it is
-zoomed, where it is scrolled, and what it looks like as an image.
+`KChartController` provides programmatic control over the chart: zoom level,
+scroll position and image export.
 
 ```dart
 final chart = KChartController();
@@ -19,16 +19,17 @@ chart.isAtRightEdge;                   // whether it is already there
 final png = await chart.capture();     // the chart as PNG bytes
 ```
 
-`capture` returns the chart itself — candles, indicators, drawings — without the
-line editor or any other control floating over it. Everything no-ops while no
-chart is attached, so a controller built before its widget, or kept after it, is
-harmless. The chart also shows its own button back to the live candle whenever it
-is scrolled away from one; `showScrollToNowButton: false` turns that off, and its
-tooltip comes from `ChartTranslations.jumpToNow`.
+- `capture` returns the chart content — candles, indicators and drawings —
+  without the line editor or other overlay controls.
+- All methods are no-ops while no chart is attached, so a controller can safely
+  be created before, or retained after, its widget.
+- When scrolled away from the newest candle, the chart shows a scroll-to-latest
+  button. Disable it with `showScrollToNowButton: false`; its tooltip comes from
+  `ChartTranslations.jumpToNow`.
 
-## The visible window
+## Visible range
 
-Which candles are on screen is both readable and settable:
+The visible range can be read and set:
 
 ```dart
 final range = chart.visibleRange;      // null until the first frame
@@ -45,16 +46,17 @@ chart.goToDate(candles, when);         // the nearest candle to an instant
 chart.fitAll();                        // open the window as wide as it goes
 ```
 
-`showRange` moves the zoom and the scroll together so the window holds exactly
-what was asked for, as near as the chart's zoom limits allow; `goToIndex` and
-`goToDate` keep the zoom and only scroll, animated by default. Each of them
-reports whether it could move at all, which is false for a chart that has not
-been laid out yet or one with no candles. `showTimeRange` widens outwards where
-the instants fall between candles, so the span asked for is always covered.
+- `showRange` adjusts zoom and scroll together to show exactly the requested
+  candles, within the chart's zoom limits.
+- `goToIndex` and `goToDate` keep the current zoom and only scroll, animated by
+  default.
+- Each method returns whether the view could move; it returns `false` before
+  layout or when there are no candles.
+- `showTimeRange` expands outwards when the requested times fall between
+  candles, so the full span is always included.
 
-`onVisibleRangeChanged` reports the window whenever it changes — after the frame
-that changed it, and only when it is actually different, so scrolling within one
-candle says nothing:
+`onVisibleRangeChanged` is called after a frame in which the visible range
+changed. Scrolling within a single candle does not trigger it:
 
 ```dart
 KChartWidget(
@@ -69,14 +71,14 @@ KChartWidget(
 );
 ```
 
-`indexRangeCovering` and `indexNearest` are exported for working out either
-from a list of candles without a chart in hand.
+`indexRangeCovering` and `indexNearest` are exported for computing ranges from a
+candle list without a chart instance.
 
-## Turning the gestures off
+## Disabling gestures
 
-Some charts are not meant to be navigated: an intraday session, a thumbnail in
-a list, a figure in a report. `scrollEnabled` and `zoomEnabled` take the
-chart's own gestures away.
+For charts that should not be navigated — a single session, a list thumbnail or
+a report figure — `scrollEnabled` and `zoomEnabled` disable the built-in
+gestures.
 
 ```dart
 KChartWidget(
@@ -100,19 +102,15 @@ KChartWidget(
 );
 ```
 
-With `scrollEnabled` off a drag neither slides the window nor flings it, and
-[`onLoadMore`](candlestick-chart.md) is never asked for more candles — no edge
-is ever reached to ask at. With `zoomEnabled` off a pinch does nothing, and the
-zoom slider is left off too: that slider only ever appears on the web and on
-desktop, standing in for the pinch those platforms do not have.
+- With `scrollEnabled: false`, drags and flings are ignored, and
+  [`onLoadMore`](candlestick-chart.md) is never called.
+- With `zoomEnabled: false`, pinch is ignored and the zoom slider (shown only on
+  web and desktop) is hidden.
+- Disable both together. Zooming out narrows the candles and creates room to
+  scroll, so a chart with only scrolling disabled can become scrollable again.
 
-Turn the two off together. Zooming out makes the candles narrower, which leaves
-the window room to scroll into, so a chart with only `scrollEnabled` off can be
-pinched back into a scrollable one.
-
-The two flags hold the *user* back and leave your own code alone, the way
-`priceScaleDrag` does — so a chart nobody can drag can still be moved from a
-toolbar, or fitted once at startup:
+These flags affect user input only, like `priceScaleDrag`. The chart can still
+be controlled programmatically:
 
 ```dart
 chart.fitAll();      // the whole history in the box
@@ -121,37 +119,34 @@ chart.goToIndex(0);  // or somewhere particular
 
 ### Filling the width
 
-`scrollEnabled: false` freezes the window wherever it happens to be, which is
-usually at the newest candle with the rest off to the left. For a chart that
-shows one fixed stretch, make the candles fit instead. `ChartStyle.fitContent`
-does it without knowing the width: a series too short to fill the plot is
-spread over the whole of it, and the candle bodies widen to match.
+With scrolling disabled, the view stays where it is — usually at the newest
+candle, with older candles off-screen. To show a complete series, use
+`ChartStyle.fitContent`, which spreads a short series across the full plot and
+widens the candles to match:
 
 ```dart
 chartStyle: ChartStyle(fitContent: true),
 ```
 
-This only ever widens the spacing. A series long enough to fill the plot on
-`ChartStyle.pointWidth` — 8 by default — is laid out on that as before, so the
-flag can stay on while history pages in.
+`fitContent` only increases spacing. A series long enough to fill the plot at
+`ChartStyle.pointWidth` (8 by default) is laid out as usual, so the option can
+remain enabled as more history loads.
 
-Doing the arithmetic yourself works too, and is what to reach for when the
-spacing matters more than filling the box:
+Alternatively, compute the spacing yourself when exact spacing matters more than
+filling the width:
 
 ```dart
 chartStyle: ChartStyle(pointWidth: width / candles.length),
 ```
 
-Once the series fits there is nowhere to scroll to at all, flag or no flag —
-the scroll clamps to zero. `xFrontPadding: 0` gives up the gap the chart
-otherwise leaves to the right of the newest candle, so the candles reach the
-edge. `fitAll()` is the other way there, and works on any width without the
-arithmetic.
+Once the series fits, there is nothing to scroll regardless of the flag.
+`xFrontPadding: 0` removes the gap to the right of the newest candle, and
+`fitAll()` achieves the same result without calculations.
 
-## Keeping charts in step
+## Linked charts
 
-`ChartLink` holds several charts on the same window. Add each one's controller
-and whichever the user scrolls or zooms carries the rest with it:
+`ChartLink` synchronises multiple charts. Add each chart's controller; scrolling
+or zooming any one of them updates the others:
 
 ```dart
 final price = KChartController();
@@ -167,35 +162,32 @@ void dispose() {
 
 ![Two linked charts sharing one crosshair](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/linked-charts.png)
 
-There is no leader: any chart the user moves becomes the one being followed for
-as long as it is moving, and the link guards against the push back — moving the
-others notifies them, and without the guard their notification would move the
-first one straight back.
+- There is no fixed leader: the chart the user is interacting with drives the
+  others, and feedback loops are prevented.
+- `syncFrom(controller)` aligns all other charts to one chart immediately,
+  which is useful for charts added later.
+- Charts with different history lengths align where their data overlaps; the
+  window is clamped to each chart's available candles.
 
-`syncFrom(controller)` puts every other chart on that one's window at once,
-which is what a chart built later wants so it joins the others where they
-already are rather than waiting for a scroll.
+### Synchronised by default
 
-Charts over histories of different lengths line up as far as they overlap: a
-window pushed onto a chart is clamped to the candles it actually has.
-
-**On by default** are the visible window — and with it the zoom, since showing
-the same candles across the same width is what zoom means here — and the
-crosshair, by candle rather than by pixel, so charts at different widths still
-point at the same bar. Both are safe between any two charts, whatever they
-show. Either can be left off:
+The **visible window** (including zoom) and the **crosshair** are synchronised
+by default. The crosshair is matched by candle index, so charts of different
+widths stay aligned. Either can be disabled:
 
 ```dart
 ChartLink(crosshair: false);  // scroll together, read separately
 ChartLink(window: false);     // one crosshair, each chart scrolled on its own
 ```
 
-A crosshair pushed onto a chart reads as one *hovered* rather than one held
-down, so it never takes the place of a press the user is making themselves, and
-a candle scrolled out of view rests at the near edge rather than vanishing.
+A synchronised crosshair behaves as a hover on the receiving charts, so it never
+interrupts user input there. If its candle is scrolled out of view, it rests at
+the nearest edge.
 
-**Off by default** are the two vertical ones, because they only mean anything
-between charts of the *same instrument*:
+### Opt-in synchronisation
+
+Vertical synchronisation is disabled by default because it only makes sense for
+charts of the **same instrument**:
 
 ```dart
 ChartLink(crosshairPrice: true);  // the crosshair's height as well as its candle
@@ -203,20 +195,18 @@ ChartLink(priceScale: true);      // the axis's stretch and shift
 ChartLink.all();                  // everything, for one market shown twice
 ```
 
-Two instruments at different prices share no vertical scale, and forcing one
-leaves a chart drawing a flat line off the top of its pane — which is why these
-are opt-in. Turn them on for the same market shown twice, at two zooms or two
-timeframes, and leave them off otherwise. With `crosshairPrice` off the
-crosshair still travels, and simply rests mid-pane on the charts it lands on.
+Instruments at different prices do not share a vertical scale, and forcing one
+produces unusable charts. Enable these options only when showing the same market
+at different zoom levels or timeframes. With `crosshairPrice` disabled, the
+crosshair still syncs by candle and is shown mid-pane on other charts.
 
-Doing any of it by hand is still an option — pass the range from
-`onVisibleRangeChanged` to the other chart's `showRange`, or the candle from
-`onCrosshairChanged` to its `showCrosshair`.
+To synchronise manually, pass the range from `onVisibleRangeChanged` to another
+chart's `showRange`, or the candle from `onCrosshairChanged` to its
+`showCrosshair`.
 
-## The crosshair, on its own
+## Crosshair control
 
-`KChartController` reads and moves the crosshair whether or not a link is
-involved:
+`KChartController` can read and set the crosshair independently of `ChartLink`:
 
 ```dart
 chart.crosshairIndex;                    // which candle it is on, or null
@@ -226,22 +216,18 @@ chart.showCrosshair(120, price: 68400);  // and at a price of its own
 chart.hideCrosshair();                   // take it down
 ```
 
-The price axis is readable and settable the same way — `priceZoom` and
-`pricePan` for its stretch and shift, `setPriceZoom`, `setPricePan` and
-`resetPriceScale` to move it. `resetPriceScale` is also what hands a
-[locked axis](price-axis.md#keeping-it-still-while-the-chart-scrolls) back to the
-chart, refitting it to the window and holding it there afresh.
+The price axis is also controllable: `priceZoom` and `pricePan` read its zoom and
+offset, and `setPriceZoom`, `setPricePan` and `resetPriceScale` change them.
+`resetPriceScale` also refits a [locked axis](price-axis.md#locking-the-scale) to
+the visible window and locks it again.
 
-`onCrosshairChanged` reports where it moved to, on the same terms as
-`onVisibleRangeChanged`: after the frame that moved it, and only when the
-candle is actually different, so sliding the pointer within one candle says
-nothing.
+`onCrosshairChanged` is called after a frame in which the crosshair moved to a
+different candle. Movement within a single candle does not trigger it.
 
-## The overview strip
+## Overview strip
 
-`ChartOverview` is a slim chart of the whole history with the visible window
-marked on it — drag the lit part to scrub, drag either edge to widen or narrow
-the window, or tap anywhere to jump there:
+`ChartOverview` is a compact chart of the full history with the visible window
+highlighted. Drag the window to scroll, drag its edges to zoom, or tap to jump:
 
 ```dart
 final chart = KChartController();
@@ -263,17 +249,12 @@ Column(
 
 ![The overview strip under a chart, with the visible window lit on it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/overview.png)
 
-It drives the chart through the same controller and reads the window back from
-it, so the two never disagree about where they are — and a chart scrolled by
-any other means moves the strip with it. Hand it the same list the chart has.
-
-It draws the closes rather than the candles, so a long history still reads as a
-shape at a glance. `height`, `padding` and `handleWidth` size it;
-`handleWidth` is how near an edge a grab counts as a resize rather than a pan,
-so a narrow window is still draggable rather than being all handle.
-
-Panning to either end slides the window up against it rather than shrinking it,
-so a drag past the edge keeps the window the width it was.
+- It uses the same controller as the main chart, so both always stay in sync,
+  including when the chart is moved by other means. Pass it the same candle list.
+- It draws closing prices as a line, so long histories remain readable.
+- `height`, `padding` and `handleWidth` control its size. `handleWidth` sets the
+  edge area that resizes rather than pans, so narrow windows remain draggable.
+- Dragging past either end keeps the window's width instead of shrinking it.
 
 ---
 

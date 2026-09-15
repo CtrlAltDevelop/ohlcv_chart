@@ -1,8 +1,9 @@
 # Indicators
 
-Indicators are instances, not flags: pass as many as you like to `indicators`,
-including several of the same kind with different settings. Overlays draw over
-the candles; everything else takes a pane of its own, stacked in the order given.
+Indicators are configured instances. Pass any number to `indicators`, including
+multiple instances of the same indicator with different settings. Overlays are
+drawn on the main chart; all other indicators get their own pane, stacked in
+list order.
 
 ```dart
 KChartWidget(
@@ -24,22 +25,22 @@ KChartWidget(
 
 | Overlay | Settings |
 | --- | --- |
-| `MaIndicator` | `period` — the simple moving average |
+| `MaIndicator` | `period` (simple moving average) |
 | `EmaIndicator` | `period` |
 | `BollIndicator` | `period`, `deviations` |
 | `SarIndicator` | `start`, `step`, `maximum` |
 | `VwapIndicator` | — |
-| `AnchoredVwapIndicator` | `anchor` — the candle it measures from |
-| `SessionVwapIndicator` | `session`, `deviations`; restarts each session, banded |
-| `PivotPointsIndicator` | `method`, `session`; the pivot with three supports and resistances |
-| `VolumeProfileIndicator` | `bins`, `valueArea`; volume by price, drawn back from the axis |
-| `SupertrendIndicator` | `period`, `multiplier`; flips colour with the trend |
+| `AnchoredVwapIndicator` | `anchor` (starting candle) |
+| `SessionVwapIndicator` | `session`, `deviations`; resets each session, with bands |
+| `PivotPointsIndicator` | `method`, `session`; pivot with three support and three resistance levels |
+| `VolumeProfileIndicator` | `bins`, `valueArea`; volume by price level |
+| `SupertrendIndicator` | `period`, `multiplier`; colour changes with trend direction |
 | `KeltnerIndicator` | `period`, `atrPeriod`, `multiplier` |
 | `DonchianIndicator` | `period` |
-| `IchimokuIndicator` | `conversionPeriod`, `basePeriod`, `spanPeriod`, `displacement`; the cloud is shaded |
-| `ZigZagIndicator` | `depth` — the swing size, in percent |
-| `FibonacciIndicator` | `depth`, `ratios`; retraces the last swing |
-| `ElliottWaveIndicator` | `depth`; labels the swings `1`–`5`, `A`–`C` |
+| `IchimokuIndicator` | `conversionPeriod`, `basePeriod`, `spanPeriod`, `displacement`; shaded cloud |
+| `ZigZagIndicator` | `depth` (minimum swing size, in percent) |
+| `FibonacciIndicator` | `depth`, `ratios`; retracement of the latest swing |
+| `ElliottWaveIndicator` | `depth`; labels swings `1`–`5` and `A`–`C` |
 
 | Pane | Settings |
 | --- | --- |
@@ -51,8 +52,8 @@ KChartWidget(
 | `AtrIndicator` | `period` |
 | `ObvIndicator` | — |
 | `MfiIndicator` | `period`, with 20/80 guides |
-| `DmiIndicator` | `period`, with the 20 guide |
-| `AroonIndicator` | `period`, with 30/70 guides; up and down lines, 0–100 |
+| `DmiIndicator` | `period`, with 20 guide |
+| `AroonIndicator` | `period`, with 30/70 guides; Aroon Up and Down, 0–100 |
 | `StochRsiIndicator` | `rsiPeriod`, `period`, `kSmoothing`, `dSmoothing`, with 20/80 guides |
 | `RocIndicator` | `period` |
 | `TrixIndicator` | `period`, `signalPeriod` |
@@ -61,47 +62,62 @@ KChartWidget(
 
 ![A zigzag, Fibonacci retracement and Elliott wave labels](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/swings.png)
 
-Three of the overlays read the market's swings rather than a fixed window, all
-from the same `depth` — the percentage move that ends a swing:
-`ZigZagIndicator` draws the legs, `FibonacciIndicator` retraces the last one,
-and `ElliottWaveIndicator` counts them. Left at its default of `0`, `depth`
-is sized from the candles — a fixed percentage that gives several swings on a
-volatile daily chart finds none at all on a quiet intraday one — and the label
-reads `auto`. Pass a positive number to set the threshold yourself. The wave count is a reading of the
-swings, not a rules-checked Elliott count; treat it as a sketch to confirm by
-eye.
+### Swing indicators
 
-`IchimokuIndicator` shifts its spans forward and its lagging line back as the
-indicator is drawn. The chart holds one value per candle, so the stretch of
-cloud that would project past the newest candle is not drawn.
+Three overlays are based on price swings rather than a fixed window, and share a
+`depth` parameter — the minimum percentage move that defines a swing:
+
+- `ZigZagIndicator` draws the swing legs.
+- `FibonacciIndicator` draws a retracement of the latest swing.
+- `ElliottWaveIndicator` labels the swings.
+
+The default `depth: 0` sizes the threshold automatically from the data, since a
+fixed percentage suited to a volatile daily chart may find no swings on a quiet
+intraday chart. The label then shows `auto`. Pass a positive value to set the
+threshold explicitly.
+
+The Elliott wave labels are a swing-based approximation, not a rules-validated
+wave count; verify them visually.
+
+### Ichimoku
+
+`IchimokuIndicator` shifts its leading spans forward and its lagging line back.
+Because the chart stores one value per candle, the portion of the cloud
+projected beyond the newest candle is not drawn.
 
 ## Levels and profiles
 
-Three overlays read price rather than a window of it.
+### Volume profile
 
-`VolumeProfileIndicator` gathers the visible volume into `bins` price bands and
-draws them as horizontal bars running in from the side the price labels are not
-on, so the prices the market actually traded at read off the same axis as the
-candles. The busiest band — the point of control — is drawn whole in its own
-colour, the `valueArea` around it is washed across the width, and every other
-band is split into the volume that traded on rising candles and the volume that
-traded on falling ones. A candle's volume is spread evenly over the bands its
-range covers, which is as much as OHLCV can say; the ticks inside the candle
-are not known. `ChartColors.profileUpColor`, `profileDownColor`,
-`profilePocColor` and `profileValueAreaColor` colour it, `profileColor` sets
-one colour for the lot, and `ChartStyle.profileWidth` — a fraction of the
-chart's width — sizes the busiest bar.
+`VolumeProfileIndicator` groups visible volume into `bins` price bands, drawn as
+horizontal bars from the side opposite the price labels so they align with the
+price axis.
 
-`PivotPointsIndicator` works out the previous session's pivot and steps it,
-with three supports and three resistances, across the current one.
-`PivotMethod.standard`, `.fibonacci` and `.camarilla` space the levels
-differently, and `PivotSession.day`, `.week`, `.month` and `.year` say what
-counts as a session, so an intraday chart can pivot off the week instead of the
-day it opened in.
+- The point of control (the band with the most volume) is highlighted.
+- The `valueArea` around it is shaded across the chart.
+- Other bands are split into volume from rising and falling candles.
+- Each candle's volume is distributed evenly across the bands its range covers,
+  since OHLCV data contains no intra-candle detail.
 
-`AnchoredVwapIndicator` is a VWAP measured from one candle onwards rather than
-over the whole series, so it can be anchored to a high, a low, an earnings date
-or the open of a session. It says nothing before its `anchor`.
+Colours: `ChartColors.profileUpColor`, `profileDownColor`, `profilePocColor` and
+`profileValueAreaColor`, or `profileColor` for a single colour.
+`ChartStyle.profileWidth` sets the width of the largest bar as a fraction of the
+chart width.
+
+### Pivot points
+
+`PivotPointsIndicator` calculates the pivot, three support and three resistance
+levels from the previous session and draws them across the current session.
+
+- `PivotMethod.standard`, `.fibonacci` and `.camarilla` select the calculation.
+- `PivotSession.day`, `.week`, `.month` and `.year` define the session, so an
+  intraday chart can use weekly pivots.
+
+### Anchored VWAP
+
+`AnchoredVwapIndicator` calculates VWAP from a chosen candle onwards — for
+example, a swing high or low, an earnings date or a session open. No values are
+drawn before the `anchor`.
 
 ```dart
 KChartWidget(
@@ -117,9 +133,11 @@ KChartWidget(
 
 ![A volume profile and an anchored VWAP over the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/profile.png)
 
-`SessionVwapIndicator` is the one a desk means by the word: it begins again at
-every session boundary rather than dragging the whole history behind it, so an
-intraday chart reads what has been paid on average *today*.
+### Session VWAP
+
+`SessionVwapIndicator` resets at every session boundary, which is the standard
+intraday VWAP: it shows the volume-weighted average price for the current
+session only.
 
 ```dart
 KChartWidget(
@@ -135,19 +153,14 @@ KChartWidget(
 
 ![A session VWAP with its band, over an Aroon pane](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/session-vwap.png)
 
-The bands are `deviations` volume-weighted standard deviations either side, so
-they say how far from the average the session has been trading — a move outside
-one is a move away from where the volume actually went. The spread is weighted
-by volume rather than by candle, so a thin candle at a silly price widens the
-band far less than a heavy one does. Passing `0` leaves the bands empty and
-draws the average alone.
+- Bands are drawn at `deviations` volume-weighted standard deviations from the
+  average. Because the deviation is volume-weighted, low-volume outliers have
+  little effect. `deviations: 0` draws the average only.
+- Sessions use the same boundaries as pivot points: days break at the chart's
+  day divider, and weeks start on Monday.
 
-The reset follows the same boundary the pivot levels step on, so a day breaks
-where the chart draws its day divider and a week runs from the Monday.
-
-**A VWAP over the visible range** is `AnchoredVwapIndicator` anchored to the
-first candle on screen — rebuild it from `onVisibleRangeChanged` and the average
-re-measures as the window moves:
+**Visible-range VWAP:** anchor `AnchoredVwapIndicator` to the first visible
+candle and update it from `onVisibleRangeChanged`:
 
 ```dart
 KChartWidget(
@@ -159,15 +172,15 @@ KChartWidget(
 );
 ```
 
-An indicator of your own can draw a profile too: return an `IndicatorProfile`
-of `ProfileBin`s from `computeProfile` and the chart draws the bars, picks out
-the busiest band and shades the value area. A delta or time profile is the same
-shape of answer.
+**Custom profiles:** a custom indicator can return an `IndicatorProfile` of
+`ProfileBin`s from `computeProfile`. The chart draws the bars, highlights the
+point of control and shades the value area. This supports other profile types,
+such as delta or time profiles.
 
 ## Pane options
 
-An indicator's pane is fitted to its values and spaced evenly, which is right
-for almost everything. Two getters change that where it is not:
+By default, a pane fits its values on a linear scale. Override `scale` to
+change this:
 
 ```dart
 class LogObvIndicator extends ObvIndicator {
@@ -176,19 +189,19 @@ class LogObvIndicator extends ObvIndicator {
 }
 ```
 
-`IndicatorScale.logarithmic` steps by ratio, so a doubling takes the same room
-wherever it happens — what a volume or an on-balance-volume pane wants, where
-the interesting range covers orders of magnitude. A pane whose values reach zero
-or below has no logarithm to space by and quietly falls back to linear.
-`IndicatorScale.percentage` reads out the move away from the first value in
-view, so panning moves the base along with the window. Both rule and label the
-pane in their own space, so a log pane's marks land on 1, 2 and 5 times each
-power of ten.
+| `IndicatorScale` | Behaviour |
+| --- | --- |
+| `linear` | Evenly spaced values (default) |
+| `logarithmic` | Equal ratios use equal space; suited to values spanning orders of magnitude, such as volume or OBV. Falls back to linear when values reach zero or below |
+| `percentage` | Change from the first visible value; the base moves as you pan |
 
-## An indicator over an indicator
+Ticks are computed in the chosen scale, so logarithmic panes show ticks at 1, 2
+and 5 times each power of ten.
 
-`ChainedIndicator` computes one indicator over another's output instead of over
-the candles:
+## Chained indicators
+
+`ChainedIndicator` computes an indicator on the output of another indicator
+instead of on candles:
 
 ```dart
 KChartWidget(
@@ -210,19 +223,19 @@ KChartWidget(
 );
 ```
 
-The source's chosen line is handed on as flat candles — open, high, low and
-close all the same value — which is what lets any indicator that reads closes be
-applied. One that reads the range or the volume instead (`ATR`, `OBV`, `MFI`)
-has nothing to read there and draws nothing; that is the caller's choice to
-make. The two warm-ups add up rather than the second starting from a guess, and
-the pane settings, guides, format and colours all come from the applied
-indicator. `flattenToCandles` is exported if you would rather do the wrapping
-yourself.
+- The selected source line is converted to flat candles (open, high, low and
+  close all equal), so any close-based indicator can be applied.
+- Indicators that depend on range or volume (`ATR`, `OBV`, `MFI`) produce no
+  output when chained.
+- Warm-up periods are combined, so the applied indicator does not start from an
+  estimate.
+- Pane settings, guides, format and colours come from the applied indicator.
+- `flattenToCandles` is exported for manual use.
 
-## An indicator on a higher timeframe
+## Higher-timeframe indicators
 
-`TimeframeIndicator` computes an indicator on bars coarser than the chart is
-drawn at, so a daily moving average can be read on a fifteen-minute chart:
+`TimeframeIndicator` computes an indicator on a higher timeframe than the chart
+— for example, a daily moving average on a 15-minute chart:
 
 ```dart
 KChartWidget(
@@ -245,29 +258,28 @@ KChartWidget(
 
 ![A four-hour moving average and RSI over fifteen-minute candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/higher-timeframe.png)
 
-The candles are aggregated up to `timeframe` — first open, highest high, lowest
-low, last close, total volume — and the applied indicator is computed over
-those bars. Bucketing is the chart's own, so a daily bar breaks where the chart
-draws its day divider rather than every 24 candles, and a monthly one follows
-the calendar rather than thirty days.
+Candles are aggregated to `timeframe` (first open, highest high, lowest low,
+last close, total volume), and the indicator is computed on the aggregated bars.
+Aggregation uses the chart's own boundaries: daily bars break at the day
+divider, and monthly bars follow the calendar.
 
-**Each candle reads the last higher-timeframe bar that had closed when it
-opened.** The line steps once per higher-timeframe bar and holds flat between,
-and the candles of the very first bar draw nothing. This is deliberate: reading
-the bar a candle is *inside* would show this morning's candles a value computed
-from this afternoon's, which flatters a backtest and then repaints as the day
-fills in. What is drawn here was genuinely known at the time and never changes
-once drawn.
+**No look-ahead or repainting.** Each candle uses the last higher-timeframe bar
+that had closed before the candle opened. The line steps once per
+higher-timeframe bar, and candles within the first bar have no value. Using the
+bar a candle falls inside would expose future data (for example, showing a
+morning candle a value that depends on the afternoon), producing misleading
+backtests and values that change as the bar develops. Values shown here were
+known at the time and never change.
 
-Pane settings, guides, format and colours come from the applied indicator, as
-with `ChainedIndicator`. The aggregation is exported on its own —
-`CandleTransforms.resample(candles, timeframe)` for the bars, and
-`CandleTransforms.bucketIndices` for which bar each candle fell in.
+As with `ChainedIndicator`, pane settings, guides, format and colours come from
+the applied indicator. The aggregation is available separately:
+`CandleTransforms.resample(candles, timeframe)` returns the bars, and
+`CandleTransforms.bucketIndices` returns the bar index for each candle.
 
 ## Indicator alerts
 
-An indicator declares the levels worth watching, and the chart reports when the
-newest value crosses one:
+Indicators can declare alert levels. The chart reports when the latest value
+crosses one:
 
 ```dart
 class AlertingRsi extends RsiIndicator {
@@ -289,33 +301,39 @@ KChartWidget(
 );
 ```
 
-`line` picks which of the indicator's lines to watch — a MACD histogram turning
-positive is `IndicatorAlert(level: 0, line: 2)`. Each fires once per crossing:
-the value has to come back through the level before it fires again. Overlays and
-panes are both watched.
+- `line` selects which indicator line to monitor — for example,
+  `IndicatorAlert(level: 0, line: 2)` for a MACD histogram crossing zero.
+- Each alert fires once per crossing and re-arms after the value crosses back.
+- Alerts work for both overlays and pane indicators.
 
 ## Custom indicators
 
-Subclass `Indicator` — give it a `label`, its `lines`, the `settings` that make
-it distinct and a `compute` — and the chart scales, draws, legends and labels it
-like a built-in one. Lines are drawn as a stroke, dots, a histogram, a
-`pivotLine` (straight across the candles with no value, which is what a zigzag
-needs) or `markers` (a dot with your own text beside it). `fills` shades the area
-between two lines, and `colorForPoint` colours a single point — how the
-Supertrend changes colour at a reversal.
+Subclass `Indicator` and implement `label`, `lines`, `settings` and `compute`.
+The chart handles scaling, rendering, legends and labels as for built-in
+indicators.
+
+| Line shape | Rendering |
+| --- | --- |
+| Stroke | Continuous line |
+| Dots | Dot per value |
+| Histogram | Bars |
+| `pivotLine` | Straight segments across candles without values, as used by ZigZag |
+| `markers` | Dot with custom text |
+
+`fills` shades the area between two lines, and `colorForPoint` sets the colour
+of individual points — for example, Supertrend's colour change at reversals.
 
 ![Three ATRs at different periods, each in its own pane](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes.png)
 
-The same kind of indicator, three times over, is the point of the list: each
-instance carries its own settings and colours.
+Multiple instances of the same indicator can be added, each with its own
+settings and colours.
 
 ## Recomputing only what moved
 
-A live feed moves the newest candle several times a second, and computing every
-indicator over the whole history each time is work that grows with how much
-history is loaded rather than with what actually changed. The chart keeps an
-`IndicatorCache` and offers each indicator the chance to extend the series it
-already has instead:
+Live data updates the newest candle frequently. Recomputing every indicator
+over the full history on each update scales with history length rather than
+with the size of the change. The chart's `IndicatorCache` instead lets
+indicators extend their existing results:
 
 ```dart
 class MyIndicator extends Indicator {
@@ -331,39 +349,38 @@ class MyIndicator extends Indicator {
 }
 ```
 
-`from` is the earliest index that can have moved. Return null — the default —
-and the series is computed in full, which is always correct and is what seventeen
-of the built-in indicators still do: anything reading the whole series at once,
-such as a volume profile, a zigzag or the swing overlays built on it, has no
-tail to extend. The other fourteen resume, and a chart carrying a moving
-average, Bollinger bands, an ATR, an OBV, an RSI and a MACD over 200,000 candles
-spends around 2ms a tick on them rather than around 100ms.
+`from` is the earliest index that may have changed. Returning `null` (the
+default) triggers a full recomputation, which is always correct.
 
-Whatever `extendSeries` returns has to be what `compute` would have returned.
-Two shapes make that hold, and `series_math.dart` has a helper for each:
+- **17 built-in indicators** recompute in full, because they depend on the whole
+  series (for example, volume profile, ZigZag and the swing indicators).
+- **14 built-in indicators** support incremental updates. With MA, Bollinger
+  Bands, ATR, OBV, RSI and MACD on 200,000 candles, an update takes about 2 ms
+  instead of about 100 ms.
 
-- **A window.** `graftTail` recomputes from `from - lookback`, which is exact
-  when a value depends only on the candles in its own window. `graftTailLines`
-  is the same for an indicator drawing several lines from one pass.
-- **A recursion whose own last value is its whole state.** `emaTail`, `atrTail`
-  and `obvTail` seed from `previous[from - 1]` and carry on, which is exact to
-  the last bit.
+The result of `extendSeries` must be identical to `compute`. `series_math.dart`
+provides helpers for two common patterns:
 
-Where neither holds — Wilder's smoothing inside an RSI keeps state its published
-values do not show — `recursiveLookback` picks the recursion up forty periods
-back instead. An exponential recursion forgets its seed geometrically, so by
-then the difference is some eighteen orders of magnitude down, well beneath the
-gap between neighbouring doubles.
+- **Windowed calculations.** `graftTail` recomputes from `from - lookback`, which
+  is exact when each value depends only on its window. `graftTailLines` does the
+  same for multi-line indicators.
+- **Recursions whose last value is the full state.** `emaTail`, `atrTail` and
+  `obvTail` continue from `previous[from - 1]`, with bit-exact results.
 
-One thing to know if you write an indicator that reads a series handed in from
-outside rather than the candles: the cache reuses values for the same instance
-while the candles sit still, and recomputes for a new one, so rebuilding your
-indicator is what tells the chart its values have changed.
+When neither applies — for example, Wilder's smoothing in RSI has internal state
+not reflected in its output — `recursiveLookback` restarts the recursion 40
+periods earlier. The influence of the seed decays geometrically, leaving a
+difference around 18 orders of magnitude smaller, below double-precision
+resolution.
+
+**Indicators using external data:** the cache reuses values for the same
+instance while candles are unchanged. Create a new instance when the external
+data changes so the chart recomputes.
 
 ## Colours
 
-Every indicator takes its colours from `ChartColors`, and a `color` (or
-`colors`, for the multi-line ones) argument overrides that per instance:
+Indicator colours come from `ChartColors` by default. Override them per instance
+with `color`, or `colors` for multi-line indicators:
 
 ```dart
 indicators: [
@@ -372,14 +389,13 @@ indicators: [
 ],
 ```
 
-Repeated indicators of one kind take successive theme colours, so three moving
-averages are three different colours without being told.
+Multiple instances of the same indicator are automatically assigned
+successive theme colours.
 
-## Adding and editing at runtime
+## Managing indicators at runtime
 
-An indicator is identified by its type and settings — colours are deliberately
-left out — so `upsert` restyles the one already on the chart instead of stacking
-a duplicate:
+Indicators are identified by type and settings, excluding colours. `upsert`
+therefore updates a matching indicator instead of adding a duplicate:
 
 ```dart
 final indicators = <Indicator>[MaIndicator(period: 20)];
@@ -392,9 +408,8 @@ indicators.toggle(RsiIndicator());                              // on, then off
 
 ## Templates
 
-A template is a named set of indicators — the reading of the market somebody
-works from, saved so it can be put on any chart in one gesture. It is to
-indicators what `DrawingTemplate` is to a drawing's look.
+An indicator template is a named set of indicators that can be saved and
+applied to any chart — the indicator equivalent of `DrawingTemplate`.
 
 ```dart
 final saved = IndicatorTemplates(IndicatorTemplate.starters);
@@ -408,15 +423,13 @@ setState(() => indicators = [...saved['Swing']!.indicators]);
 await prefs.setString('templates', jsonEncode(saved.toJson()));
 ```
 
-Saving under a name that is already taken replaces it in its place, so "save"
-and "overwrite" are one gesture and a menu built from `all` does not reshuffle.
-`IndicatorTemplate.starters` is four ordinary sets — trend, momentum,
-volatility and volume — so a template menu has something in it on the first
-run; nothing about them is privileged, and an app is free to ignore them.
-
-Templates serialise through the same codec a workspace uses. An indicator the
-catalog cannot rebuild is left out rather than saved as something else, and
-`unsaveable` lists which, so an app can say so instead of quietly dropping it:
+- Saving with an existing name replaces that template in place, so menus built
+  from `all` keep their order.
+- `IndicatorTemplate.starters` provides four default sets — trend, momentum,
+  volatility and volume — which apps can use or ignore.
+- Templates use the workspace serialisation format. Indicators the catalog
+  cannot rebuild are excluded and listed in `unsaveable`, so your app can
+  inform the user:
 
 ```dart
 final template = IndicatorTemplate(name: 'Mine', indicators: indicators);
@@ -429,12 +442,12 @@ if (template.unsaveable.isNotEmpty) {
 
 ![The example app's add-indicator sheet, built from the catalog](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/indicator-settings.png)
 
-`indicatorCatalog` describes every indicator — its settings, their ranges and
-its colour slots — so an "add indicator" sheet can be driven by data rather than
-a hard-coded list. It holds 35 entries: the 31 indicators above, with the four
-pivot flavours — classic, Fibonacci, Camarilla and weekly — and the daily and
-weekly session VWAPs each listed one apiece. The example app's
-`IndicatorSheet` is built entirely from it:
+`indicatorCatalog` describes each indicator's settings, value ranges and colour
+slots, so indicator configuration UIs can be generated from data. It contains
+35 entries: the 31 indicators, with four pivot variants (classic, Fibonacci,
+Camarilla and weekly) and two session VWAP variants (daily and weekly) listed
+separately. The example app's `IndicatorSheet` is built entirely from the
+catalog:
 
 ```dart
 final type = indicatorCatalog.firstWhere((t) => t.name == 'ATR');
@@ -458,9 +471,9 @@ final indicator = type.create(
 final values = indicatorTypeOf(indicator)?.valuesOf(indicator); // {'period': 8}
 ```
 
-`DataUtil.calculate` still fills the indicator fields on each `KLineEntity`,
-which the long-press readout uses; the indicators themselves compute their own
-values from the candles.
+`DataUtil.calculate` populates the indicator fields on each `KLineEntity`, which
+the long-press readout uses. Indicators compute their own values from the
+candles independently.
 
 ---
 

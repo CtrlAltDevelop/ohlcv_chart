@@ -12,16 +12,20 @@ KChartWidget(
 
 ![The pre-market and after-hours stretches washed behind the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sessions.png)
 
-`timeZoneOffset` is added to every candle's time before it is shown — on the axis,
-in the crosshair, in the legend and when working out where a day starts. It
-changes what is displayed and never the data, so drawings stay anchored to the
-candles they were placed on. `showSessionDividers` then marks the first candle of
-each day, in `ChartColors.sessionDividerColor`.
+## Display time zone
+
+`timeZoneOffset` is applied to candle times wherever they are displayed: the
+date axis, crosshair, legend and day-boundary calculations. It affects display
+only; the underlying data is unchanged, so drawings stay anchored to their
+candles.
+
+`showSessionDividers` draws a line at the first candle of each day, using
+`ChartColors.sessionDividerColor`.
 
 ## Extended hours
 
-`session` says what the regular session is, and the stretches outside it — the
-pre-market and the after-hours — are washed behind the candles:
+`session` defines the regular trading session. Pre-market and after-hours
+periods are shaded behind the candles:
 
 ```dart
 KChartWidget(
@@ -36,18 +40,18 @@ KChartWidget(
 );
 ```
 
-Read in the time zone the chart is showing, so the bands land where the trader
-sees them rather than where UTC does. `weekdays` chooses the days it is kept on,
-and a `close` at or before its `open` runs overnight — which is how a market that
-opens in one day and closes in the next is described, right down to Friday night
-belonging to Friday. Neighbouring candles outside the session are washed as one
-band, so a long overnight is one rectangle rather than a hundred. The colour is
-`ChartColors.extendedHoursColor`.
+- Session times are interpreted in the displayed time zone.
+- `weekdays` selects the trading days.
+- If `close` is at or before `open`, the session spans midnight; the overnight
+  portion belongs to the day the session opened (for example, Friday night
+  belongs to Friday).
+- Consecutive out-of-session candles are drawn as a single band.
+- The shading colour is `ChartColors.extendedHoursColor`.
 
-## Colouring a bar yourself
+## Custom bar colours
 
-`candleColor` is asked about every candle, bar and column drawn. Return a colour
-to use it, or null to leave the up or down colour it would have had:
+`candleColor` is called for every candle, bar and column. Return a colour to
+override it, or `null` to keep the default up/down colour:
 
 ```dart
 KChartWidget(
@@ -61,10 +65,9 @@ KChartWidget(
 );
 ```
 
-Anything the caller can work out can decide: a bar inside a session, one above an
-average, one that completes a pattern, one belonging to a particular account.
-The `index` is into the list handed to the chart, so a precomputed answer can be
-looked up rather than recalculated.
+Use it to highlight any condition your app can compute — session membership,
+price relative to an average, pattern completion and so on. `index` refers to
+the list passed to the chart, so you can look up precomputed results.
 
 ---
 

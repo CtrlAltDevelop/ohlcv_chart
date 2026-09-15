@@ -2,9 +2,9 @@
 
 ![A five-feature radar web with two scored strategies drawn over it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/pie-radar.png)
 
-`RadarChart` compares several things over the same features: a web of spokes,
-one outline per series. (The doughnut beside it is
-[its own page](pie-chart.md).)
+`RadarChart` compares multiple series across the same set of features, drawing
+one outline per series on a shared grid. The doughnut chart in the screenshot is
+covered in [Pie chart](pie-chart.md).
 
 ```dart
 RadarChart(
@@ -17,43 +17,42 @@ RadarChart(
 );
 ```
 
-The chart fills the box it is given, and is `defaultSize` square in a box that
-sets no size of its own.
+The chart fills its constraints. When unconstrained, it is a square of
+`defaultSize`.
 
 ## Series
 
-A `RadarSeries` carries one value per feature, in the order `features` names
-them. A value beyond the range is held at the edge rather than drawn off the
-web, and a `null` leaves that corner out of the outline.
+A `RadarSeries` has one value per feature, in the same order as `features`.
+Values outside the range are clamped to the edge, and `null` values are omitted
+from the outline.
 
-| Field | What it does |
+| Field | Description |
 | --- | --- |
-| `color` | The outline colour |
-| `fillColor` | Inside the outline; null uses a faint `color` |
-| `width`, `dashPattern` | The outline itself; `width: 0` draws none |
-| `dot` | A dot on every corner |
-| `label` | What the series is called, for a legend of your own |
+| `color` | Outline colour |
+| `fillColor` | Fill colour; defaults to a translucent `color` |
+| `width`, `dashPattern` | Outline width and dash pattern; `width: 0` hides the outline |
+| `dot` | Dot drawn at each vertex |
+| `label` | Series name, for use in a custom legend |
 
-## The web
+## Grid
 
-| Field | What it does |
+| Field | Description |
 | --- | --- |
-| `features` | What each corner is called; an empty list leaves them unnamed |
-| `minValue`, `maxValue` | The middle and the outer ring; `maxValue` null takes the largest value given |
-| `tickCount` | How many rings are drawn |
-| `shape` | `RadarShape.polygon` — the spider web — or `circle` |
-| `startDegreeOffset` | Where the first feature sits, clockwise from twelve |
-| `gridColor`, `gridWidth` | The rings |
-| `spokeColor`, `spokeWidth` | The spokes out to each corner |
-| `showTicks`, `tickStyle` | The value each ring stands for, written up the first spoke |
-| `featureStyle`, `featureGap` | The names outside the web |
-| `radius` | How far the web reaches; null fits the box, leaving room for the names |
+| `features` | Feature names; an empty list hides labels |
+| `minValue`, `maxValue` | Values at the centre and outer ring; `maxValue: null` uses the largest value |
+| `tickCount` | Number of rings |
+| `shape` | `RadarShape.polygon` or `RadarShape.circle` |
+| `startDegreeOffset` | Position of the first feature, clockwise from 12 o'clock |
+| `gridColor`, `gridWidth` | Ring style |
+| `spokeColor`, `spokeWidth` | Spoke style |
+| `showTicks`, `tickStyle` | Ring value labels, drawn along the first spoke |
+| `featureStyle`, `featureGap` | Feature label style and spacing |
+| `radius` | Grid radius; `null` fits the available space, leaving room for labels |
 
 ## Touch
 
-`onTouch` reports the corner nearest the finger — which series, which feature
-and the value there — within `touchThreshold` pixels, and `null` when the touch
-leaves.
+`onTouch` reports the nearest vertex within `touchThreshold` pixels — series,
+feature and value — and `null` when the touch ends.
 
 ```dart
 RadarChart(
@@ -62,10 +61,10 @@ RadarChart(
 );
 ```
 
-## Placing your own widgets
+## Positioning custom widgets
 
-`radarCorner` and `RadarLayout` are public, so a legend chip or a badge can be
-put exactly on a corner:
+`radarCorner` and `RadarLayout` are public, so you can position widgets such as
+badges or legend chips at a specific vertex:
 
 ```dart
 const layout = RadarLayout(
@@ -81,4 +80,4 @@ final at = layout.cornerFor(2, 7); // where the third feature's 7 is drawn
 
 ## Animation
 
-With `animationDuration` set, the outlines grow out of the middle.
+When `animationDuration` is set, outlines animate outwards from the centre.

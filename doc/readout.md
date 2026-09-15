@@ -1,11 +1,13 @@
-# The long-press readout
+# Long-press readout
 
 ![The crosshair and its OHLC card while a candle is held](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/readout.png)
 
-Holding the chart puts a crosshair under the finger with the price and time on
-the axes, and a card of that candle's open, high, low, close, change and volume.
-`isTapShowInfoDialog` opens it on a tap as well, `infoDialogBuilder` replaces the
-card, and `ChartTranslations` names every row.
+A long press shows a crosshair with price and time labels on the axes, and a
+card with the candle's open, high, low, close, change and volume.
+
+- `isTapShowInfoDialog` also opens the card on tap.
+- `infoDialogBuilder` replaces the card with a custom widget.
+- `ChartTranslations` localises every row label.
 
 ---
 

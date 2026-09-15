@@ -2,8 +2,8 @@
 
 ![The line editor open on a selected line](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/line-editor.png)
 
-`DrawingStyle` decides what the toolbar offers, how it looks, and how close a tap
-has to land to count. Everything is optional:
+`DrawingStyle` controls the options the editor toolbar offers, its appearance,
+and the hit-test tolerance for selecting drawings. All fields are optional:
 
 ```dart
 KChartWidget(
@@ -47,12 +47,14 @@ KChartWidget(
 );
 ```
 
-A control that a drawing has no use for is left out whatever these say: the fill
-slider only appears on a shape with an interior, the alert bell only on a level,
-and the label field only on a drawing that can carry one.
+Controls are shown only where they apply, regardless of these settings: the fill
+slider for shapes with an interior, the alert button for alert-capable drawings,
+and the label field for drawings that support labels.
 
-A line's own appearance lives on the line, so you can style one before it ever
-reaches the chart:
+## Styling individual drawings
+
+Appearance is stored on each drawing, so you can style a drawing before adding
+it to the chart:
 
 ```dart
 HorizontalLine(
@@ -66,8 +68,8 @@ HorizontalLine(
 );
 ```
 
-`ChartLine.opacity` reads and writes the alpha of `color`, and `isDashed` still
-works for code written before `LineStyle`.
+`ChartLine.opacity` reads and writes the alpha channel of `color`. `isDashed` is
+still supported for code written before `LineStyle`.
 
 ---
 

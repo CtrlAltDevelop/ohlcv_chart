@@ -1,39 +1,54 @@
 # Migrating from 1.x
 
-Nothing was taken off `KChartWidget`: the per-kind drawing lists, their `onAdd*`
-and `onRemove*` callbacks and `isLine` all still work, so most apps upgrade by
-changing the version and nothing else. Three things to know:
+No parameters were removed from `KChartWidget`. The per-kind drawing lists,
+their `onAdd*` and `onRemove*` callbacks and `isLine` still work, so most apps
+only need to update the version. Review the following changes.
 
-- **Two defaults changed what an existing chart shows.** `crosshairOnHover` and
-  `showScrollToNowButton` are both on. The first only ever fires for a pointer
-  that hovers, so a touch app never sees it; the second draws a small button over
-  the bottom right corner whenever the chart is scrolled away from the newest
-  candle. Set either to `false` to keep the old behaviour.
-- **A custom `ChartLine` now has to serialise.** `toJson` is part of the base
-  class, since that is what lets a layout be saved and a drawing be copied for
-  the undo history. Build yours on `baseJson`, and register a `fromJson` of your
-  own where you decode:
+## Changed defaults
 
-  ```dart
-  class MyDrawing extends TwoPointDrawing {
-    @override
-    Map<String, dynamic> toJson() => {
-      ...baseJson('myDrawing'),
-      ...anchorsJson(),
-    };
-  }
-  ```
+`crosshairOnHover` and `showScrollToNowButton` are now enabled by default.
 
-  Adopting `LabelledDrawing` or `FilledDrawing` is what gets your drawing the
-  editor's label field or its fill slider.
-- **The painters moved on**, if you imported them from `src/` rather than through
-  the public API: `ChartPainter` now takes one `drawings` list rather than a list
-  per kind, and reports the crosshair's candle through an `emitInfoWindow`
-  callback rather than a `StreamSink`. `MainRenderer.getValue` is now the exact
-  inverse of `getY`, which also corrects a price read a few pixels out.
+- `crosshairOnHover` responds only to hovering pointers, so it has no effect on
+  touch devices.
+- `showScrollToNowButton` shows a button in the bottom-right corner when the
+  chart is scrolled away from the newest candle.
 
-`ChartLine.hidden` is new and defaults to false, so nothing disappears; the
-drawing manager is what turns it on.
+Set either to `false` to restore the previous behaviour.
+
+## Custom drawings must serialise
+
+`toJson` is now part of the `ChartLine` base class; it is required for saving
+layouts and for undo history. Build on `baseJson`, and register a matching
+`fromJson` where you decode drawings:
+
+```dart
+class MyDrawing extends TwoPointDrawing {
+  @override
+  Map<String, dynamic> toJson() => {
+    ...baseJson('myDrawing'),
+    ...anchorsJson(),
+  };
+}
+```
+
+Mix in `LabelledDrawing` or `FilledDrawing` to enable the editor's label field
+or fill slider for your drawing.
+
+## Internal painter changes
+
+These apply only if you imported painters from `src/` rather than the public
+API:
+
+- `ChartPainter` takes a single `drawings` list instead of one list per kind.
+- The crosshair candle is reported through an `emitInfoWindow` callback instead
+  of a `StreamSink`.
+- `MainRenderer.getValue` is now the exact inverse of `getY`, which also fixes a
+  small price offset.
+
+## New properties
+
+`ChartLine.hidden` defaults to `false`, so existing drawings remain visible. The
+drawing manager uses it to hide drawings.
 
 ---
 

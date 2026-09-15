@@ -1,11 +1,10 @@
 # Series charts
 
-`KChartWidget` reads candles against time. `SeriesChart` reads any numbers
-against any numbers: a balance per day, sign-ups per month, profit per trade.
-These are the charts a dashboard, a wallet or a report draws. It has lines,
-areas and bars, several series at once, axes you can write or hide, a touch
-readout you can replace, a range strip for long data, and animation between
-data sets.
+`SeriesChart` plots numeric x/y data — for example, balance per day, sign-ups
+per month or profit per trade — for dashboards, wallets and reports. Where
+`KChartWidget` is designed for OHLC candles over time, `SeriesChart` supports
+lines, areas, bars and scatter plots, multiple series, configurable axes, custom
+tooltips, a range selector for long data sets, and animated updates.
 
 ![A return split at zero, profit bars, deposits and withdrawals with a tooltip, and a balance sparkline — all SeriesChart](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-charts.png)
 
@@ -24,18 +23,17 @@ SeriesChart(
 );
 ```
 
-Everything else is optional. Every parameter's default draws a plain,
-readable chart, and each section below changes one part of it.
+All other parameters are optional; the defaults produce a clean, readable
+chart. The sections below describe each part.
 
 ## Series
 
-A chart takes a list of `PlotSeries`, drawn bottom layer first. There are three
-kinds — lines, bars and scatter — and one chart can mix them.
+A chart takes a list of `PlotSeries`, drawn in order with the first series at
+the bottom. Line, bar and scatter series can be combined in one chart.
 
-Points are `SeriesPoint(x, y)` and run from the lowest x to the highest. When
-your data is just a list of values, the `.values` constructors place them at
-`x = 0, 1, 2, …`. A `null` value is a gap: a line breaks there and a bar is
-left out.
+Points are `SeriesPoint(x, y)`, ordered by ascending x. For a plain list of
+values, the `.values` constructors place them at `x = 0, 1, 2, …`. A `null`
+value creates a gap: lines break and bars are omitted.
 
 ### Lines
 
@@ -57,26 +55,28 @@ LineSeries(
 );
 ```
 
-`curve` decides how points are joined:
+`curve` sets how points are connected:
 
-| `LineCurve` | Draws |
+| `LineCurve` | Rendering |
 | --- | --- |
-| `linear` | straight segments |
-| `smooth` | a curve through every point that can swing past a peak (`fl_chart`'s `isCurved`) |
-| `monotone` | a curve through every point that never swings past its neighbours (`isCurved` + `preventCurveOverShooting`) |
-| `step` | holds each value until the next point; `stepPosition` says where between two points it changes — 0 at the first, 0.5 halfway, 1 at the second |
+| `linear` | Straight segments |
+| `smooth` | Smooth curve through all points; may overshoot peaks (`fl_chart`'s `isCurved`) |
+| `monotone` | Smooth curve that never overshoots adjacent points (`isCurved` + `preventCurveOverShooting`) |
+| `step` | Holds each value until the next point; `stepPosition` sets where the step occurs — `0` at the first point, `0.5` midway, `1` at the second |
 
-A line also takes a `shadow`, a blurred copy of it drawn underneath.
+`shadow` draws a blurred copy of the line beneath it.
 
 ### Fills
 
-A `SeriesFill` colours the area between the line and its `baseline`, or the
-bottom of the plot when `toBaseline` is false. A fill anchored to the baseline
-never paints across it. Above the baseline it uses `gradient` (or `color`),
-measured from the line's highest point down to the baseline, so it fades out
-exactly at the baseline. Below the baseline it uses `negativeGradient` (or
-`negativeColor`), measured the other way. Left unset, the lower half reuses the
-upper gradient flipped upside down, so both halves fade away from the line.
+`SeriesFill` fills the area between the line and its `baseline`, or the bottom
+of the plot when `toBaseline` is `false`. Fills anchored to the baseline never
+cross it.
+
+- **Above the baseline**, `gradient` (or `color`) spans from the line's peak to
+  the baseline, fading out at the baseline.
+- **Below the baseline**, `negativeGradient` (or `negativeColor`) spans in the
+  opposite direction. If unset, the upper gradient is mirrored, so both halves
+  fade away from the line.
 
 ```dart
 // Green above zero, red below, each fading towards zero.
@@ -107,15 +107,14 @@ BarSeries.values(
 );
 ```
 
-Several bar series on one chart stand side by side at each x. When there are
-bars, the x range gets half a unit of room at either end, so the first and last
-bars are drawn whole.
+Multiple bar series are grouped side by side at each x value. When a chart
+contains bars, half a unit of padding is added to each end of the x range so
+the first and last bars are fully visible.
 
-Bar series that share a `stack` are piled on each other instead: each one
-starts where the ones before it ended, upwards for values above the baseline
-and downwards for values below, and only the outermost bar is rounded. A stack
-takes one place in the row, so a stack and a plain series still stand side by
-side.
+Bar series with the same `stack` value are stacked instead: positive values
+stack upwards and negative values downwards from the baseline, and only the
+outermost bar is rounded. A stack occupies one group position, so stacks and
+unstacked series can be combined.
 
 ```dart
 SeriesChart(
@@ -126,8 +125,8 @@ SeriesChart(
 );
 ```
 
-A point with a `low` draws a bar that floats between two values rather than
-growing from the baseline — a range, or a step of a waterfall:
+A point with `low` draws a floating bar between two values instead of from the
+baseline, for ranges or waterfall charts:
 
 ```dart
 BarSeries(
@@ -135,7 +134,7 @@ BarSeries(
 );
 ```
 
-`border` outlines each bar, and `labelBuilder` writes past its far end:
+`border` outlines each bar, and `labelBuilder` adds a label beyond its end:
 
 ```dart
 BarSeries.values(
@@ -149,7 +148,7 @@ BarSeries.values(
 
 ![Every trade as a dot, wins as circles and losses as crosses, one of them read out](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-scatter.png)
 
-A `ScatterSeries` places a dot per point, free on both axes:
+`ScatterSeries` draws one dot per point, positioned freely on both axes:
 
 ```dart
 SeriesChart(
@@ -168,15 +167,15 @@ SeriesChart(
 );
 ```
 
-`SeriesTouchSnap.nearestPoint` reads out the one dot under the finger, within
-`SeriesTouch.threshold` pixels, instead of everything at that x — which is what
-a scatter plot wants and a line chart does not.
+`SeriesTouchSnap.nearestPoint` selects the single nearest dot within
+`SeriesTouch.threshold` pixels, instead of all values at that x. This is the
+recommended mode for scatter plots.
 
-A dot's `shape` is a `circle`, a `square`, a `diamond` or a `cross`.
+Dot `shape` can be `circle`, `square`, `diamond` or `cross`.
 
 ### Error bars
 
-A point can carry how far it might be off, on either axis:
+Points can include error ranges on either axis:
 
 ```dart
 SeriesPoint(
@@ -187,19 +186,19 @@ SeriesPoint(
 );
 ```
 
-Any series draws them, styled by `errorBars: SeriesErrorBars(color, width,
-capLength)`; pass `errorBars: null` to leave them out. The value range makes
-room for them.
+All series types render error bars, styled by `errorBars: SeriesErrorBars(color,
+width, capLength)`. Pass `errorBars: null` to hide them. The value range expands
+to include them.
 
-### Filling between two lines
+### Fill between lines
 
 ![A waterfall of floating bars beside a forecast with its band and its error bars](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-ranges.png)
 
-The same picture shows both: floating bars on the left, and on the right a
-`betweenFills` band with error bars every few points.
+The screenshot shows floating bars (left) and a `betweenFills` band with error
+bars (right).
 
-`betweenFills` shades the gap between two of the series — a high and a low, a
-plan and what happened:
+`betweenFills` shades the area between two series, such as a high and low, or a
+forecast and actual values:
 
 ```dart
 SeriesChart(
@@ -213,12 +212,12 @@ SeriesChart(
 );
 ```
 
-## Turning the chart on its side
+## Horizontal orientation
 
 ![Stacked in and out bars running rightwards, months down the left, values along the bottom](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-horizontal.png)
 
-`orientation: SeriesOrientation.horizontal` runs the x axis down the chart and
-grows the values rightwards, which is the horizontal bar chart:
+`orientation: SeriesOrientation.horizontal` places the x axis vertically and
+values horizontally, producing a horizontal bar chart:
 
 ```dart
 SeriesChart(
@@ -228,11 +227,10 @@ SeriesChart(
 );
 ```
 
-Everything turns with it: curves and steps follow the x axis rather than the
-screen, gradients written for an upright chart still point at the high values,
-the crosshair reads down the chart, and the tooltip hangs off the far end of
-the values. `SeriesAxisSide.left` puts the value axis along the bottom and
-`SeriesXSide.bottom` puts the x labels down the left.
+All elements rotate accordingly: curves and steps follow the x axis, gradients
+still point towards high values, and the crosshair and tooltip adapt to the
+orientation. In horizontal mode, `SeriesAxisSide.left` places the value axis at
+the bottom and `SeriesXSide.bottom` places the x labels on the left.
 
 ## Axes, grid and border
 
@@ -256,24 +254,23 @@ SeriesChart(
 );
 ```
 
-The x axis chooses which x values to label, and to draw a vertical grid line
-at, in this order:
+The x axis determines label and vertical gridline positions in this order of
+precedence:
 
-1. `ticks`, if given.
-2. Otherwise, every index whose entry in `labels` is not blank, kept only at
-   multiples of `interval` when that is set. A label list that names only month
-   starts therefore spaces itself.
-3. Otherwise, every `interval`.
-4. Otherwise, about `tickCount` round values.
+1. `ticks`, if provided.
+2. Each index with a non-blank entry in `labels`, filtered to multiples of
+   `interval` if set. A label list containing only month starts is therefore
+   spaced automatically.
+3. Every `interval`.
+4. Approximately `tickCount` round values.
 
-Labels that would overlap the one before are dropped, and `fitInside` slides
-the first and last labels in so their text is not cut off. Use `labelBuilder`
-to write a label from its x.
+Overlapping labels are omitted, and `fitInside` shifts the first and last labels
+inwards so they are not clipped. `labelBuilder` generates a label from an x
+value.
 
-Either axis takes a `title`, written beyond its labels and turned to read up an
-axis that runs down the chart, and a side of its own: `SeriesXSide.top` puts
-the x labels over the plot and `SeriesAxisSide.right` puts the values on the
-right.
+Both axes accept a `title`, drawn beyond the labels and rotated for vertical
+axes. `SeriesXSide.top` places x labels above the plot, and
+`SeriesAxisSide.right` places the value axis on the right.
 
 ```dart
 SeriesChart(
@@ -283,24 +280,23 @@ SeriesChart(
 ```
 
 `SeriesXAxis.hidden`, `SeriesYAxis.hidden` and `SeriesGrid.none` remove each
-part, along with the room it held. A 58-pixel sparkline is a chart with all
-three hidden.
+element and its reserved space. Hiding all three produces a sparkline.
 
-## The range of values
+## Value range
 
-With nothing set, x spans the points and the value range fits the data. The
-fitted range gets `yPadding` (10%) of room above and below, then widens to the
-next round tick at each end. The padding never pushes a series that stays above
-zero below zero, or one that stays below zero above it.
+By default, the x range spans all points and the value range fits the data,
+with `yPadding` (10%) added above and below and then extended to round ticks.
+Padding never crosses zero for data that is entirely positive or entirely
+negative.
 
-| Parameter | Does |
+| Parameter | Description |
 | --- | --- |
-| `minX`, `maxX` | Pin the plot's edges. Set both to show a window of a longer series; the values range then fits what is in the window. |
-| `xPadding` | Room either side of the fitted x range, in x units. |
-| `minY`, `maxY` | Pin the value range. |
-| `includeZero` | Always reach zero. |
-| `yPadding` | Room above and below, as a share of the range. |
-| `niceYRange` | Widen to round ticks (on by default). |
+| `minX`, `maxX` | Fix the plot bounds. Set both to show a window of a longer series; the value range then fits the visible data. |
+| `xPadding` | Padding on each side of the x range, in x units. |
+| `minY`, `maxY` | Fix the value range. |
+| `includeZero` | Always include zero. |
+| `yPadding` | Padding above and below, as a fraction of the range. |
+| `niceYRange` | Extend to round tick values (enabled by default). |
 
 ## Reference lines and bands
 
@@ -313,9 +309,9 @@ referenceLines: [
 bands: [SeriesBand.vertical(5, 7, color: weekendShade)],
 ```
 
-Reference lines are not interactive, and they sit under the series unless
-`aboveSeries` is set. A horizontal line only widens the value range when
-`extendsRange` asks, because otherwise a far-off target would flatten the data.
+Reference lines are not interactive and are drawn beneath the series unless
+`aboveSeries` is set. Horizontal lines only expand the value range when
+`extendsRange` is `true`, so distant targets do not compress the data.
 
 ## Touch
 
@@ -343,30 +339,28 @@ SeriesChart(
 
 | `SeriesTouchTrigger` | Behaviour |
 | --- | --- |
-| `press` | Shows while a finger is down or dragging, and hides when it lifts. This is `fl_chart`'s default. |
-| `longPress` | Shows after a long press and follows the finger, so a quick swipe still scrolls the page. |
-| `tap` | A tap places it and it stays there. A drag moves it, and tapping the same point again clears it. |
-| `none` | Only hover or the controller can show it. |
+| `press` | Shown while pressed or dragging; hidden on release. Matches `fl_chart`'s default. |
+| `longPress` | Shown after a long press and follows the pointer, so swipes still scroll the page. |
+| `tap` | Placed by tap and remains visible. Drag to move; tap the same point to clear. |
+| Shown only by hover or the controller. |
 
-The crosshair snaps to the nearest point. `onTouch` is called after it moves to
-another x, and with `null` when it goes away. Its `SeriesTouchDetails` carry
-the x (`index` for charts of plain values) and, for every series with a value
-there, the series, the point, its position on the chart and its colour at that
-value.
+The crosshair snaps to the nearest point. `onTouch` is called when it moves to
+a different x, and with `null` when it is dismissed. `SeriesTouchDetails`
+contains the x value (`index` for charts built from plain values) and, for each
+series with a value at that x, the series, point, screen position and colour.
 
-To draw your own tooltip, give `SeriesTooltip.builder`. The chart still places
-the result beside the crosshair or above the point and keeps it inside the
-chart. Return `null` from the builder, or pass `tooltip: null`, to show no
-tooltip at all. Pass `touch: null` to make the chart ignore touch and hover
-entirely.
+For a custom tooltip, provide `SeriesTooltip.builder`. The chart positions the
+result beside the crosshair or above the point, within the chart bounds. Return
+`null` from the builder, or pass `tooltip: null`, to hide the tooltip. Pass
+`touch: null` to disable touch and hover entirely.
 
-### Several charts, one crosshair
+### Synchronised crosshair
 
 ![A balance panel over a profit panel, one crosshair marking the same day in both](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-panels.png)
 
-A `SeriesChartController` shows or clears the crosshair from code. Give two
-charts the same controller, and touching either one marks the same x on both.
-For example, a balance panel and a profit panel under it:
+`SeriesChartController` shows or clears the crosshair programmatically. Charts
+that share a controller display the crosshair at the same x value — for example,
+a balance panel above a profit panel:
 
 ```dart
 final crosshair = SeriesChartController();
@@ -378,17 +372,16 @@ Column(children: [
 ]);
 ```
 
-Charts stacked like this line up as long as they give `SeriesYAxis` the same
-`width` and use the same x range.
+Stacked charts align when they use the same `SeriesYAxis` width and x range.
 
-## A window over long data
+## Range selector
 
 ![Three series over a window of five months, a day read out, and the range selector that moves the window](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-window.png)
 
-`SeriesRangeSelector` draws the whole data set small, with a window over it.
-Drag inside the window to move it, or drag a handle to move that edge. The
-selector holds no data of its own: show the window through the main chart's
-`minX` and `maxX`, and keep the window it reports.
+`SeriesRangeSelector` shows a miniature of the full data set with a selectable
+window. Drag the window to move it, or drag a handle to resize it. The selector
+does not store state: apply the window to the main chart's `minX` and `maxX`,
+and store the window it reports.
 
 ```dart
 var window = SeriesWindow(count - 30, count - 1.0);
@@ -413,25 +406,26 @@ SeriesChart(
 );
 ```
 
-With a non-zero duration, new data moves into place. If each series has the
-same number of points as before, every value moves from where it was, and the
-value range moves with it. Otherwise, and on the first build, the values grow
-out of each series' baseline, or from the edge of the plot when the baseline is
-out of range. A change of colour or style alone does not animate.
+With a non-zero duration, data changes are animated:
 
-Leave the duration at zero for data that changes while it is being dragged,
-such as a window moved by a range selector, so the chart keeps up with the
-finger.
+- If each series has the same number of points as before, values and the value
+  range interpolate from their previous positions.
+- Otherwise, and on first build, values grow from each series' baseline (or
+  from the plot edge if the baseline is out of range).
+- Colour and style changes alone are not animated.
+
+Use a zero duration for data that changes during a drag, such as a window moved
+by a range selector, so the chart tracks the pointer without lag.
 
 ## Sizing
 
-The chart fills the box it is given. In a box with no height of its own, such
-as a `Column` without an `Expanded` or a scroll view, it is `defaultHeight`
-(200) tall. `padding` keeps space clear around the whole chart, axes included.
-`clipToPlot: false` lets a thick line or a dot at the edge draw past the plot
-instead of being cut off.
+The chart fills its constraints. When the height is unbounded — for example,
+in a `Column` without `Expanded` or in a scroll view — it uses `defaultHeight`
+(200). `padding` adds space around the entire chart, including axes.
+`clipToPlot: false` allows thick lines and edge dots to extend beyond the plot
+area instead of being clipped.
 
-## Migrating
+## Migration
 
-[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md) maps
-their APIs onto this one, with worked examples.
+See [Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md) for an
+API mapping and examples.

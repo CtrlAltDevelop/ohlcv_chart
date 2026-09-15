@@ -1,9 +1,8 @@
 # Event marks
 
-Something happened to the instrument — it reported, it went ex-dividend, it
-split, it was in the news. `events` marks each under the candle nearest its own
-time, as a small badge below the candle area, so it says *when* without covering
-the price it happened at:
+`events` displays corporate and market events — earnings, dividends, splits and
+news — as small badges below the candle area, aligned to the candle nearest each
+event's time. Badges indicate when an event occurred without obscuring price.
 
 ```dart
 KChartWidget(
@@ -26,17 +25,28 @@ KChartWidget(
 
 ![Earnings, a dividend, a split and a news mark under the candles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/events.png)
 
-`ChartEventKind.earnings`, `.dividend`, `.split`, `.news` and `.custom` each
-carry a letter and a colour — `E`, `D`, `S`, `N`, `•`, coloured from
-`ChartColors.eventColors` — and `label`, `color` and `icon` override any of it.
-`detail` is for a panel or a tooltip of your own; nothing on the chart reads it.
+## Event kinds
 
-Tapping a badge reports through `onEventTapped`, and a tap gets to the badges
-before it is read as a selection or a drawing point, since they are small
-targets. `ChartStyle.eventMarkRadius` sizes them and `eventMarkGap` sets how far
-below the candles they sit; a radius of zero draws nothing while leaving the
-events on the chart for a list of your own. `resolveEvents` is exported for
-working out which candle each event falls on without a chart in hand.
+| Kind | Default label |
+| --- | --- |
+| `ChartEventKind.earnings` | `E` |
+| `ChartEventKind.dividend` | `D` |
+| `ChartEventKind.split` | `S` |
+| `ChartEventKind.news` | `N` |
+| `ChartEventKind.custom` | `•` |
+
+Default colours come from `ChartColors.eventColors`. Override them per event with
+`label`, `color` and `icon`. `detail` is not rendered on the chart; use it in
+your own panels or tooltips.
+
+## Interaction and styling
+
+- `onEventTapped` reports taps on a badge. Badge taps take priority over
+  selection and drawing input.
+- `ChartStyle.eventMarkRadius` sets the badge size and `eventMarkGap` the
+  distance below the candles. A radius of `0` hides the badges while keeping
+  event data available.
+- `resolveEvents` maps events to candle indices without a chart instance.
 
 ---
 

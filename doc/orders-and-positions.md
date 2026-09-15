@@ -1,8 +1,8 @@
 # Orders and positions
 
-`orders` and `positions` draw what the account actually holds: a line the full
-width of the chart, tagged on the axis side. These are not drawings — they come
-from the venue rather than from the user, and they are not saved with a layout.
+`orders` and `positions` display account data from your broker or exchange as
+full-width lines labelled on the price axis. They are not drawings: they are not
+user-editable shapes and are not saved with layouts.
 
 ```dart
 KChartWidget(
@@ -33,20 +33,28 @@ KChartWidget(
 
 ![A working order and an open position, each tagged on the axis](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/trading.png)
 
-**Drag to modify.** Press an order's line and drag it: the line follows the
-pointer, `onOrderDragged` fires all the way so a readout can follow it, and
-`onOrderMoved` fires once on release with the price it landed at. The chart never
-amends the order itself — it draws what you hand it, so the line snaps back
-unless the new price comes round in the next build. That is what you want: the
-venue gets the last word. `draggable: false` pins a line down, and an order with
-no `onOrderMoved` is not grabbable at all, so the gesture stays the chart's.
+## Modifying orders by drag
 
-A tag reads itself from the side, the kind and the quantity — `Buy 0.5`,
-`Stop 2`, `Long 1.5  +812.4` — and `label` overrides the lot. `unrealisedPnl` is
-yours to work out: only you know the contract size, the fees and the currency.
-Colours come from `ChartColors.buyColor` and `sellColor` unless the order names
-its own, and `ChartStyle.trading` — a `TradingStyle` — sets the stroke, the
-dashes and how near a line a press has to land.
+1. Press and drag an order line. The line follows the pointer, and
+   `onOrderDragged` fires continuously for live previews.
+2. On release, `onOrderMoved` fires once with the new price.
+3. The chart does not modify the order. The line returns to its original price
+   unless your app passes the updated order on the next build. This keeps your
+   broker as the source of truth.
+
+Set `draggable: false` to lock an individual order. Orders are not draggable
+when `onOrderMoved` is not provided.
+
+## Labels and styling
+
+- Labels are generated from side, kind and quantity — for example `Buy 0.5`,
+  `Stop 2` or `Long 1.5  +812.4`. Use `label` to override.
+- `unrealisedPnl` is supplied by your app, since contract size, fees and
+  currency are account-specific.
+- Colours default to `ChartColors.buyColor` and `sellColor`, and can be set per
+  order.
+- `ChartStyle.trading` (a `TradingStyle`) configures stroke width, dash pattern
+  and the hit-test distance.
 
 ---
 

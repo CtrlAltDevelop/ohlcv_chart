@@ -1,18 +1,24 @@
-# The date axis
+# Date axis
 
-The date axis is chosen the same way. Above a day it lands on round dates; below
-one it reads as a run of clock times — `06:00, 12:00, 18:00` — with the date
-promoted where the day turns over, so an intraday chart shows where one session
-ends and the next begins. Labels that would crowd into each other are dropped
-rather than printed over one another, and the boundaries follow the clock the
-chart prints: a `timeZoneOffset` of half an hour still labels round local times.
+Like the price axis, the date axis selects round values before placing labels.
+
+- **Daily and longer timeframes** use round dates.
+- **Intraday timeframes** use clock times such as `06:00, 12:00, 18:00`, with
+  the date shown where the day changes so session boundaries are visible.
+- **Overlapping labels** are omitted.
+- **Time zones:** boundaries are computed in the displayed time, so a
+  half-hour `timeZoneOffset` still produces round local times.
 
 ![The axis the chart picks, and the same candles under a dateFormatter](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/date-axis.png)
 
-`ChartStyle.gridColumns` sets the density, read like `gridRows`. Formatting can
-be taken over completely — `ChartStyle.dateTimeFormat` for a fixed pattern, or
-`dateFormatter` for full control, which is handed each candle along with a flag
-marking the long form the crosshair wants:
+## Customisation
+
+`ChartStyle.gridColumns` controls label density, in the same way as `gridRows`
+on the price axis.
+
+To control formatting, use `ChartStyle.dateTimeFormat` for a fixed pattern, or
+`dateFormatter` for full control. `dateFormatter` receives each candle and a
+flag indicating whether the long form (used by the crosshair) is required:
 
 ```dart
 KChartWidget(
@@ -26,9 +32,9 @@ KChartWidget(
 );
 ```
 
-`xFrontPadding` is the empty space kept to the right of the newest candle — room
-for the "now price" tag and its countdown, and for a level drawn just ahead of
-the market.
+`xFrontPadding` reserves space to the right of the newest candle, for the
+current-price tag and countdown, or for drawings placed ahead of the latest
+price.
 
 ---
 

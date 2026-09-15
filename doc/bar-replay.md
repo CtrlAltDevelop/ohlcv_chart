@@ -1,9 +1,9 @@
 # Bar replay
 
-Rewind the chart and let the market happen again. `ChartReplayController` holds
-the chart at a candle in the past: everything after it — the candles, the
-indicators computed from them, the now-price line and the legend — is as it was
-at that moment, so a setup can be studied without the answer already on screen.
+`ChartReplayController` replays historical data candle by candle. While a replay
+is active, the chart shows only the candles up to the current position, and
+indicators, the current-price line and the legend reflect only that data. This
+lets you study a setup without seeing what happened next.
 
 ![The replay running, a candle at a time](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-replay.gif)
 
@@ -25,17 +25,19 @@ replay.pause();
 replay.stop();           // hand the whole series back
 ```
 
-`play()` from cold starts halfway through, so a play button works without a
-candle having been picked first, and it gives up on its own at the newest one —
-`isPlaying`, `isActive`, `position`, `length` and `isAtEnd` are all there to
-drive a transport bar from. It is a `ChangeNotifier`, so those buttons rebuild
-themselves; dispose it with the widget that owns it.
+## Behaviour
+
+- Calling `play()` without `start()` begins at the midpoint of the series.
+- Playback stops automatically at the newest candle.
+- `isPlaying`, `isActive`, `position`, `length` and `isAtEnd` expose state for
+  building playback controls.
+- The controller is a `ChangeNotifier`. Dispose it together with the widget
+  that owns it.
 
 ![The chart held at the 150th candle of 420, under a transport bar](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-replay.png)
 
-Nothing is thrown away while a replay runs: the candle list is untouched and
-the drawings stay where they were placed, including any on candles still to
-arrive.
+Replay does not modify your data: the candle list is unchanged, and drawings
+remain in place, including those on candles not yet revealed.
 
 ---
 

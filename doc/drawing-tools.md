@@ -2,17 +2,19 @@
 
 ![The line editor open on a selected line](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/line-editor.png)
 
-Selecting a drawn line opens the editor over the chart: colour, thickness,
-stroke style, label text and visibility, lock and delete.
+Selecting a drawing opens the editor, with controls for colour, thickness,
+line style, label text and visibility, lock and delete.
 
 ![Trend and horizontal lines with labels](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/drawing.png)
 
-Set `currentDrawingTool` to put the chart into placement mode and handle the
-callbacks to persist what the user draws. The per-kind lists below are the
-original API and still work; a `drawingController` — see
-[Undo, redo and the drawing controller](#undo-redo-and-the-drawing-controller) —
-owns the whole layout for you instead, and `drawings:` takes drawings of any
-kind, which is where the later ones live:
+Set `currentDrawingTool` to enable placement mode, and handle the callbacks to
+persist user drawings.
+
+- The per-kind lists (`trendLines`, `horizontalLines`, …) are the original API
+  and remain supported.
+- `drawings:` accepts drawings of any kind and is required for newer tools.
+- A `drawingController` can manage the entire layout instead — see
+  [Undo, redo and the drawing controller](#undo-redo-and-the-drawing-controller).
 
 ```dart
 KChartWidget(
@@ -35,110 +37,113 @@ KChartWidget(
 );
 ```
 
-Placement works the way a charting desk expects. A horizontal or vertical line
-lands with a single tap. A trend line takes one tap per end: tap its start, move,
-and tap again to finish — the line rubber-bands along with the pointer in
-between. Pressing and dragging from one end to the other still draws a line in
-one gesture, on a touch screen as much as with a mouse. Escape abandons a line
-that is half-placed, as does tapping outside the chart or switching tools, and
-the line editor stays out of the way until the line is finished.
+### Placement
 
-With `magnetMode: true`, each point snaps to the nearest open, high, low or
-close within `DrawingStyle.magnetSnapDistance` pixels, and lands wherever the
-pointer is when nothing is that close. This applies to an anchor **dragged**
-afterwards as much as to one being placed, which is how a line already drawn
-gets pinned exactly onto a wick.
+- **Horizontal and vertical lines** are placed with a single tap.
+- **Trend lines** take one tap per end; the line follows the pointer between
+  taps.
+- **Press and drag** draws a two-point line in one gesture, on both touch and
+  mouse.
+- **Cancel** a partially placed drawing with Escape, by tapping outside the
+  chart, or by switching tools.
+- The line editor opens only after placement is complete.
 
-Dragging a drawing by its *body* is not snapped: it moves by the distance the
-pointer has travelled, and pulling one end onto a candle value would stretch or
-shift the shape rather than move it.
+### Magnet mode
 
-## What can be drawn
+With `magnetMode: true`, points snap to the nearest open, high, low or close
+within `DrawingStyle.magnetSnapDistance` pixels. Snapping applies both when
+placing and when dragging an anchor, so existing lines can be aligned precisely
+to candle values.
+
+Dragging an entire drawing is not snapped, so its shape is preserved.
+
+## Available tools
 
 ![A ray, an arrow, a horizontal ray, a range box and a Fibonacci retracement](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/shapes.png)
 
-| `DrawingTool` | Taps | Draws |
+| `DrawingTool` | Points | Description |
 | --- | --- | --- |
-| `horizontal` | 1 | a level across the whole chart |
-| `horizontalRay` | 1 | a level that only applies from that candle rightwards |
-| `vertical` | 1 | a line marking one candle |
-| `text` | 1 | a note pinned to a point, ready to be typed into |
-| `trend` | 2 | a segment between two anchors |
-| `ray` | 2 | a segment that carries on past its second anchor |
-| `extendedLine` | 2 | a segment that carries on past both anchors |
-| `arrow` | 2 | a segment with an arrowhead on its far end |
-| `rectangle` | 2 | a box between two opposite corners |
-| `ellipse` | 2 | an ellipse inscribed in that box |
-| `fibRetracement` | 2 | the levels of a swing, labelled and banded |
-| `measure` | 2 | a ruler: the move in price, in percent, in candles and in time |
-| `triangle` | 3 | a triangle over three corners |
-| `channel` | 3 | a base line and a parallel through the third point |
-| `position` | 3 | entry, target and stop, with the risk-to-reward worked out |
-| `brush` | drag | a freehand stroke |
-| `flag` | 1 | a pennant planted on one candle |
-| `gannFan` | 2 | rays at Gann's angles, `1×1` through `1×8` and `8×1` |
-| `gannBox` | 2 | a box ruled at the same fractions across and down |
-| `fibFan` | 2 | rays at the Fibonacci fractions of a swing |
-| `fibTimeZones` | 2 | verticals at Fibonacci multiples of a span |
-| `regressionTrend` | 2 | the least-squares fit through the candles between, with bands |
-| `priceRange` | 2 | a bracket over a price move, in price and percent |
-| `dateRange` | 2 | a bracket under a span, in candles and in time |
-| `callout` | 2 | a note in a box, with a tail pointing at a candle |
-| `pitchfork` | 3 | a median line and its tines, from three swings |
-| `fibExtension` | 3 | an impulse projected on from where the retracement ended |
-| `xabcd` | 5 | a harmonic pattern, each leg labelled with its retracement |
-| `path` | many | straight legs through as many points as are tapped |
+| `horizontal` | 1 | Horizontal level across the chart |
+| `horizontalRay` | 1 | Horizontal level extending right from a candle |
+| `vertical` | 1 | Vertical line at a candle |
+| `text` | 1 | Text note at a point |
+| `trend` | 2 | Line segment between two points |
+| `ray` | 2 | Line extending beyond the second point |
+| `extendedLine` | 2 | Line extending beyond both points |
+| `arrow` | 2 | Line segment with an arrowhead |
+| `rectangle` | 2 | Rectangle defined by opposite corners |
+| `ellipse` | 2 | Ellipse inscribed in a rectangle |
+| `fibRetracement` | 2 | Fibonacci retracement levels with labels and bands |
+| `measure` | 2 | Measurement of price, percentage, candle count and time |
+| `triangle` | 3 | Triangle |
+| `channel` | 3 | Parallel channel through a third point |
+| `position` | 3 | Entry, target and stop, with risk-to-reward ratio |
+| `brush` | drag | Freehand drawing |
+| `flag` | 1 | Flag marker on a candle |
+| `gannFan` | 2 | Gann fan angles, `1×1` through `1×8` and `8×1` |
+| `gannBox` | 2 | Gann box divided at ratio levels in price and time |
+| `fibFan` | 2 | Fibonacci fan |
+| `fibTimeZones` | 2 | Vertical lines at Fibonacci time intervals |
+| `regressionTrend` | 2 | Linear regression channel with deviation bands |
+| `priceRange` | 2 | Price range in absolute and percentage terms |
+| `dateRange` | 2 | Date range in candles and time |
+| `callout` | 2 | Text box with a pointer to a candle |
+| `pitchfork` | 3 | Pitchfork median line and parallels |
+| `fibExtension` | 3 | Trend-based Fibonacci extension |
+| `xabcd` | 5 | Harmonic pattern with retracement ratios |
+| `path` | many | Multi-segment path |
 
-The three trend variants are all `TrendLine`s: `extend` (`LineExtension.none`,
-`.right`, `.both`) decides how far past its anchors the line runs, and `arrow`
-puts a head on the far end, so a ray persisted by an older version of the app
-still loads. `HorizontalLine.startTime` is what makes a level a ray. Rectangles
-and retracements are their own types, `RectangleDrawing` and `FibRetracement`,
-passed in `rectangles` and `fibRetracements` and reported through
-`onAddRectangle` / `onRemoveRectangle` and `onAddFibRetracement` /
-`onRemoveFibRetracement`.
+### Drawing classes
 
-Every two-point drawing shares one base, `TwoPointDrawing`: two (time, price)
-anchors, either of which can be dragged, plus `isComplete` — false while the
-second point is still following the pointer.
+- **Trend line variants** (`trend`, `ray`, `extendedLine`, `arrow`) are all
+  `TrendLine` instances. `extend` (`LineExtension.none`, `.right`, `.both`)
+  controls extension, and `arrow` adds an arrowhead, so layouts saved by older
+  versions still load.
+- **Horizontal rays** are `HorizontalLine`s with `startTime` set.
+- **Rectangles and retracements** are `RectangleDrawing` and `FibRetracement`,
+  passed in `rectangles` and `fibRetracements` and reported through
+  `onAddRectangle` / `onRemoveRectangle` and `onAddFibRetracement` /
+  `onRemoveFibRetracement`.
+- **Two-point drawings** extend `TwoPointDrawing`: two (time, price) anchors,
+  each draggable, and `isComplete`, which is `false` while the second point is
+  being placed.
+- **Multi-point drawings** (`xabcd`, `path`) extend `MultiPointDrawing` and store
+  anchors in a `points` list. Each tap adds a point. An XABCD pattern completes
+  after five points; a path completes when you tap the same point twice or
+  switch tools (which finishes rather than discards it).
 
-`xabcd` and `path` are `MultiPointDrawing`s instead: their anchors live in a
-`points` list rather than in numbered fields, which is what lets a path take as
-many as it is given. Each tap lands a leg. A pattern finishes when its five
-points are in; a path has no count to finish on, so it ends when you tap twice
-in the same place, or when the tool is disarmed — switching tools finishes an
-open path rather than throwing it away.
+### Gann, Fibonacci, pitchfork and regression tools
 
-### Fans, forks and fits
+**`GannFan`** — the second anchor defines the `1×1` angle (one unit of price per
+unit of time). `ratios` multiply that slope: `2` is `1×2` and `0.5` is `2×1`.
 
-`GannFan`'s second anchor places the `1×1` — one unit of price against one unit
-of time — and `ratios` multiplies that slope for the rest of the fan, so `2` is
-the `1×2` and `0.5` the `2×1`. `GannBox` divides a range by its own proportions
-instead: `ratios` are taken as fractions of the box both ways, so the
-horizontals mark those fractions of the price range and the verticals the same
-fractions of the span.
+**`GannBox`** — `ratios` are fractions of the box in both directions, dividing
+the price range horizontally and the time span vertically.
 
-`FibFan` spreads rays between the flat `0` and the diagonal `1` of a swing —
-support that slopes with time, where a retracement's is level.
-`FibTimeZones` reads the other axis: the two anchors set one unit of time and
-each level marks that many units on, so a swing that took ten candles projects
-lines at 10, 20, 30, 50 and 80. `FibExtension` is the trend-based one: the
-first two anchors are the impulse, the third is where the retracement ended,
-and the levels are projected on from there rather than drawn between the
-anchors.
+**`FibFan`** — rays between the horizontal `0` and the diagonal `1` of a swing,
+producing sloping support and resistance.
 
-`PitchforkDrawing` takes a pivot and the swing either side of it. The median
-runs through the midpoint of the swing and each level draws a tine parallel to
-it — `1` being the tines through the anchors themselves, `0` the median.
-`PitchforkKind.andrews` leaves the handle on the pivot, `.schiff` lifts it
-halfway to the median in price, and `.modifiedSchiff` lifts it in time as well.
+**`FibTimeZones`** — the two anchors define one time unit, and lines are drawn at
+Fibonacci multiples of it. A 10-candle swing projects lines at 10, 20, 30, 50 and
+80 candles.
 
-`RegressionChannel` is the one drawing that reads the candles rather than only
-the anchors: `fitRegression` runs a least-squares fit through the closes of
-everything the two anchors span, and `deviations` places a band either side at
-that many standard deviations. Move an anchor and the fit is worked out again,
-so the line always describes the stretch it covers rather than the two points
-it was dropped on.
+**`FibExtension`** — the first two anchors define the impulse and the third the
+end of the retracement; levels are projected from the third point.
+
+**`PitchforkDrawing`** — takes a pivot and two swing points. The median line runs
+through the midpoint of the swing, and each level draws a parallel line (`0` is
+the median, `1` passes through the anchors).
+
+| `PitchforkKind` | Handle position |
+| --- | --- |
+| `andrews` | At the pivot |
+| `schiff` | Moved halfway to the median in price |
+| `modifiedSchiff` | Moved halfway in both price and time |
+
+**`RegressionChannel`** — the only drawing that reads candle data.
+`fitRegression` computes a least-squares fit through the closes between the two
+anchors, and `deviations` adds bands at that many standard deviations. The fit
+updates when an anchor moves.
 
 ```dart
 KChartWidget(
@@ -174,18 +179,20 @@ FibRetracement(
 );
 ```
 
-A retracement's levels run from the drawing rightwards to the edge of the chart,
-since what a level is worth is what price does after the move. `DrawingStyle`
-carries the rest of the geometry: `arrowHeadLength`, `rectangleFillOpacity`,
-`shapeFillOpacity`, `measureFillOpacity`, `channelFillOpacity`,
-`positionFillOpacity`, and `fibLevels` and `fibFillOpacity` for new retracements
-and their bands.
+Retracement levels extend from the drawing to the right edge of the chart.
+`DrawingStyle` sets default geometry for new drawings: `arrowHeadLength`,
+`rectangleFillOpacity`, `shapeFillOpacity`, `measureFillOpacity`,
+`channelFillOpacity`, `positionFillOpacity`, `fibLevels` and `fibFillOpacity`.
 
-The three-point shapes — `TriangleDrawing`, `ParallelChannel`, `PositionDrawing`
-— share `ThreePointDrawing`, which adds `time3` and `price3` and is not complete
-until the third point lands. A channel's parallel runs through that point; a
-position takes its entry from the first, its target from the second and its stop
-from the third, and works out `reward`, `risk` and `riskReward` for the label:
+### Three-point drawings
+
+`TriangleDrawing`, `ParallelChannel` and `PositionDrawing` extend
+`ThreePointDrawing`, which adds `time3` and `price3` and is complete once the
+third point is placed.
+
+- A channel's parallel line passes through the third point.
+- A position uses the first point as entry, the second as target and the third
+  as stop, and calculates `reward`, `risk` and `riskReward`:
 
 ```dart
 final plan = PositionDrawing(
@@ -199,27 +206,29 @@ plan.riskReward;   // 3.0
 
 ![A planned position with its risk-to-reward, inside a parallel channel](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/planning.png)
 
-A measurement reads itself out the same way: `priceMove`, `ratio` and `span`, plus
-the candle count the chart works out for the label. A note is a `TextAnnotation`
-whose `text` the editor's label field types into, and a freehand stroke is a
-`FreehandDrawing` — a list of (time, price) points, so it stays on the candles it
-was drawn over.
+### Other drawing types
 
-`keepToolArmed` is your own state — the chart never changes `currentDrawingTool`
-— but `selectAfterDrawing: false` stops the editor opening over each drawing as
-it lands, which is what makes drawing five levels in a row bearable.
+- **Measurements** (`MeasureDrawing`) expose `priceMove`, `ratio` and `span`, and
+  the label also shows the candle count.
+- **Text notes** (`TextAnnotation`) are edited through the editor's label field.
+- **Freehand drawings** (`FreehandDrawing`) store a list of (time, price) points,
+  so they stay aligned with the candles.
 
-Tapping an existing line selects it and opens the editing toolbar. Dragging an
-anchor of a two-point drawing moves that anchor; dragging the shape by its
-stroke, its outline or one of its levels moves the whole thing, both anchors
-together. Every edit — a new colour, a new thickness, a drag, a renamed
-label — fires the matching `onAdd*` callback with the updated line, so
-persisting a change is the same code path as persisting a new one.
+### Editing
+
+- The chart never changes `currentDrawingTool`, so keeping a tool active after
+  placement is up to your app. Set `selectAfterDrawing: false` to avoid opening
+  the editor after each placement when drawing several in a row.
+- Tap a drawing to select it and open the editor.
+- Drag an anchor to move that point; drag the stroke, outline or a level to move
+  the entire drawing.
+- Every edit — colour, thickness, position or label — fires the matching
+  `onAdd*` callback with the updated drawing, so saving edits uses the same code
+  as saving new drawings.
 
 ## Persisting a layout
 
-Every drawing serialises, and `drawingFromJson` turns a map back into the drawing
-it came from:
+All drawings serialise to JSON, and `drawingFromJson` restores them:
 
 ```dart
 final drawings = ChartDrawings([
@@ -235,18 +244,16 @@ final restored = saved == null
     : ChartDrawings.fromJson(jsonDecode(saved) as Map<String, dynamic>);
 ```
 
-`ChartDrawings` is an ordered set of drawings with typed views —
-`horizontalLines`, `trendLines`, `positions` and the rest — so the chart can be
-handed the whole layout at once through `drawings:`. A drawing of a kind this
-version does not know is skipped rather than throwing, so a layout written by a
-newer release still opens. `copyDrawing` deep-copies one, by round-tripping it
-through its own JSON.
+- `ChartDrawings` is an ordered collection with typed views (`horizontalLines`,
+  `trendLines`, `positions`, …) and can be passed to the chart as `drawings:`.
+- Unknown drawing kinds are skipped rather than throwing, so layouts from newer
+  versions still load.
+- `copyDrawing` creates a deep copy via JSON.
 
 ## Undo, redo and the drawing controller
 
-Hand the chart a `ChartDrawingController` and it owns the drawings: what the user
-places, restyles, drags or deletes goes through the controller, which is what
-makes undo possible.
+A `ChartDrawingController` manages all drawings. Every add, style change, move
+and deletion goes through the controller, which enables undo and redo.
 
 ```dart
 final drawings = ChartDrawingController();
@@ -266,25 +273,26 @@ drawings.select(line); // opens the chart's editor on that drawing
 jsonEncode(drawings.toJson());
 ```
 
-An edit is a step, so restyling a line and undoing gets the old style back — the
-controller keeps a deep copy of the last committed state, because the chart edits
-a drawing in place and only reports it once the edit lands. `historyLimit`
-(50 by default) is how far back it goes; `clearHistory` keeps the drawings and
-drops the steps, which is what a fresh symbol wants.
+- Each edit is one undo step, so undoing a style change restores the previous
+  style. The controller keeps a deep copy of the last committed state.
+- `historyLimit` (default 50) sets the maximum number of steps.
+- `clearHistory` removes undo history while keeping drawings — useful when
+  switching symbols.
+- Delete removes the selection, and Escape cancels placement. Disable keyboard
+  shortcuts with `enableKeyboardShortcuts: false`.
+- Without a controller, the per-kind lists and callbacks work as before, without
+  undo support.
 
-Delete removes the selection, and Escape abandons a drawing being placed. All of
-it can be turned off with `enableKeyboardShortcuts: false`. Without a controller
-the per-kind lists and callbacks work exactly as before — there is simply no undo.
+## Multi-select
 
-## Selecting several, and what to do with them
+Shift- or ⌘-click adds a drawing to the selection, and ⌘A selects all drawings.
+With multiple drawings selected:
 
-Shift- or ⌘-click a drawing and it joins the selection rather than replacing it;
-⌘A takes everything drawn. What follows applies to the lot: dragging one moves
-them all together, Delete removes them in a single undoable step, and an edit
-made through the line editor — colour, thickness, stroke, fill, label
-visibility — is copied onto the rest, which is what a user who selected five
-lines to recolour meant. The editor stays open on the last one picked and says
-how many it is editing.
+- Dragging moves all of them.
+- Delete removes all of them in a single undo step.
+- Editor changes (colour, thickness, line style, fill, label visibility) apply to
+  all of them.
+- The editor shows the number of selected drawings.
 
 ```dart
 drawings.selection;               // every selected drawing, primary last
@@ -296,10 +304,12 @@ drawings.clearSelection();
 drawings.removeAll(drawings.selection);   // one step
 ```
 
-⌘C copies, ⌘V pastes and ⌘D duplicates, each nudged a few candles clear of the
-original so the copy can be seen and grabbed rather than hiding underneath.
-The clipboard holds copies, so editing or deleting the originals afterwards
-leaves what was copied alone.
+### Copy, paste and duplicate
+
+⌘C copies, ⌘V pastes and ⌘D duplicates. Pasted and duplicated drawings are
+offset by a few candles so they do not overlap the original. The clipboard
+stores independent copies, so later changes to the originals do not affect
+them.
 
 ```dart
 drawings.copyToClipboard(drawings.selection);
@@ -308,10 +318,11 @@ drawings.paste();                  // returns what it added, and selects it
 drawings.duplicate(drawings.selection);
 ```
 
-⌘] and ⌘[ walk the selection up and down the stack, ⇧⌘] and ⇧⌘[ take it all the
-way. Later is higher: the last drawing paints over the ones before it, and is
-the one a tap in an overlap picks up. Saving an edit no longer restacks the
-drawing it edited, so the order the user set is the order that keeps.
+### Stacking order
+
+⌘] and ⌘[ move the selection one level up or down; ⇧⌘] and ⇧⌘[ move it to the
+front or back. Later drawings are drawn on top and receive taps first where
+drawings overlap. Editing a drawing does not change its position in the stack.
 
 ```dart
 drawings.bringToFront(line);
@@ -323,11 +334,9 @@ drawings.indexOf(line);            // -1 when it is not there
 
 ## Style templates
 
-`DrawingTemplate` is one drawing's look, saved so it can be put on another:
-colour, thickness, stroke style, fill opacity and label visibility — everything
-a drawing shares with every other drawing, and nothing that belongs to one kind
-in particular. Applying one to a rectangle and to a trend line gives them the
-same look without either having to know about the other.
+`DrawingTemplate` stores the common style properties of a drawing — colour,
+thickness, line style, fill opacity and label visibility — so they can be
+applied to other drawings of any type.
 
 ```dart
 final house = DrawingTemplate.of(drawings.selected!);
@@ -340,19 +349,18 @@ drawings.templates;                                    // by name
 jsonEncode(drawings.templatesToJson());
 ```
 
-Templates are kept apart from the layout — `templatesToJson` and
-`loadTemplates`, not `toJson` — because they outlive any one chart's drawings.
+Templates are serialised separately from layouts (`templatesToJson` and
+`loadTemplates` rather than `toJson`), since they are typically shared across
+charts.
 
 ## Exact coordinates
 
-A drawing placed by hand lands on whichever candle the pointer was over, which
-is close enough to read a chart by and not close enough to hand to someone
-else. The editor's ruler button opens a dialog listing every anchor — a price
-and a candle apiece, named `Start`, `End`, `X` through `D`, `Point 3` — and each
-one can be typed in exactly. `showDrawingCoordinates: false` leaves the button
-out.
+For precise placement, the editor's ruler button opens a dialog listing every
+anchor (named `Start`, `End`, `X` through `D`, `Point 3` and so on), where price
+and candle can be entered exactly. Set `showDrawingCoordinates: false` to hide
+the button.
 
-The same anchors are readable from code, whatever kind of drawing it is:
+Anchors can also be read and set from code for any drawing type:
 
 ```dart
 for (final anchor in drawingAnchors(line)) {
@@ -361,22 +369,22 @@ for (final anchor in drawingAnchors(line)) {
 setDrawingAnchor(line, 1, price: 42_000);   // leaves the time alone
 ```
 
-A freehand stroke is the one drawing whose anchors cannot be typed into — its
-shape is the hundreds of points it was drawn with — so it reads out its two ends
-and `drawingAnchorsAreEditable` answers false.
+Freehand drawings consist of many points, so only their endpoints are listed
+and `drawingAnchorsAreEditable` returns `false`.
 
-## The right-click menu
+## Context menu
 
-A right-click opens a menu, and what it offers depends on what was clicked. On a
-drawing: its coordinates, duplicate, copy, restack, lock, hide, its alert where
-it has one, and delete — applied to the whole selection where there is one. On
-empty chart: paste, select all, fit the price scale, scroll to the newest
-candle, undo, redo and clear. Right-clicking a drawing selects it first, so what
-the menu is about and what the chart highlights always agree.
+Right-clicking opens a context menu:
 
-`showContextMenu: false` turns it off. `contextMenuBuilder` is handed what was
-clicked — the drawing, the candle, the price, and the entries the chart would
-have shown — so an item of your own is one line:
+- **On a drawing:** coordinates, duplicate, copy, stacking order, lock, hide,
+  alert (where supported) and delete. Actions apply to the whole selection.
+  Right-clicking a drawing selects it first.
+- **On the chart:** paste, select all, fit price scale, scroll to latest, undo,
+  redo and clear.
+
+Set `showContextMenu: false` to disable it. `contextMenuBuilder` receives the
+clicked drawing, candle, price and default entries, so custom items can be
+added easily:
 
 ```dart
 KChartWidget(
@@ -396,16 +404,16 @@ KChartWidget(
 );
 ```
 
-Returning a list of your own replaces the menu; returning an empty one shows
-none. `ChartMenuItem` takes an `icon`, an `enabled` flag, a `checked` flag for a
-toggle and `destructive` for something that throws work away, and
-`ChartMenuDivider` rules between groups. `showChartMenu` opens the same menu
-from your own button.
+- Returning a custom list replaces the menu; an empty list shows no menu.
+- `ChartMenuItem` supports `icon`, `enabled`, `checked` (for toggles) and
+  `destructive` (for destructive actions).
+- `ChartMenuDivider` separates groups.
+- `showChartMenu` opens the menu from your own UI.
 
-## The drawing manager
+## Drawing manager
 
-`DrawingManager` is a plain widget over the same controller: every drawing by
-name, with show/hide, lock, delete, undo, redo and clear.
+`DrawingManager` is a widget that lists all drawings from a controller, with
+show/hide, lock, delete, undo, redo and clear actions.
 
 ```dart
 Row(
@@ -416,15 +424,16 @@ Row(
 );
 ```
 
-Tapping a row selects that drawing on the chart, and the chart's own selection
-highlights the row. Hiding one leaves it in the layout but off the chart —
-`ChartLine.hidden` — and every string it shows, including what each kind is
-called, comes from `DrawingTranslations`.
+- Tapping a row selects the drawing on the chart, and chart selection
+  highlights the corresponding row.
+- Hiding a drawing sets `ChartLine.hidden`, keeping it in the layout without
+  rendering it.
+- All labels, including drawing type names, come from `DrawingTranslations`.
 
-## Level alerts
+## Alerts
 
-A `HorizontalLine` with `alert: true` reports through `onAlertCrossed` whenever
-the newest candle closes on the other side of it:
+A `HorizontalLine` with `alert: true` triggers `onAlertCrossed` when the latest
+candle closes across it:
 
 ```dart
 KChartWidget(
@@ -437,14 +446,13 @@ KChartWidget(
 );
 ```
 
-It fires once per crossing — the market has to come back through the level before
-it fires again — and the editor's bell button is what arms one from the chart.
+The alert fires once per crossing and re-arms after price crosses back. Users
+can enable alerts with the editor's alert button.
 
-Levels are not the only thing that can be crossed. Any drawing mixing in
-`AlertingDrawing` — `HorizontalLine`, `TrendLine`, `ParallelChannel` and
-`FibRetracement` — reports through `onDrawingAlert`, which carries the price
-that was crossed as well as the drawing and the candle, since a drawing may
-have several levels at once:
+Drawings that mix in `AlertingDrawing` — `HorizontalLine`, `TrendLine`,
+`ParallelChannel` and `FibRetracement` — report through `onDrawingAlert`, which
+includes the crossed price in addition to the drawing and candle, since a
+drawing can have multiple levels:
 
 ```dart
 KChartWidget(
@@ -465,12 +473,12 @@ KChartWidget(
 );
 ```
 
-`alertLevelsAt` is what each drawing answers with, at the newest candle's
-instant, so a sloping line reports where it is now rather than where it was
-drawn. A segment can only be crossed between its anchors; a ray also counts
-rightwards of its second one, and an extended line everywhere. A horizontal
-level reports through both callbacks, so an app written against
-`onAlertCrossed` carries on working unchanged.
+- Each drawing provides its levels through `alertLevelsAt` at the latest candle's
+  time, so sloping lines are evaluated at their current price.
+- Segments trigger only between their anchors; rays also trigger beyond the
+  second anchor, and extended lines trigger anywhere.
+- Horizontal lines report through both callbacks, so existing
+  `onAlertCrossed` code continues to work.
 
 ---
 

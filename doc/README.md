@@ -1,94 +1,84 @@
 # ohlcv_chart documentation
 
-Every feature of the package, one page each. Start with the
-[candlestick chart](candlestick-chart.md); the rest can be read in any order.
+Reference documentation for every feature, one page each. Start with
+[Candlestick chart](candlestick-chart.md); the remaining pages can be read in
+any order.
 
-For installation, the feature list and support, see the
+For installation and an overview of features, see the
 [package README](../README.md).
 
 ## Getting started
 
-- **[Candlestick chart](candlestick-chart.md)** — the candles a `KChartWidget`
-  needs, and the shape `KLineEntity` expects them in.
-- **[Series charts](series-chart.md)** — `SeriesChart` for values rather than
-  candles: lines, areas, bars that group, stack or float, and scatter plots,
-  several at once, a chart you can turn on its side, a touch readout of your
-  own, a range strip for long data, and animation between data sets.
-
-- **[Pie chart](pie-chart.md)** — `PieChart`: sections worth a share of the
-  whole, a doughnut hole with a widget in it, exploded slices, badges and
-  touch.
-
-- **[Radar chart](radar-chart.md)** — `RadarChart`: a web of features with one
-  outline per series, drawn as a polygon or as rings.
-
-- **[Heatmap](heatmap-chart.md)** — `HeatmapChart`: a grid of squares coloured
-  by their value, with a scale, a legend and a readout per square.
+- **[Candlestick chart](candlestick-chart.md)** — the `KChartWidget` and the
+  `KLineEntity` data model.
+- **[Series charts](series-chart.md)** — `SeriesChart` for numeric data: lines,
+  areas, grouped, stacked and floating bars, scatter plots, horizontal
+  orientation, custom tooltips, range selection and animation.
+- **[Pie chart](pie-chart.md)** — `PieChart`: proportional sections, doughnut
+  charts with centre content, exploded slices, badges and touch.
+- **[Radar chart](radar-chart.md)** — `RadarChart`: multi-series comparison on a
+  polygonal or circular grid.
+- **[Heatmap](heatmap-chart.md)** — `HeatmapChart`: value-coloured grids with
+  colour scales, legends and hover readouts.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
-  their APIs mapped onto this package's, with worked examples.
+  API mapping from both packages, with examples.
 
-## Series and indicators
+## Indicators and data
 
-- **[Indicators](indicators.md)** — all 31 of them as configured instances, the
-  catalogue behind an "add indicator" sheet, pane scales, chained indicators,
-  alerts, colours and writing your own.
-- **[Comparing a second instrument](comparison.md)** — overlaying other series,
-  rebased or at their own prices, matched to the candles by time.
-- **[Chart types](chart-types.md)** — the eight ways to draw a series, and the
-  six transforms that rewrite the candles instead: Heikin-Ashi, Renko, line
-  break, Kagi, point & figure and range bars.
+- **[Indicators](indicators.md)** — all 31 indicators, the indicator catalogue,
+  pane scales, chained indicators, alerts, colours and custom indicators.
+- **[Symbol comparison](comparison.md)** — overlaying other instruments, rebased
+  or at actual prices, aligned by timestamp.
+- **[Chart types](chart-types.md)** — eight chart types and six candle
+  transforms: Heikin-Ashi, Renko, line break, Kagi, point & figure and range
+  bars.
 
-## Axes and reading the chart
+## Axes and readouts
 
-- **[Price axis](price-axis.md)** — linear, logarithmic, percentage or indexed
-  to 100; inverting it, marking the window's high, low and average close,
-  dragging the scale by hand, locking it so scrolling cannot rescale it,
-  writing the prices yourself with `priceFormatter`, and holding a gutter back
-  for its labels.
-- **[The date axis](date-axis.md)** — round time values, the formats it picks
-  between, and taking it over with `dateFormatter`.
-- **[The legend and the crosshair](legend-and-crosshair.md)** — the OHLC row
-  above the chart and the crosshair that follows the mouse.
-- **[The long-press readout](readout.md)** — the card that opens over a held
-  candle, and replacing it with your own.
+- **[Price axis](price-axis.md)** — linear, logarithmic, percentage and
+  indexed-to-100 scales; inversion, high/low and average markers, dragging,
+  locking, custom formatting with `priceFormatter`, and label gutters.
+- **[Date axis](date-axis.md)** — automatic time intervals and custom
+  formatting with `dateFormatter`.
+- **[Legend and crosshair](legend-and-crosshair.md)** — the OHLC legend and
+  hover crosshair.
+- **[Long-press readout](readout.md)** — the candle details card and custom
+  builders.
 
-## Drawing
+## Drawing tools
 
-- **[Drawing tools](drawing-tools.md)** — all 29 tools and what each one takes
-  to place, persisting a layout as JSON, undo and redo, multi-select, style
-  templates, typed coordinates, the right-click menu, the drawing manager and
-  level alerts.
-- **[Customising the line editor](line-editor.md)** — every control, option list
-  and pixel of the editor that opens on selection, through `DrawingStyle`.
+- **[Drawing tools](drawing-tools.md)** — all 29 tools, placement, JSON
+  persistence, undo and redo, multi-select, style templates, coordinate
+  editing, context menu, drawing manager and alerts.
+- **[Customising the line editor](line-editor.md)** — configuring the editor
+  through `DrawingStyle`.
 
-## Market context
+## Trading context
 
-- **[Orders and positions](orders-and-positions.md)** — live lines from your
-  venue, tagged with side, size and P&L, and draggable to amend.
-- **[Event marks](event-marks.md)** — earnings, dividends, splits and news
-  badged under the candle they fell on.
-- **[Sessions and time zones](sessions.md)** — day dividers, a display time
-  zone, extended-hours shading and colouring a bar yourself.
+- **[Orders and positions](orders-and-positions.md)** — live order and position
+  lines with side, size and P&L, draggable to modify.
+- **[Event marks](event-marks.md)** — earnings, dividend, split and news
+  markers.
+- **[Sessions and time zones](sessions.md)** — session dividers, display time
+  zone, extended-hours shading and custom bar colours.
 
-## Driving it from your code
+## Programmatic control and layout
 
 - **[Driving the chart](driving-the-chart.md)** — `KChartController` for zoom,
-  scroll and a PNG of the chart, reading and setting the visible window, and
-  turning the chart's own gestures off for one that should sit still.
-- **[Panes](panes.md)** — stacking, resizing and reordering the indicator panes.
-- **[Bar replay](bar-replay.md)** — rewind to any candle and step or play the
-  market forward, with the indicators only knowing what has arrived.
-- **[Sizing](sizing.md)** — how the candle area and the panes divide up the
-  height they are given.
-- **[Performance](performance.md)** — what the chart does to stay cheap to
-  redraw, what a host can do that undoes it, and how to measure a frame.
+  scroll and PNG export, reading and setting the visible range, and disabling
+  gestures.
+- **[Panes](panes.md)** — stacking, resizing and reordering indicator panes.
+- **[Bar replay](bar-replay.md)** — replaying historical data candle by candle.
+- **[Sizing](sizing.md)** — how the candle area and panes share the available
+  height.
+- **[Performance](performance.md)** — rendering optimisations, common pitfalls
+  and benchmarking.
 
-## More
+## Other
 
-- **[Depth chart](depth-chart.md)** — the `DepthChart` widget for an order book:
-  its four modes, three axes, how far either side of the mid to look, and the
-  bid/ask ratio bar.
-- **[Theming](theming.md)** — `ChartStyle` for geometry, `ChartColors` for
-  colour, `ChartTranslations` for every label.
-- **[Migrating from 1.x](migrating-from-1.x.md)** — what changed, and what to
-  replace it with.
+- **[Depth chart](depth-chart.md)** — `DepthChart` for order-book depth: display
+  modes, scales, zoom and the bid/ask ratio bar.
+- **[Theming](theming.md)** — `ChartStyle`, `ChartColors` and
+  `ChartTranslations`.
+- **[Migrating from 1.x](migrating-from-1.x.md)** — breaking changes and their
+  replacements.

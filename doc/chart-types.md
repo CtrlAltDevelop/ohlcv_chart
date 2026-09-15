@@ -1,6 +1,6 @@
 # Chart types
 
-`chartType` decides what the candle area draws:
+`chartType` sets how the candle area is rendered:
 
 ```dart
 KChartWidget(
@@ -14,26 +14,25 @@ KChartWidget(
 
 ![Bars, baseline, area, step line, HLC area and columns](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/chart-types.png)
 
-| `ChartType` | Draws |
+| `ChartType` | Rendering |
 | --- | --- |
-| `candles` | a filled or hollow body with a wick — the default |
-| `bars` | the high-low range, open ticked left and close ticked right |
-| `line` | a line through the closes |
-| `area` | the same line with the area beneath it washed in |
-| `baseline` | the line washed towards a level, up-coloured above it and down-coloured below |
-| `stepLine` | the same line, holding each close flat until the next one |
-| `hlcArea` | the high-low range washed in, with the close drawn through it |
-| `columns` | a column per candle, from the baseline to the close |
+| `candles` | Filled or hollow body with wicks (default) |
+| `bars` | OHLC bars: high-low range with open tick on the left and close tick on the right |
+| `line` | Line through closing prices |
+| `area` | Line with a filled area below |
+| `baseline` | Line filled towards a baseline, in the up colour above and the down colour below |
+| `stepLine` | Line that holds each close until the next |
+| `hlcArea` | Filled high-low range with the close drawn through it |
+| `columns` | One column per candle, from the baseline to the close |
 
-`isLine: true` still means `ChartType.area`, so nothing written against the older
-API changes behaviour.
+For backward compatibility, `isLine: true` is equivalent to `ChartType.area`.
 
-## Transformed candles
+## Candle transforms
 
-Heikin-Ashi, Renko, three-line break, Kagi, point & figure and range bars all
-rewrite the candles rather than the way they are drawn, so they are transforms
-rather than chart types. Run the list through `CandleTransforms` and recompute
-the indicators over the result:
+Heikin-Ashi, Renko, three-line break, Kagi, point & figure and range bars change
+the candle data itself rather than how it is drawn, so they are provided as
+transforms. Pass the candles through `CandleTransforms`, then compute
+indicators on the result:
 
 ```dart
 final ha = CandleTransforms.heikinAshi(candles);
@@ -50,20 +49,21 @@ KChartWidget(ha, ChartColors(), /* … */);
 
 ![Heikin-Ashi candles beside the same market as Renko bricks](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/aggregations.png)
 
-Heikin-Ashi keeps one candle per candle, at the same times, so anything drawn on
-the chart stays where it was. The rest throw time away between bars, and each
-carries the volume of the candles it covers:
+Heikin-Ashi produces one candle per source candle at the same timestamps, so
+drawings stay in place. The other transforms are price-based and not
+time-based; each output bar carries the combined volume of the candles it
+covers.
 
-| Transform | What draws a bar |
+| Transform | New bar condition |
 | --- | --- |
-| `renko(brickSize:)` | price closing a whole brick beyond the last; a reversal costs two |
-| `lineBreak(lines: 3)` | a close beyond the last block, or beyond the extreme of the last `lines` blocks to turn round |
-| `kagi(reversal:, asPercent:)` | a retracement of `reversal` from the extreme; a whole trend is one segment |
-| `pointAndFigure(boxSize:, reversalBoxes: 3)` | a whole box of travel, read off the highs and lows; a new column takes `reversalBoxes` back |
-| `rangeBars(range:)` | price travelling `range` from where the bar opened |
+| `renko(brickSize:)` | Close moves one full brick beyond the previous brick; reversals require two |
+| `lineBreak(lines: 3)` | Close beyond the previous block; reversals must exceed the extreme of the last `lines` blocks |
+| `kagi(reversal:, asPercent:)` | Price retraces by `reversal` from the extreme; each segment represents a full trend |
+| `pointAndFigure(boxSize:, reversalBoxes: 3)` | Price moves a full box, based on highs and lows; a new column requires `reversalBoxes` boxes |
+| `rangeBars(range:)` | Price moves `range` from the bar's open |
 
-`atrBrickSize` sizes a brick, a box, a reversal or a range from the market's own
-average true range, which is the usual way to pick one:
+`atrBrickSize` derives a brick, box, reversal or range size from the average true
+range:
 
 ```dart
 final step = CandleTransforms.atrBrickSize(candles) ?? candles.last.close * 0.005;
@@ -76,10 +76,10 @@ final bars = CandleTransforms.rangeBars(candles, range: step);
 
 ![Line break, Kagi, point & figure and range bars](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bar-types.png)
 
-Every one of them hands back plain candles at their own times, so the chart, the
-indicators and the drawing tools all work over them unchanged. What each bar
-means differs: a Kagi segment is a whole trend, a point-and-figure candle is a
-whole column of boxes, and a range bar is exactly `range` of travel.
+All transforms return standard candles with their own timestamps, so the chart,
+indicators and drawing tools work without changes. Note that bar meaning
+differs by transform: a Kagi segment is a complete trend, a point & figure
+candle is a column of boxes, and a range bar covers exactly `range`.
 
 ---
 

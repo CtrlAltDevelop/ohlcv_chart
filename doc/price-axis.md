@@ -11,33 +11,33 @@ KChartWidget(
 
 ![The same market indexed to 100, and with the axis inverted](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/price-scales.png)
 
-- `linear` — equal prices take equal space. The default.
-- `logarithmic` — equal *ratios* take equal space, so 10 → 20 covers as much of
-  the axis as 100 → 200. A window whose low is zero or negative has no logarithm
-  to space by and falls back to linear until it scrolls back into positive
-  prices.
-- `percentage` — spaced linearly, but the axis, the crosshair's price label and
-  the current-price tag read as the move away from the oldest candle in view.
-- `indexedTo100` — the same information said the other way about: the oldest
-  candle in view reads 100 and everything else is quoted against it, which is
-  how an index or a rebased performance series is usually written. The axis
-  marks round index levels — 100, 105, 110 — and converts them back to the
-  prices they stand for.
+## Scale types
+
+| `PriceAxisScale` | Behaviour |
+| --- | --- |
+| `linear` | Equal price differences use equal space (default) |
+| `logarithmic` | Equal ratios use equal space, so 10 → 20 spans the same distance as 100 → 200. Falls back to linear while the visible low is zero or negative |
+| `percentage` | Linear spacing; the axis, crosshair label and current-price tag show change from the oldest visible candle |
+| `indexedTo100` | The oldest visible candle is 100 and other values are relative to it, as with an index or rebased performance series. Ticks fall on round index levels (100, 105, 110) |
 
 ![A logarithmic price axis stepping by ratio, under an EMA](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/log-axis.png)
 
-An indicator pane can be logarithmic or read as a percentage in its own right;
-see `Indicator.scale`. The volume pane always stays linear.
+Indicator panes can use their own logarithmic or percentage scale through
+`Indicator.scale`. The volume pane is always linear.
 
-The axis picks round values and the grid is ruled where they land, so a label
-and its line always agree. A linear axis steps by 1, 2, 2.5 or 5 times a power
-of ten; a logarithmic one steps by ratio — 1, 2 and 5 through each power of ten
-— falling back to linear steps over a range too narrow to hold a decade; a
-percentage axis chooses round percentages and converts them back to prices.
+## Ticks and gridlines
 
-`ChartStyle.gridRows` is how densely that happens. It is not a row count: about
-half as many round values as `gridRows` land inside the window, so raise it for
-a denser axis and lower it for a sparser one.
+The axis selects round values and draws gridlines at them, so labels and lines
+always align.
+
+- **Linear:** steps of 1, 2, 2.5 or 5 times a power of ten.
+- **Logarithmic:** steps of 1, 2 and 5 within each power of ten, falling back to
+  linear steps when the range spans less than a decade.
+- **Percentage:** round percentages, converted to prices.
+
+`ChartStyle.gridRows` controls tick density. It is not a row count: roughly half
+as many round values as `gridRows` fall within the window. Increase it for more
+ticks, decrease it for fewer.
 
 ```dart
 KChartWidget(
@@ -48,15 +48,14 @@ KChartWidget(
 );
 ```
 
-The same arithmetic is exported, for a caller drawing an axis of its own beside
-the chart: `niceStep`, `niceTicks` and `niceLogTicks` for values, `niceTimeStep`,
-`timeBucket` and `startsNewDay` for times.
+The tick functions are exported for custom axes: `niceStep`, `niceTicks` and
+`niceLogTicks` for values, and `niceTimeStep`, `timeBucket` and `startsNewDay`
+for times.
 
-## A second axis down the other side
+## Secondary axis
 
-`secondaryPriceAxisScale` puts another axis on the side the price axis left
-free — the change since the oldest candle in view, next to the prices
-themselves:
+`secondaryPriceAxisScale` adds a second axis on the opposite side — for example,
+percentage change alongside prices:
 
 ```dart
 KChartWidget(
@@ -71,23 +70,17 @@ KChartWidget(
 )
 ```
 
-It marks its own round values, so a percentage axis reads +2%, +4%, +6% rather
-than whatever percentages the round prices happen to work out at. The grid
-stays ruled by the price axis: a second set of lines over one set of candles
-would say nothing the second set of labels does not.
+- The secondary axis computes its own round values (for example +2%, +4%, +6%).
+- Gridlines follow the primary axis only.
+- Both gutters together are limited to half the chart width. Set
+  `secondaryPriceAxisWidth: 0` to draw its labels over the candles instead.
+- The crosshair, current-price tag and other readouts continue to use
+  `priceAxisScale`.
 
-The two gutters share half the chart's width between them, so a second axis can
-never crowd the candles out, and `secondaryPriceAxisWidth: 0` draws its labels
-over the candles the way the price axis is drawn without a gutter.
+## Price formatting
 
-The crosshair, the current-price tag and the other readouts keep following
-`priceAxisScale`. The second axis is an axis, not a second voice for everything
-the chart says.
-
-## Writing the prices yourself
-
-`fixedLength` is how many decimals a price is written to. `priceFormatter`
-takes the writing over, the way `dateFormatter` does on the date axis:
+`fixedLength` sets the number of decimal places. For full control, use
+`priceFormatter`, which works like `dateFormatter` on the date axis:
 
 ```dart
 KChartWidget(
@@ -98,15 +91,13 @@ KChartWidget(
 )
 ```
 
-It writes every price the chart says: the axis labels, the crosshair's price
-label, the current-price tag, the high, low and signal tags, and the OHLC
-legend. An axis that reads out a move rather than a price — `percentage`,
-`indexedTo100` — writes that move itself and does not ask.
+`priceFormatter` applies to axis labels, the crosshair price label, the
+current-price tag, high, low and signal tags, and the OHLC legend. `percentage`
+and `indexedTo100` axes format their own values and do not use it.
 
-Drawings keep their own labels, which are yours to set through each one's
-`title`.
+Drawing labels are set separately through each drawing's `title`.
 
-## Reading it the other way, and other extras
+## Inversion and markers
 
 ```dart
 KChartWidget(
@@ -119,27 +110,19 @@ KChartWidget(
 );
 ```
 
-`invertPriceAxis` flips the axis, which is what a chart of a yield or a spread
-wants — and what a trader who thinks in the other direction reaches for.
-Everything follows: the candles, the drawings, the crosshair, the orders and the
-comparisons all read off the same flipped axis, and a rising candle is still
-coloured as one, because the colour comes from the prices rather than from the
-pixels. A logarithmic axis inverts and stays logarithmic.
+- **`invertPriceAxis`** places higher prices lower on the axis, which is useful
+  for yields and spreads. Candles, drawings, crosshair, orders and comparisons
+  all follow. Candle colours are based on prices, so rising candles keep their
+  up colour. Logarithmic axes remain logarithmic.
+- **`showAverageClose`** draws a dashed line at the mean close of the visible
+  window, using `ChartColors.avgColor`. It updates as you pan.
+- **`showHighLowOnAxis`** labels the visible high and low on the price axis, in
+  the axis's units.
 
-`showAverageClose` draws a dashed level at the mean close of the visible window —
-the level a mean-reversion read is taken against — coloured from
-`ChartColors.avgColor`, and it moves as the chart is panned, since it describes
-the window rather than the whole history.
+## Locking the scale
 
-`showHighLowOnAxis` tags the window's high and low on the axis, in whatever units
-the axis reads in. The leader lines already point at the candles that set them;
-this says what to read them off the axis as.
-
-## Keeping it still while the chart scrolls
-
-The axis fits the candles in the window, so scrolling rescales it: drag back
-through a trend and every number on the axis changes as the window moves.
-`lockPriceScale` holds it at one range instead.
+By default, the axis refits to the visible candles, so its values change while
+scrolling. `lockPriceScale` keeps the axis at a fixed range instead.
 
 ```dart
 KChartWidget(
@@ -150,31 +133,27 @@ KChartWidget(
 )
 ```
 
-It locks onto the range the axis was already showing, so turning it on does not
-move the chart. From then on the candles move under a scale that stays where it
-is — which is what reading a level off the axis while scrolling needs, and what
-paging in history through `onLoadMore` needs in order not to jump.
+- The lock applies to the range currently shown, so enabling it does not move
+  the chart.
+- Candles scroll beneath a stable scale, which makes it easier to read levels
+  and prevents jumps when loading history through `onLoadMore`.
+- Visible high and low markers, including `showHighLowOnAxis`, continue to track
+  the visible window.
+- A locked axis can still be dragged and zoomed, relative to its locked range.
 
-Only the scale is held. The window's own high and low are still measured, so
-`showHighLowOnAxis` and the high and low markers keep pointing at the candles
-that set them, and a locked axis can still be dragged and zoomed — from the
-range it is held at rather than the window's.
-
-`resetPriceScale` hands the axis back to the chart: it refits to whatever is on
-screen and holds there afresh.
+`resetPriceScale` refits the axis to the visible candles and locks it again:
 
 ```dart
 chart.resetPriceScale();  // refit to the window, then hold there
 ```
 
-Because the range is held until it is reset, a chart that switches to another
-instrument should reset it — a range from one instrument means nothing on
-another. Paging in candles and live ticks need nothing, which is the point.
+Reset the scale when switching instruments. New candles and live updates do not
+require a reset.
 
-### When the market trades past the locked range
+### Following price beyond the locked range
 
-A held range is a range the market can leave. `lockedScaleFollowsPrice` grows
-it just enough to keep the newest candle on the chart:
+`lockedScaleFollowsPrice` expands the locked range just enough to keep the newest
+candle visible:
 
 ```dart
 KChartWidget(
@@ -186,21 +165,18 @@ KChartWidget(
 )
 ```
 
-It only ever grows, and never refits to the window, so the axis still sits
-still while the chart is scrolled. Only the newest candle counts, and only
-while it is in view — growing the axis to swallow the history a scroll moves
-over would undo the lock a little at a time.
+The range only expands and never refits to the window, so the axis remains
+stable while scrolling. It considers only the newest candle, and only while it is
+visible.
 
-Left off, a price outside the range is not lost either: a level the axis cannot
-reach has its label pinned to the edge it went past, marked with an arrow,
-rather than being drawn outside the candle area where it cannot be seen.
+Without this option, levels outside the locked range are not hidden: their
+labels are pinned to the nearest edge and marked with an arrow.
 
-## Holding a gutter back for it
+## Label gutter
 
-By default the price labels are drawn over the candles, and the candles scroll
-underneath them. `ChartStyle.priceAxisWidth` holds a gutter back instead: the
-candles, the grid, the indicator panes and the date axis all stop short of it,
-and the labels sit in it on their own.
+By default, price labels are drawn over the candles. `ChartStyle.priceAxisWidth`
+reserves a gutter so that candles, grid, indicator panes and the date axis stop
+before the labels:
 
 ```dart
 KChartWidget(
@@ -213,25 +189,22 @@ KChartWidget(
 )
 ```
 
-56 or so suits four or five digits at the default text size. The gutter is
-never allowed past half the width, so a narrow chart is still mostly candles.
-
-The plot is clipped to its own bounds, so nothing — a candle at the edge of the
-window, an indicator line, the now-price level — spills into the gutter, and
-the axis reads the same however far the chart is scrolled. Pressing the labels
-still grabs the scale, as below; the gutter counts as part of the axis strip.
-
-Left at 0, the default, nothing changes and the labels are drawn over the
-candles as they always were.
+- A width of about 56 fits four to five digits at the default text size.
+- The gutter is limited to half the chart width.
+- The plot is clipped to its bounds, so candles, indicators and the
+  current-price line do not overlap the gutter.
+- The gutter is part of the drag area for scaling.
+- The default of `0` keeps labels drawn over the candles.
 
 ## Dragging the scale
 
-The axis fits the window by default, so the candles always fill the height —
-which is what you want until you want to look closer. Dragging down the strip
-the price labels sit in stretches the range and makes the candles taller;
-dragging up compresses it. Once the scale is being held that way, a vertical
-drag anywhere on the candles slides the window up and down, and a double-tap on
-the labels hands the axis back to the chart.
+By default, the axis fits the visible candles to the full height. Users can
+adjust this directly:
+
+- **Drag down** on the price labels to stretch the range (taller candles).
+- **Drag up** to compress it.
+- **Drag vertically** on the chart to pan once the scale is adjusted.
+- **Double-tap** the labels to refit.
 
 ```dart
 KChartWidget(
@@ -244,13 +217,12 @@ KChartWidget(
 );
 ```
 
-`priceScaleGripWidth` is how far in from the labelled side that strip reaches,
-and it is never more than half the chart. A drag through it still scrolls the
-chart sideways, a tap still selects what is under it, and while a drawing tool
-is armed it steps aside completely — so a line can still be placed against the
-axis.
+`priceScaleGripWidth` sets the width of the drag area from the labelled edge,
+limited to half the chart. Horizontal drags in this area still scroll the chart,
+taps still select, and the area is disabled while a drawing tool is active so
+drawings can be placed near the axis.
 
-The same three moves are on the controller, for a chart driven from a toolbar:
+The same actions are available on the controller:
 
 ```dart
 chart.stretchPrice();     // taller candles, as dragging down does
@@ -260,13 +232,12 @@ chart.resetPriceScale();  // back to fitting the window
 chart.priceZoom;          // 1 while the chart is fitting it itself
 ```
 
-Set `priceScaleDrag: false` to keep the axis fitted to the window whatever the
-user does, which is the older behaviour.
+Set `priceScaleDrag: false` to always fit the axis to the visible candles.
 
-That is the opposite of [locking it](#keeping-it-still-while-the-chart-scrolls),
-which is worth keeping straight: `priceScaleDrag: false` means the axis *always*
-refits to the window, and `lockPriceScale: true` means it *never* does. The two
-can be combined — an axis held at one range that the user cannot drag off it.
+Note the distinction from [locking the scale](#locking-the-scale):
+`priceScaleDrag: false` means the axis **always** refits, while
+`lockPriceScale: true` means it **never** refits. They can be combined to keep a
+fixed range that users cannot adjust.
 
 ---
 

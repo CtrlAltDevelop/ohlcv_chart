@@ -1,15 +1,14 @@
 # Performance
 
-A chart is redrawn more often than almost anything else on screen: every frame
-of a pan, every tick from the feed, every pixel the mouse moves. This page says
-what the chart does to keep that cheap, and the few things a host can do that
-undo it.
+Charts redraw frequently: on every frame of a pan, every data update and every
+mouse movement. This page describes the chart's rendering optimisations, the
+patterns in host code that can defeat them, and how to measure performance.
 
-## Where it stands
+## Benchmarks
 
 ```
-Microseconds to paint one frame — 140 candles in a 1200×800 box, median
-of three runs. Filled is what it costs now; hollow is what went away.
+Paint time per frame (µs) — 140 candles, 1200×800, median of three runs.
+Filled bar: current. Hollow bar: before the 2.3.1 optimisations.
 
                         0           200          400  µs
                         ┼──┬──┬──┬──┼──┬───┬──┬──┼──┬──┬──┬
@@ -24,44 +23,38 @@ columns                 ██████████░░░░░░        
 candles + 6 indicators  ████████████████████████░░░░░░░░    382 ← 522  1.4×
 a mouse move            ████░░░░░░░░░░░░░░░░░░░░░░░░        72 ← 445  6.2×
 
-With a long history behind the window, on a scale of its own:
+Long history behind the visible window:
 
                         0           1000        2000  µs
                         ┼──┬──┬──┬──┼──┬──┬──┬──┼──┬──┬──┬─
 50k candles, 20 lines   ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    198 ← 2668  13.5×
 ```
 
-Both charts are the same measurement: the time one call to the painter takes,
-which is the part of a frame the chart is responsible for. The gains come from
-the sections below — the series batching accounts for most of the per-type
-difference, the crosshair layer for the mouse move, and the anchor index for
-almost all of the long-history case, which is **13.5× faster**: a frame that
-cost 2668µs now costs 198, so what is behind the window no longer decides what
-a frame costs.
+Both measure the duration of a single painter call — the portion of a frame the
+chart is responsible for. Series batching accounts for most per-type
+improvements, the separate crosshair layer for mouse movement, and anchor
+indexing for the long-history case, which is **13.5× faster** (2668 µs to
+198 µs). Frame cost no longer depends on the amount of off-screen history.
 
-Reproduce them with:
+To reproduce:
 
 ```
 flutter test test/paint_benchmark.dart
 ```
 
-It is not a test and asserts nothing, so `flutter test` does not collect it —
-its name has no `_test` suffix. Run it either side of a change, on the same
-quiet machine.
+The benchmark has no assertions and no `_test` suffix, so `flutter test` does
+not run it by default. Run it before and after a change on the same idle
+machine.
 
-## What the chart already does
+## Built-in optimisations
 
-**Only the window is drawn.** The paint loop runs from the first candle on
-screen to the last, found by binary search, so the cost of a frame follows the
-width of the window and not the length of the history. A chart holding a hundred
-thousand candles draws the same hundred-odd that a chart holding a thousand
-does.
+**Visible-range rendering.** The paint loop covers only the visible candles,
+located by binary search. Frame cost depends on window width, not history
+length.
 
-**A series is one draw call, not one per candle.** The renderers are handed a
-candle at a time, so a line chart used to spend a `drawPath` on every candle in
-the window — ninety candles, ninety calls, and ninety throwaway `Path` objects
-with them. Each piece is now collected as its own subpath and the lot goes down
-in a single call. What is left per candle is only what is genuinely per candle:
+**Batched series drawing.** Series are collected as subpaths and drawn in a
+single call, rather than one `drawPath` (and one `Path` allocation) per candle.
+Remaining per-candle draw calls:
 
 | Chart type | Draw calls per candle |
 | --- | --- |
@@ -70,69 +63,56 @@ in a single call. What is left per candle is only what is genuinely per candle:
 | `candles` | 3 — wick, body, volume bar |
 | `bars` | 4 — the range, the two ticks, volume bar |
 
-A candle body and an OHLC bar stay one rectangle each: a rectangle is cheap, and
-folding them into a path would change how they blend. Everything drawn as a
-*series* — including both volume moving averages — costs nothing per candle.
+Candle bodies and OHLC bars remain individual rectangles, which are inexpensive
+and blend correctly. All series, including volume moving averages, have no
+per-candle cost.
 
-**Text is laid out once.** Laying out a label is the most expensive thing the
-chart does per label, and the labels barely change: the price axis, the date
-axis and the legends read the same strings frame after frame while the chart is
-only being hovered. They are held laid out, keyed by the string, its colour and
-its size, so a recolour or a resize measures afresh and nothing else does.
+**Text layout caching.** Text layout is the most expensive per-label operation.
+Axis and legend labels are cached by string, colour and size, and re-laid out
+only when one of those changes.
 
-**Drawing anchors are indexed.** A drawing remembers *when* it was placed, not
-where, so every anchor has to be turned back into a candle index before it can
-be drawn. Doing that by searching the list walks the whole history once per
-anchor per frame. The lookup is built once per series instead and kept until the
-series changes.
+**Indexed drawing anchors.** Drawings store timestamps, which must be resolved to
+candle indices. A lookup table is built once per series and reused until the
+series changes, instead of searching the history for each anchor on each frame.
 
-**Indicators are extended, not recomputed.** A tick that moves the newest candle
-offers each indicator the chance to carry on from what it already has, rather
-than computing the whole series again — see
-[Recomputing only what moved](indicators.md#recomputing-only-what-moved). An indicator that cannot resume is
-recomputed in full, so this is a shortcut where one exists and never a different
-answer.
+**Incremental indicator updates.** When the newest candle changes, indicators
+that support it extend their existing results instead of recomputing the full
+series — see [Recomputing only what moved](indicators.md#recomputing-only-what-moved).
+Indicators that cannot resume are recomputed in full, so results are always
+identical.
 
-**The crosshair is a layer of its own.** The chart and the crosshair over it are
-drawn separately, each behind its own repaint boundary. Moving the mouse redraws
-the crosshair, its readouts and the legends — which read out the candle under it
-— and leaves every candle, indicator and axis label exactly as it was. On
-desktop and web, where the crosshair follows a resting mouse, this is the
-difference between redrawing the whole chart on every mouse move and redrawing
-almost nothing.
+**Separate crosshair layer.** The chart and crosshair are drawn behind separate
+repaint boundaries. Mouse movement repaints only the crosshair, its labels and
+the legends; candles, indicators and axes are untouched. This is especially
+significant on desktop and web, where the crosshair follows the mouse.
 
-## What a host can do to spoil it
+## Avoiding common pitfalls
 
-Most of the above is keyed on noticing that nothing has changed, so the thing to
-avoid is telling the chart that everything has.
+Most optimisations depend on detecting unchanged input. Avoid patterns that make
+unchanged data look new.
 
-**Append to the candle list; do not rebuild it.** A feed that appends to the
-list it already passed is recognised as the same series grown, and the
-indicators, the anchor index and the laid-out labels all survive. A host that
-builds a fresh list every tick — `[...candles, newOne]` — is passing a series
-the chart has never seen, and everything is computed again from the first
-candle.
+**Append to the candle list instead of replacing it.** Appending to the same list
+is recognised as growth of the existing series, preserving indicator results,
+the anchor index and cached labels. Creating a new list on every update (for
+example `[...candles, newOne]`) forces a full recomputation.
 
-**Keep indicator instances alive.** Indicators are compared by identity as well
-as by settings, because two indicators of one kind with the same settings are
-free to compute different values. Holding your list in state and appending to
-it reuses the computed values; rebuilding `[MaIndicator(period: 20)]` inside
-`build` computes them again every frame.
+**Keep indicator instances stable.** Indicators are compared by identity as well
+as settings. Store the indicator list in state; creating
+`[MaIndicator(period: 20)]` inside `build` recomputes values on every frame.
 
-**Pass a stable list of comparisons and events.** These are compared by value,
-so a host that rebuilds the list every frame is not realigned every frame — but
-an empty `const []` is cheaper still, and a chart with no events never lines any
-up.
+**Use stable comparison and event lists.** These are compared by value, so
+rebuilding them does not force realignment, but `const []` is cheaper when there
+are none.
 
-**Give the chart a stable box.** The geometry is worked out from the size it is
-given, so a parent that changes the height every frame recomputes the whole
-layout every frame.
+**Provide stable constraints.** Layout is derived from the chart's size. A
+parent that changes the chart's height every frame forces a full layout on
+every frame.
 
-## Measuring it
+## Measuring
 
-Wall-clock numbers from a test are worth very little — they say more about what
-else the machine was doing. What moves a frame budget is draw calls, text
-layouts and how much of the series was walked, and all three are counted:
+Wall-clock timings in tests are unreliable because they depend on system load.
+The chart instead exposes counters for draw calls, text layouts and series
+scans:
 
 ```dart
 painter.chartPaints      // times the chart layer has been drawn
@@ -141,16 +121,15 @@ painter.textLayouts      // labels that had to be measured
 painter.candleIndex.scans// candles walked to build the anchor lookup
 ```
 
-`test/render_perf_test.dart` asserts on those, using a `Canvas` in
-`test/counting_canvas.dart` that tallies every drawing call and forwards it to a
-real one. It measures the *growth* in draw calls as the window widens rather
-than an absolute count, so the grid and the dashed price line — which scale with
-the canvas and not with the data — stay out of the answer.
+`test/render_perf_test.dart` asserts on these counters, using the `Canvas`
+wrapper in `test/counting_canvas.dart` that counts every draw call. It measures
+how draw calls grow as the window widens rather than absolute counts, excluding
+elements that scale with the canvas, such as the grid.
 
-`test/paint_benchmark.dart` puts a time on the same cases, for comparing one
-revision against another rather than for guarding anything.
+`test/paint_benchmark.dart` measures timings for the same scenarios, for
+comparing revisions.
 
-For the real thing, run in profile mode and read the timeline:
+For real-world profiling, run in profile mode and inspect the timeline:
 
 ```
 flutter run --profile --trace-skia
