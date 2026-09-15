@@ -2,6 +2,14 @@ import '../entity/k_line_entity.dart';
 import 'indicator.dart';
 
 /// What one indicator's last computation left behind.
+/// Open, high, low, close and volume.
+typedef _Bar = (double, double, double, double, double);
+
+/// What [candle] traded at, compared as one value.
+_Bar? _barOf(KLineEntity? candle) => candle == null
+    ? null
+    : (candle.open, candle.high, candle.low, candle.close, candle.vol);
+
 class _Entry {
   _Entry({
     required this.instance,
@@ -9,7 +17,7 @@ class _Entry {
     required this.profile,
     required this.length,
     required this.lastTime,
-    required this.lastClose,
+    required this.lastBar,
   });
 
   /// The very object the values were computed by.
@@ -31,8 +39,9 @@ class _Entry {
   /// recognised as the same series grown rather than a different one.
   DateTime? lastTime;
 
-  /// Close of that candle, so a tick that moves it is noticed.
-  double? lastClose;
+  /// The prices and volume of that candle, so a tick that moves any of them —
+  /// not only the close — is noticed.
+  _Bar? lastBar;
 }
 
 /// Holds computed indicator values between frames.
@@ -96,7 +105,7 @@ class IndicatorCache {
         cached != null &&
         cached.length == candles.length &&
         cached.lastTime == last?.dateTime &&
-        cached.lastClose == last?.close;
+        cached.lastBar == _barOf(last);
 
     if (candlesSitStill && identical(cached.instance, indicator)) {
       // The same object over the same candles can only give the same answer.
@@ -121,7 +130,7 @@ class IndicatorCache {
             ..profile = indicator.computeProfile(candles)
             ..length = candles.length
             ..lastTime = last?.dateTime
-            ..lastClose = last?.close;
+            ..lastBar = _barOf(last);
           return cached;
         }
       }
@@ -134,7 +143,7 @@ class IndicatorCache {
       profile: indicator.computeProfile(candles),
       length: candles.length,
       lastTime: last?.dateTime,
-      lastClose: last?.close,
+      lastBar: _barOf(last),
     );
     _entries[indicator] = entry;
     return entry;

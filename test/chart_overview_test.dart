@@ -242,5 +242,51 @@ void main() {
 
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('redraws when the newest candle moves in place', (
+      tester,
+    ) async {
+      final candles = series(100);
+      final host = _FakeHost(candles, first: 50, last: 99);
+      final controller = KChartController()..attach(host);
+      // One set of colours for the life of the strip, as an app passes them.
+      final colors = ChartColors();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              child: ChartOverview(
+                candles,
+                controller: controller,
+                colors: colors,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      CustomPainter overviewPainter() => tester
+          .widgetList<CustomPaint>(
+            find.descendant(
+              of: find.byType(ChartOverview),
+              matching: find.byType(CustomPaint),
+            ),
+          )
+          .firstWhere((paint) => paint.painter != null)
+          .painter!;
+
+      final before = overviewPainter();
+      // A tick mutates the newest candle in the list the strip already holds.
+      candles.last.close += 50;
+      controller.hostChanged();
+      await tester.pumpAndSettle();
+      final after = overviewPainter();
+
+      expect(identical(after, before), isFalse, reason: 'nothing rebuilt');
+      expect(after.shouldRepaint(before), isTrue);
+    });
   });
 }

@@ -1192,6 +1192,14 @@ class _KChartWidgetState extends State<KChartWidget>
   /// redoes — walk the controller's history. Each one is only claimed when the
   /// chart actually has something to do with it, so a key the host wanted for a
   /// dialog of its own is never swallowed.
+  /// Whether the keyboard focus is in an editable text field.
+  static bool get _isEditingText {
+    final context = FocusManager.instance.primaryFocus?.context;
+    if (context == null) return false;
+    return context.widget is EditableText ||
+        context.findAncestorWidgetOfExactType<EditableText>() != null;
+  }
+
   bool _handleKey(KeyEvent event) {
     if (event is! KeyDownEvent) return false;
 
@@ -1200,6 +1208,10 @@ class _KChartWidgetState extends State<KChartWidget>
       _cancelDrawing();
       return true;
     }
+
+    // A key typed into a text field — the editor's own label field, or any
+    // field of the host app's — belongs to that field, not to the drawings.
+    if (_isEditingText) return false;
 
     if (!widget.enableKeyboardShortcuts || !widget.isTrendLine) return false;
 
@@ -1433,6 +1445,10 @@ class _KChartWidgetState extends State<KChartWidget>
   /// the whole chart and repaint every candle for a mouse move.
   final ValueNotifier<int> _crosshairRepaint = ValueNotifier<int>(0);
 
+  /// Repaints the now-price, high/low and signal layer on its own, which is all
+  /// the countdown ticking over needs.
+  final ValueNotifier<int> _marksRepaint = ValueNotifier<int>(0);
+
   /// The cursor the last build handed the [MouseRegion].
   ///
   /// The cursor is chosen from where the pointer is, so moving between the
@@ -1531,7 +1547,11 @@ class _KChartWidgetState extends State<KChartWidget>
     final last = candles == null || candles.isEmpty ? null : candles.last;
     return (
       length: candles?.length ?? 0,
-      last: last?.close,
+      // Every price and the volume, not only the close: a trade at the same
+      // price still moves the volume, and a wick that comes back moves the high.
+      last: last == null
+          ? null
+          : (last.open, last.high, last.low, last.close, last.vol),
       time: last?.dateTime,
     );
   }
@@ -1604,8 +1624,10 @@ class _KChartWidgetState extends State<KChartWidget>
   /// Runs the one-second repaint only while the now-price countdown is shown.
   void _syncCountdownTimer() {
     if (widget.showNowPrice && widget.timeFrame != null) {
+      // Only the countdown moves, so only the layer it is drawn on repaints: a
+      // rebuild here would draw every candle again once a second.
       _countdownTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
+        if (mounted) _marksRepaint.value++;
       });
     } else {
       _countdownTimer?.cancel();
@@ -1660,6 +1682,7 @@ class _KChartWidgetState extends State<KChartWidget>
     mInfoWindowStream.close();
     _controller?.dispose();
     _crosshairRepaint.dispose();
+    _marksRepaint.dispose();
     super.dispose();
   }
 
@@ -2186,6 +2209,7 @@ class _KChartWidgetState extends State<KChartWidget>
           candleIndex: _candleIndex,
           textCache: _textCache,
         );
+        painter.marksOnOwnLayer = true;
 
         return Stack(
           children: [
@@ -2271,9 +2295,11 @@ class _KChartWidgetState extends State<KChartWidget>
                     if (isDraggingHandle) {
                       _applyHandleDrag(details.localPosition);
                     } else if (widget.currentDrawingTool == DrawingTool.none) {
+                      // Only the crosshair follows the finger, so only its
+                      // layer is redrawn, the same as for a hovering mouse.
                       mSelectX = details.localPosition.dx;
                       mSelectY = details.localPosition.dy;
-                      notifyChanged();
+                      _repaintCrosshair();
                     }
                   },
                   onLongPressEnd: (_) {
@@ -2454,6 +2480,20 @@ class _KChartWidgetState extends State<KChartWidget>
                                   baseDimension.mDisplayHeight,
                                 ),
                                 painter: painter,
+                              ),
+                            ),
+                            // The now-price, high/low and signal marks, apart
+                            // so the countdown can tick without the candles
+                            // under it being drawn again.
+                            RepaintBoundary(
+                              child: CustomPaint(
+                                size: Size.fromHeight(
+                                  baseDimension.mDisplayHeight,
+                                ),
+                                painter: ChartMarksPainter(
+                                  painter,
+                                  repaint: _marksRepaint,
+                                ),
                               ),
                             ),
                             if (widget.watermark case final watermark?)
@@ -3828,11 +3868,20 @@ class _KChartWidgetState extends State<KChartWidget>
     widget.isOnDrag?.call(isDrag);
   }
 
-  void _onFling(double velocity) {
-    _controller = AnimationController(
+  /// A fresh controller for a scroll animation, disposing the one it replaces.
+  ///
+  /// Every fling and every animated scroll gets its own, and without this the
+  /// old ones — each holding a ticker — would pile up for the life of the chart.
+  AnimationController _replaceScrollController() {
+    _controller?.dispose();
+    return _controller = AnimationController(
       duration: Duration(milliseconds: widget.flingTime),
       vsync: this,
     );
+  }
+
+  void _onFling(double velocity) {
+    _controller = _replaceScrollController();
     aniX =
         Tween<double>(
           begin: mScrollX,
@@ -3929,11 +3978,7 @@ class _KChartWidgetState extends State<KChartWidget>
       return;
     }
 
-    final controller = AnimationController(
-      duration: Duration(milliseconds: widget.flingTime),
-      vsync: this,
-    );
-    _controller = controller;
+    final controller = _replaceScrollController();
     final animation = Tween<double>(begin: mScrollX, end: 0).animate(
       CurvedAnimation(parent: controller.view, curve: widget.flingCurve),
     );
@@ -4118,11 +4163,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Slides the window to [scroll] over the fling duration.
   void _animateScrollTo(double scroll) {
-    final controller = AnimationController(
-      duration: Duration(milliseconds: widget.flingTime),
-      vsync: this,
-    );
-    _controller = controller;
+    final controller = _replaceScrollController();
     final animation = Tween<double>(begin: mScrollX, end: scroll).animate(
       CurvedAnimation(parent: controller.view, curve: widget.flingCurve),
     );

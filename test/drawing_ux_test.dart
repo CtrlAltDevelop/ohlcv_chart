@@ -157,6 +157,47 @@ void main() {
       expect(controller.selectionLength, 1);
     });
 
+    testWidgets('keys typed into a text field are left to the field', (
+      tester,
+    ) async {
+      final selected = HorizontalLine(price: 105);
+      final controller = ChartDrawingController(
+        drawings: [selected, HorizontalLine(price: 110)],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                const TextField(),
+                SizedBox(
+                  width: 500,
+                  height: 480,
+                  child: KChartWidget(
+                    candles0(),
+                    ChartColors(),
+                    isTrendLine: true,
+                    showNowPrice: false,
+                    drawingController: controller,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      controller.select(selected);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'label');
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+      await _shortcut(tester, LogicalKeyboardKey.keyA);
+
+      expect(controller.length, 2, reason: 'a key meant for the field deleted');
+      expect(controller.selection, [selected], reason: '⌘A was taken');
+    });
+
     testWidgets('⌘A selects everything drawn', (tester) async {
       final controller = ChartDrawingController(
         drawings: [HorizontalLine(price: 105), HorizontalLine(price: 110)],

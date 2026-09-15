@@ -66,6 +66,11 @@ class ChartOverview extends StatefulWidget {
 }
 
 class _ChartOverviewState extends State<ChartOverview> {
+  /// The colours used when none are given, made once: a fresh [ChartColors]
+  /// on every build would never compare equal to the last, and the strip
+  /// would repaint on every rebuild whether anything had changed or not.
+  final ChartColors _fallbackColors = ChartColors();
+
   /// What a drag in progress is doing.
   _Grab _grab = _Grab.none;
 
@@ -219,7 +224,7 @@ class _ChartOverviewState extends State<ChartOverview> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = widget.colors ?? ChartColors();
+    final colors = widget.colors ?? _fallbackColors;
     final range = widget.controller.visibleRange;
 
     return SizedBox(
@@ -239,6 +244,9 @@ class _ChartOverviewState extends State<ChartOverview> {
               size: Size(width, widget.height),
               painter: _OverviewPainter(
                 candles: widget.candles,
+                lastClose: widget.candles.isEmpty
+                    ? null
+                    : widget.candles.last.close,
                 colors: colors,
                 firstVisible: range?.firstIndex,
                 lastVisible: range?.lastIndex,
@@ -260,6 +268,7 @@ enum _Grab { none, window, left, right }
 class _OverviewPainter extends CustomPainter {
   const _OverviewPainter({
     required this.candles,
+    required this.lastClose,
     required this.colors,
     required this.firstVisible,
     required this.lastVisible,
@@ -267,6 +276,11 @@ class _OverviewPainter extends CustomPainter {
   });
 
   final List<KLineEntity> candles;
+
+  /// The newest close as it was when this painter was made. The list itself is
+  /// usually the same object tick after tick, mutated in place, so it cannot
+  /// say whether the newest candle has moved.
+  final double? lastClose;
   final ChartColors colors;
   final int? firstVisible;
   final int? lastVisible;
@@ -362,6 +376,7 @@ class _OverviewPainter extends CustomPainter {
       old.firstVisible != firstVisible ||
       old.lastVisible != lastVisible ||
       old.candles.length != candles.length ||
+      old.lastClose != lastClose ||
       !identical(old.candles, candles) ||
       old.colors != colors;
 }

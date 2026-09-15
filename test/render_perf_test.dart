@@ -243,6 +243,60 @@ void main() {
     });
   });
 
+  group('the countdown', () {
+    testWidgets('ticks over without redrawing the candles', (tester) async {
+      await tester.pumpWidget(_chart(_market()));
+      await tester.pumpAndSettle();
+
+      final painter = _painterOf(tester);
+      final chartBefore = painter.chartPaints;
+      final marksBefore = painter.marksPaints;
+
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(painter.marksPaints, greaterThan(marksBefore));
+      expect(
+        painter.chartPaints,
+        chartBefore,
+        reason: 'the countdown redrew the chart',
+      );
+      expect(identical(_painterOf(tester), painter), isTrue);
+    });
+  });
+
+  group('a held finger', () {
+    testWidgets('moves the crosshair without redrawing the chart', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_chart(_market()));
+      await tester.pumpAndSettle();
+
+      final centre = tester.getCenter(find.byType(KChartWidget));
+      final finger = await tester.startGesture(centre);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+      await tester.pump();
+
+      final painter = _painterOf(tester);
+      final chartBefore = painter.chartPaints;
+      final overlayBefore = painter.overlayPaints;
+
+      for (var step = 1; step <= 5; step++) {
+        await finger.moveTo(centre + Offset(step * 7.0, 0));
+        await tester.pump();
+      }
+
+      expect(painter.overlayPaints, greaterThan(overlayBefore));
+      expect(
+        painter.chartPaints,
+        chartBefore,
+        reason:
+            'dragging the crosshair redrew the chart '
+            '${painter.chartPaints - chartBefore} times',
+      );
+      await finger.up();
+    });
+  });
+
   group('hovering', () {
     testWidgets('redraws the crosshair and leaves the chart alone', (
       tester,

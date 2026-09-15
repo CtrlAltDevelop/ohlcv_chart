@@ -283,11 +283,41 @@ abstract class BaseChartPainter extends CustomPainter {
       drawVerticalText(canvas);
       drawDate(canvas, size);
 
-      drawNowPrice(canvas);
-      drawMaxAndMin(canvas);
-      drawSignals(canvas);
+      if (!marksOnOwnLayer) _drawMarks(canvas);
     }
     canvas.restore();
+  }
+
+  /// Whether [paint] leaves the now-price line, the high and low markers and
+  /// the signals to [paintMarks].
+  ///
+  /// The chart widget draws those on a layer of their own, so the countdown on
+  /// the now-price tag can tick over once a second without every candle being
+  /// drawn again. Left false, [paint] draws the whole chart, as it always has.
+  bool marksOnOwnLayer = false;
+
+  /// How many times the marks layer has been drawn on its own.
+  int get marksPaints => _marksPaints;
+  int _marksPaints = 0;
+
+  /// Draws the now-price line, the high and low markers and the signals.
+  ///
+  /// Reuses the geometry [paint] worked out, as [paintOverlay] does.
+  void paintMarks(Canvas canvas, Size size) {
+    _marksPaints++;
+    if (!hasLayout) layout(size);
+    if (candles == null || candles!.isEmpty) return;
+
+    canvas.clipRect(Rect.fromLTRB(0, 0, size.width, size.height));
+    canvas.save();
+    _drawMarks(canvas);
+    canvas.restore();
+  }
+
+  void _drawMarks(Canvas canvas) {
+    drawNowPrice(canvas);
+    drawMaxAndMin(canvas);
+    drawSignals(canvas);
   }
 
   /// Draws what follows the pointer: the crosshair, its readouts, and the

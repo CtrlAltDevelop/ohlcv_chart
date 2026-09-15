@@ -334,6 +334,20 @@ void _cacheTests() {
       expect(cache.hits, 2);
     });
 
+    test('recomputes when only the volume of the newest candle moves', () {
+      final cache = IndicatorCache();
+      final indicator = VolumeMaIndicator(period: 5);
+      final data = _series(50);
+
+      final before = cache.seriesFor(indicator, data).valueAt(0, 49);
+      // The same list and the same close: a trade at the price already printed.
+      data.last.vol = 10100;
+      final after = cache.seriesFor(indicator, data).valueAt(0, 49);
+
+      expect(cache.hits, 0, reason: 'the stale series was served');
+      expect(after, isNot(before));
+    });
+
     test('recomputes when history is paged in at the front', () {
       final cache = IndicatorCache();
       final indicator = _CountingMa();

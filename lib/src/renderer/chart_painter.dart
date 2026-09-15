@@ -3247,3 +3247,23 @@ class ChartOverlayPainter extends CustomPainter {
   bool shouldRepaint(ChartOverlayPainter oldDelegate) =>
       !identical(oldDelegate.chart, chart);
 }
+
+/// Draws the now-price line, the high and low markers and the signals, over
+/// the candles.
+///
+/// A layer of its own so the countdown on the now-price tag can tick over
+/// without the candles being drawn again: it is driven by its own `repaint`
+/// listenable, and the chart underneath is left alone.
+class ChartMarksPainter extends CustomPainter {
+  ChartMarksPainter(this.chart, {super.repaint});
+
+  /// The chart this draws over, and shares its geometry with.
+  final ChartPainter chart;
+
+  @override
+  void paint(Canvas canvas, Size size) => chart.paintMarks(canvas, size);
+
+  @override
+  bool shouldRepaint(ChartMarksPainter oldDelegate) =>
+      !identical(oldDelegate.chart, chart);
+}
