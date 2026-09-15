@@ -159,6 +159,8 @@ indicator and drawing tool is included; there is no paid tier.
   structures, several expiries at once with a crosshair that reads them all.
 - **`MarketProfileChart`** — time at price as TPO letters, with the point of
   control and the value area worked out from your candles.
+- **`FootprintChart`** — bid against ask volume at every price inside every bar,
+  shaded by size, with imbalances outlined and cumulative delta.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -339,6 +341,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Options payoff](doc/option-payoff-chart.md) | `OptionPayoffChart`: strategy profit at expiry, with break-evens |
 | [Volatility curve](doc/volatility-curve-chart.md) | `VolatilityCurveChart`: smiles, skews and term structures |
 | [Market profile](doc/market-profile-chart.md) | `MarketProfileChart`: time at price, TPO letters and value area |
+| [Footprint](doc/footprint-chart.md) | `FootprintChart`: bid and ask volume at every price, order flow |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |

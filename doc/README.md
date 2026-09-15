@@ -46,6 +46,8 @@ For installation and an overview of features, see the
   smiles, skews and term structures, several expiries at once.
 - **[Market profile](market-profile-chart.md)** — `MarketProfileChart`: time at
   price as TPO letters, with the point of control and value area.
+- **[Footprint](footprint-chart.md)** — `FootprintChart`: bid and ask volume at
+  every price inside every bar, with imbalances marked.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 

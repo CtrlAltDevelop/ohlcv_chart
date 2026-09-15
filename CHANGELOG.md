@@ -71,6 +71,13 @@
   axis, row touch, tooltips and grow-out animation. `MarketProfile`,
   `layOutMarketProfile` and `marketProfileBarAt` are public. See
   [Market profile](doc/market-profile-chart.md).
+- **`FootprintChart`** — bid against ask volume at every price inside every bar,
+  each cell shaded by size and outlined where the flow was one-sided, with each
+  bar's point of control, a thin candle behind each column, numbers that drop
+  out when there is no room, a price axis, cell touch and tooltips.
+  `FootprintLevel`, `FootprintBar`, `footprintCumulativeDelta`,
+  `footprintPriceRange`, `layOutFootprint` and `footprintCellAt` are public. See
+  [Footprint](doc/footprint-chart.md).
 
 ### Fixed
 
