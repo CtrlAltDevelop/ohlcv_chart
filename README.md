@@ -151,6 +151,8 @@ indicator and drawing tool is included; there is no paid tier.
   with axis titles, reference lines and labelled bubbles.
 - **`CalendarChart`** — daily profit and loss as real months, each day coloured
   by its value, with monthly totals in the headers.
+- **`EquityCurveChart`** — an account's value with an underwater drawdown panel,
+  the deepest fall marked, and drawdown statistics you can read yourself.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -327,6 +329,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Histogram](doc/histogram-chart.md) | `HistogramChart`: distribution shape, with binning helpers |
 | [Bubble](doc/bubble-chart.md) | `BubbleChart`: three numbers at once, size carried by area |
 | [Calendar](doc/calendar-chart.md) | `CalendarChart`: daily values laid out as real months |
+| [Equity curve](doc/equity-curve-chart.md) | `EquityCurveChart`: equity with an underwater drawdown panel |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |

@@ -82,6 +82,7 @@ export './distribution/box_plot_chart.dart';
 export './distribution/histogram_chart.dart';
 export './bubble/bubble_chart.dart';
 export './calendar/calendar_chart.dart';
+export './equity/equity_curve_chart.dart';
 export './gauge/gauge_chart.dart';
 export './treemap/treemap_chart.dart';
 export './treemap/treemap_data.dart';

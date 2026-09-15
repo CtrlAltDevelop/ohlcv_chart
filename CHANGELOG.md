@@ -47,6 +47,12 @@
   numbers and weekday initials, touch, tooltips and fade-in animation.
   `layOutCalendar`, `calendarCellAt` and `calendarValueRange` are public. See
   [Calendar](doc/calendar-chart.md).
+- **`EquityCurveChart`** — an account's value over time with an underwater
+  drawdown panel beneath it, the deepest fall marked and labelled, a crosshair
+  that follows a drag, value, percentage and time axes, tooltips and draw-in
+  animation. `equityDrawdowns`, `equityStats` (peak, trough, total return, max
+  drawdown and its dates) and `layOutEquityCurve` are public. See
+  [Equity curve](doc/equity-curve-chart.md).
 
 ### Fixed
 
