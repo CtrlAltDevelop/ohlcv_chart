@@ -121,6 +121,14 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`OpenInterestChart`** — open interest over price in one panel and funding
+  in another, interest scaled to its own swings rather than down to zero,
+  funding bars hanging either way off a zero line, a crosshair down both
+  panels, tooltips and a draw-in animation. `openInterestMoves` reads price
+  and interest together into new longs, longs closing, new shorts or shorts
+  covering; `OpenInterestPoint`, `OpenInterestMove`, `moveLabel`,
+  `OpenInterestLayout` and `layOutOpenInterest` are public. See
+  [Open interest and funding](doc/open-interest-chart.md).
 - **`LiquidityMapChart`** — where the leveraged stops sit: liquidation size
   bucketed up the price axis, longs growing in from the left and shorts from
   the right, the largest bucket labelled, a line at the current price, and

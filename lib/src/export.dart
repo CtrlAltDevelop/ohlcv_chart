@@ -79,6 +79,7 @@ export './dumbbell/dumbbell_chart.dart';
 export './slope/slope_chart.dart';
 export './sparkline/sparkline_grid.dart';
 export './chord/chord_chart.dart';
+export './openinterest/open_interest_chart.dart';
 export './parallel/parallel_chart.dart';
 export './liquidity/liquidity_map_chart.dart';
 export './marimekko/marimekko_chart.dart';

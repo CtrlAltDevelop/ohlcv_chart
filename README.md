@@ -358,6 +358,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Market profile](doc/market-profile-chart.md) | `MarketProfileChart`: time at price, TPO letters and value area |
 | [Footprint](doc/footprint-chart.md) | `FootprintChart`: bid and ask volume at every price, order flow |
 | [Order-book heatmap](doc/book-heatmap-chart.md) | `BookHeatmapChart`: resting liquidity over time |
+| [Open interest and funding](doc/open-interest-chart.md) | `OpenInterestChart`: how much money is in the trade, and who is paying |
 | [Liquidity map](doc/liquidity-map-chart.md) | `LiquidityMapChart`: where the stops are, and what a move would set off |
 | [Cumulative delta](doc/cumulative-delta-chart.md) | `CumulativeDeltaChart`: running delta with divergences |
 | [Trade timeline](doc/trade-timeline-chart.md) | `TradeTimelineChart`: when each trade was open, and what it made |
