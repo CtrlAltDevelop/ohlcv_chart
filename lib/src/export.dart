@@ -73,6 +73,7 @@ export './utils/candle_transforms.dart';
 export './utils/data_util.dart';
 export './heatmap/heatmap_chart.dart';
 export './heatmap/heatmap_data.dart';
+export './heatmap/seasonality_chart.dart';
 export './pie/pie_chart.dart';
 export './radar/radar_chart.dart';
 export './funnel/funnel_chart.dart';

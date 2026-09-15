@@ -115,6 +115,12 @@
   with compound or fixed sizing and a seed; `MonteCarloResult`,
   `MonteCarloResult.fromPaths` and `layOutMonteCarlo` are public. See
   [Monte Carlo fan](doc/monte-carlo-chart.md).
+- **`SeasonalityChart`** — results across the calendar, month by year, weekday
+  by hour or weekday by month, gathered by compounding, sum, mean, median, win
+  rate or count, with a total per row and an average per column, coloured from
+  loss through zero to profit on a heatmap. `SeasonalSample`,
+  `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
+  public. See [Seasonality](doc/seasonality-chart.md).
 
 ### Fixed
 
