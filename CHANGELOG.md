@@ -65,6 +65,12 @@
   that reads every curve at once, tooltips and draw-in animation.
   `volatilityRange` and `layOutVolatility` are public. See
   [Volatility curve](doc/volatility-curve-chart.md).
+- **`MarketProfileChart`** — time at price drawn as TPO letters or blocks, with
+  `buildMarketProfile` reading your candles into levels by tick size or row
+  count and working out the point of control and the 70% value area, a price
+  axis, row touch, tooltips and grow-out animation. `MarketProfile`,
+  `layOutMarketProfile` and `marketProfileBarAt` are public. See
+  [Market profile](doc/market-profile-chart.md).
 
 ### Fixed
 

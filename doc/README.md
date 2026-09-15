@@ -44,6 +44,8 @@ For installation and an overview of features, see the
   strategy makes or loses at expiry, with break-evens marked.
 - **[Volatility curve](volatility-curve-chart.md)** — `VolatilityCurveChart`:
   smiles, skews and term structures, several expiries at once.
+- **[Market profile](market-profile-chart.md)** — `MarketProfileChart`: time at
+  price as TPO letters, with the point of control and value area.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
