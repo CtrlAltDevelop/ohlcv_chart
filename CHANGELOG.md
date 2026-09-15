@@ -10,6 +10,10 @@
   coloured ranges, a value bar, a needle, major and minor ticks, centre text or
   a custom centre widget, and animated transitions between values.
   `GaugeLayout` is public. See [Gauge](doc/gauge-chart.md).
+- **`FunnelChart`** — tapered or stepped stages sized by value, with a minimum
+  width, conversion from the first and previous stage, labels inside or beside
+  each stage, shape-accurate touch, tooltips and animation. `layOutFunnel` and
+  `funnelSegmentAt` are public. See [Funnel](doc/funnel-chart.md).
 
 ### Fixed
 

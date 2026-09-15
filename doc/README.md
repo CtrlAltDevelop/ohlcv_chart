@@ -24,6 +24,8 @@ For installation and an overview of features, see the
   value, nested groups and colour scales for market maps.
 - **[Gauge](gauge-chart.md)** — `GaugeChart`: a dial for a single value, with
   ranges, a needle, ticks and animated transitions.
+- **[Funnel](funnel-chart.md)** — `FunnelChart`: sequential stages with
+  conversion percentages.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
