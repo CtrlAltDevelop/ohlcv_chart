@@ -88,6 +88,7 @@ export './volatility/volatility_curve_chart.dart';
 export './profile/market_profile_chart.dart';
 export './footprint/footprint_chart.dart';
 export './book/book_heatmap_chart.dart';
+export './delta/cumulative_delta_chart.dart';
 export './gauge/gauge_chart.dart';
 export './treemap/treemap_chart.dart';
 export './treemap/treemap_data.dart';

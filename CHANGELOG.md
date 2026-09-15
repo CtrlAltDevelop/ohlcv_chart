@@ -85,6 +85,12 @@
   `BookLevel`, `BookSnapshot`, `bookPriceRange`, `layOutBookHeatmap` and
   `bookHeatmapCellAt` are public. See
   [Order-book heatmap](doc/book-heatmap-chart.md).
+- **`CumulativeDeltaChart`** — buying less selling as a running total, with each
+  bar's own delta in a panel beneath, divergences against price marked both
+  ways, a crosshair that follows a drag, tooltips and draw-in animation.
+  `DeltaBar`, `cumulativeDelta`, `deltaBarsFromFootprint`, `deltaDivergences`
+  and `layOutCumulativeDelta` are public. See
+  [Cumulative delta](doc/cumulative-delta-chart.md).
 
 ### Fixed
 
