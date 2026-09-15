@@ -121,6 +121,14 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`MarimekkoChart`** — two dimensions at once: columns as wide as they are
+  big, each split by its own shares, cells with the same label sharing a
+  colour across columns, gaps taken out before the shares are worked out,
+  clipped headers with each column's share of the width, names inside the
+  cells that fit them, tooltips and a draw-in animation. `MarimekkoColumn`,
+  `MarimekkoCell`, `MarimekkoLayout`, `MarimekkoColumnLayout`,
+  `MarimekkoCellLayout` and `layOutMarimekko` are public. See
+  [Marimekko](doc/marimekko-chart.md).
 - **`StreamChart`** — a stack that flows: bands stacked on a wiggle,
   silhouette or zero baseline, ordered inside-out so the busiest bands sit
   where the stack moves least, with eased edges, names written in each band's

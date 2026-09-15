@@ -363,6 +363,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [R-multiple distribution](doc/r-multiple-chart.md) | `RMultipleChart`: results in R, with expectancy and SQN |
 | [Monte Carlo fan](doc/monte-carlo-chart.md) | `MonteCarloChart`: simulated equity paths as percentile bands |
 | [Seasonality](doc/seasonality-chart.md) | `SeasonalityChart`: results by month and year, or weekday and hour |
+| [Marimekko](doc/marimekko-chart.md) | `MarimekkoChart`: two dimensions at once, column width and cell height |
 | [Stream graph](doc/stream-chart.md) | `StreamChart`: a stack that flows, on a wiggle baseline |
 | [Violin and ridgeline](doc/violin-chart.md) | `ViolinChart`: the shape of a distribution, not just its quartiles |
 | [Slope and bump](doc/slope-chart.md) | `SlopeChart`: how things moved between periods, by value or by rank |
