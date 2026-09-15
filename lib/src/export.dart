@@ -84,6 +84,7 @@ export './bubble/bubble_chart.dart';
 export './calendar/calendar_chart.dart';
 export './equity/equity_curve_chart.dart';
 export './options/option_payoff_chart.dart';
+export './volatility/volatility_curve_chart.dart';
 export './gauge/gauge_chart.dart';
 export './treemap/treemap_chart.dart';
 export './treemap/treemap_data.dart';

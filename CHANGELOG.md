@@ -59,6 +59,12 @@
   a drag, tooltips and draw-in animation. `OptionLeg`, `optionPayoff`,
   `optionBreakEvens`, `optionPriceRange` and `layOutOptionPayoff` are public.
   See [Options payoff](doc/option-payoff-chart.md).
+- **`VolatilityCurveChart`** — implied volatility against strike or maturity,
+  with several curves at once, solid or dashed lines, smoothing that cannot
+  overshoot, an at-the-money marker, a legend, percentage axis, a crosshair
+  that reads every curve at once, tooltips and draw-in animation.
+  `volatilityRange` and `layOutVolatility` are public. See
+  [Volatility curve](doc/volatility-curve-chart.md).
 
 ### Fixed
 

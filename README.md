@@ -155,6 +155,8 @@ indicator and drawing tool is included; there is no paid tier.
   the deepest fall marked, and drawdown statistics you can read yourself.
 - **`OptionPayoffChart`** — an options strategy's profit at expiry, with exact
   break-evens, strike lines, the spot marked, and profit and loss shaded apart.
+- **`VolatilityCurveChart`** — implied volatility smiles, skews and term
+  structures, several expiries at once with a crosshair that reads them all.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -333,6 +335,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Calendar](doc/calendar-chart.md) | `CalendarChart`: daily values laid out as real months |
 | [Equity curve](doc/equity-curve-chart.md) | `EquityCurveChart`: equity with an underwater drawdown panel |
 | [Options payoff](doc/option-payoff-chart.md) | `OptionPayoffChart`: strategy profit at expiry, with break-evens |
+| [Volatility curve](doc/volatility-curve-chart.md) | `VolatilityCurveChart`: smiles, skews and term structures |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |
