@@ -14,6 +14,11 @@
   width, conversion from the first and previous stage, labels inside or beside
   each stage, shape-accurate touch, tooltips and animation. `layOutFunnel` and
   `funnelSegmentAt` are public. See [Funnel](doc/funnel-chart.md).
+- **`SankeyChart`** — flows between nodes drawn as ribbons sized by value, with
+  columns derived from the links, cycle-safe layout, blended or fixed ribbon
+  colours, node and ribbon touch, hover highlighting with the rest faded back,
+  tooltips and grow-in animation. `layOutSankey`, `sankeyNodeAt` and
+  `sankeyLinkAt` are public. See [Sankey](doc/sankey-chart.md).
 
 ### Fixed
 

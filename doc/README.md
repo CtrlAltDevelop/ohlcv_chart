@@ -26,6 +26,8 @@ For installation and an overview of features, see the
   ranges, a needle, ticks and animated transitions.
 - **[Funnel](funnel-chart.md)** — `FunnelChart`: sequential stages with
   conversion percentages.
+- **[Sankey](sankey-chart.md)** — `SankeyChart`: flows between nodes, ribbons
+  as thick as the quantity moved.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 

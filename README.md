@@ -139,6 +139,8 @@ indicator and drawing tool is included; there is no paid tier.
   ranges, a needle, ticks, centre text and animated transitions.
 - **`FunnelChart`** — tapered or stepped stages with conversion percentages,
   fitted or side labels, touch and tooltips.
+- **`SankeyChart`** — flows between nodes as ribbons sized by value, with
+  automatic columns, node and link touch, and highlight on hover.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -309,6 +311,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Treemap](doc/treemap-chart.md) | `TreemapChart`: tiles sized by value, groups and market maps |
 | [Gauge](doc/gauge-chart.md) | `GaugeChart`: dials with ranges, needle, ticks and centre content |
 | [Funnel](doc/funnel-chart.md) | `FunnelChart`: stage drop-off with conversion percentages |
+| [Sankey](doc/sankey-chart.md) | `SankeyChart`: flows between nodes, sized by value |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |

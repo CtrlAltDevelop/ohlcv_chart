@@ -76,6 +76,7 @@ export './heatmap/heatmap_data.dart';
 export './pie/pie_chart.dart';
 export './radar/radar_chart.dart';
 export './funnel/funnel_chart.dart';
+export './sankey/sankey_chart.dart';
 export './gauge/gauge_chart.dart';
 export './treemap/treemap_chart.dart';
 export './treemap/treemap_data.dart';
