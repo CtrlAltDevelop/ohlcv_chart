@@ -36,6 +36,11 @@
   column-wide touch, tooltips and grow-up animation. `HistogramBin`,
   `layOutHistogram` and `histogramBarAt` are public. See
   [Histogram](doc/histogram-chart.md).
+- **`BubbleChart`** — two axes and a third number carried by bubble area, with
+  automatic or fixed ranges, axis titles, a grid, reference lines on both axes,
+  labels inside the bubbles that fit, smallest-first hit testing, tooltips and
+  grow-in animation. `bubbleRange`, `layOutBubbles` and `bubbleAt` are public.
+  See [Bubble](doc/bubble-chart.md).
 
 ### Fixed
 

@@ -147,6 +147,8 @@ indicator and drawing tool is included; there is no paid tier.
   the statistics worked out from raw samples for you.
 - **`HistogramChart`** — the shape of a distribution, with binning by count or
   width, a colour for negative bins and reference lines.
+- **`BubbleChart`** — risk against return with a third number as bubble area,
+  with axis titles, reference lines and labelled bubbles.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -321,6 +323,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Sunburst](doc/sunburst-chart.md) | `SunburstChart`: a hierarchy as rings round a centre |
 | [Box plot](doc/box-plot-chart.md) | `BoxPlotChart`: quartiles, whiskers and outliers |
 | [Histogram](doc/histogram-chart.md) | `HistogramChart`: distribution shape, with binning helpers |
+| [Bubble](doc/bubble-chart.md) | `BubbleChart`: three numbers at once, size carried by area |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |
