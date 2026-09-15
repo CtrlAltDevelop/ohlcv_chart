@@ -121,6 +121,13 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`SlopeChart`** — how things moved between periods, as a slope chart on a
+  value scale or a bump chart on a rank one, with eased crossings, labels and
+  values at both ends of every line, broken lines where a series has no value,
+  column-first hit testing, fading, tooltips and a draw-in animation.
+  `SlopeSeries`, `SlopeScale`, `SlopeLayout`, `SlopeSeriesLayout`,
+  `rankValues` and `layOutSlope` are public. See
+  [Slope and bump](doc/slope-chart.md).
 - **`DumbbellChart`** — two values a row joined by a bar, every row on one
   shared scale, end dots coloured by direction, a value axis and gridlines
   under them, optional numbers outside the dots, touch reporting, tooltips and

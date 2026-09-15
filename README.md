@@ -363,6 +363,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [R-multiple distribution](doc/r-multiple-chart.md) | `RMultipleChart`: results in R, with expectancy and SQN |
 | [Monte Carlo fan](doc/monte-carlo-chart.md) | `MonteCarloChart`: simulated equity paths as percentile bands |
 | [Seasonality](doc/seasonality-chart.md) | `SeasonalityChart`: results by month and year, or weekday and hour |
+| [Slope and bump](doc/slope-chart.md) | `SlopeChart`: how things moved between periods, by value or by rank |
 | [Dumbbell](doc/dumbbell-chart.md) | `DumbbellChart`: two values a row, joined by a bar |
 | [Waffle](doc/waffle-chart.md) | `WaffleChart`: parts of a whole as a grid of squares |
 | [Bullet](doc/bullet-chart.md) | `BulletChart`: a measure against its target on a banded track |
