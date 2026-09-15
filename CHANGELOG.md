@@ -121,6 +121,13 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`LiquidityMapChart`** — where the leveraged stops sit: liquidation size
+  bucketed up the price axis, longs growing in from the left and shorts from
+  the right, the largest bucket labelled, a line at the current price, and
+  `layout.exposureTo(price)` for everything a move that far would set off.
+  `LiquidityLevel`, `LiquiditySide`, `LiquidityBin`, `liquidityBins`,
+  `LiquidityMapLayout`, `LiquidityBinLayout` and `layOutLiquidityMap` are
+  public. See [Liquidity map](doc/liquidity-map-chart.md).
 - **`SparklineGrid`** — small multiples: a name, a little line and a number
   per tile, laid out in columns, every tile scaled to its own series unless
   told to share one, with breaks where values are missing, a dot at each

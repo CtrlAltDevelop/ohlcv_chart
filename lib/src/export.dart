@@ -80,6 +80,7 @@ export './slope/slope_chart.dart';
 export './sparkline/sparkline_grid.dart';
 export './chord/chord_chart.dart';
 export './parallel/parallel_chart.dart';
+export './liquidity/liquidity_map_chart.dart';
 export './marimekko/marimekko_chart.dart';
 export './stream/stream_chart.dart';
 export './violin/violin_chart.dart';

@@ -52,6 +52,8 @@ For installation and an overview of features, see the
   every price inside every bar, with imbalances marked.
 - **[Order-book heatmap](book-heatmap-chart.md)** — `BookHeatmapChart`: resting
   liquidity over time, walls as bright lines.
+- **[Liquidity map](liquidity-map-chart.md)** — `LiquidityMapChart`: where the
+  leveraged stops sit, and what a move would set off.
 - **[Cumulative delta](cumulative-delta-chart.md)** — `CumulativeDeltaChart`:
   buying less selling, with divergences against price marked.
 - **[Trade timeline](trade-timeline-chart.md)** — `TradeTimelineChart`: each
