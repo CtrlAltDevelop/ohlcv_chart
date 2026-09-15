@@ -24,6 +24,8 @@ For installation and an overview of features, see the
   value, nested groups and colour scales for market maps.
 - **[Gauge](gauge-chart.md)** — `GaugeChart`: a dial for a single value, with
   ranges, a needle, ticks and animated transitions.
+- **[Waterfall](waterfall-chart.md)** — `WaterfallChart`: a bridge from one
+  total to another, gains and losses step by step.
 - **[Funnel](funnel-chart.md)** — `FunnelChart`: sequential stages with
   conversion percentages.
 - **[Sankey](sankey-chart.md)** — `SankeyChart`: flows between nodes, ribbons

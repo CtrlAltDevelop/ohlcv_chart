@@ -91,6 +91,11 @@
   `DeltaBar`, `cumulativeDelta`, `deltaBarsFromFootprint`, `deltaDivergences`
   and `layOutCumulativeDelta` are public. See
   [Cumulative delta](doc/cumulative-delta-chart.md).
+- **`WaterfallChart`** — a bridge from one total to another, each step picking
+  up where the last left off, with totals and subtotals on the baseline,
+  connectors, values over the bars, touch, tooltips and grow-in animation.
+  `WaterfallStep`, `waterfallTotals`, `waterfallRange`, `layOutWaterfall` and
+  `waterfallBarAt` are public. See [Waterfall](doc/waterfall-chart.md).
 
 ### Fixed
 

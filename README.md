@@ -137,6 +137,8 @@ indicator and drawing tool is included; there is no paid tier.
   colour scales for market maps, labels, touch and tooltips.
 - **`GaugeChart`** — a dial or semicircle for a single value, with coloured
   ranges, a needle, ticks, centre text and animated transitions.
+- **`WaterfallChart`** — a bridge from an opening total to a closing one, step
+  by step, with subtotals, connectors and values over the bars.
 - **`FunnelChart`** — tapered or stepped stages with conversion percentages,
   fitted or side labels, touch and tooltips.
 - **`SankeyChart`** — flows between nodes as ribbons sized by value, with
@@ -334,6 +336,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Heatmap](doc/heatmap-chart.md) | `HeatmapChart`: value-coloured grids, colour scales and legends |
 | [Treemap](doc/treemap-chart.md) | `TreemapChart`: tiles sized by value, groups and market maps |
 | [Gauge](doc/gauge-chart.md) | `GaugeChart`: dials with ranges, needle, ticks and centre content |
+| [Waterfall](doc/waterfall-chart.md) | `WaterfallChart`: a total built up step by step |
 | [Funnel](doc/funnel-chart.md) | `FunnelChart`: stage drop-off with conversion percentages |
 | [Sankey](doc/sankey-chart.md) | `SankeyChart`: flows between nodes, sized by value |
 | [Sunburst](doc/sunburst-chart.md) | `SunburstChart`: a hierarchy as rings round a centre |
