@@ -53,6 +53,12 @@
   animation. `equityDrawdowns`, `equityStats` (peak, trough, total return, max
   drawdown and its dates) and `layOutEquityCurve` are public. See
   [Equity curve](doc/equity-curve-chart.md).
+- **`OptionPayoffChart`** — an options strategy's profit at expiry, with long
+  and short call, put and underlying legs, quantity and contract size, profit
+  and loss shaded apart, strike lines, a spot marker, a crosshair that follows
+  a drag, tooltips and draw-in animation. `OptionLeg`, `optionPayoff`,
+  `optionBreakEvens`, `optionPriceRange` and `layOutOptionPayoff` are public.
+  See [Options payoff](doc/option-payoff-chart.md).
 
 ### Fixed
 

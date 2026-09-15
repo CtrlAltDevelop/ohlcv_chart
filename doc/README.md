@@ -40,6 +40,8 @@ For installation and an overview of features, see the
   months, each day coloured by its value.
 - **[Equity curve](equity-curve-chart.md)** — `EquityCurveChart`: an account's
   value with an underwater drawdown panel beneath it.
+- **[Options payoff](option-payoff-chart.md)** — `OptionPayoffChart`: what a
+  strategy makes or loses at expiry, with break-evens marked.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
