@@ -41,6 +41,12 @@
   labels inside the bubbles that fit, smallest-first hit testing, tooltips and
   grow-in animation. `bubbleRange`, `layOutBubbles` and `bubbleAt` are public.
   See [Bubble](doc/bubble-chart.md).
+- **`CalendarChart`** — daily values laid out as real month panels, coloured by
+  any `HeatmapScale`, with a range made symmetric about zero by default, a
+  configurable first weekday, monthly totals in the headers, optional day
+  numbers and weekday initials, touch, tooltips and fade-in animation.
+  `layOutCalendar`, `calendarCellAt` and `calendarValueRange` are public. See
+  [Calendar](doc/calendar-chart.md).
 
 ### Fixed
 

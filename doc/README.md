@@ -36,6 +36,8 @@ For installation and an overview of features, see the
   in each part of their range, with binning done for you.
 - **[Bubble](bubble-chart.md)** — `BubbleChart`: three numbers at once, size
   carried by area.
+- **[Calendar](calendar-chart.md)** — `CalendarChart`: daily values as real
+  months, each day coloured by its value.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
