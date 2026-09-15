@@ -121,6 +121,13 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`ChordChart`** — flow between nodes both ways round a ring, cycles drawn
+  rather than broken: arcs as long as everything passing through their node,
+  pads taken out of the turn before the arcs share it, ribbons bending through
+  the centre and coloured by their larger end, labels outside the ring,
+  fading, tooltips and a sweep-open animation. `ChordNode`, `ChordFlow`,
+  `ChordTotals`, `ChordArc`, `ChordRibbon`, `ChordLayout` and `layOutChord`
+  are public. See [Chord](doc/chord-chart.md).
 - **`MarimekkoChart`** — two dimensions at once: columns as wide as they are
   big, each split by its own shares, cells with the same label sharing a
   colour across columns, gaps taken out before the shares are worked out,

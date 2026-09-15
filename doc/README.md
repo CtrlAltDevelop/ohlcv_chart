@@ -62,6 +62,8 @@ For installation and an overview of features, see the
   equity paths as percentile bands, with the odds of loss and ruin.
 - **[Seasonality](seasonality-chart.md)** — `SeasonalityChart`: results by month
   and year, or weekday and hour, with totals and averages.
+- **[Chord](chord-chart.md)** — `ChordChart`: flow between nodes both ways
+  round a ring, cycles included.
 - **[Marimekko](marimekko-chart.md)** — `MarimekkoChart`: two dimensions at
   once, columns as wide as they are big.
 - **[Stream graph](stream-chart.md)** — `StreamChart`: how a whole was made up
