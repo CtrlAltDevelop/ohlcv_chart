@@ -1,5 +1,7 @@
 # Box plot
 
+![Daily returns of four strategies as quartiles, whiskers and outliers](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/box-plot.png)
+
 `BoxPlotChart` compares the spread of several sets of numbers side by side. Each
 entry is drawn as a box from the first to the third quartile, a line at the
 median, whiskers out to the furthest ordinary value, and a point for every

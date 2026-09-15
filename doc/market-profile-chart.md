@@ -1,5 +1,7 @@
 # Market profile (TPO)
 
+![Time at price as TPO letters, with the point of control and value area](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/market-profile.png)
+
 `MarketProfileChart` shows how long the market spent at each price. Each candle
 is one *period*, and every price level its range covered is credited to it — so
 the profile counts time at price, where a [volume profile](indicators.md) counts

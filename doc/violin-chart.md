@@ -1,5 +1,7 @@
 # Violin and ridgeline
 
+![Four strategies as violins, beside five months as a ridgeline](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/violin.png)
+
 `ViolinChart` draws the shape of a distribution. A box plot says where the
 quartiles are; a violin says what the distribution actually looks like between
 them — two strategies with the same median and the same spread can look very

@@ -242,6 +242,10 @@ class ParallelLayout {
 
 /// Lays out [lines] across [axes] in [size].
 ///
+/// [legendWidth] keeps room at the left for the line names, where the chart
+/// writes them; without it they would have nowhere to go but over the first
+/// axis.
+///
 /// [progress] reveals the axes left to right, for a draw-in animation.
 ParallelLayout layOutParallel(
   List<ParallelAxis> axes,
@@ -249,6 +253,7 @@ ParallelLayout layOutParallel(
   required Size size,
   double headerHeight = 0,
   double footerHeight = 0,
+  double legendWidth = 0,
   bool curved = false,
   EdgeInsets padding = EdgeInsets.zero,
   double progress = 1,
@@ -257,7 +262,7 @@ ParallelLayout layOutParallel(
   final box = padding.deflateRect(Offset.zero & size);
   if (box.width <= 0 || box.height <= 0) return ParallelLayout.empty;
   final plot = Rect.fromLTRB(
-    box.left,
+    box.left + math.max(0, legendWidth),
     box.top + math.max(0, headerHeight),
     box.right,
     box.bottom - math.max(0, footerHeight),
@@ -369,6 +374,7 @@ class ParallelChart extends StatefulWidget {
     this.endStyle,
     this.fadeUntouched = true,
     this.showLegend = false,
+    this.legendWidth = 64,
     this.padding = EdgeInsets.zero,
     this.backgroundColor,
     this.animationDuration = Duration.zero,
@@ -442,6 +448,9 @@ class ParallelChart extends StatefulWidget {
 
   /// Whether every line is labelled at the left-hand axis.
   final bool showLegend;
+
+  /// How much room those names take, left of the first axis.
+  final double legendWidth;
 
   /// Space kept clear around the chart.
   final EdgeInsets padding;
@@ -554,6 +563,7 @@ class _ParallelChartState extends State<ParallelChart>
             size: Size(width, height),
             headerHeight: widget.showHeaders ? widget.headerHeight : 0,
             footerHeight: widget.showEnds ? widget.footerHeight : 0,
+            legendWidth: widget.showLegend ? widget.legendWidth : 0,
             curved: widget.curved,
             padding: widget.padding,
             progress: progress,
@@ -702,11 +712,16 @@ class ParallelChartPainter extends CustomPainter {
           ),
         ]) {
           final painter = textCache.get(pair.$1, endStyle);
+          // Centred on its axis, except on the first one when the lines are
+          // named there: the names own that corner, so the numbers step
+          // right of the axis rather than sitting under them.
+          final left = a == 0 && chart.showLegend
+              ? x + 4
+              : x - painter.width / 2;
           painter.paint(
             canvas,
             Offset(
-              (x - painter.width / 2)
-                  .clamp(0.0, math.max(0.0, size.width - painter.width)),
+              left.clamp(0.0, math.max(0.0, size.width - painter.width)),
               pair.$2,
             ),
           );

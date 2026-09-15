@@ -1,5 +1,7 @@
 # Order-book heatmap
 
+![Resting order-book liquidity over twenty minutes, with walls as bright lines](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/book-heatmap.png)
+
 `BookHeatmapChart` draws resting liquidity over time. Every column is one
 snapshot of the order book, every row is a price, and the brighter a cell the
 more was resting there — so walls show up as bright lines running across time,

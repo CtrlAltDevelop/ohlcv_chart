@@ -1,5 +1,7 @@
 # Gauge
 
+![A risk dial with coloured ranges, a half-circle margin gauge and a progress ring](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/gauge.png)
+
 `GaugeChart` displays a single value against a range on a dial. Typical uses
 include KPIs, margin level, risk scores and sentiment indices.
 

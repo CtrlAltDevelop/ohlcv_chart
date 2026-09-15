@@ -316,6 +316,10 @@ const List<String> defaultCalendarMonthNames = [
 ];
 
 /// The names weekdays are written by, Monday first.
+/// How much room the weekday row takes under a month's title, where
+/// [CalendarChart.showWeekdayHeader] asks for one.
+const double calendarWeekdayRowHeight = 12;
+
 const List<String> defaultCalendarWeekdayNames = [
   'M',
   'T',
@@ -584,7 +588,10 @@ class _CalendarChartState extends State<CalendarChart>
           firstWeekday: widget.firstWeekday,
           monthsPerRow: widget.monthsPerRow,
           cellSpacing: widget.cellSpacing,
-          headerHeight: widget.headerHeight,
+          // A weekday row is written under the month's title, so the header
+          // needs the room for both rather than stacking them on each other.
+          headerHeight: widget.headerHeight +
+              (widget.showWeekdayHeader ? calendarWeekdayRowHeight : 0),
           monthSpacing: widget.monthSpacing,
           minPanelWidth: widget.minPanelWidth,
         );
@@ -789,7 +796,11 @@ class CalendarChartPainter extends CustomPainter {
           canvas,
           Offset(
             month.headerRect.left,
-            month.headerRect.center.dy - tp.height / 2,
+            // Against the top when a weekday row shares the header, centred
+            // in it when the title has the header to itself.
+            chart.showWeekdayHeader
+                ? month.headerRect.top
+                : month.headerRect.center.dy - tp.height / 2,
           ),
         );
       }

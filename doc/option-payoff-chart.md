@@ -1,5 +1,7 @@
 # Options payoff
 
+![A bull call spread and a long straddle at expiry, with break-evens](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/option-payoff.png)
+
 `OptionPayoffChart` draws what an options strategy makes or loses at expiry,
 price by price: profit shaded green above the zero line, loss red below it, with
 the strikes, the break-evens and the current spot marked.

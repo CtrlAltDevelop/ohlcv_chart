@@ -98,6 +98,17 @@ void main() {
       expect(layout.lines.single.points[0], isNotNull);
     });
 
+    test('a legend takes its room off the left', () {
+      final layout = layOutParallel(
+        _axes,
+        _lines,
+        size: const Size(400, 200),
+        legendWidth: 64,
+      );
+      expect(layout.plotRect.left, 64);
+      expect(layout.axisX.first, 64);
+    });
+
     test('the header and the ends take their room', () {
       final layout = layOutParallel(
         _axes,

@@ -1,5 +1,7 @@
 # Dumbbell
 
+![Quarter-on-quarter moves and daily ranges, each as two dots joined by a bar](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/dumbbell.png)
+
 `DumbbellChart` puts two values on one line and joins them with a bar. Before
 and after, low and high, bid and ask, last quarter and this one: the gap is the
 point, and a bar between two dots shows it far better than two bars side by

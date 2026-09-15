@@ -1,5 +1,7 @@
 # Bullet
 
+![Five KPIs against their targets on banded tracks](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bullet.png)
+
 `BulletChart` puts a measure against its target on a banded track. It is the
 compact form of a gauge: where a `GaugeChart` takes a panel to show one number,
 a bullet row takes a line, so a column of KPIs fits in the space of a single

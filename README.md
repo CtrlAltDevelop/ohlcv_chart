@@ -251,6 +251,81 @@ Each image links to the documentation page for that feature.
 </tr>
 </table>
 
+### Order flow and derivatives
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/market-profile-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/market-profile.png" width="100%" alt="Market profile"></a><br /><sub><b><a href="doc/market-profile-chart.md">Market profile</a></b><br />Time at price as TPO letters, with the point of control and value area.</sub></td>
+<td width="33%" valign="top"><a href="doc/footprint-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/footprint.png" width="100%" alt="Footprint"></a><br /><sub><b><a href="doc/footprint-chart.md">Footprint</a></b><br />Bid and ask volume at every price, inside each candle.</sub></td>
+<td width="33%" valign="top"><a href="doc/book-heatmap-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/book-heatmap.png" width="100%" alt="Order-book heatmap"></a><br /><sub><b><a href="doc/book-heatmap-chart.md">Order-book heatmap</a></b><br />Resting liquidity over time, with walls as bright lines.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/cumulative-delta-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/cumulative-delta.png" width="100%" alt="Cumulative delta"></a><br /><sub><b><a href="doc/cumulative-delta-chart.md">Cumulative delta</a></b><br />Running delta over a session, with buying and selling per bar.</sub></td>
+<td width="33%" valign="top"><a href="doc/liquidity-map-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/liquidity-map.png" width="100%" alt="Liquidity map"></a><br /><sub><b><a href="doc/liquidity-map-chart.md">Liquidity map</a></b><br />Where the leveraged stops sit, longs below the price and shorts above.</sub></td>
+<td width="33%" valign="top"><a href="doc/open-interest-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/open-interest.png" width="100%" alt="Open interest and funding"></a><br /><sub><b><a href="doc/open-interest-chart.md">Open interest and funding</a></b><br />How much money is in the trade, and which side is paying.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/option-payoff-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/option-payoff.png" width="100%" alt="Options payoff"></a><br /><sub><b><a href="doc/option-payoff-chart.md">Options payoff</a></b><br />A bull call spread and a long straddle at expiry, with break-evens.</sub></td>
+<td width="33%" valign="top"><a href="doc/volatility-curve-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/volatility-curve.png" width="100%" alt="Volatility curves"></a><br /><sub><b><a href="doc/volatility-curve-chart.md">Volatility curves</a></b><br />A smile at three expiries, and a term structure.</sub></td>
+<td width="33%" valign="top"><a href="doc/pair-spread-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/pair-spread.png" width="100%" alt="Pair spread"></a><br /><sub><b><a href="doc/pair-spread-chart.md">Pair spread</a></b><br />The log ratio of two symbols, with bands and a z-score.</sub></td>
+</tr>
+</table>
+
+### Backtests and results
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/equity-curve-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/equity-curve.png" width="100%" alt="Equity curve"></a><br /><sub><b><a href="doc/equity-curve-chart.md">Equity curve</a></b><br />The curve, with the underwater drawdown panel beneath it.</sub></td>
+<td width="33%" valign="top"><a href="doc/monte-carlo-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/monte-carlo.png" width="100%" alt="Monte Carlo fan"></a><br /><sub><b><a href="doc/monte-carlo-chart.md">Monte Carlo fan</a></b><br />Simulated paths as percentile bands, with the odds of loss and ruin.</sub></td>
+<td width="33%" valign="top"><a href="doc/r-multiple-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/r-multiple.png" width="100%" alt="R-multiple distribution"></a><br /><sub><b><a href="doc/r-multiple-chart.md">R-multiple distribution</a></b><br />Results in R, with expectancy, profit factor and SQN.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/trade-timeline-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/trade-timeline.png" width="100%" alt="Trade timeline"></a><br /><sub><b><a href="doc/trade-timeline-chart.md">Trade timeline</a></b><br />Every trade from entry to exit, a lane per symbol.</sub></td>
+<td width="33%" valign="top"><a href="doc/seasonality-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/seasonality.png" width="100%" alt="Seasonality"></a><br /><sub><b><a href="doc/seasonality-chart.md">Seasonality</a></b><br />Returns by month and year, compounded, with totals and averages.</sub></td>
+<td width="33%" valign="top"><a href="doc/calendar-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/calendar.png" width="100%" alt="Calendar"></a><br /><sub><b><a href="doc/calendar-chart.md">Calendar</a></b><br />Daily profit and loss on real month panels.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/waterfall-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/waterfall.png" width="100%" alt="Waterfall"></a><br /><sub><b><a href="doc/waterfall-chart.md">Waterfall</a></b><br />A balance built up step by step, from opening to closing.</sub></td>
+<td width="33%"></td>
+<td width="33%"></td>
+</tr>
+</table>
+
+### Dashboards and reports
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="doc/treemap-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/treemap.png" width="100%" alt="Treemap"></a><br /><sub><b><a href="doc/treemap-chart.md">Treemap</a></b><br />A market map of sectors and symbols, and portfolio weight.</sub></td>
+<td width="33%" valign="top"><a href="doc/sunburst-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sunburst.png" width="100%" alt="Sunburst"></a><br /><sub><b><a href="doc/sunburst-chart.md">Sunburst</a></b><br />A hierarchy as rings, with the total in the middle.</sub></td>
+<td width="33%" valign="top"><a href="doc/sankey-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sankey.png" width="100%" alt="Sankey"></a><br /><sub><b><a href="doc/sankey-chart.md">Sankey</a></b><br />Fee income flowing through revenue into costs and profit.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/chord-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/chord.png" width="100%" alt="Chord"></a><br /><sub><b><a href="doc/chord-chart.md">Chord</a></b><br />Flow between venues, both ways round a ring.</sub></td>
+<td width="33%" valign="top"><a href="doc/marimekko-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/marimekko.png" width="100%" alt="Marimekko"></a><br /><sub><b><a href="doc/marimekko-chart.md">Marimekko</a></b><br />Two dimensions at once: column width and cell height.</sub></td>
+<td width="33%" valign="top"><a href="doc/stream-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/stream.png" width="100%" alt="Stream graph"></a><br /><sub><b><a href="doc/stream-chart.md">Stream graph</a></b><br />Two years of composition, on a wiggle baseline.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/parallel-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/parallel.png" width="100%" alt="Parallel coordinates"></a><br /><sub><b><a href="doc/parallel-chart.md">Parallel coordinates</a></b><br />Five strategies compared on five measures at once.</sub></td>
+<td width="33%" valign="top"><a href="doc/slope-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/slope.png" width="100%" alt="Slope and bump"></a><br /><sub><b><a href="doc/slope-chart.md">Slope and bump</a></b><br />Returns by quarter, by value and by changing rank.</sub></td>
+<td width="33%" valign="top"><a href="doc/bubble-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bubble.png" width="100%" alt="Bubble"></a><br /><sub><b><a href="doc/bubble-chart.md">Bubble</a></b><br />Risk against return, sized by capital.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/box-plot-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/box-plot.png" width="100%" alt="Box plot"></a><br /><sub><b><a href="doc/box-plot-chart.md">Box plot</a></b><br />Quartiles, whiskers and outliers for four strategies.</sub></td>
+<td width="33%" valign="top"><a href="doc/histogram-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/histogram.png" width="100%" alt="Histogram"></a><br /><sub><b><a href="doc/histogram-chart.md">Histogram</a></b><br />Daily returns split at zero, and a spread of trade sizes.</sub></td>
+<td width="33%" valign="top"><a href="doc/violin-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/violin.png" width="100%" alt="Violin and ridgeline"></a><br /><sub><b><a href="doc/violin-chart.md">Violin and ridgeline</a></b><br />The shape of a distribution, side by side or stacked.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/dumbbell-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/dumbbell.png" width="100%" alt="Dumbbell"></a><br /><sub><b><a href="doc/dumbbell-chart.md">Dumbbell</a></b><br />Two values a row, joined by a bar.</sub></td>
+<td width="33%" valign="top"><a href="doc/bullet-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bullet.png" width="100%" alt="Bullet"></a><br /><sub><b><a href="doc/bullet-chart.md">Bullet</a></b><br />KPIs against their targets, on banded tracks.</sub></td>
+<td width="33%" valign="top"><a href="doc/gauge-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/gauge.png" width="100%" alt="Gauge"></a><br /><sub><b><a href="doc/gauge-chart.md">Gauge</a></b><br />A dial with coloured ranges, a half circle and a progress ring.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="doc/waffle-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/waffle.png" width="100%" alt="Waffle"></a><br /><sub><b><a href="doc/waffle-chart.md">Waffle</a></b><br />Shares as a hundred squares, counted rather than judged.</sub></td>
+<td width="33%" valign="top"><a href="doc/funnel-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/funnel.png" width="100%" alt="Funnel"></a><br /><sub><b><a href="doc/funnel-chart.md">Funnel</a></b><br />Where the people go, tapered or straight-sided.</sub></td>
+<td width="33%" valign="top"><a href="doc/sparkline-grid.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sparkline-grid.png" width="100%" alt="Sparkline grid"></a><br /><sub><b><a href="doc/sparkline-grid.md">Sparkline grid</a></b><br />A watchlist of small multiples, a name and a shape each.</sub></td>
+</tr>
+</table>
+
 ### Chart types
 
 <table>

@@ -1,5 +1,7 @@
 # Liquidity map
 
+![Liquidation size up the price axis, longs below the price and shorts above](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/liquidity-map.png)
+
 `LiquidityMapChart` shows where the stops are. Leveraged positions do not close
 quietly: each one is a market order waiting at a price. Stacked up the price
 axis, they show where a move would find fuel — which is the thing a depth chart

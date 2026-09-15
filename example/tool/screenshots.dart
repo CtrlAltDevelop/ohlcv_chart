@@ -32,6 +32,8 @@ import 'package:ohlcv_chart_example/src/chart_theme.dart';
 import 'package:ohlcv_chart_example/src/indicator_sheet.dart';
 import 'package:ohlcv_chart_example/src/market_data.dart';
 
+part 'gallery_scenes.dart';
+
 /// The scenes to shoot, comma-separated, or every one of them when left unset.
 ///
 /// A run that adds one image should not rewrite the other thirty:
@@ -1666,6 +1668,8 @@ List<Scene> buildScenes() {
       build: seriesRangesScene,
     ),
     (name: 'watermark', size: wide, act: null, build: watermarkScene),
+    // One image per chart doc page, kept in gallery_scenes.dart.
+    ...buildGalleryScenes(),
   ];
 }
 

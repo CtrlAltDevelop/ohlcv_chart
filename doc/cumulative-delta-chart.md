@@ -1,5 +1,7 @@
 # Cumulative delta
 
+![Running delta over a session with per-bar buying and selling beneath](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/cumulative-delta.png)
+
 `CumulativeDeltaChart` draws buying less selling as a running total, with each
 bar's own delta in a panel beneath it, and marks the bars where price and delta
 disagreed.

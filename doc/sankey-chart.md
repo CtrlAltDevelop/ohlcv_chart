@@ -1,5 +1,7 @@
 # Sankey
 
+![Fee income flowing through revenue into costs and profit](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sankey.png)
+
 `SankeyChart` draws flows between nodes as ribbons whose thickness is the
 quantity moved. Typical uses include money between accounts, income split into
 expenses, order flow between venues and traffic between pages.

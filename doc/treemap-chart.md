@@ -1,5 +1,7 @@
 # Treemap
 
+![A market map of sectors and symbols, beside portfolio weight as tiles](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/treemap.png)
+
 `TreemapChart` divides a rectangle into tiles sized by value. Typical uses
 include market maps (stocks sized by market cap and coloured by daily change),
 portfolio composition and budget breakdowns.

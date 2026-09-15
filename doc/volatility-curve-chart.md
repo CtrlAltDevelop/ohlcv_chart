@@ -1,5 +1,7 @@
 # Volatility curve
 
+![A volatility smile at three expiries, beside a term structure](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/volatility-curve.png)
+
 `VolatilityCurveChart` draws implied volatility against strike or maturity: a
 smile, a skew, or a term structure. Several curves can be shown at once — one
 per expiry — with a crosshair that reads all of them.

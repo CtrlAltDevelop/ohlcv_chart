@@ -1,5 +1,7 @@
 # Marimekko
 
+![Volume by venue and instrument, columns as wide as they are big](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/marimekko.png)
+
 `MarimekkoChart` — a mosaic chart — shows two dimensions at once. Every column
 is as wide as it is big and as tall as every other, so the width says how much
 a group is worth and the height says what it is made of. Volume by venue split

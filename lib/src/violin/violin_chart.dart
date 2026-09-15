@@ -486,8 +486,10 @@ class ViolinChart extends StatefulWidget {
     this.overlap = 0.55,
     this.showLabels = true,
     this.labelWidth = 72,
+    this.labelHeight = 18,
     this.labelStyle,
     this.showAxis = true,
+    this.axisWidth = 44,
     this.axisHeight = 20,
     this.tickCount = 4,
     this.axisStyle,
@@ -565,13 +567,19 @@ class ViolinChart extends StatefulWidget {
   /// How wide the label column of a ridgeline is.
   final double labelWidth;
 
+  /// How much room the names under a violin take.
+  final double labelHeight;
+
   /// Style of the series labels.
   final TextStyle? labelStyle;
 
   /// Whether the value axis is written.
   final bool showAxis;
 
-  /// How much room it takes.
+  /// How much room it takes down the side of a violin chart.
+  final double axisWidth;
+
+  /// How much room it takes along the bottom of a ridgeline.
   final double axisHeight;
 
   /// How many gaps it is divided into; 0 draws no gridlines.
@@ -699,11 +707,17 @@ class _ViolinChartState extends State<ViolinChart>
             max: widget.max,
             bandPadding: widget.bandPadding,
             overlap: widget.overlap,
-            labelWidth: widget.shape == ViolinShape.ridgeline &&
-                    widget.showLabels
-                ? widget.labelWidth
-                : 0,
-            axisHeight: widget.showAxis ? widget.axisHeight : 0,
+            // A ridgeline is named down the left and a violin chart reads its
+            // values there, so the left gutter belongs to whichever it is.
+            labelWidth: widget.shape == ViolinShape.ridgeline
+                ? (widget.showLabels ? widget.labelWidth : 0)
+                : (widget.showAxis ? widget.axisWidth : 0),
+            // Violins are named under the plot and read their values off the
+            // left, so the strip at the bottom belongs to the names; a
+            // ridgeline is the other way round.
+            axisHeight: widget.shape == ViolinShape.violin
+                ? (widget.showLabels ? widget.labelHeight : 0)
+                : (widget.showAxis ? widget.axisHeight : 0),
             padding: widget.padding,
             progress: progress,
           );
@@ -912,7 +926,10 @@ class ViolinChartPainter extends CustomPainter {
                 )
               : Offset(
                   laid.bandRect.center.dx - painter.width / 2,
-                  math.max(0, layout.plotRect.bottom - painter.height),
+                  math.min(
+                    layout.plotRect.bottom + 4,
+                    size.height - painter.height,
+                  ),
                 ),
         );
       }

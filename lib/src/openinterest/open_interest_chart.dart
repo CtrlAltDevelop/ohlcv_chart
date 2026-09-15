@@ -319,15 +319,15 @@ OpenInterestLayout layOutOpenInterest(
       bars.add(null);
       continue;
     }
-    // Bars hang from the zero line: positive funding below it, because longs
-    // paying is what it means and that reads as pressure downwards.
+    // Bars grow off the zero line the way every exchange draws them:
+    // positive funding — longs paying — above it, negative below.
     final reach = (rate.abs() / peak).clamp(0.0, 1.0) * funding.height / 2;
     bars.add(
       Rect.fromLTRB(
         x - barHalf,
-        rate >= 0 ? zeroY : zeroY - reach,
+        rate >= 0 ? zeroY - reach : zeroY,
         x + barHalf,
-        rate >= 0 ? zeroY + reach : zeroY,
+        rate >= 0 ? zeroY : zeroY + reach,
       ),
     );
   }

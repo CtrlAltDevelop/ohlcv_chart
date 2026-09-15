@@ -1,5 +1,7 @@
 # Bubble
 
+![Risk against return for six strategies, sized by capital](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/bubble.png)
+
 `BubbleChart` compares three numbers at once: two positions and a size. Typical
 uses include risk against return with position size, spread against volume with
 trade count, and market cap maps.

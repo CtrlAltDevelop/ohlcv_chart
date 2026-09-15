@@ -1,5 +1,7 @@
 # Footprint (order flow)
 
+![Bid and ask volume at every price inside each candle](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/footprint.png)
+
 `FootprintChart` shows what traded at every price inside every bar. Each bar is
 a column of price levels, each level split into what was sold into the bid and
 what was bought from the offer, shaded by how much traded and outlined where the

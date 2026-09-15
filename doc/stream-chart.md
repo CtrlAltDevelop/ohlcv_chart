@@ -1,5 +1,7 @@
 # Stream graph
 
+![Two years of book composition as a stream on a wiggle baseline](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/stream.png)
+
 `StreamChart` draws a stack that flows. The make-up of a portfolio month by
 month, volume by venue, positions by symbol: a stacked area answers "how much
 in total", and a stream graph on a wiggle baseline answers "what was it made

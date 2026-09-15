@@ -1,5 +1,7 @@
 # Parallel coordinates
 
+![Five strategies compared on return, drawdown, win rate, profit factor and trades](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/parallel.png)
+
 `ParallelChart` compares many things on many measures at once: one axis per
 measure, one line per thing, each crossing every axis at its own value.
 Comparing strategies on return, drawdown, win rate, expectancy and trade count

@@ -1,5 +1,7 @@
 # Monte Carlo fan
 
+![Simulated equity paths as percentile bands, with the odds of loss and ruin](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/monte-carlo.png)
+
 `MonteCarloChart` draws many simulated equity curves as percentile bands round
 the median: what a strategy's trades could have made had luck dealt them in a
 different order. Where [`EquityCurveChart`](equity-curve-chart.md) shows the

@@ -1,5 +1,7 @@
 # Pair spread
 
+![The log ratio of two symbols with bands, and its z-score beneath](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/pair-spread.png)
+
 `PairSpreadChart` reads two instruments as one: their ratio or spread, with
 bands round its rolling mean, and beneath it the z-score pair traders enter and
 exit on — short the spread when it is stretched high, long when stretched low,

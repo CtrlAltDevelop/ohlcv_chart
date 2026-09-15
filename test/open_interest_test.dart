@@ -90,11 +90,11 @@ void main() {
         axisWidth: 0,
       );
       expect(layout.fundingMax, closeTo(0.0003, 1e-12));
-      // Longs paying hangs below zero; shorts paying rises above it.
-      expect(layout.fundingBars[1]!.top, closeTo(layout.zeroY, 1e-9));
-      expect(layout.fundingBars[1]!.bottom, greaterThan(layout.zeroY));
-      expect(layout.fundingBars[2]!.bottom, closeTo(layout.zeroY, 1e-9));
-      expect(layout.fundingBars[2]!.top, lessThan(layout.zeroY));
+      // Longs paying rises above zero; shorts paying hangs below it.
+      expect(layout.fundingBars[1]!.bottom, closeTo(layout.zeroY, 1e-9));
+      expect(layout.fundingBars[1]!.top, lessThan(layout.zeroY));
+      expect(layout.fundingBars[2]!.top, closeTo(layout.zeroY, 1e-9));
+      expect(layout.fundingBars[2]!.bottom, greaterThan(layout.zeroY));
       // The largest rate fills half the panel.
       expect(
         layout.fundingBars[1]!.height,

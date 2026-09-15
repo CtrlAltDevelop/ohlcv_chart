@@ -1,5 +1,7 @@
 # Waterfall
 
+![An opening balance built up through wins, losses, funding and fees](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/waterfall.png)
+
 `WaterfallChart` shows how a total was got to, step by step. Each bar picks up
 where the last left off, so gains and losses are read against the running total
 rather than against zero — a bridge from an opening balance to a closing one.

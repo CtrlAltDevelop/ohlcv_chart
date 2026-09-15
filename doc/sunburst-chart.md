@@ -1,5 +1,7 @@
 # Sunburst
 
+![A book split by desk and symbol as two rings, with the total in the middle](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sunburst.png)
+
 `SunburstChart` draws a hierarchy as rings round a centre, one ring per level.
 Typical uses include portfolio composition (asset class → sector → holding),
 budget breakdowns and folder sizes.

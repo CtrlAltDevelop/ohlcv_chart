@@ -796,11 +796,17 @@ class StreamChartPainter extends CustomPainter {
             laid.topPoints[thickest].dx,
             (laid.topPoints[thickest].dy + laid.bottomPoints[thickest].dy) / 2,
           );
+          // Held a few pixels inside the plot: a band is usually thickest at
+          // one of its ends, and a name flush against the edge reads as cut
+          // off even when every pixel of it is there.
+          const inset = 6.0;
           painter.paint(
             canvas,
             Offset(
-              (middle.dx - painter.width / 2)
-                  .clamp(0.0, math.max(0.0, size.width - painter.width)),
+              (middle.dx - painter.width / 2).clamp(
+                inset,
+                math.max(inset, size.width - painter.width - inset),
+              ),
               middle.dy - painter.height / 2,
             ),
           );

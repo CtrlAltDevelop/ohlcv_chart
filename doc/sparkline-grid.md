@@ -1,5 +1,7 @@
 # Sparkline grid
 
+![A watchlist of twelve symbols, a name, a shape and a change each](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sparkline-grid.png)
+
 `SparklineGrid` draws dozens of little charts in one table — small multiples. A
 watchlist, a book of accounts, every strategy in a portfolio: one row each, a
 name, its shape and its number.

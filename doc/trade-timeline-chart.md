@@ -1,5 +1,7 @@
 # Trade timeline
 
+![Nineteen trades from entry to exit, a lane per symbol](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/trade-timeline.png)
+
 `TradeTimelineChart` shows when an account was in the market. Each trade is a
 bar from entry to exit, coloured by what it made, in a lane per symbol; a strip
 beneath counts how many trades were open at once.

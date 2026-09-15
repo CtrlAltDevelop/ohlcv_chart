@@ -1,5 +1,7 @@
 # Waffle
 
+![A portfolio as a hundred squares, beside 38 winning trades of 100](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/waffle.png)
+
 `WaffleChart` draws parts of a whole as a grid of squares. With a hundred
 cells, each one is a per cent, so a share is counted rather than judged by
 angle — which is the thing a pie chart cannot do.

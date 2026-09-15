@@ -1,5 +1,7 @@
 # Seasonality
 
+![Monthly returns by year, compounded, with a total and an average](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/seasonality.png)
+
 `SeasonalityChart` shows how results fall across the calendar: each year month
 by month, the typical January, the best hour of a Tuesday. It gathers the
 samples for you and draws them on a [heatmap](heatmap-chart.md) coloured from

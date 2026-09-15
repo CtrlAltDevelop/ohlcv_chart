@@ -126,3 +126,8 @@ flutter run -d macos -t tool/screenshots.dart
 
 macOS sandboxes the app, so the files land in its container and the path is
 printed on the way through — copy them into `../screenshots/` from there.
+
+`--dart-define=only=treemap,gauge` shoots just those scenes, for a run that is
+adding one rather than redoing the set. The gallery — one image per chart doc
+page — lives in `tool/gallery_scenes.dart`, a part of the same file, so the
+scenes there share the palette and the panel card with the rest.

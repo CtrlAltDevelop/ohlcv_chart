@@ -1,5 +1,7 @@
 # Calendar
 
+![Four months of daily profit and loss on real month panels](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/calendar.png)
+
 `CalendarChart` lays a run of daily numbers out as real months, each day a
 square coloured by its value. Typical uses include daily profit and loss, trades
 taken per day, and activity graphs.

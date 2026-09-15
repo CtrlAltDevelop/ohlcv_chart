@@ -1,5 +1,7 @@
 # Equity curve
 
+![An equity curve with the underwater drawdown panel beneath it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/equity-curve.png)
+
 `EquityCurveChart` draws an account's value over time with an *underwater* panel
 below it, shading how far the curve has fallen below its own high. It is the
 chart every backtest, copy-trading profile and portfolio report ends with.

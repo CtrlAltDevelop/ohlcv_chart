@@ -1,5 +1,7 @@
 # R-multiple distribution
 
+![Trade results in R with win rate, expectancy, profit factor and SQN](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/r-multiple.png)
+
 `RMultipleChart` shows how a strategy's trades turned out in R — each result as
 a multiple of what the trade risked — with the figures position sizing is read
 from: win rate, average win and loss, expectancy, profit factor and SQN.

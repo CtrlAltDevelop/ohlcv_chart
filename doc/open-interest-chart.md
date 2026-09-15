@@ -1,5 +1,7 @@
 # Open interest and funding
 
+![Open interest over price, with funding bars beneath](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/open-interest.png)
+
 `OpenInterestChart` draws the pair every perpetual futures desk watches: open
 interest over price in the upper panel, funding in the lower one. Open interest
 says how much money is in the trade and funding says which side is paying to be
@@ -52,8 +54,9 @@ scaled to the range the readings actually cover rather than down to zero. The
 price line over it has its own scale, since it is there to be compared in shape
 rather than in level.
 
-Funding bars hang off a zero line in the lower panel: positive funding — longs
-paying — hangs below it, negative funding rises above it. They are scaled to
+Funding bars grow off a zero line in the lower panel, the way every exchange
+draws them: positive funding — longs paying — rises above it, negative funding
+hangs below. They are scaled to
 the largest rate either way, which makes one chart's bars incomparable with
 another's, so pass `fundingMax` to pin the scale. `fundingShare` is how much of
 the height that panel takes.

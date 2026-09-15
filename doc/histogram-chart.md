@@ -1,5 +1,7 @@
 # Histogram
 
+![Daily returns split at zero, beside a distribution of trade sizes](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/histogram.png)
+
 `HistogramChart` shows how often values fall in each part of their range — the
 shape of a distribution. Typical uses include the spread of daily returns, trade
 sizes, slippage and time-of-day activity.

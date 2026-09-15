@@ -1,5 +1,7 @@
 # Slope and bump
 
+![Returns by quarter on a value scale, and the same ranks as a bump chart](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/slope.png)
+
 `SlopeChart` shows how things moved between periods. With two periods it is a
 slope chart: one line each, and what matters is which way they lean. With more
 periods on a rank scale it is a bump chart: places changing hands, which is far

@@ -1,5 +1,7 @@
 # Funnel
 
+![A tapered onboarding funnel beside a straight-sided one](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/funnel.png)
+
 `FunnelChart` shows how a quantity decreases through sequential stages, making
 drop-off between steps easy to see. Typical uses include sign-up and onboarding
 conversion, sales pipelines and KYC completion.

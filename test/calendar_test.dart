@@ -133,6 +133,8 @@ void main() {
         Rect.fromLTWH(0, 0, tester.getSize(find.byType(CalendarChart)).width,
             320),
         monthsPerRow: 1,
+        // The widget grows the header by a weekday row when it writes one.
+        headerHeight: 16 + calendarWeekdayRowHeight,
       );
       final gesture =
           await tester.startGesture(topLeft + layout.cells.first.rect.center);

@@ -1,5 +1,7 @@
 # Chord
 
+![Flow between four venues, both ways round a ring](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/chord.png)
+
 `ChordChart` draws flow between nodes both ways round a ring. Where a Sankey
 has to break a cycle, a chord draws it: money moving between accounts, volume
 between venues, rotation between sectors.

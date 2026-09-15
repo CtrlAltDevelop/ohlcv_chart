@@ -215,6 +215,25 @@
 
 ### Fixed
 
+- **A calendar's month total no longer sits on top of its weekday row.**
+  `CalendarChart` wrote the month's name and total and the weekday letters
+  into the same 16-pixel header, so a month with a total ran the two together.
+  The header now grows by `calendarWeekdayRowHeight` when
+  `showWeekdayHeader` is set, with the title on top and the letters beneath.
+- **A parallel coordinates legend has room of its own.** `ParallelChart`
+  drew the line names over the first axis, since nothing reserved space for
+  them; `showLegend` now insets the plot by `legendWidth`, and the first
+  axis' end labels step right of the axis so the names keep that corner.
+- **A violin chart's value axis and its names no longer overlap.** The names
+  now sit in a strip under the plot (`labelHeight`) and the axis in a gutter
+  beside it (`axisWidth`), instead of both being written into the plot's
+  bottom-left corner.
+- **A stream graph's band names are held inside the plot.** A band is usually
+  thickest at one of its ends, where its name sat flush against the edge and
+  read as cut off.
+- **Funding bars grow the way exchanges draw them.** `OpenInterestChart` hung
+  positive funding below the zero line; positive — longs paying — now rises
+  above it and negative hangs below.
 - **Backspace no longer deletes a selected drawing while typing.** The
   chart's keyboard shortcuts (Delete, Backspace, ⌘A, ⌘C, ⌘V, ⌘D, undo, redo
   and restacking) are now ignored while a text field has focus, including
