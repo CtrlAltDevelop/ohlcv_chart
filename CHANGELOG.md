@@ -6,6 +6,10 @@
   nested groups and headers, colour by `HeatmapScale` or palette, fitted
   labels, touch, tooltips and grow-in animation. `layOutTreemap` and
   `treemapTileAt` are public. See [Treemap](doc/treemap-chart.md).
+- **`GaugeChart`** — a dial for a single value, with any start and sweep angle,
+  coloured ranges, a value bar, a needle, major and minor ticks, centre text or
+  a custom centre widget, and animated transitions between values.
+  `GaugeLayout` is public. See [Gauge](doc/gauge-chart.md).
 
 ### Fixed
 

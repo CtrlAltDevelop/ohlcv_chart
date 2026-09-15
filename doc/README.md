@@ -22,6 +22,8 @@ For installation and an overview of features, see the
   colour scales, legends and hover readouts.
 - **[Treemap](treemap-chart.md)** — `TreemapChart`: squarified tiles sized by
   value, nested groups and colour scales for market maps.
+- **[Gauge](gauge-chart.md)** — `GaugeChart`: a dial for a single value, with
+  ranges, a needle, ticks and animated transitions.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
