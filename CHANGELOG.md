@@ -19,6 +19,11 @@
   colours, node and ribbon touch, hover highlighting with the rest faded back,
   tooltips and grow-in animation. `layOutSankey`, `sankeyNodeAt` and
   `sankeyLinkAt` are public. See [Sankey](doc/sankey-chart.md).
+- **`SunburstChart`** — a hierarchy as rings round a centre, taking the same
+  `TreemapItem` tree as the treemap, with any start and sweep angle, a depth
+  limit, curved upright labels, a centre widget, touch that picks the deepest
+  ring, tooltips and sweep-in animation. `layOutSunburst` and `sunburstArcAt`
+  are public. See [Sunburst](doc/sunburst-chart.md).
 
 ### Fixed
 

@@ -28,6 +28,8 @@ For installation and an overview of features, see the
   conversion percentages.
 - **[Sankey](sankey-chart.md)** — `SankeyChart`: flows between nodes, ribbons
   as thick as the quantity moved.
+- **[Sunburst](sunburst-chart.md)** — `SunburstChart`: a hierarchy as rings
+  round a centre, one ring per level.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
