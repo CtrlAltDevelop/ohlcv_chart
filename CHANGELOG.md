@@ -121,6 +121,12 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`WaffleChart`** — parts of a whole as a grid of squares, a cell per per
+  cent, shared out by largest remainder so no slice is more than one cell from
+  its true share, filled from any corner, with an optional total that leaves
+  the rest of the grid empty, dimming, tooltips and a fill-in animation.
+  `WaffleSlice`, `WaffleFill`, `WaffleLayout`, `waffleCounts` and
+  `layOutWaffle` are public. See [Waffle](doc/waffle-chart.md).
 - **`BulletChart`** — a measure against its target on a banded qualitative
   track, a row per KPI, each row on its own scale, with a target tick, the
   value written at the end, rows that shrink to fit a short box, touch
