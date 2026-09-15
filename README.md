@@ -363,6 +363,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [R-multiple distribution](doc/r-multiple-chart.md) | `RMultipleChart`: results in R, with expectancy and SQN |
 | [Monte Carlo fan](doc/monte-carlo-chart.md) | `MonteCarloChart`: simulated equity paths as percentile bands |
 | [Seasonality](doc/seasonality-chart.md) | `SeasonalityChart`: results by month and year, or weekday and hour |
+| [Pair spread](doc/pair-spread-chart.md) | `PairSpreadChart`: the spread or ratio of two symbols, with z-score bands |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |

@@ -121,6 +121,13 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`PairSpreadChart`** — the relationship between two symbols for pair
+  trading: their difference at a hedge ratio, their ratio or the log of it,
+  with a rolling mean and standard-deviation bands over it and a z-score panel
+  below, entry and exit signals marked on both, a shared crosshair, tooltips
+  and animation. `PairPoint`, `alignPairSeries`, `pairHedgeRatio`,
+  `pairSpread`, `pairZScores`, `pairSignals` and `layOutPairSpread` are
+  public. See [Pair spread](doc/pair-spread-chart.md).
 
 ### Fixed
 
