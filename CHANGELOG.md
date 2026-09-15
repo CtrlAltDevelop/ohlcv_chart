@@ -108,6 +108,13 @@
   and lines at zero and the expectancy. `RMultipleStats`, `rMultiplesFrom`,
   `rMultipleBins` and `defaultRMultipleStats` are public. See
   [R-multiple distribution](doc/r-multiple-chart.md).
+- **`MonteCarloChart`** — simulated equity paths as percentile bands round the
+  median, with faint sample paths, the real curve laid over, dashed start and
+  ruin levels, a summary of final equity, loss and ruin odds and drawdown, a
+  crosshair, tooltips and draw-in animation. `runMonteCarlo` bootstraps trades
+  with compound or fixed sizing and a seed; `MonteCarloResult`,
+  `MonteCarloResult.fromPaths` and `layOutMonteCarlo` are public. See
+  [Monte Carlo fan](doc/monte-carlo-chart.md).
 
 ### Fixed
 

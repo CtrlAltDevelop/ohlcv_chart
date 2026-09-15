@@ -58,6 +58,8 @@ For installation and an overview of features, see the
   trade from entry to exit, a lane per symbol, coloured by result.
 - **[R-multiple distribution](r-multiple-chart.md)** — `RMultipleChart`: trade
   results in R, with expectancy, profit factor and SQN.
+- **[Monte Carlo fan](monte-carlo-chart.md)** — `MonteCarloChart`: simulated
+  equity paths as percentile bands, with the odds of loss and ruin.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 

@@ -171,6 +171,8 @@ indicator and drawing tool is included; there is no paid tier.
   symbol, coloured by result, with an open-trade count beneath.
 - **`RMultipleChart`** — trade results in R, with expectancy, win rate, profit
   factor and SQN worked out for you.
+- **`MonteCarloChart`** — a fan of simulated equity paths as percentile bands,
+  with the odds of loss and ruin and the real curve laid over.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -357,6 +359,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Cumulative delta](doc/cumulative-delta-chart.md) | `CumulativeDeltaChart`: running delta with divergences |
 | [Trade timeline](doc/trade-timeline-chart.md) | `TradeTimelineChart`: when each trade was open, and what it made |
 | [R-multiple distribution](doc/r-multiple-chart.md) | `RMultipleChart`: results in R, with expectancy and SQN |
+| [Monte Carlo fan](doc/monte-carlo-chart.md) | `MonteCarloChart`: simulated equity paths as percentile bands |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |

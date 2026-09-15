@@ -84,6 +84,7 @@ export './distribution/r_multiple_chart.dart';
 export './bubble/bubble_chart.dart';
 export './calendar/calendar_chart.dart';
 export './equity/equity_curve_chart.dart';
+export './equity/monte_carlo_chart.dart';
 export './options/option_payoff_chart.dart';
 export './volatility/volatility_curve_chart.dart';
 export './profile/market_profile_chart.dart';
