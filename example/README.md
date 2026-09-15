@@ -92,28 +92,6 @@ and how far either side of the mid to look.
 
 All nine follow the palette switch in the app bar.
 
-## The intraday demo
-
-A second entry point, for the other kind of chart: one session drawn as an
-area, with the chart's own gestures turned off.
-
-```bash
-flutter run -t lib/intraday_demo.dart
-```
-
-`scrollEnabled: false` and `zoomEnabled: false` are what make it sit still, and
-`ChartStyle.pointWidth` set to the width divided by the candle count is what
-fits the whole session on screen. Both switches at the top flip those off again,
-so the difference can be felt rather than described: with "static" on, dragging
-and pinching do nothing at all.
-
-Worth trying the pinch in particular. Zooming out narrows the candles, which
-leaves the window room to scroll into — so a chart with only `scrollEnabled`
-off could be pinched back into a scrollable one. That is why the two flags
-belong together.
-
-See [Turning the gestures off](../doc/driving-the-chart.md#turning-the-gestures-off).
-
 ## Screenshots
 
 The images in the package README and on the pub.dev listing are rendered by
