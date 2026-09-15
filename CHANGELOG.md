@@ -103,6 +103,11 @@
   `TimelineTrade`, `tradeTimelineRange`, `packTradeRows`,
   `tradeTimelineExposure` and `layOutTradeTimeline` are public. See
   [Trade timeline](doc/trade-timeline-chart.md).
+- **`RMultipleChart`** — trade results in R as a histogram split at zero, with
+  win rate, average win and loss, expectancy, profit factor and SQN over it,
+  and lines at zero and the expectancy. `RMultipleStats`, `rMultiplesFrom`,
+  `rMultipleBins` and `defaultRMultipleStats` are public. See
+  [R-multiple distribution](doc/r-multiple-chart.md).
 
 ### Fixed
 

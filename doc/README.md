@@ -56,6 +56,8 @@ For installation and an overview of features, see the
   buying less selling, with divergences against price marked.
 - **[Trade timeline](trade-timeline-chart.md)** — `TradeTimelineChart`: each
   trade from entry to exit, a lane per symbol, coloured by result.
+- **[R-multiple distribution](r-multiple-chart.md)** — `RMultipleChart`: trade
+  results in R, with expectancy, profit factor and SQN.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 

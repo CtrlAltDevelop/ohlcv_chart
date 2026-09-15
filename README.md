@@ -169,6 +169,8 @@ indicator and drawing tool is included; there is no paid tier.
   bar's own delta beneath, and divergences against price marked.
 - **`TradeTimelineChart`** — every trade as a bar from entry to exit, a lane per
   symbol, coloured by result, with an open-trade count beneath.
+- **`RMultipleChart`** — trade results in R, with expectancy, win rate, profit
+  factor and SQN worked out for you.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -354,6 +356,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Order-book heatmap](doc/book-heatmap-chart.md) | `BookHeatmapChart`: resting liquidity over time |
 | [Cumulative delta](doc/cumulative-delta-chart.md) | `CumulativeDeltaChart`: running delta with divergences |
 | [Trade timeline](doc/trade-timeline-chart.md) | `TradeTimelineChart`: when each trade was open, and what it made |
+| [R-multiple distribution](doc/r-multiple-chart.md) | `RMultipleChart`: results in R, with expectancy and SQN |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |
