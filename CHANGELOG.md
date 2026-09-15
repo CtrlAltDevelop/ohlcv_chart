@@ -121,6 +121,11 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`DumbbellChart`** — two values a row joined by a bar, every row on one
+  shared scale, end dots coloured by direction, a value axis and gridlines
+  under them, optional numbers outside the dots, touch reporting, tooltips and
+  a draw-in animation. `DumbbellRow`, `DumbbellLayout`, `DumbbellRowLayout`
+  and `layOutDumbbell` are public. See [Dumbbell](doc/dumbbell-chart.md).
 - **`WaffleChart`** — parts of a whole as a grid of squares, a cell per per
   cent, shared out by largest remainder so no slice is more than one cell from
   its true share, filled from any corner, with an optional total that leaves

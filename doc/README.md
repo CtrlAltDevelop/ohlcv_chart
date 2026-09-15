@@ -62,6 +62,8 @@ For installation and an overview of features, see the
   equity paths as percentile bands, with the odds of loss and ruin.
 - **[Seasonality](seasonality-chart.md)** — `SeasonalityChart`: results by month
   and year, or weekday and hour, with totals and averages.
+- **[Dumbbell](dumbbell-chart.md)** — `DumbbellChart`: two values a row joined
+  by a bar, for before and after or low and high.
 - **[Waffle](waffle-chart.md)** — `WaffleChart`: parts of a whole as a grid of
   squares, a cell per per cent.
 - **[Bullet](bullet-chart.md)** — `BulletChart`: a measure against its target
