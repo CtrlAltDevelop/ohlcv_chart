@@ -29,6 +29,7 @@ import 'package:flutter/rendering.dart';
 import 'package:image/image.dart' as gif;
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 import 'package:ohlcv_chart_example/src/chart_theme.dart';
+import 'package:ohlcv_chart_example/src/gallery/gallery_entries.dart';
 import 'package:ohlcv_chart_example/src/indicator_sheet.dart';
 import 'package:ohlcv_chart_example/src/market_data.dart';
 

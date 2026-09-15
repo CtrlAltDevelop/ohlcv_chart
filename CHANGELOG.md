@@ -136,6 +136,13 @@
   `LiquidityLevel`, `LiquiditySide`, `LiquidityBin`, `liquidityBins`,
   `LiquidityMapLayout`, `LiquidityBinLayout` and `layOutLiquidityMap` are
   public. See [Liquidity map](doc/liquidity-map-chart.md).
+- **A Gallery tab in the example app** — every chart that is not the
+  candlestick, depth or series screen, 34 of them, with a page each: a
+  searchable list grouped by what the charts are for, and a page per chart
+  holding everything that chart has worth showing. The charts and their sample
+  data live in `example/lib/src/gallery/`, and the screenshot tool builds the
+  documentation's images from that same list, so the pictures are of the charts
+  the example runs.
 - **`SparklineGrid`** — small multiples: a name, a little line and a number
   per tile, laid out in columns, every tile scaled to its own series unless
   told to share one, with breaks where values are missing, a dot at each

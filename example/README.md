@@ -6,8 +6,9 @@ Run it with:
 flutter run
 ```
 
-A tour of the whole package in three tabs. The market data is generated locally,
-so the demo needs no network.
+A tour of the whole package in four tabs — the candlestick screen, the order
+book, the business charts, and a gallery holding every other chart with a page
+each. The market data is generated locally, so the demo needs no network.
 
 ## The Candles tab
 
@@ -92,6 +93,22 @@ and how far either side of the mid to look.
 
 All nine follow the palette switch in the app bar.
 
+## The Gallery tab
+
+Every chart in the package that is not the candlestick, depth or series screen
+— 34 of them — with a page each: the order-flow and derivatives charts, the
+ones a backtest report is built from, and the ones a dashboard is.
+
+The tab opens on a searchable list grouped by what the charts are for. Tapping
+one opens it full size, with everything that chart has worth showing stacked
+down the page — a violin beside its ridgeline, a gauge in its three shapes — and
+a pointer to the chart's reference page under `doc/`.
+
+The charts and the sample data behind them live in `lib/src/gallery/`:
+`gallery_data.dart` holds the data, `gallery_entries.dart` the chart per entry.
+The screenshot tool builds the documentation's images from that same list, so
+the pictures in the README are of the charts this tab actually runs.
+
 ## Screenshots
 
 The images in the package README and on the pub.dev listing are rendered by
@@ -106,6 +123,6 @@ macOS sandboxes the app, so the files land in its container and the path is
 printed on the way through — copy them into `../screenshots/` from there.
 
 `--dart-define=only=treemap,gauge` shoots just those scenes, for a run that is
-adding one rather than redoing the set. The gallery — one image per chart doc
-page — lives in `tool/gallery_scenes.dart`, a part of the same file, so the
-scenes there share the palette and the panel card with the rest.
+adding one rather than redoing the set. The gallery's scenes are generated from
+`lib/src/gallery/gallery_entries.dart` — one image per entry, named after it —
+so adding a chart to the Gallery tab adds its screenshot too.
