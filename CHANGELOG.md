@@ -121,6 +121,12 @@
   loss through zero to profit on a heatmap. `SeasonalSample`,
   `seasonalReturnsFromPrices`, `seasonalityTable` and `seasonalAggregate` are
   public. See [Seasonality](doc/seasonality-chart.md).
+- **`BulletChart`** — a measure against its target on a banded qualitative
+  track, a row per KPI, each row on its own scale, with a target tick, the
+  value written at the end, rows that shrink to fit a short box, touch
+  reporting, tooltips and a draw-in animation. `BulletRow`, `BulletBand`,
+  `BulletLayout`, `BulletRowLayout` and `layOutBullet` are public. See
+  [Bullet](doc/bullet-chart.md).
 - **`PairSpreadChart`** — the relationship between two symbols for pair
   trading: their difference at a hedge ratio, their ratio or the log of it,
   with a rolling mean and standard-deviation bands over it and a z-score panel

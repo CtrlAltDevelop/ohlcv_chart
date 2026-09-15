@@ -62,6 +62,8 @@ For installation and an overview of features, see the
   equity paths as percentile bands, with the odds of loss and ruin.
 - **[Seasonality](seasonality-chart.md)** — `SeasonalityChart`: results by month
   and year, or weekday and hour, with totals and averages.
+- **[Bullet](bullet-chart.md)** — `BulletChart`: a measure against its target
+  on a banded track, a row per KPI.
 - **[Pair spread](pair-spread-chart.md)** — `PairSpreadChart`: the spread or
   ratio of two symbols, with z-score bands and entry and exit signals.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
