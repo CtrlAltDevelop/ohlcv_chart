@@ -48,6 +48,8 @@ For installation and an overview of features, see the
   price as TPO letters, with the point of control and value area.
 - **[Footprint](footprint-chart.md)** — `FootprintChart`: bid and ask volume at
   every price inside every bar, with imbalances marked.
+- **[Order-book heatmap](book-heatmap-chart.md)** — `BookHeatmapChart`: resting
+  liquidity over time, walls as bright lines.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 

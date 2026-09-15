@@ -78,6 +78,13 @@
   `FootprintLevel`, `FootprintBar`, `footprintCumulativeDelta`,
   `footprintPriceRange`, `layOutFootprint` and `footprintCellAt` are public. See
   [Footprint](doc/footprint-chart.md).
+- **`BookHeatmapChart`** — resting order-book liquidity over time, one column
+  per snapshot and one row per price, with gamma-shaped brightness so a book
+  with one huge wall stays readable, a mid-price track, a price axis, a
+  crosshair that follows a drag, and a readout of the level under the pointer.
+  `BookLevel`, `BookSnapshot`, `bookPriceRange`, `layOutBookHeatmap` and
+  `bookHeatmapCellAt` are public. See
+  [Order-book heatmap](doc/book-heatmap-chart.md).
 
 ### Fixed
 

@@ -161,6 +161,8 @@ indicator and drawing tool is included; there is no paid tier.
   control and the value area worked out from your candles.
 - **`FootprintChart`** — bid against ask volume at every price inside every bar,
   shaded by size, with imbalances outlined and cumulative delta.
+- **`BookHeatmapChart`** — resting order-book liquidity over time, walls showing
+  as bright lines, with a mid-price track and a crosshair readout.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
@@ -342,6 +344,7 @@ Each feature has a reference page in [`doc/`](doc/README.md):
 | [Volatility curve](doc/volatility-curve-chart.md) | `VolatilityCurveChart`: smiles, skews and term structures |
 | [Market profile](doc/market-profile-chart.md) | `MarketProfileChart`: time at price, TPO letters and value area |
 | [Footprint](doc/footprint-chart.md) | `FootprintChart`: bid and ask volume at every price, order flow |
+| [Order-book heatmap](doc/book-heatmap-chart.md) | `BookHeatmapChart`: resting liquidity over time |
 | [Indicators](doc/indicators.md) | All 31 indicators, the catalogue, pane scales, chaining, higher timeframes and alerts |
 | [Symbol comparison](doc/comparison.md) | Overlaying other instruments, rebased or at actual prices |
 | [Chart types](doc/chart-types.md) | Eight chart types and six candle transforms |
