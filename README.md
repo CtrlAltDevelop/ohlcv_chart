@@ -1,7 +1,8 @@
 # ohlcv_chart
 
-A candlestick chart for Flutter with 31 indicators and 29 drawing tools, plus
-depth, series, pie, radar and heatmap charts. Everything is rendered with
+A candlestick chart for Flutter with 31 indicators and 29 drawing tools, and 39
+other chart widgets: the order book and the tape, the charts a backtest report
+is built from, and the ones a dashboard is. Everything is rendered with
 `CustomPainter` — no WebView and no JavaScript bridge.
 
 ## Gallery
@@ -380,7 +381,7 @@ indicator and drawing tool is included; there is no paid tier.
 
 ```yaml
 dependencies:
-  ohlcv_chart: ^2.5.0
+  ohlcv_chart: ^2.6.0
 ```
 
 ## Quick start

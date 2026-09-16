@@ -1,4 +1,4 @@
-## Unreleased
+## 2.6.0 - 2026-09-16
 
 ### Added
 
@@ -45,8 +45,8 @@
   any `HeatmapScale`, with a range made symmetric about zero by default, a
   configurable first weekday, monthly totals in the headers, optional day
   numbers and weekday initials, touch, tooltips and fade-in animation.
-  `layOutCalendar`, `calendarCellAt` and `calendarValueRange` are public. See
-  [Calendar](doc/calendar-chart.md).
+  `layOutCalendar`, `calendarCellAt`, `calendarValueRange` and
+  `calendarWeekdayRowHeight` are public. See [Calendar](doc/calendar-chart.md).
 - **`EquityCurveChart`** — an account's value over time with an underwater
   drawdown panel beneath it, the deepest fall marked and labelled, a crosshair
   that follows a drag, value, percentage and time axes, tooltips and draw-in
@@ -183,7 +183,8 @@
 - **`ViolinChart`** — the shape of a distribution rather than only its
   quartiles, as violins side by side or as an overlapping ridgeline, every
   shape measured against the tallest peak so their areas compare, with the
-  box-plot quartiles inside them, a value axis, tooltips and a draw-in
+  box-plot quartiles inside them, a value axis in `axisWidth` beside the
+  violins and their names in `labelHeight` under them, tooltips and a draw-in
   animation. `kernelDensity` estimates the shape with a Gaussian kernel and
   Silverman's bandwidth; `DensityCurve`, `ViolinSeries`, `ViolinShape`,
   `ViolinLayout`, `ViolinSeriesLayout` and `layOutViolin` are public. See
@@ -222,25 +223,6 @@
 
 ### Fixed
 
-- **A calendar's month total no longer sits on top of its weekday row.**
-  `CalendarChart` wrote the month's name and total and the weekday letters
-  into the same 16-pixel header, so a month with a total ran the two together.
-  The header now grows by `calendarWeekdayRowHeight` when
-  `showWeekdayHeader` is set, with the title on top and the letters beneath.
-- **A parallel coordinates legend has room of its own.** `ParallelChart`
-  drew the line names over the first axis, since nothing reserved space for
-  them; `showLegend` now insets the plot by `legendWidth`, and the first
-  axis' end labels step right of the axis so the names keep that corner.
-- **A violin chart's value axis and its names no longer overlap.** The names
-  now sit in a strip under the plot (`labelHeight`) and the axis in a gutter
-  beside it (`axisWidth`), instead of both being written into the plot's
-  bottom-left corner.
-- **A stream graph's band names are held inside the plot.** A band is usually
-  thickest at one of its ends, where its name sat flush against the edge and
-  read as cut off.
-- **Funding bars grow the way exchanges draw them.** `OpenInterestChart` hung
-  positive funding below the zero line; positive — longs paying — now rises
-  above it and negative hangs below.
 - **Backspace no longer deletes a selected drawing while typing.** The
   chart's keyboard shortcuts (Delete, Backspace, ⌘A, ⌘C, ⌘V, ⌘D, undo, redo
   and restacking) are now ignored while a text field has focus, including
