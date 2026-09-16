@@ -12,3 +12,19 @@ example/analysis_options.yaml
 # Local build output.
 build/
 .dart_tool/
+
+# The gallery's images: the README and the documentation pages link them
+# from raw.githubusercontent.com, so only the ones pub.dev displays itself
+# need to travel in the archive. The rest are 9.8 MB every `pub get` would
+# otherwise pay for.
+screenshots/*
+!screenshots/candles.png
+!screenshots/series-charts.png
+!screenshots/pie-radar.png
+!screenshots/heatmap.png
+!screenshots/overlays.png
+!screenshots/series-ranges.png
+!screenshots/trading.png
+!screenshots/bar-types.png
+!screenshots/shapes.png
+!screenshots/depth.png
