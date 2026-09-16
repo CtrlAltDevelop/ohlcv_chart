@@ -153,12 +153,12 @@ void main() {
 
   group('ChartDrawings', () {
     ChartDrawings sample() => ChartDrawings([
-      HorizontalLine(price: 1),
-      VerticalLine(time: _at(1)),
-      TrendLine(time1: _at(1), price1: 1, time2: _at(2), price2: 2),
-      RectangleDrawing(time1: _at(1), price1: 1, time2: _at(2), price2: 2),
-      FibRetracement(time1: _at(1), price1: 1, time2: _at(2), price2: 2),
-    ]);
+          HorizontalLine(price: 1),
+          VerticalLine(time: _at(1)),
+          TrendLine(time1: _at(1), price1: 1, time2: _at(2), price2: 2),
+          RectangleDrawing(time1: _at(1), price1: 1, time2: _at(2), price2: 2),
+          FibRetracement(time1: _at(1), price1: 1, time2: _at(2), price2: 2),
+        ]);
 
     test('sorts a restored set back into its typed views', () {
       final restored = ChartDrawings.fromJson(sample().toJson());

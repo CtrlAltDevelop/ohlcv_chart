@@ -72,7 +72,8 @@ void main() {
       expect(layout.min, 1);
       expect(layout.max, 3);
       // Period 0: ETH 12.1 is first, SOL second, BTC third.
-      expect(layout.series[1].points[0]!.dy, closeTo(layout.plotRect.top, 1e-9));
+      expect(
+          layout.series[1].points[0]!.dy, closeTo(layout.plotRect.top, 1e-9));
       expect(
         layout.series[0].points[0]!.dy,
         closeTo(layout.plotRect.bottom, 1e-9),
@@ -136,7 +137,8 @@ void main() {
       );
       final at = layout.series[1].points[1]!;
       expect(layout.seriesAt(at)?.index, 1);
-      expect(layout.seriesAt(at + const Offset(0, 90)), isNot(same(layout.series[1])));
+      expect(layout.seriesAt(at + const Offset(0, 90)),
+          isNot(same(layout.series[1])));
       expect(layout.seriesAt(const Offset(200, -400)), isNull);
       expect(layout.columnAt(layout.columnX.last + 30), 2);
     });
@@ -170,8 +172,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('takes its default height in an unbounded box',
-        (tester) async {
+    testWidgets('takes its default height in an unbounded box', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

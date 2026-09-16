@@ -256,7 +256,8 @@ class CountingCanvas implements Canvas {
     Rect rect, {
     ClipOp clipOp = ClipOp.intersect,
     bool doAntiAlias = true,
-  }) => _inner.clipRect(rect, clipOp: clipOp, doAntiAlias: doAntiAlias);
+  }) =>
+      _inner.clipRect(rect, clipOp: clipOp, doAntiAlias: doAntiAlias);
 
   @override
   void clipRRect(RRect rrect, {bool doAntiAlias = true}) =>
@@ -266,7 +267,8 @@ class CountingCanvas implements Canvas {
   void clipRSuperellipse(
     RSuperellipse rsuperellipse, {
     bool doAntiAlias = true,
-  }) => _inner.clipRSuperellipse(rsuperellipse, doAntiAlias: doAntiAlias);
+  }) =>
+      _inner.clipRSuperellipse(rsuperellipse, doAntiAlias: doAntiAlias);
 
   @override
   void clipPath(Path path, {bool doAntiAlias = true}) =>

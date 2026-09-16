@@ -212,9 +212,8 @@ CalendarLayout layOutCalendar(
     var total = 0.0;
     var counted = 0;
     // Which column the first of the month falls in, given the week's start.
-    final lead = (DateTime(month.year, month.month, 1).weekday - firstWeekday +
-            7) %
-        7;
+    final lead =
+        (DateTime(month.year, month.month, 1).weekday - firstWeekday + 7) % 7;
     for (var day = 1; day <= _daysInMonth(month); day++) {
       final date = DateTime(month.year, month.month, day);
       final at = lead + day - 1;

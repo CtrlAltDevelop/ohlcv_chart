@@ -199,9 +199,9 @@ enum PivotSession {
       // The Monday of the week the candle falls in, so a week that straddles
       // a month or a year still reads as one session.
       PivotSession.week => () {
-        final monday = time.subtract(Duration(days: time.weekday - 1));
-        return (monday.year, monday.month, monday.day);
-      }(),
+          final monday = time.subtract(Duration(days: time.weekday - 1));
+          return (monday.year, monday.month, monday.day);
+        }(),
       PivotSession.month => (time.year, time.month),
       PivotSession.year => time.year,
     };
@@ -284,7 +284,7 @@ class IndicatorAlert {
 abstract class Indicator {
   /// Creates an indicator, optionally overriding its line colours.
   Indicator({List<Color>? colors})
-    : colors = colors == null ? null : List<Color>.unmodifiable(colors);
+      : colors = colors == null ? null : List<Color>.unmodifiable(colors);
 
   /// Colour per line, in the order of [lines]; null falls back to the theme.
   final List<Color>? colors;
@@ -355,7 +355,8 @@ abstract class Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => null;
+  ) =>
+      null;
 
   /// Volume gathered by price, for an indicator that draws a profile.
   ///
@@ -375,7 +376,8 @@ abstract class Indicator {
     IndicatorFill fill,
     ChartColors theme, {
     required bool isAbove,
-  }) => (isAbove ? theme.upColor : theme.dnColor).withValues(alpha: 0.12);
+  }) =>
+      (isAbove ? theme.upColor : theme.dnColor).withValues(alpha: 0.12);
 
   /// Text drawn beside the point at [index] on [line], for a marker series.
   ///
@@ -432,7 +434,8 @@ abstract class Indicator {
     KLineEntity candle,
     double value,
     ChartColors theme,
-  ) => null;
+  ) =>
+      null;
 
   @override
   bool operator ==(Object other) =>

@@ -98,8 +98,8 @@ void main() {
   group('hit testing', () {
     test('a point inside a bar finds its node', () {
       final layout = layOutSankey(_nodes, _links, _bounds);
-      expect(sankeyNodeAt(layout, layout.nodes[1].rect.center)?.node.id,
-          'budget');
+      expect(
+          sankeyNodeAt(layout, layout.nodes[1].rect.center)?.node.id, 'budget');
       expect(sankeyNodeAt(layout, const Offset(100, 5)), isNull);
     });
 

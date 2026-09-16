@@ -146,8 +146,7 @@ class VolatilityLayout {
   /// Where [volatility] sits up the plot.
   double yOf(double volatility) => maxVol == minVol
       ? plot.center.dy
-      : plot.bottom -
-          (volatility - minVol) / (maxVol - minVol) * plot.height;
+      : plot.bottom - (volatility - minVol) / (maxVol - minVol) * plot.height;
 }
 
 /// The ranges [slices] need, with a little room above and below.
@@ -709,8 +708,8 @@ class VolatilityCurveChartPainter extends CustomPainter {
         final previous = points[i - 1];
         final current = points[i];
         final midX = (previous.dx + current.dx) / 2;
-        path.cubicTo(midX, previous.dy, midX, current.dy, current.dx,
-            current.dy);
+        path.cubicTo(
+            midX, previous.dy, midX, current.dy, current.dx, current.dy);
       }
       if (curve.slice.dashed) {
         _drawDashed(canvas, path, pen);

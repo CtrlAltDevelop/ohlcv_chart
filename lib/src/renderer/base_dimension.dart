@@ -19,14 +19,12 @@ class BaseDimension {
             ? paneHeights[i]
             : secondaryPaneHeight,
     ];
-    _mSecondaryHeight = _paneHeights.isEmpty
-        ? secondaryPaneHeight
-        : _paneHeights.first;
+    _mSecondaryHeight =
+        _paneHeights.isEmpty ? secondaryPaneHeight : _paneHeights.first;
     _totalSecondaryHeight = _paneHeights.fold(0.0, (sum, h) => sum + h);
     _totalLabelHeight = legendRowHeight * legendRowCount;
 
-    _mDisplayHeight =
-        _mBaseHeight +
+    _mDisplayHeight = _mBaseHeight +
         _mVolumeHeight +
         _totalSecondaryHeight +
         _totalLabelHeight;

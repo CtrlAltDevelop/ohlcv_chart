@@ -7,16 +7,16 @@ import 'package:ohlcv_chart/src/renderer/depth_painter.dart';
 
 /// Raw rungs: 3 sizes a side, a mid of 100.
 List<DepthEntity> rawBids() => [
-  DepthEntity(99, 1),
-  DepthEntity(98, 2),
-  DepthEntity(97, 3),
-];
+      DepthEntity(99, 1),
+      DepthEntity(98, 2),
+      DepthEntity(97, 3),
+    ];
 
 List<DepthEntity> rawAsks() => [
-  DepthEntity(101, 4),
-  DepthEntity(102, 5),
-  DepthEntity(103, 6),
-];
+      DepthEntity(101, 4),
+      DepthEntity(102, 5),
+      DepthEntity(103, 6),
+    ];
 
 /// Counts the geometry a painter puts on the canvas.
 class Recorder implements Canvas {
@@ -209,8 +209,8 @@ void main() {
 
   group('DepthLadder', () {
     Widget host(Widget child) => MaterialApp(
-      home: Scaffold(body: SizedBox(width: 320, height: 600, child: child)),
-    );
+          home: Scaffold(body: SizedBox(width: 320, height: 600, child: child)),
+        );
 
     testWidgets('lists both sides outwards from the spread', (tester) async {
       await tester.pumpWidget(
@@ -333,21 +333,21 @@ void main() {
 
   group('DepthRatioBar', () {
     Widget host(Widget child) => MaterialApp(
-      home: Scaffold(body: SizedBox(width: 320, height: 600, child: child)),
-    );
+          home: Scaffold(body: SizedBox(width: 320, height: 600, child: child)),
+        );
 
     /// The two halves of the bar, in the order they are drawn.
     List<Size> halves(WidgetTester tester) => [
-      for (var i = 0; i < 2; i++)
-        tester.getSize(
-          find
-              .descendant(
-                of: find.byType(DepthRatioBar),
-                matching: find.byType(Container),
-              )
-              .at(i),
-        ),
-    ];
+          for (var i = 0; i < 2; i++)
+            tester.getSize(
+              find
+                  .descendant(
+                    of: find.byType(DepthRatioBar),
+                    matching: find.byType(Container),
+                  )
+                  .at(i),
+            ),
+        ];
 
     testWidgets('names each side its share of the book', (tester) async {
       await tester.pumpWidget(
@@ -412,8 +412,8 @@ void main() {
 
     testWidgets('slides to a new split rather than jumping', (tester) async {
       Widget bar(List<DepthEntity> bids) => host(
-        DepthRatioBar(DepthEntity.bids(bids), DepthEntity.asks(rawAsks())),
-      );
+            DepthRatioBar(DepthEntity.bids(bids), DepthEntity.asks(rawAsks())),
+          );
 
       await tester.pumpWidget(bar(rawBids()));
       final before = halves(tester).first.width;

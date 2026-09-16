@@ -46,7 +46,8 @@ void main() {
       expect(bins.single.count, 3);
     });
 
-    test('values that are not numbers are left out, and nothing bins to nothing',
+    test(
+        'values that are not numbers are left out, and nothing bins to nothing',
         () {
       expect(histogramBins(const [double.nan, double.infinity]), isEmpty);
       expect(histogramBins(const []), isEmpty);

@@ -284,8 +284,7 @@ class FootprintLayout {
   /// Where [price] sits up the plot.
   double yOf(double price) => maxPrice == minPrice
       ? plot.center.dy
-      : plot.bottom -
-          (price - minPrice) / (maxPrice - minPrice) * plot.height;
+      : plot.bottom - (price - minPrice) / (maxPrice - minPrice) * plot.height;
 }
 
 /// Places [bars] across [bounds], one column each, priced up the side.

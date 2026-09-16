@@ -246,7 +246,7 @@ class ChartDrawings {
 
   /// This set as a JSON-encodable map.
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'version': formatVersion,
-    'drawings': [for (final line in all) line.toJson()],
-  };
+        'version': formatVersion,
+        'drawings': [for (final line in all) line.toJson()],
+      };
 }

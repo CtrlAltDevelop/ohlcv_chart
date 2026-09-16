@@ -42,20 +42,20 @@ ChartPainter _painterOf(WidgetTester tester) {
 }
 
 Widget _chartWith(List<KLineEntity> data) => MaterialApp(
-  home: Scaffold(
-    body: SizedBox(
-      width: 500,
-      height: 600,
-      child: KChartWidget(
-        data,
-        ChartColors(),
-        isTrendLine: false,
-        timeFrame: const Duration(minutes: 15),
-        showNowPrice: false,
+      home: Scaffold(
+        body: SizedBox(
+          width: 500,
+          height: 600,
+          child: KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: false,
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: false,
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
 
 void main() {
   group('onLoadMore', () {

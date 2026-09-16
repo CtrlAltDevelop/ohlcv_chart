@@ -102,9 +102,11 @@ void main() {
       expect(layout.columns.first.openY, 225);
       expect(layout.columns.first.closeY, 75);
       final noCandle = layOutFootprint(
-        [FootprintBar(time: DateTime(2024), levels: const [
-          FootprintLevel(price: 100, askVolume: 1),
-        ])],
+        [
+          FootprintBar(time: DateTime(2024), levels: const [
+            FootprintLevel(price: 100, askVolume: 1),
+          ])
+        ],
         _bounds,
         tickSize: 1,
       );
@@ -144,8 +146,7 @@ void main() {
                   tickSize: 1,
                   gridColor: const Color(0x22FFFFFF),
                   onTouch: (d) => touched = d,
-                  tooltipBuilder: (context, d) =>
-                      Text('card ${d.level.price}'),
+                  tooltipBuilder: (context, d) => Text('card ${d.level.price}'),
                   semanticLabel: 'Order flow',
                 ),
               ],

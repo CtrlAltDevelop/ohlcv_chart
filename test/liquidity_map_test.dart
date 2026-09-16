@@ -142,8 +142,7 @@ void main() {
     });
 
     test('with no current price there is no exposure to report', () {
-      final layout =
-          layOutLiquidityMap(bins, size: const Size(400, 200));
+      final layout = layOutLiquidityMap(bins, size: const Size(400, 200));
       expect(layout.currentPrice, isNull);
       expect(layout.exposureTo(61000), 0);
     });
@@ -211,8 +210,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('takes its default height in an unbounded box',
-        (tester) async {
+    testWidgets('takes its default height in an unbounded box', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

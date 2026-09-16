@@ -169,8 +169,7 @@ class BookHeatmapLayout {
   /// Where [price] sits up the plot.
   double yOf(double price) => maxPrice == minPrice
       ? plot.center.dy
-      : plot.bottom -
-          (price - minPrice) / (maxPrice - minPrice) * plot.height;
+      : plot.bottom - (price - minPrice) / (maxPrice - minPrice) * plot.height;
 
   /// The price at [dy].
   double priceAt(double dy) => plot.height <= 0

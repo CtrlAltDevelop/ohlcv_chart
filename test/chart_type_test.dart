@@ -68,21 +68,21 @@ void main() {
       DataUtil.calculate(data);
 
       Widget chart(ChartType type) => MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 500,
-            height: 600,
-            child: KChartWidget(
-              data,
-              ChartColors(),
-              isTrendLine: false,
-              timeFrame: const Duration(minutes: 15),
-              chartType: type,
-              indicators: [MaIndicator(period: 5)],
+            home: Scaffold(
+              body: SizedBox(
+                width: 500,
+                height: 600,
+                child: KChartWidget(
+                  data,
+                  ChartColors(),
+                  isTrendLine: false,
+                  timeFrame: const Duration(minutes: 15),
+                  chartType: type,
+                  indicators: [MaIndicator(period: 5)],
+                ),
+              ),
             ),
-          ),
-        ),
-      );
+          );
 
       for (final type in [
         ChartType.hlcArea,

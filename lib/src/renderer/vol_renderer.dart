@@ -21,20 +21,20 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     super.priceAxisGutter = 0.0,
     super.priceAxisGutterOnLeft = false,
   }) : super(
-         chartRect: mainRect,
-         maxValue: maxValue,
-         minValue: minValue,
-         topPadding: topPadding,
-         fixedLength: fixedLength,
-         gridColor: chartColors.gridColor,
-         separatorColor: chartColors.effectiveSeparatorColor,
-         gridColumnColor: chartColors.effectiveGridColumnColor,
-         gridStrokeWidth: chartStyle.gridStrokeWidth,
-         separatorWidth: chartStyle.separatorWidth,
-         labelCornerRadius: chartStyle.labelCornerRadius,
-         legendPadding: chartStyle.legendPadding,
-         legendBgColor: chartColors.effectiveLegendBgColor,
-       ) {
+          chartRect: mainRect,
+          maxValue: maxValue,
+          minValue: minValue,
+          topPadding: topPadding,
+          fixedLength: fixedLength,
+          gridColor: chartColors.gridColor,
+          separatorColor: chartColors.effectiveSeparatorColor,
+          gridColumnColor: chartColors.effectiveGridColumnColor,
+          gridStrokeWidth: chartStyle.gridStrokeWidth,
+          separatorWidth: chartStyle.separatorWidth,
+          labelCornerRadius: chartStyle.labelCornerRadius,
+          legendPadding: chartStyle.legendPadding,
+          legendBgColor: chartColors.effectiveLegendBgColor,
+        ) {
     mVolWidth = chartStyle.volWidth;
   }
 
@@ -157,9 +157,9 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
   /// wants a couple of round marks — enough to read a bar against, without
   /// crowding a pane this short.
   List<double> get volumeTicks => _volumeTicks ??= [
-    for (final value in niceTicks(0, maxValue, target: 2))
-      if (value > 0) value,
-  ];
+        for (final value in niceTicks(0, maxValue, target: 2))
+          if (value > 0) value,
+      ];
 
   List<double>? _volumeTicks;
 
@@ -211,8 +211,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
       canvas.drawLine(Offset(0, y), Offset(chartRect.width, y), gridPaint);
     }
 
-    final columns =
-        columnXs ??
+    final columns = columnXs ??
         [
           for (int i = 0; i <= gridColumns; i++)
             chartRect.width / gridColumns * i,

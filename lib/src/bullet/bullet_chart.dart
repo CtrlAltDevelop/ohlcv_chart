@@ -364,12 +364,9 @@ class BulletChart extends StatefulWidget {
   final String? semanticLabel;
 
   /// How tall the chart is in a box that sets no height.
-  double get intrinsicHeight =>
-      rows.isEmpty
-          ? padding.vertical
-          : padding.vertical +
-              rows.length * rowHeight +
-              (rows.length - 1) * rowGap;
+  double get intrinsicHeight => rows.isEmpty
+      ? padding.vertical
+      : padding.vertical + rows.length * rowHeight + (rows.length - 1) * rowGap;
 
   @override
   State<BulletChart> createState() => _BulletChartState();
@@ -434,13 +431,12 @@ class _BulletChartState extends State<BulletChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width = constraints.hasBoundedWidth
-              ? constraints.maxWidth
-              : 320.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.intrinsicHeight;
+          final width =
+              constraints.hasBoundedWidth ? constraints.maxWidth : 320.0;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.intrinsicHeight;
           final size = Size(width, height);
           final valueWidth = widget.showValues ? 56.0 : 0.0;
           _layout = layOutBullet(

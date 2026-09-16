@@ -369,8 +369,7 @@ ViolinLayout layOutViolin(
     if (!curve.isEmpty) {
       if (shape == ViolinShape.violin) {
         final centerX = band.center.dx;
-        final half =
-            band.width * (0.5 - bandPadding.clamp(0.0, 0.45)) * t;
+        final half = band.width * (0.5 - bandPadding.clamp(0.0, 0.45)) * t;
         final right = <Offset>[];
         for (var p = 0; p < curve.densities.length; p++) {
           final y = laidOut.positionOf(curve.valueAt(p));
@@ -693,10 +692,10 @@ class _ViolinChartState extends State<ViolinChart>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultHeight;
           _layout = layOutViolin(
             widget.series,
             size: Size(width, height),
@@ -829,7 +828,8 @@ class ViolinChartPainter extends CustomPainter {
         ..color = chart.gridColor
         ..strokeWidth = 1;
       for (var i = 0; i <= chart.tickCount; i++) {
-        final value = layout.min + (layout.max - layout.min) * i / chart.tickCount;
+        final value =
+            layout.min + (layout.max - layout.min) * i / chart.tickCount;
         final at = layout.positionOf(value);
         if (ridge) {
           canvas.drawLine(

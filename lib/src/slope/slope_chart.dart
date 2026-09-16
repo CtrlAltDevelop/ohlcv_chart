@@ -222,7 +222,8 @@ SlopeLayout layOutSlope(
       );
     }
     for (var i = 0; i < series.length; i++) {
-      plotted.add([for (var p = 0; p < periods; p++) byPeriod[p][i]?.toDouble()]);
+      plotted
+          .add([for (var p = 0; p < periods; p++) byPeriod[p][i]?.toDouble()]);
     }
   } else {
     for (final one in series) {
@@ -541,10 +542,10 @@ class _SlopeChartState extends State<SlopeChart>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultHeight;
           _layout = layOutSlope(
             widget.series,
             size: Size(width, height),
@@ -598,8 +599,7 @@ class _SlopeChartState extends State<SlopeChart>
         _period.clamp(0, math.max(0, laid.points.length - 1)).toInt();
     final at = laid.points[period] ?? laid.lastPoint ?? _layout.plotRect.center;
     final build = widget.tooltipBuilder;
-    final value =
-        period < series.values.length ? series.values[period] : null;
+    final value = period < series.values.length ? series.values[period] : null;
     final child = build != null
         ? build(context, series, period)
         : Container(
@@ -690,7 +690,8 @@ class SlopeChartPainter extends CustomPainter {
     for (final laid in layout.series) {
       final base = laid.series.color ??
           chart.palette[laid.index % math.max(1, chart.palette.length)];
-      final dimmed = touched != null && chart.fadeUntouched && touched != laid.index;
+      final dimmed =
+          touched != null && chart.fadeUntouched && touched != laid.index;
       final color = dimmed
           ? Color.lerp(base, const Color(0x00000000), 0.7) ?? base
           : base;
@@ -721,9 +722,8 @@ class SlopeChartPainter extends CustomPainter {
         path,
         Paint()
           ..color = color
-          ..strokeWidth = touched == laid.index
-              ? chart.lineWidth + 1
-              : chart.lineWidth
+          ..strokeWidth =
+              touched == laid.index ? chart.lineWidth + 1 : chart.lineWidth
           ..style = PaintingStyle.stroke
           ..strokeJoin = StrokeJoin.round
           ..strokeCap = StrokeCap.round,
@@ -741,8 +741,7 @@ class SlopeChartPainter extends CustomPainter {
         final first = laid.firstPoint;
         final last = laid.lastPoint;
         if (first != null) {
-          final painter =
-              textCache.get(_endLabel(laid, first: true), style);
+          final painter = textCache.get(_endLabel(laid, first: true), style);
           painter.paint(
             canvas,
             Offset(
@@ -752,8 +751,7 @@ class SlopeChartPainter extends CustomPainter {
           );
         }
         if (last != null && layout.columnX.length > 1) {
-          final painter =
-              textCache.get(_endLabel(laid, first: false), style);
+          final painter = textCache.get(_endLabel(laid, first: false), style);
           painter.paint(
             canvas,
             Offset(

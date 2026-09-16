@@ -48,10 +48,11 @@ double fibTimeZoneX(Offset from, Offset to, double level) =>
 ({List<double> horizontals, List<double> verticals}) gannBoxRules(
   Rect box,
   List<double> ratios,
-) => (
-  horizontals: [for (final r in ratios) box.top + box.height * r],
-  verticals: [for (final r in ratios) box.left + box.width * r],
-);
+) =>
+    (
+      horizontals: [for (final r in ratios) box.top + box.height * r],
+      verticals: [for (final r in ratios) box.left + box.width * r],
+    );
 
 /// The handle, median and tines of a pitchfork, in view space.
 ///
@@ -87,9 +88,9 @@ ForkGeometry pitchforkGeometry(
     PitchforkKind.schiff => Offset(p1.dx, (p1.dy + median.dy) / 2),
     // Modified Schiff lifts it in time as well.
     PitchforkKind.modifiedSchiff => Offset(
-      (p1.dx + median.dx) / 2,
-      (p1.dy + median.dy) / 2,
-    ),
+        (p1.dx + median.dx) / 2,
+        (p1.dy + median.dy) / 2,
+      ),
   };
 
   return (

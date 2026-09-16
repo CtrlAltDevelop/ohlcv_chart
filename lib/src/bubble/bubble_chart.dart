@@ -446,9 +446,7 @@ class _BubbleChartState extends State<BubbleChart>
           box.right,
           math.max(
             box.top,
-            box.bottom -
-                (widget.showAxes ? widget.axisHeight : 0) -
-                titleRoom,
+            box.bottom - (widget.showAxes ? widget.axisHeight : 0) - titleRoom,
           ),
         );
         _circles = layOutBubbles(

@@ -6,29 +6,29 @@ DateTime _at(int minute) =>
     DateTime.utc(2024, 1, 1).add(Duration(minutes: minute));
 
 ChartDrawingController _controller() => ChartDrawingController(
-  drawings: [
-    HorizontalLine(price: 100, title: 'entry'),
-    TrendLine(time1: _at(1), price1: 1, time2: _at(9), price2: 2),
-    PositionDrawing(
-      time1: _at(1),
-      price1: 100,
-      time2: _at(9),
-      price2: 120,
-      time3: _at(9),
-      price3: 95,
-    ),
-  ],
-);
+      drawings: [
+        HorizontalLine(price: 100, title: 'entry'),
+        TrendLine(time1: _at(1), price1: 1, time2: _at(9), price2: 2),
+        PositionDrawing(
+          time1: _at(1),
+          price1: 100,
+          time2: _at(9),
+          price2: 120,
+          time3: _at(9),
+          price3: 95,
+        ),
+      ],
+    );
 
 Widget _host(ChartDrawingController controller) => MaterialApp(
-  home: Scaffold(
-    body: SizedBox(
-      width: 400,
-      height: 600,
-      child: DrawingManager(controller: controller),
-    ),
-  ),
-);
+      home: Scaffold(
+        body: SizedBox(
+          width: 400,
+          height: 600,
+          child: DrawingManager(controller: controller),
+        ),
+      ),
+    );
 
 void main() {
   testWidgets('lists every drawing by name, newest first', (tester) async {

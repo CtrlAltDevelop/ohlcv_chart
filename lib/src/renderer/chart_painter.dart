@@ -78,8 +78,8 @@ class ChartPainter extends BaseChartPainter {
     this.dateFormatter,
     this.priceFormatter,
     super.repaint,
-  }) : candleIndex = candleIndex ?? CandleIndex(),
-       textCache = textCache ?? TextPainterCache() {
+  })  : candleIndex = candleIndex ?? CandleIndex(),
+        textCache = textCache ?? TextPainterCache() {
     selectPointPaint = Paint()
       ..isAntiAlias = true
       ..strokeWidth = 0.5
@@ -339,8 +339,7 @@ class ChartPainter extends BaseChartPainter {
     // candles move and the scale under them does not.
     final lockedMin = fixedPriceMin;
     final lockedMax = fixedPriceMax;
-    final locked =
-        lockedMin != null &&
+    final locked = lockedMin != null &&
         lockedMax != null &&
         lockedMin.isFinite &&
         lockedMax.isFinite &&
@@ -1065,8 +1064,8 @@ class ChartPainter extends BaseChartPainter {
       final textX = rayStart != null
           ? rayStart + padding.left + 8
           : verticalTextAlignment == VerticalTextAlignment.right
-          ? size.width - tp.width - padding.right - 8
-          : 8.0 + padding.left;
+              ? size.width - tp.width - padding.right - 8
+              : 8.0 + padding.left;
 
       drawLineLabel(
         canvas,
@@ -1222,8 +1221,7 @@ class ChartPainter extends BaseChartPainter {
   void drawRectangleLabel(Canvas canvas, Rect rect, RectangleDrawing box) {
     final high = math.max(box.price1, box.price2!);
     final low = math.min(box.price1, box.price2!);
-    final text =
-        box.label ??
+    final text = box.label ??
         '${high.toStringAsFixed(fixedLength)} – '
             '${low.toStringAsFixed(fixedLength)}';
 
@@ -1350,11 +1348,9 @@ class ChartPainter extends BaseChartPainter {
       final x2 = translateXtoX(getX(i2));
       final y2 = getMainY(line.price2!);
 
-      final label1 =
-          line.label1 ??
+      final label1 = line.label1 ??
           '${line.price1.toStringAsFixed(fixedLength)}\n${getDate(line.time1)}';
-      final label2 =
-          line.label2 ??
+      final label2 = line.label2 ??
           '${line.price2!.toStringAsFixed(fixedLength)}\n${getDate(line.time2)}';
 
       final tp1 = getLabelPainter(label1, line.color);
@@ -1986,9 +1982,8 @@ class ChartPainter extends BaseChartPainter {
       // from.
       strokeChartLine(canvas, p2, p3, fork);
 
-      final outermost = fork.levels.isEmpty
-          ? null
-          : fork.levels.reduce(math.max);
+      final outermost =
+          fork.levels.isEmpty ? null : fork.levels.reduce(math.max);
       for (final tine in geometry.tines) {
         for (final start in [tine.upper, tine.lower]) {
           final from = tine.level == 0 ? geometry.handle : start;
@@ -2035,10 +2030,10 @@ class ChartPainter extends BaseChartPainter {
 
   /// What a pitchfork of [kind] is called, for its label.
   String _forkName(PitchforkKind kind) => switch (kind) {
-    PitchforkKind.andrews => 'Andrews',
-    PitchforkKind.schiff => 'Schiff',
-    PitchforkKind.modifiedSchiff => 'Mod. Schiff',
-  };
+        PitchforkKind.andrews => 'Andrews',
+        PitchforkKind.schiff => 'Schiff',
+        PitchforkKind.modifiedSchiff => 'Mod. Schiff',
+      };
 
   void drawRegressions(Canvas canvas, Size size) {
     for (final regression in _withDraft(regressions)) {
@@ -2053,9 +2048,8 @@ class ChartPainter extends BaseChartPainter {
 
       final from = _indexOf(regression.time1);
       final to = _indexOf(regression.time2);
-      final fit = from == null || to == null
-          ? null
-          : fitRegression(candles!, from, to);
+      final fit =
+          from == null || to == null ? null : fitRegression(candles!, from, to);
       if (fit == null) {
         // Too little to fit, so the anchors are all there is to show.
         strokeChartLine(canvas, start, end, regression);
@@ -2069,31 +2063,28 @@ class ChartPainter extends BaseChartPainter {
       final left = math.min(start.dx, end.dx);
       final right = math.max(start.dx, end.dx);
       Offset at(double side, double multiple) => Offset(
-        side,
-        getMainY(
-          (side == left ? fit.startPrice : fit.endPrice) +
-              multiple * fit.deviation,
-        ),
-      );
+            side,
+            getMainY(
+              (side == left ? fit.startPrice : fit.endPrice) +
+                  multiple * fit.deviation,
+            ),
+          );
 
       final spread = regression.showBands ? regression.deviations : 0.0;
       final fitFrom = at(left, 0);
       final fitTo = at(right, 0);
-      final fitEnd = regression.extend
-          ? extendPoint(fitFrom, fitTo, size)
-          : fitTo;
+      final fitEnd =
+          regression.extend ? extendPoint(fitFrom, fitTo, size) : fitTo;
 
       if (spread != 0) {
         final upperFrom = at(left, spread);
         final upperTo = at(right, spread);
         final lowerFrom = at(left, -spread);
         final lowerTo = at(right, -spread);
-        final upperEnd = regression.extend
-            ? extendPoint(upperFrom, upperTo, size)
-            : upperTo;
-        final lowerEnd = regression.extend
-            ? extendPoint(lowerFrom, lowerTo, size)
-            : lowerTo;
+        final upperEnd =
+            regression.extend ? extendPoint(upperFrom, upperTo, size) : upperTo;
+        final lowerEnd =
+            regression.extend ? extendPoint(lowerFrom, lowerTo, size) : lowerTo;
 
         canvas.drawPath(
           Path()
@@ -2640,8 +2631,7 @@ class ChartPainter extends BaseChartPainter {
     // Below a day, the axis reads as a run of clock times with the date
     // promoted where the day turns over — which is how a trader tells one
     // session from the next.
-    final promoteDates =
-        step != null &&
+    final promoteDates = step != null &&
         step < const Duration(days: 1) &&
         dateFormatter == null &&
         chartStyle.dateTimeFormat == null;
@@ -2885,9 +2875,8 @@ class ChartPainter extends BaseChartPainter {
     final labels = chartTranslations;
     final neutral = chartColors.defaultTextColor;
     final change = data.close - data.open;
-    final moveColor = change >= 0
-        ? chartColors.nowPriceUpColor
-        : chartColors.nowPriceDnColor;
+    final moveColor =
+        change >= 0 ? chartColors.nowPriceUpColor : chartColors.nowPriceDnColor;
     final percent = data.open == 0 ? 0.0 : change / data.open * 100;
 
     final spans = <InlineSpan>[
@@ -2906,8 +2895,7 @@ class ChartPainter extends BaseChartPainter {
           style: getTextStyle(moveColor),
         ),
       TextSpan(
-        text:
-            '${change >= 0 ? '+' : ''}${change.toStringAsFixed(fixedLength)} '
+        text: '${change >= 0 ? '+' : ''}${change.toStringAsFixed(fixedLength)} '
             '(${percent.toStringAsFixed(2)}%)  ',
         style: getTextStyle(moveColor),
       ),
@@ -3014,8 +3002,8 @@ class ChartPainter extends BaseChartPainter {
 
     // Dashes run the full width so the level can be read anywhere, while the
     // stretch since the last candle stays solid.
-    final lastX = translateXtoX(getX(candles!.length - 1))
-        .clamp(mPlotLeft, mPlotRight);
+    final lastX =
+        translateXtoX(getX(candles!.length - 1)).clamp(mPlotLeft, mPlotRight);
     if (chartStyle.nowPriceDashed) {
       paintStyledLine(
         canvas,

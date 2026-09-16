@@ -64,8 +64,7 @@ void main() {
         for (var i = 0; i < _series.length; i++) {
           for (var p = 1; p < 3; p++) {
             final mid = (stack.tops[i][p] + stack.bottoms[i][p]) / 2;
-            final before =
-                (stack.tops[i][p - 1] + stack.bottoms[i][p - 1]) / 2;
+            final before = (stack.tops[i][p - 1] + stack.bottoms[i][p - 1]) / 2;
             sum += (mid - before).abs();
           }
         }
@@ -220,8 +219,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('takes its default height in an unbounded box',
-        (tester) async {
+    testWidgets('takes its default height in an unbounded box', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

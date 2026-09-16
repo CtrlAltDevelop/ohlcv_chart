@@ -215,11 +215,10 @@ class _WatermarkLayout extends SingleChildLayoutDelegate {
   }
 
   @override
-  Offset getPositionForChild(Size size, Size childSize) => painter
-      .chartStyle
-      .watermarkAlignment
-      .inscribe(childSize, painter.mMainRect)
-      .topLeft;
+  Offset getPositionForChild(Size size, Size childSize) =>
+      painter.chartStyle.watermarkAlignment
+          .inscribe(childSize, painter.mMainRect)
+          .topLeft;
 
   @override
   bool shouldRelayout(_WatermarkLayout oldDelegate) =>
@@ -484,7 +483,7 @@ class KChartWidget extends StatefulWidget {
   /// A horizontal level reports through both this and [onAlertCrossed], so an
   /// app written against the older callback carries on working.
   final void Function(ChartLine line, KLineEntity candle, double level)?
-  onDrawingAlert;
+      onDrawingAlert;
 
   /// The regular trading session, in the zone the chart is showing.
   ///
@@ -561,8 +560,7 @@ class KChartWidget extends StatefulWidget {
     IndicatorAlert alert,
     KLineEntity candle,
     double value,
-  )?
-  onIndicatorAlert;
+  )? onIndicatorAlert;
 
   /// Things that happened to the instrument, marked under the candles.
   ///
@@ -794,7 +792,7 @@ class KChartWidget extends StatefulWidget {
   ///
   /// Receives the selected candle and the one before it.
   final Widget? Function(BuildContext, KLineEntity?, KLineEntity?)?
-  infoDialogBuilder;
+      infoDialogBuilder;
 
   /// Overrides axis date formatting; the flag marks the long form.
   final String Function(KLineEntity, bool)? dateFormatter;
@@ -1008,9 +1006,8 @@ class _KChartWidgetState extends State<KChartWidget>
     }
 
     if (identical(_localSelection, line)) {
-      _localSelection = _localAlsoSelected.isEmpty
-          ? null
-          : _localAlsoSelected.removeLast();
+      _localSelection =
+          _localAlsoSelected.isEmpty ? null : _localAlsoSelected.removeLast();
       return;
     }
     if (_localAlsoSelected.any((candidate) => identical(candidate, line))) {
@@ -1225,8 +1222,7 @@ class _KChartWidgetState extends State<KChartWidget>
     if (!_isCommandPressed) return false;
 
     final keys = HardwareKeyboard.instance.logicalKeysPressed;
-    final shift =
-        keys.contains(LogicalKeyboardKey.shiftLeft) ||
+    final shift = keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight);
 
     // ⌘A selects everything drawn, and works with or without a controller.
@@ -1349,7 +1345,7 @@ class _KChartWidgetState extends State<KChartWidget>
     const across = 3;
     final down =
         (painter.mMainRenderer.maxValue - painter.mMainRenderer.minValue) *
-        0.03;
+            0.03;
 
     for (final line in lines) {
       final anchors = _anchorsOf(line);
@@ -1362,13 +1358,16 @@ class _KChartWidgetState extends State<KChartWidget>
       // Nowhere to move to at the right-hand edge, so the copy goes left.
       final shift = highest + across < candles.length ? across : -across;
 
-      _writeAnchors(line, [
-        for (final anchor in anchors)
-          (
-            index: (anchor.index + shift).clamp(0, candles.length - 1),
-            price: anchor.price - down,
-          ),
-      ], candles);
+      _writeAnchors(
+          line,
+          [
+            for (final anchor in anchors)
+              (
+                index: (anchor.index + shift).clamp(0, candles.length - 1),
+                price: anchor.price - down,
+              ),
+          ],
+          candles);
     }
   }
 
@@ -1413,8 +1412,7 @@ class _KChartWidgetState extends State<KChartWidget>
   /// Ctrl everywhere else.
   bool get _isCommandPressed {
     final keyboard = HardwareKeyboard.instance;
-    final isApple =
-        defaultTargetPlatform == TargetPlatform.macOS ||
+    final isApple = defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.iOS;
     return isApple ? keyboard.isMetaPressed : keyboard.isControlPressed;
   }
@@ -2173,11 +2171,13 @@ class _KChartWidgetState extends State<KChartWidget>
             ChartType.line ||
             ChartType.area ||
             ChartType.baseline ||
-            ChartType.stepLine => true,
+            ChartType.stepLine =>
+              true,
             ChartType.candles ||
             ChartType.bars ||
             ChartType.hlcArea ||
-            ChartType.columns => false,
+            ChartType.columns =>
+              false,
           },
           chartType: _chartType,
           baselinePrice: widget.baselinePrice,
@@ -2504,8 +2504,7 @@ class _KChartWidgetState extends State<KChartWidget>
                                       delegate: _WatermarkLayout(painter),
                                       child: ColorFiltered(
                                         colorFilter: ColorFilter.mode(
-                                          widget
-                                              .chartColors
+                                          widget.chartColors
                                               .effectiveWatermarkColor,
                                           BlendMode.srcIn,
                                         ),
@@ -2784,135 +2783,135 @@ class _KChartWidgetState extends State<KChartWidget>
     final ChartLine? draft = switch (widget.currentDrawingTool) {
       DrawingTool.none => null,
       DrawingTool.horizontal => HorizontalLine(
-        price: anchor.price,
-        title: title,
-      ),
+          price: anchor.price,
+          title: title,
+        ),
       DrawingTool.horizontalRay => HorizontalLine(
-        price: anchor.price,
-        startTime: anchor.time,
-        title: title,
-      ),
+          price: anchor.price,
+          startTime: anchor.time,
+          title: title,
+        ),
       DrawingTool.vertical => VerticalLine(
-        time: anchor.time,
-        title: painter.getDate(anchor.time),
-      ),
+          time: anchor.time,
+          title: painter.getDate(anchor.time),
+        ),
       DrawingTool.flag => FlagDrawing(time: anchor.time, price: anchor.price),
       _ when preview => null,
       DrawingTool.trend => TrendLine(time1: anchor.time, price1: anchor.price),
       DrawingTool.ray => TrendLine(
-        time1: anchor.time,
-        price1: anchor.price,
-        extend: LineExtension.right,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          extend: LineExtension.right,
+        ),
       DrawingTool.extendedLine => TrendLine(
-        time1: anchor.time,
-        price1: anchor.price,
-        extend: LineExtension.both,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          extend: LineExtension.both,
+        ),
       DrawingTool.arrow => TrendLine(
-        time1: anchor.time,
-        price1: anchor.price,
-        arrow: true,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          arrow: true,
+        ),
       DrawingTool.rectangle => RectangleDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.rectangleFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.rectangleFillOpacity,
+        ),
       DrawingTool.ellipse => EllipseDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.shapeFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.shapeFillOpacity,
+        ),
       DrawingTool.triangle => TriangleDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.shapeFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.shapeFillOpacity,
+        ),
       DrawingTool.fibRetracement => FibRetracement(
-        time1: anchor.time,
-        price1: anchor.price,
-        levels: List<double>.of(style.fibLevels),
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          levels: List<double>.of(style.fibLevels),
+        ),
       DrawingTool.measure => MeasureDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.measureFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.measureFillOpacity,
+        ),
       DrawingTool.channel => ParallelChannel(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.channelFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.channelFillOpacity,
+        ),
       DrawingTool.position => PositionDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.positionFillOpacity,
-        profitColor: widget.chartColors.upColor,
-        lossColor: widget.chartColors.dnColor,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.positionFillOpacity,
+          profitColor: widget.chartColors.upColor,
+          lossColor: widget.chartColors.dnColor,
+        ),
       DrawingTool.text => TextAnnotation(
-        time: anchor.time,
-        price: anchor.price,
-      ),
+          time: anchor.time,
+          price: anchor.price,
+        ),
       DrawingTool.brush => FreehandDrawing(
-        points: [(time: anchor.time, price: anchor.price)],
-      ),
+          points: [(time: anchor.time, price: anchor.price)],
+        ),
       DrawingTool.pitchfork => PitchforkDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.channelFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.channelFillOpacity,
+        ),
       DrawingTool.gannFan => GannFan(time1: anchor.time, price1: anchor.price),
       DrawingTool.gannBox => GannBox(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.shapeFillOpacity / 2,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.shapeFillOpacity / 2,
+        ),
       DrawingTool.fibExtension => FibExtension(
-        time1: anchor.time,
-        price1: anchor.price,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+        ),
       DrawingTool.fibFan => FibFan(time1: anchor.time, price1: anchor.price),
       DrawingTool.fibTimeZones => FibTimeZones(
-        time1: anchor.time,
-        price1: anchor.price,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+        ),
       DrawingTool.regressionTrend => RegressionChannel(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.channelFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.channelFillOpacity,
+        ),
       DrawingTool.priceRange => PriceRangeDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.measureFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.measureFillOpacity,
+        ),
       DrawingTool.dateRange => DateRangeDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-        fillOpacity: style.measureFillOpacity,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+          fillOpacity: style.measureFillOpacity,
+        ),
       DrawingTool.callout => CalloutDrawing(
-        time1: anchor.time,
-        price1: anchor.price,
-      ),
+          time1: anchor.time,
+          price1: anchor.price,
+        ),
       // A multi-point shape starts with its first anchor landed and a second
       // one following the pointer, so it rubber-bands like every other shape.
       DrawingTool.xabcd => XabcdDrawing(
-        points: [
-          (time: anchor.time, price: anchor.price),
-          (time: anchor.time, price: anchor.price),
-        ],
-        fillOpacity: style.shapeFillOpacity,
-      ),
+          points: [
+            (time: anchor.time, price: anchor.price),
+            (time: anchor.time, price: anchor.price),
+          ],
+          fillOpacity: style.shapeFillOpacity,
+        ),
       DrawingTool.path => PathDrawing(
-        points: [
-          (time: anchor.time, price: anchor.price),
-          (time: anchor.time, price: anchor.price),
-        ],
-        fillOpacity: style.shapeFillOpacity,
-      ),
+          points: [
+            (time: anchor.time, price: anchor.price),
+            (time: anchor.time, price: anchor.price),
+          ],
+          fillOpacity: style.shapeFillOpacity,
+        ),
     };
     if (draft == null) return false;
 
@@ -3257,8 +3256,8 @@ class _KChartWidgetState extends State<KChartWidget>
     }
 
     return legs.any(
-          (leg) => _distanceToSegment(pos, leg.$1, leg.$2) < tolerance,
-        )
+      (leg) => _distanceToSegment(pos, leg.$1, leg.$2) < tolerance,
+    )
         ? 0
         : null;
   }
@@ -3333,9 +3332,8 @@ class _KChartWidgetState extends State<KChartWidget>
         return _hitOval(pos, Rect.fromPoints(p1, p2), tolerance);
 
       case TriangleDrawing():
-        final corners = p3 == null
-            ? [(p1, p2)]
-            : [(p1, p2), (p2, p3), (p3, p1)];
+        final corners =
+            p3 == null ? [(p1, p2)] : [(p1, p2), (p2, p3), (p3, p1)];
         return corners.any(
           (edge) => _distanceToSegment(pos, edge.$1, edge.$2) < tolerance,
         );
@@ -3483,9 +3481,8 @@ class _KChartWidgetState extends State<KChartWidget>
             painter.getMainY(fit.startPrice + shift),
           );
           final to = Offset(right.dx, painter.getMainY(fit.endPrice + shift));
-          final end = regression.extend
-              ? painter.extendPoint(from, to, size)
-              : to;
+          final end =
+              regression.extend ? painter.extendPoint(from, to, size) : to;
           return _distanceToSegment(pos, from, end) < tolerance;
         });
 
@@ -3741,9 +3738,8 @@ class _KChartWidgetState extends State<KChartWidget>
     // drawing keeps the raw price: it moves by the distance the pointer has
     // travelled since `_beginHandleDrag` recorded it, and snapping one end of
     // that measurement would jump the shape by the difference.
-    final snapped = widget.magnetMode
-        ? _magnetPrice(candles[index], pos.dy, price)
-        : price;
+    final snapped =
+        widget.magnetMode ? _magnetPrice(candles[index], pos.dy, price) : price;
 
     switch (line) {
       case HorizontalLine():
@@ -3848,10 +3844,13 @@ class _KChartWidgetState extends State<KChartWidget>
     final priceShift = price - start.price;
 
     for (final entry in moving.entries) {
-      _writeAnchors(entry.key, [
-        for (final anchor in entry.value)
-          (index: anchor.index + shift, price: anchor.price + priceShift),
-      ], candles);
+      _writeAnchors(
+          entry.key,
+          [
+            for (final anchor in entry.value)
+              (index: anchor.index + shift, price: anchor.price + priceShift),
+          ],
+          candles);
     }
   }
 
@@ -3882,13 +3881,12 @@ class _KChartWidgetState extends State<KChartWidget>
 
   void _onFling(double velocity) {
     _controller = _replaceScrollController();
-    aniX =
-        Tween<double>(
-          begin: mScrollX,
-          end: velocity * widget.flingRatio + mScrollX,
-        ).animate(
-          CurvedAnimation(parent: _controller!.view, curve: widget.flingCurve),
-        );
+    aniX = Tween<double>(
+      begin: mScrollX,
+      end: velocity * widget.flingRatio + mScrollX,
+    ).animate(
+      CurvedAnimation(parent: _controller!.view, curve: widget.flingCurve),
+    );
 
     aniX!.addListener(() {
       mScrollX = aniX!.value.clamp(0.0, BaseChartPainter.maxScrollX);
@@ -4026,8 +4024,7 @@ class _KChartWidgetState extends State<KChartWidget>
   /// means choosing a scale and a scroll together and the painter only knows
   /// about the scale it last painted at.
   double _maxScrollAt(double scale) {
-    final reach =
-        -painter.mDataLen +
+    final reach = -painter.mDataLen +
         painter.mWidth / scale -
         painter.mPointWidth / 2 -
         widget.xFrontPadding;
@@ -4048,10 +4045,9 @@ class _KChartWidgetState extends State<KChartWidget>
     // allows — so a range too narrow or too wide to reach is shown as near as
     // it can be.
     final scale = (painter.mWidth / wanted).clamp(0.1, 3.0);
-    final scroll =
-        (_maxScrollAt(scale) -
-                (from * painter.mPointWidth + painter.mPointWidth / 2))
-            .clamp(0.0, _maxScrollAt(scale));
+    final scroll = (_maxScrollAt(scale) -
+            (from * painter.mPointWidth + painter.mPointWidth / 2))
+        .clamp(0.0, _maxScrollAt(scale));
 
     _stopAnimation(needNotify: false);
     mScaleX = scale;
@@ -4144,8 +4140,8 @@ class _KChartWidgetState extends State<KChartWidget>
     final y = price == null
         ? middle
         : painter
-              .getMainY(price)
-              .clamp(painter.mMainRect.top, painter.mMainRect.bottom);
+            .getMainY(price)
+            .clamp(painter.mMainRect.top, painter.mMainRect.bottom);
 
     // A crosshair put up from outside reads as a hover, not as a press, so it
     // does not take a held finger's place or leave one behind when it goes.
@@ -4208,8 +4204,7 @@ class _KChartWidgetState extends State<KChartWidget>
           top: 10,
           left: info.isLeft ? 10.0 : null,
           right: info.isLeft ? null : 10.0,
-          child:
-              widget.infoDialogBuilder?.call(
+          child: widget.infoDialogBuilder?.call(
                 context,
                 info.kLinePreviousEntity,
                 entity,
@@ -4488,15 +4483,12 @@ class _KChartWidgetState extends State<KChartWidget>
     final index = candles == null || candles.isEmpty
         ? -1
         : painter.calculateSelectedX(local.dx);
-    final candle = index < 0 || index >= (candles?.length ?? 0)
-        ? null
-        : candles![index];
+    final candle =
+        index < 0 || index >= (candles?.length ?? 0) ? null : candles![index];
 
-    final defaults = drawing == null
-        ? _chartMenuEntries()
-        : _drawingMenuEntries(drawing);
-    final entries =
-        widget.contextMenuBuilder?.call((
+    final defaults =
+        drawing == null ? _chartMenuEntries() : _drawingMenuEntries(drawing);
+    final entries = widget.contextMenuBuilder?.call((
           position: local,
           drawing: drawing,
           candle: candle,

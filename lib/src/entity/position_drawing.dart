@@ -97,10 +97,10 @@ class PositionDrawing extends ThreePointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('position'),
-    ...threeAnchorsJson(),
-    'fillOpacity': fillOpacity,
-    'profitColor': profitColor.toARGB32(),
-    'lossColor': lossColor.toARGB32(),
-  };
+        ...baseJson('position'),
+        ...threeAnchorsJson(),
+        'fillOpacity': fillOpacity,
+        'profitColor': profitColor.toARGB32(),
+        'lossColor': lossColor.toARGB32(),
+      };
 }

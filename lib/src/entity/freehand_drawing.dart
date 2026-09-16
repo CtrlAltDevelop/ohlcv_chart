@@ -64,10 +64,10 @@ class FreehandDrawing extends ChartLine {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('freehand'),
-    'points': [
-      for (final point in points)
-        {'time': point.time.toIso8601String(), 'price': point.price},
-    ],
-  };
+        ...baseJson('freehand'),
+        'points': [
+          for (final point in points)
+            {'time': point.time.toIso8601String(), 'price': point.price},
+        ],
+      };
 }

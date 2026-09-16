@@ -10,24 +10,25 @@ Widget chart(
   List<KLineEntity> data, {
   KChartController? controller,
   ValueChanged<int?>? onMove,
-}) => MaterialApp(
-  home: Scaffold(
-    body: SizedBox(
-      width: 400,
-      height: 500,
-      child: KChartWidget(
-        data,
-        ChartColors(),
-        isTrendLine: false,
-        timeFrame: const Duration(minutes: 15),
-        showNowPrice: false,
-        controller: controller,
-        onCrosshairChanged: onMove,
-        indicators: [MaIndicator()],
+}) =>
+    MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 400,
+          height: 500,
+          child: KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: false,
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: false,
+            controller: controller,
+            onCrosshairChanged: onMove,
+            indicators: [MaIndicator()],
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
 
 void main() {
   group('the crosshair, through the controller', () {

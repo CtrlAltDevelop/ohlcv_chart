@@ -395,10 +395,13 @@ void main() {
       a.host.hoverAt(42, price: 100);
       a.host.hoverAt(42, price: 105);
 
-      expect(b.host.pricesAsked, [
-        100,
-        105,
-      ], reason: 'the candle held but the price changed');
+      expect(
+          b.host.pricesAsked,
+          [
+            100,
+            105,
+          ],
+          reason: 'the candle held but the price changed');
     });
 
     test('priceScale carries the stretch and the shift', () {

@@ -73,11 +73,11 @@ abstract class MultiPointDrawing extends ChartLine {
   /// Every anchor, ready to be merged into a subclass's JSON map.
   @protected
   Map<String, dynamic> pointsJson() => <String, dynamic>{
-    'points': [
-      for (final point in points)
-        {'time': point.time.toIso8601String(), 'price': point.price},
-    ],
-  };
+        'points': [
+          for (final point in points)
+            {'time': point.time.toIso8601String(), 'price': point.price},
+        ],
+      };
 
   /// The anchors held in [json], skipping any that cannot be read.
   static List<DrawingPoint> pointsFromJson(Map<String, dynamic> json) {
@@ -114,15 +114,15 @@ class XabcdDrawing extends MultiPointDrawing implements FilledDrawing {
 
   /// Rebuilds a pattern from [json].
   factory XabcdDrawing.fromJson(Map<String, dynamic> json) => XabcdDrawing(
-    points: MultiPointDrawing.pointsFromJson(json),
-    fillOpacity: LineJson.number(json, 'fillOpacity', 0.08),
-    color: LineJson.color(json, const Color(0xFFBA68C8)),
-    thickness: LineJson.number(json, 'thickness', 1.5),
-    style: LineJson.style(json),
-    locked: LineJson.flag(json, 'locked'),
-    showLabel: LineJson.flag(json, 'showLabel', true),
-    hidden: LineJson.flag(json, 'hidden'),
-  );
+        points: MultiPointDrawing.pointsFromJson(json),
+        fillOpacity: LineJson.number(json, 'fillOpacity', 0.08),
+        color: LineJson.color(json, const Color(0xFFBA68C8)),
+        thickness: LineJson.number(json, 'thickness', 1.5),
+        style: LineJson.style(json),
+        locked: LineJson.flag(json, 'locked'),
+        showLabel: LineJson.flag(json, 'showLabel', true),
+        hidden: LineJson.flag(json, 'hidden'),
+      );
 
   /// What each anchor is called, in the order they are placed.
   static const List<String> pointNames = ['X', 'A', 'B', 'C', 'D'];
@@ -149,10 +149,10 @@ class XabcdDrawing extends MultiPointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('xabcd'),
-    ...pointsJson(),
-    'fillOpacity': fillOpacity,
-  };
+        ...baseJson('xabcd'),
+        ...pointsJson(),
+        'fillOpacity': fillOpacity,
+      };
 }
 
 /// A run of straight segments through as many points as were tapped.
@@ -178,17 +178,17 @@ class PathDrawing extends MultiPointDrawing implements FilledDrawing {
 
   /// Rebuilds a path from [json].
   factory PathDrawing.fromJson(Map<String, dynamic> json) => PathDrawing(
-    points: MultiPointDrawing.pointsFromJson(json),
-    closed: LineJson.flag(json, 'closed'),
-    arrow: LineJson.flag(json, 'arrow'),
-    fillOpacity: LineJson.number(json, 'fillOpacity', 0.08),
-    color: LineJson.color(json, const Color(0xFF4FC3F7)),
-    thickness: LineJson.number(json, 'thickness', 2),
-    style: LineJson.style(json),
-    locked: LineJson.flag(json, 'locked'),
-    showLabel: LineJson.flag(json, 'showLabel'),
-    hidden: LineJson.flag(json, 'hidden'),
-  );
+        points: MultiPointDrawing.pointsFromJson(json),
+        closed: LineJson.flag(json, 'closed'),
+        arrow: LineJson.flag(json, 'arrow'),
+        fillOpacity: LineJson.number(json, 'fillOpacity', 0.08),
+        color: LineJson.color(json, const Color(0xFF4FC3F7)),
+        thickness: LineJson.number(json, 'thickness', 2),
+        style: LineJson.style(json),
+        locked: LineJson.flag(json, 'locked'),
+        showLabel: LineJson.flag(json, 'showLabel'),
+        hidden: LineJson.flag(json, 'hidden'),
+      );
 
   /// Whether the last point joins back to the first.
   bool closed;
@@ -207,10 +207,10 @@ class PathDrawing extends MultiPointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('path'),
-    ...pointsJson(),
-    'closed': closed,
-    'arrow': arrow,
-    'fillOpacity': fillOpacity,
-  };
+        ...baseJson('path'),
+        ...pointsJson(),
+        'closed': closed,
+        'arrow': arrow,
+        'fillOpacity': fillOpacity,
+      };
 }

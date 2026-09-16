@@ -86,7 +86,8 @@ void main() {
   group('the widget', () {
     Widget host(Widget chart) => MaterialApp(
           home: Scaffold(
-            body: Center(child: SizedBox(width: 400, height: 300, child: chart)),
+            body:
+                Center(child: SizedBox(width: 400, height: 300, child: chart)),
           ),
         );
 
@@ -116,7 +117,8 @@ void main() {
       );
 
       final origin = tester.getTopLeft(find.byType(FunnelChart));
-      final gesture = await tester.startGesture(origin + const Offset(200, 150));
+      final gesture =
+          await tester.startGesture(origin + const Offset(200, 150));
       await tester.pump();
       expect(reported?.stage.label, 'Signed up');
       expect(find.text('card Signed up'), findsOneWidget);

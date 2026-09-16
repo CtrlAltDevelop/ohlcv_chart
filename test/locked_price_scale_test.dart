@@ -23,24 +23,25 @@ Widget _chart({
   List<KLineEntity>? data,
   KChartController? controller,
   bool followsPrice = false,
-}) => MaterialApp(
-  home: Scaffold(
-    body: SizedBox(
-      width: 500,
-      height: 600,
-      child: KChartWidget(
-        data ?? _trend(),
-        ChartColors(),
-        isTrendLine: false,
-        timeFrame: const Duration(minutes: 15),
-        showNowPrice: false,
-        lockPriceScale: lock,
-        lockedScaleFollowsPrice: followsPrice,
-        controller: controller,
+}) =>
+    MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 500,
+          height: 600,
+          child: KChartWidget(
+            data ?? _trend(),
+            ChartColors(),
+            isTrendLine: false,
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: false,
+            lockPriceScale: lock,
+            lockedScaleFollowsPrice: followsPrice,
+            controller: controller,
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
 
 /// The range the price axis is actually drawn at, which is the renderer's --
 /// the painter's own min and max stay the honest fit to the window.

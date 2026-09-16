@@ -9,12 +9,12 @@ import 'test_utils.dart';
 const _grabAnything = DrawingStyle(hitTestTolerance: 10000);
 
 Widget _host(Widget child) => MaterialApp(
-  home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
-);
+      home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
+    );
 
 /// A chart with [tool] armed, collecting whatever the user places.
 ({Widget widget, List<ChartLine> placed, List<KLineEntity> data})
-_chartWithTool(DrawingTool tool) {
+    _chartWithTool(DrawingTool tool) {
   final data = candles(rampThenFall(60));
   DataUtil.calculate(data);
   final placed = <ChartLine>[];
@@ -240,16 +240,16 @@ void main() {
       final placed = <ChartLine>[];
 
       Widget chart(DrawingTool tool) => _host(
-        KChartWidget(
-          data,
-          ChartColors(),
-          isTrendLine: true,
-          timeFrame: const Duration(minutes: 15),
-          showNowPrice: false,
-          currentDrawingTool: tool,
-          onAddDrawing: placed.add,
-        ),
-      );
+            KChartWidget(
+              data,
+              ChartColors(),
+              isTrendLine: true,
+              timeFrame: const Duration(minutes: 15),
+              showNowPrice: false,
+              currentDrawingTool: tool,
+              onAddDrawing: placed.add,
+            ),
+          );
 
       await tester.pumpWidget(chart(DrawingTool.path));
       await _tapAt(tester, const Offset(100, 400));

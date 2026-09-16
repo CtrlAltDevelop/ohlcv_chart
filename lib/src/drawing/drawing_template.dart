@@ -28,19 +28,18 @@ class DrawingTemplate {
 
   /// Reads the look of [line] into a template.
   factory DrawingTemplate.of(ChartLine line) => DrawingTemplate(
-    color: line.color,
-    thickness: line.thickness,
-    style: line.style,
-    fillOpacity: line is FilledDrawing ? line.fillOpacity : null,
-    showLabel: line.showLabel,
-  );
+        color: line.color,
+        thickness: line.thickness,
+        style: line.style,
+        fillOpacity: line is FilledDrawing ? line.fillOpacity : null,
+        showLabel: line.showLabel,
+      );
 
   /// Rebuilds a template from [json].
   factory DrawingTemplate.fromJson(Map<String, dynamic> json) =>
       DrawingTemplate(
-        color: json['color'] is num
-            ? Color((json['color'] as num).toInt())
-            : null,
+        color:
+            json['color'] is num ? Color((json['color'] as num).toInt()) : null,
         thickness: LineJson.maybeNumber(json, 'thickness'),
         style: json['style'] == null ? null : LineJson.style(json),
         fillOpacity: LineJson.maybeNumber(json, 'fillOpacity'),
@@ -77,12 +76,12 @@ class DrawingTemplate {
 
   /// This template as a JSON-encodable map.
   Map<String, dynamic> toJson() => <String, dynamic>{
-    if (color != null) 'color': color!.toARGB32(),
-    if (thickness != null) 'thickness': thickness,
-    if (style != null) 'style': style!.name,
-    if (fillOpacity != null) 'fillOpacity': fillOpacity,
-    if (showLabel != null) 'showLabel': showLabel,
-  };
+        if (color != null) 'color': color!.toARGB32(),
+        if (thickness != null) 'thickness': thickness,
+        if (style != null) 'style': style!.name,
+        if (fillOpacity != null) 'fillOpacity': fillOpacity,
+        if (showLabel != null) 'showLabel': showLabel,
+      };
 
   @override
   bool operator ==(Object other) =>

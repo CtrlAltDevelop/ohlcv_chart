@@ -29,17 +29,17 @@ class HorizontalLine extends ChartLine
 
   /// Rebuilds a horizontal line from [json].
   factory HorizontalLine.fromJson(Map<String, dynamic> json) => HorizontalLine(
-    price: LineJson.number(json, 'price'),
-    startTime: LineJson.time(json, 'startTime'),
-    title: LineJson.text(json, 'title'),
-    alert: LineJson.flag(json, 'alert'),
-    color: LineJson.color(json),
-    thickness: LineJson.number(json, 'thickness', 2),
-    style: LineJson.style(json),
-    locked: LineJson.flag(json, 'locked'),
-    showLabel: LineJson.flag(json, 'showLabel'),
-    hidden: LineJson.flag(json, 'hidden'),
-  );
+        price: LineJson.number(json, 'price'),
+        startTime: LineJson.time(json, 'startTime'),
+        title: LineJson.text(json, 'title'),
+        alert: LineJson.flag(json, 'alert'),
+        color: LineJson.color(json),
+        thickness: LineJson.number(json, 'thickness', 2),
+        style: LineJson.style(json),
+        locked: LineJson.flag(json, 'locked'),
+        showLabel: LineJson.flag(json, 'showLabel'),
+        hidden: LineJson.flag(json, 'hidden'),
+      );
 
   /// The price level the line sits at, in quote currency.
   double price;
@@ -78,10 +78,10 @@ class HorizontalLine extends ChartLine
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('horizontal'),
-    'price': price,
-    if (startTime != null) 'startTime': startTime!.toIso8601String(),
-    if (title != null) 'title': title,
-    'alert': alert,
-  };
+        ...baseJson('horizontal'),
+        'price': price,
+        if (startTime != null) 'startTime': startTime!.toIso8601String(),
+        if (title != null) 'title': title,
+        'alert': alert,
+      };
 }

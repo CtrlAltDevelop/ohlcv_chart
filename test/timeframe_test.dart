@@ -3,16 +3,17 @@ import 'package:ohlcv_chart/ohlcv_chart.dart';
 
 /// Hourly candles, [count] of them, closing at 100, 101, 102, …
 List<KLineEntity> hourly(int count, {int startHour = 0}) => [
-  for (var i = 0; i < count; i++)
-    KLineEntity.fromCustom(
-      open: 100.0 + i,
-      high: 100.5 + i,
-      low: 99.5 + i,
-      close: 100.0 + i,
-      vol: 10,
-      dateTime: DateTime.utc(2024, 1, 1).add(Duration(hours: startHour + i)),
-    ),
-];
+      for (var i = 0; i < count; i++)
+        KLineEntity.fromCustom(
+          open: 100.0 + i,
+          high: 100.5 + i,
+          low: 99.5 + i,
+          close: 100.0 + i,
+          vol: 10,
+          dateTime:
+              DateTime.utc(2024, 1, 1).add(Duration(hours: startHour + i)),
+        ),
+    ];
 
 void main() {
   group('resampling', () {

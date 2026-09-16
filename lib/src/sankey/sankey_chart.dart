@@ -690,9 +690,7 @@ class SankeyChartPainter extends CustomPainter {
 
     final t = animation.clamp(0.0, 1.0);
     final fill = Paint()..isAntiAlias = true;
-    final highlighted = touchedNode == null
-        ? null
-        : layout.nodes[touchedNode!];
+    final highlighted = touchedNode == null ? null : layout.nodes[touchedNode!];
 
     for (final ribbon in layout.links) {
       final dimmed = chart.fadeUntouched &&

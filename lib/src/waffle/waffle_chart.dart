@@ -31,7 +31,8 @@ class WaffleSlice {
 /// Cells are whole things, so the shares have to be rounded to them. The
 /// largest remainder gets the spare cells, which keeps every slice within one
 /// cell of its true share and the total exactly [cells].
-List<int> waffleCounts(List<WaffleSlice> slices, {int cells = 100, double? total}) {
+List<int> waffleCounts(List<WaffleSlice> slices,
+    {int cells = 100, double? total}) {
   if (slices.isEmpty || cells <= 0) {
     return List<int>.filled(slices.length, 0);
   }
@@ -60,8 +61,7 @@ List<int> waffleCounts(List<WaffleSlice> slices, {int cells = 100, double? total
   // With a total of its own the whole is not the slices, so cells left over
   // belong to nobody and stay empty.
   if (total != null && total.isFinite && total > 0) return counts;
-  final order = [for (var i = 0; i < counts.length; i++) i]
-    ..sort((a, b) {
+  final order = [for (var i = 0; i < counts.length; i++) i]..sort((a, b) {
       final remainder = (exact[b] - counts[b]).compareTo(exact[a] - counts[a]);
       return remainder != 0 ? remainder : a.compareTo(b);
     });
@@ -381,9 +381,7 @@ class _WaffleChartState extends State<WaffleChart>
     final progress = widget.animationCurve.transform(_animation.value);
     final counts = waffleCounts(
       widget.slices,
-      cells: widget.rows != null
-          ? widget.columns * widget.rows!
-          : widget.cells,
+      cells: widget.rows != null ? widget.columns * widget.rows! : widget.cells,
       total: widget.total,
     );
 
@@ -395,10 +393,10 @@ class _WaffleChartState extends State<WaffleChart>
           final width = constraints.hasBoundedWidth
               ? constraints.maxWidth
               : widget.defaultSize;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultSize;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultSize;
           _layout = layOutWaffle(
             counts,
             size: Size(width, height),

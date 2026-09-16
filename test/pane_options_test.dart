@@ -16,24 +16,25 @@ Widget _chart(
   List<KLineEntity> data,
   List<Indicator> indicators, {
   void Function(Indicator, IndicatorAlert, KLineEntity, double)?
-  onIndicatorAlert,
-}) => MaterialApp(
-  home: Scaffold(
-    body: SizedBox(
-      width: 500,
-      height: 700,
-      child: KChartWidget(
-        data,
-        ChartColors(),
-        isTrendLine: false,
-        timeFrame: const Duration(minutes: 1),
-        showNowPrice: false,
-        indicators: indicators,
-        onIndicatorAlert: onIndicatorAlert,
+      onIndicatorAlert,
+}) =>
+    MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 500,
+          height: 700,
+          child: KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: false,
+            timeFrame: const Duration(minutes: 1),
+            showNowPrice: false,
+            indicators: indicators,
+            onIndicatorAlert: onIndicatorAlert,
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
 
 ChartPainter _painterOf(WidgetTester tester) {
   final paint = tester.widget<CustomPaint>(
@@ -83,11 +84,11 @@ class _Given extends Indicator {
 
   @override
   IndicatorSeries compute(List<KLineEntity> candles) => IndicatorSeries([
-    [
-      for (var i = 0; i < candles.length; i++)
-        i < values.length ? values[i] : null,
-    ],
-  ]);
+        [
+          for (var i = 0; i < candles.length; i++)
+            i < values.length ? values[i] : null,
+        ],
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -426,12 +427,15 @@ void main() {
       final reports = <double>[];
       final data = _candles(30);
 
-      Widget chart(double value) => _chart(data, [
-        _Given(
-          List<double?>.filled(30, value),
-          alerts: const [IndicatorAlert(level: 50)],
-        ),
-      ], onIndicatorAlert: (_, __, ___, v) => reports.add(v));
+      Widget chart(double value) => _chart(
+          data,
+          [
+            _Given(
+              List<double?>.filled(30, value),
+              alerts: const [IndicatorAlert(level: 50)],
+            ),
+          ],
+          onIndicatorAlert: (_, __, ___, v) => reports.add(v));
 
       await tester.pumpWidget(chart(10));
       await tester.pumpAndSettle();
@@ -447,12 +451,15 @@ void main() {
       final reports = <double>[];
       final data = _candles(30);
 
-      Widget chart(double value) => _chart(data, [
-        _OverlayGiven(
-          List<double?>.filled(30, value),
-          alerts: const [IndicatorAlert(level: 50)],
-        ),
-      ], onIndicatorAlert: (_, __, ___, v) => reports.add(v));
+      Widget chart(double value) => _chart(
+          data,
+          [
+            _OverlayGiven(
+              List<double?>.filled(30, value),
+              alerts: const [IndicatorAlert(level: 50)],
+            ),
+          ],
+          onIndicatorAlert: (_, __, ___, v) => reports.add(v));
 
       await tester.pumpWidget(chart(10));
       await tester.pumpAndSettle();
@@ -465,12 +472,15 @@ void main() {
     testWidgets('an alert on a line with no value stays quiet', (tester) async {
       final reports = <double>[];
       await tester.pumpWidget(
-        _chart(_candles(30), [
-          _Given(
-            List<double?>.filled(30, null),
-            alerts: const [IndicatorAlert(level: 50)],
-          ),
-        ], onIndicatorAlert: (_, __, ___, v) => reports.add(v)),
+        _chart(
+            _candles(30),
+            [
+              _Given(
+                List<double?>.filled(30, null),
+                alerts: const [IndicatorAlert(level: 50)],
+              ),
+            ],
+            onIndicatorAlert: (_, __, ___, v) => reports.add(v)),
       );
       await tester.pumpAndSettle();
 

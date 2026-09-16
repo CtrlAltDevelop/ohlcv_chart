@@ -501,10 +501,10 @@ class _MarimekkoChartState extends State<MarimekkoChart>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultHeight;
           _layout = layOutMarimekko(
             widget.columns,
             size: Size(width, height),
@@ -623,8 +623,7 @@ class MarimekkoChartPainter extends CustomPainter {
           Paint()..color = lit ? _lighten(base) : base,
         );
 
-        if (chart.showCellLabels &&
-            laid.rect.height >= chart.minLabelHeight) {
+        if (chart.showCellLabels && laid.rect.height >= chart.minLabelHeight) {
           final text = chart.cellFormatter?.call(laid.cell, laid.share) ??
               laid.cell.label;
           final painter = textCache.get(text, cellStyle);

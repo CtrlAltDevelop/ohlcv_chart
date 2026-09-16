@@ -87,12 +87,12 @@ class IndicatorType {
   ///
   /// Prefer [create], which fills in the defaults for any missing setting.
   final Indicator Function(Map<String, num> values, List<Color>? colors)
-  builder;
+      builder;
 
   /// Every setting at its default, ready to be edited and passed to [create].
   Map<String, num> get defaults => {
-    for (final setting in settings) setting.key: setting.defaultValue,
-  };
+        for (final setting in settings) setting.key: setting.defaultValue,
+      };
 
   /// Builds an instance from [values], filling in defaults for what is missing.
   ///
@@ -133,8 +133,8 @@ class IndicatorType {
   /// Built from an instance at [values], because some labels carry the
   /// settings — a `MA(20)` line is called `MA20`.
   List<String> lineLabels({Map<String, num>? values}) => [
-    for (final line in create(values: values).lines) line.label,
-  ];
+        for (final line in create(values: values).lines) line.label,
+      ];
 
   /// The colours an instance would draw with, to seed the colour pickers.
   ///
@@ -176,12 +176,12 @@ const IndicatorSetting _vwapDeviations = IndicatorSetting(
 );
 
 IndicatorSetting _periodOf(int defaultValue) => IndicatorSetting(
-  key: 'period',
-  label: 'Period',
-  defaultValue: defaultValue,
-  min: 2,
-  max: 200,
-);
+      key: 'period',
+      label: 'Period',
+      defaultValue: defaultValue,
+      min: 2,
+      max: 200,
+    );
 
 /// Every indicator the chart can draw, with the settings each one takes.
 ///

@@ -26,7 +26,9 @@ void main() {
     test('given ends win over the data', () {
       final scales = parallelScales(
         const [ParallelAxis(label: 'x', min: 0, max: 100)],
-        const [ParallelLine(label: 'a', values: [50])],
+        const [
+          ParallelLine(label: 'a', values: [50])
+        ],
       );
       expect(scales.single.min, 0);
       expect(scales.single.max, 100);
@@ -53,7 +55,9 @@ void main() {
     test('an axis nothing has a value for still has a scale', () {
       final scales = parallelScales(
         const [ParallelAxis(label: 'x')],
-        const [ParallelLine(label: 'a', values: [null])],
+        const [
+          ParallelLine(label: 'a', values: [null])
+        ],
       );
       expect(scales.single.max, greaterThan(scales.single.min));
     });
@@ -61,8 +65,7 @@ void main() {
 
   group('the layout', () {
     test('axes are spread evenly across the plot', () {
-      final layout =
-          layOutParallel(_axes, _lines, size: const Size(400, 200));
+      final layout = layOutParallel(_axes, _lines, size: const Size(400, 200));
       expect(layout.axisX.first, closeTo(layout.plotRect.left, 1e-9));
       expect(layout.axisX.last, closeTo(layout.plotRect.right, 1e-9));
       expect(layout.axisX[1], closeTo(layout.plotRect.center.dx, 1e-9));
@@ -91,7 +94,9 @@ void main() {
     test('a missing value breaks the line there', () {
       final layout = layOutParallel(
         _axes,
-        const [ParallelLine(label: 'a', values: [1, null, 3])],
+        const [
+          ParallelLine(label: 'a', values: [1, null, 3])
+        ],
         size: const Size(400, 200),
       );
       expect(layout.lines.single.points[1], isNull);
@@ -195,8 +200,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('takes its default height in an unbounded box',
-        (tester) async {
+    testWidgets('takes its default height in an unbounded box', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

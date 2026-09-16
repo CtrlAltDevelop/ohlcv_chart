@@ -214,8 +214,7 @@ CumulativeDeltaLayout layOutCumulativeDelta(
   final room = math.max(0.0, bounds.height - math.max(0.0, gap));
   final lower = room * share;
   final upper = room - lower;
-  final lineRect =
-      Rect.fromLTWH(bounds.left, bounds.top, bounds.width, upper);
+  final lineRect = Rect.fromLTWH(bounds.left, bounds.top, bounds.width, upper);
   final barsRect = Rect.fromLTWH(
     bounds.left,
     bounds.bottom - lower,
@@ -762,9 +761,8 @@ class CumulativeDeltaChartPainter extends CustomPainter {
       if (mark.index >= layout.line.length) continue;
       final at = layout.line[mark.index];
       final bearish = mark.kind == DeltaDivergence.bearish;
-      final color = bearish
-          ? chart.bearishDivergenceColor
-          : chart.bullishDivergenceColor;
+      final color =
+          bearish ? chart.bearishDivergenceColor : chart.bullishDivergenceColor;
       // A small triangle, pointing the way the divergence warns.
       final tip = bearish ? at - const Offset(0, 9) : at + const Offset(0, 9);
       final base = bearish ? at - const Offset(0, 3) : at + const Offset(0, 3);

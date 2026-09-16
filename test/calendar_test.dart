@@ -68,7 +68,8 @@ void main() {
     test('panels flow across the width when asked for more per row', () {
       final layout = layOutCalendar(_days, _bounds, monthsPerRow: 2);
       expect(layout.months[1].rect.top, layout.months[0].rect.top);
-      expect(layout.months[1].rect.left, greaterThan(layout.months[0].rect.left));
+      expect(
+          layout.months[1].rect.left, greaterThan(layout.months[0].rect.left));
     });
 
     test('squares shrink so the calendar fits the box it is given', () {
@@ -130,8 +131,8 @@ void main() {
       final topLeft = tester.getTopLeft(find.byType(CalendarChart));
       final layout = layOutCalendar(
         _days,
-        Rect.fromLTWH(0, 0, tester.getSize(find.byType(CalendarChart)).width,
-            320),
+        Rect.fromLTWH(
+            0, 0, tester.getSize(find.byType(CalendarChart)).width, 320),
         monthsPerRow: 1,
         // The widget grows the header by a weekday row when it writes one.
         headerHeight: 16 + calendarWeekdayRowHeight,

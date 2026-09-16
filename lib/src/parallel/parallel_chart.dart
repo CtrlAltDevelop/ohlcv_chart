@@ -553,10 +553,10 @@ class _ParallelChartState extends State<ParallelChart>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultHeight;
           _layout = layOutParallel(
             widget.axes,
             widget.lines,
@@ -686,8 +686,8 @@ class ParallelChartPainter extends CustomPainter {
       );
 
       if (chart.showHeaders && chart.headerHeight > 0) {
-        final label = chart.axes[a].label +
-            (chart.axes[a].inverted ? ' ↓' : '');
+        final label =
+            chart.axes[a].label + (chart.axes[a].inverted ? ' ↓' : '');
         final painter = textCache.get(label, headerStyle);
         painter.paint(
           canvas,
@@ -715,9 +715,8 @@ class ParallelChartPainter extends CustomPainter {
           // Centred on its axis, except on the first one when the lines are
           // named there: the names own that corner, so the numbers step
           // right of the axis rather than sitting under them.
-          final left = a == 0 && chart.showLegend
-              ? x + 4
-              : x - painter.width / 2;
+          final left =
+              a == 0 && chart.showLegend ? x + 4 : x - painter.width / 2;
           painter.paint(
             canvas,
             Offset(

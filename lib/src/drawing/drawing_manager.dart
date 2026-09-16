@@ -226,9 +226,8 @@ class DrawingManager extends StatelessWidget {
                   icon: line.locked
                       ? Icons.lock_rounded
                       : Icons.lock_open_rounded,
-                  tooltip: line.locked
-                      ? translations.unlock
-                      : translations.lock,
+                  tooltip:
+                      line.locked ? translations.unlock : translations.lock,
                   color: line.locked ? style.accentColor : color,
                   onPressed: () {
                     line.locked = !line.locked;
@@ -275,8 +274,7 @@ class DrawingManager extends StatelessWidget {
   /// Whether a key that means "add to the selection" is down.
   bool get _isSelectionModifierPressed {
     final keyboard = HardwareKeyboard.instance;
-    final isApple =
-        defaultTargetPlatform == TargetPlatform.macOS ||
+    final isApple = defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.iOS;
     return keyboard.isShiftPressed ||
         (isApple ? keyboard.isMetaPressed : keyboard.isControlPressed);

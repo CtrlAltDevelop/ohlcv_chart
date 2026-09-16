@@ -65,11 +65,11 @@ class CalloutDrawing extends TwoPointDrawing
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('callout'),
-    ...anchorsJson(),
-    if (text != null) 'text': text,
-    'fillOpacity': fillOpacity,
-  };
+        ...baseJson('callout'),
+        ...anchorsJson(),
+        if (text != null) 'text': text,
+        'fillOpacity': fillOpacity,
+      };
 }
 
 /// A pennant pinned to one candle, on a short staff.
@@ -94,19 +94,18 @@ class FlagDrawing extends ChartLine implements LabelledDrawing {
 
   /// Rebuilds a flag from [json].
   factory FlagDrawing.fromJson(Map<String, dynamic> json) => FlagDrawing(
-    time:
-        LineJson.time(json, 'time') ??
-        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-    price: LineJson.number(json, 'price'),
-    text: LineJson.text(json, 'text'),
-    staffHeight: LineJson.number(json, 'staffHeight', 28),
-    color: LineJson.color(json, const Color(0xFFEF5350)),
-    thickness: LineJson.number(json, 'thickness', 1.5),
-    style: LineJson.style(json),
-    locked: LineJson.flag(json, 'locked'),
-    showLabel: LineJson.flag(json, 'showLabel', true),
-    hidden: LineJson.flag(json, 'hidden'),
-  );
+        time: LineJson.time(json, 'time') ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        price: LineJson.number(json, 'price'),
+        text: LineJson.text(json, 'text'),
+        staffHeight: LineJson.number(json, 'staffHeight', 28),
+        color: LineJson.color(json, const Color(0xFFEF5350)),
+        thickness: LineJson.number(json, 'thickness', 1.5),
+        style: LineJson.style(json),
+        locked: LineJson.flag(json, 'locked'),
+        showLabel: LineJson.flag(json, 'showLabel', true),
+        hidden: LineJson.flag(json, 'hidden'),
+      );
 
   /// The candle the flag is planted on.
   DateTime time;
@@ -131,10 +130,10 @@ class FlagDrawing extends ChartLine implements LabelledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('flag'),
-    'time': time.toIso8601String(),
-    'price': price,
-    if (text != null) 'text': text,
-    'staffHeight': staffHeight,
-  };
+        ...baseJson('flag'),
+        'time': time.toIso8601String(),
+        'price': price,
+        if (text != null) 'text': text,
+        'staffHeight': staffHeight,
+      };
 }

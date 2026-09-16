@@ -84,7 +84,8 @@ void main() {
 
   group('ticks', () {
     test('a count divides the range evenly', () {
-      expect(const GaugeTicks(count: 4).majorValues(0, 100), [0, 25, 50, 75, 100]);
+      expect(
+          const GaugeTicks(count: 4).majorValues(0, 100), [0, 25, 50, 75, 100]);
     });
 
     test('an interval steps from the start and stops inside the range', () {
@@ -121,12 +122,18 @@ void main() {
   group('the widget', () {
     Widget host(Widget chart) => MaterialApp(
           home: Scaffold(
-            body: Center(child: SizedBox(width: 240, height: 240, child: chart)),
+            body:
+                Center(child: SizedBox(width: 240, height: 240, child: chart)),
           ),
         );
 
     testWidgets('draws over many shapes without a fuss', (tester) async {
-      for (final (start, sweep) in [(-135.0, 270.0), (-90.0, 180.0), (0.0, 360.0), (0.0, 0.0)]) {
+      for (final (start, sweep) in [
+        (-135.0, 270.0),
+        (-90.0, 180.0),
+        (0.0, 360.0),
+        (0.0, 0.0)
+      ]) {
         await tester.pumpWidget(
           host(
             GaugeChart(

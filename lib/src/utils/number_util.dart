@@ -70,9 +70,8 @@ class NumberUtil {
   ]) {
     try {
       // avoid scientific notation format e-10
-      final number = Decimal.parse(value.toString())
-          .floor(scale: precision)
-          .toString();
+      final number =
+          Decimal.parse(value.toString()).floor(scale: precision).toString();
       final parts = number.split('.');
       final integerPart = NumberFormat(
         pattern,

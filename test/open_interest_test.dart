@@ -58,8 +58,7 @@ void main() {
     });
 
     test('open interest is scaled to its own range, not down to zero', () {
-      final layout =
-          layOutOpenInterest(_points, size: const Size(400, 200));
+      final layout = layOutOpenInterest(_points, size: const Size(400, 200));
       expect(layout.interestMin, 100);
       expect(layout.interestMax, 160);
       expect(
@@ -73,8 +72,7 @@ void main() {
     });
 
     test('price has its own scale over the same panel', () {
-      final layout =
-          layOutOpenInterest(_points, size: const Size(400, 200));
+      final layout = layOutOpenInterest(_points, size: const Size(400, 200));
       expect(layout.priceMin, 59000);
       expect(layout.priceMax, 62000);
       expect(
@@ -193,8 +191,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('takes its default height in an unbounded box',
-        (tester) async {
+    testWidgets('takes its default height in an unbounded box', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

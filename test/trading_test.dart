@@ -21,28 +21,29 @@ Widget _chart(
   ValueChanged<ChartOrder>? onOrderTapped,
   ValueChanged<ChartPosition>? onPositionTapped,
   ChartStyle? style,
-}) => MaterialApp(
-  home: Scaffold(
-    body: SizedBox(
-      width: 500,
-      height: 600,
-      child: KChartWidget(
-        data,
-        ChartColors(),
-        isTrendLine: false,
-        timeFrame: const Duration(minutes: 1),
-        showNowPrice: false,
-        chartStyle: style ?? ChartStyle(),
-        orders: orders,
-        positions: positions,
-        onOrderMoved: onOrderMoved,
-        onOrderDragged: onOrderDragged,
-        onOrderTapped: onOrderTapped,
-        onPositionTapped: onPositionTapped,
+}) =>
+    MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 500,
+          height: 600,
+          child: KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: false,
+            timeFrame: const Duration(minutes: 1),
+            showNowPrice: false,
+            chartStyle: style ?? ChartStyle(),
+            orders: orders,
+            positions: positions,
+            onOrderMoved: onOrderMoved,
+            onOrderDragged: onOrderDragged,
+            onOrderTapped: onOrderTapped,
+            onPositionTapped: onPositionTapped,
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
 
 ChartPainter _painterOf(WidgetTester tester) {
   final paint = tester.widget<CustomPaint>(

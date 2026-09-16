@@ -157,8 +157,7 @@ StreamStack stackStream(
       var total = 0.0;
       for (var s = 0; s < stackOrder.length; s++) {
         final index = stackOrder[s];
-        final change =
-            series[index].valueAt(p) - series[index].valueAt(p - 1);
+        final change = series[index].valueAt(p) - series[index].valueAt(p - 1);
         // Half this band's own change, plus all of everything below it.
         var below = 0.0;
         for (var b = 0; b < s; b++) {
@@ -639,10 +638,10 @@ class _StreamChartState extends State<StreamChart>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultHeight;
           _layout = layOutStream(
             widget.series,
             size: Size(width, height),
@@ -650,10 +649,9 @@ class _StreamChartState extends State<StreamChart>
             baseline: widget.baseline,
             order: widget.order,
             curved: widget.curved,
-            axisHeight:
-                widget.showAxis && widget.periodLabels.isNotEmpty
-                    ? widget.axisHeight
-                    : 0,
+            axisHeight: widget.showAxis && widget.periodLabels.isNotEmpty
+                ? widget.axisHeight
+                : 0,
             padding: widget.padding,
             progress: progress,
           );
@@ -693,9 +691,8 @@ class _StreamChartState extends State<StreamChart>
 
   Widget _tooltip(BuildContext context, int index) {
     final laid = _layout.series[index];
-    final period = (_period ?? 0)
-        .clamp(0, math.max(0, laid.topPoints.length - 1))
-        .toInt();
+    final period =
+        (_period ?? 0).clamp(0, math.max(0, laid.topPoints.length - 1)).toInt();
     final at = laid.topPoints[period];
     final build = widget.tooltipBuilder;
     final child = build != null
@@ -767,8 +764,7 @@ class StreamChartPainter extends CustomPainter {
       final laid = layout.series[index];
       final base = laid.series.color ??
           chart.palette[index % math.max(1, chart.palette.length)];
-      final dimmed =
-          touched != null && chart.fadeUntouched && touched != index;
+      final dimmed = touched != null && chart.fadeUntouched && touched != index;
       final alpha = (chart.fillOpacity * (dimmed ? 0.35 : 1)).clamp(0.0, 1.0);
       canvas.drawPath(
         laid.shape,

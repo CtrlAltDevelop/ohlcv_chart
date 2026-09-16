@@ -625,9 +625,8 @@ class _OptionPayoffChartState extends State<OptionPayoffChart>
         );
 
         final price = _touched;
-        final details = price == null || _layout.isEmpty
-            ? null
-            : _detailsAt(price);
+        final details =
+            price == null || _layout.isEmpty ? null : _detailsAt(price);
         final builder = widget.tooltipBuilder;
         final tooltip = details == null || builder == null
             ? null
@@ -774,10 +773,16 @@ class OptionPayoffChartPainter extends CustomPainter {
         ..close();
       final alpha = chart.fillOpacity.clamp(0.0, 1.0);
       for (final (color, band) in [
-        (chart.profitColor, Rect.fromLTRB(layout.plot.left, layout.plot.top,
-            layout.plot.right, zero)),
-        (chart.lossColor, Rect.fromLTRB(layout.plot.left, zero,
-            layout.plot.right, layout.plot.bottom)),
+        (
+          chart.profitColor,
+          Rect.fromLTRB(
+              layout.plot.left, layout.plot.top, layout.plot.right, zero)
+        ),
+        (
+          chart.lossColor,
+          Rect.fromLTRB(
+              layout.plot.left, zero, layout.plot.right, layout.plot.bottom)
+        ),
       ]) {
         if (band.height <= 0) continue;
         canvas
@@ -798,10 +803,16 @@ class OptionPayoffChartPainter extends CustomPainter {
       ..strokeJoin = StrokeJoin.round
       ..isAntiAlias = true;
     for (final (color, band) in [
-      (chart.profitColor, Rect.fromLTRB(layout.plot.left, layout.plot.top,
-          layout.plot.right, zero)),
-      (chart.lossColor, Rect.fromLTRB(layout.plot.left, zero,
-          layout.plot.right, layout.plot.bottom)),
+      (
+        chart.profitColor,
+        Rect.fromLTRB(
+            layout.plot.left, layout.plot.top, layout.plot.right, zero)
+      ),
+      (
+        chart.lossColor,
+        Rect.fromLTRB(
+            layout.plot.left, zero, layout.plot.right, layout.plot.bottom)
+      ),
     ]) {
       if (band.height <= 0) continue;
       canvas

@@ -57,9 +57,11 @@ void main() {
       final layout = layOutBookHeatmap(_snapshots, _bounds, tickSize: 1);
       expect(layout.columns.first.midY, 150);
       final noMid = layOutBookHeatmap(
-        [BookSnapshot(time: DateTime(2024), levels: const [
-          BookLevel(price: 1, size: 1, side: BookSide.bid),
-        ])],
+        [
+          BookSnapshot(time: DateTime(2024), levels: const [
+            BookLevel(price: 1, size: 1, side: BookSide.bid),
+          ])
+        ],
         _bounds,
         tickSize: 1,
       );
@@ -91,8 +93,8 @@ void main() {
       final cell = bookHeatmapCellAt(layout, const Offset(150, 75));
       expect(cell?.level.price, 101);
       expect(cell?.level.size, 80);
-      expect(bookHeatmapCellAt(layout, const Offset(150, 299))?.level.price,
-          100);
+      expect(
+          bookHeatmapCellAt(layout, const Offset(150, 299))?.level.price, 100);
     });
   });
 

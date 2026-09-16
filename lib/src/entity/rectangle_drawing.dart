@@ -65,9 +65,9 @@ class RectangleDrawing extends TwoPointDrawing
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('rectangle'),
-    ...anchorsJson(),
-    'fillOpacity': fillOpacity,
-    if (label != null) 'label': label,
-  };
+        ...baseJson('rectangle'),
+        ...anchorsJson(),
+        'fillOpacity': fillOpacity,
+        if (label != null) 'label': label,
+      };
 }

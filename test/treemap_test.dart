@@ -140,7 +140,8 @@ void main() {
         expect(child.depth, 1);
         expect(child.root, same(group));
         expect(child.rect.top, greaterThanOrEqualTo(group.headerRect!.bottom));
-        expect(group.rect.inflate(1e-6).contains(child.rect.bottomRight), isTrue);
+        expect(
+            group.rect.inflate(1e-6).contains(child.rect.bottomRight), isTrue);
       }
     });
 
@@ -168,7 +169,8 @@ void main() {
   group('the widget', () {
     Widget host(Widget chart) => MaterialApp(
           home: Scaffold(
-            body: Center(child: SizedBox(width: 400, height: 300, child: chart)),
+            body:
+                Center(child: SizedBox(width: 400, height: 300, child: chart)),
           ),
         );
 

@@ -121,7 +121,8 @@ void main() {
     });
 
     test('nothing to show lays out nothing', () {
-      expect(layOutDumbbell(const [], size: const Size(400, 200)).isEmpty, true);
+      expect(
+          layOutDumbbell(const [], size: const Size(400, 200)).isEmpty, true);
       expect(layOutDumbbell(_rows, size: Size.zero).isEmpty, true);
       expect(
         layOutDumbbell(

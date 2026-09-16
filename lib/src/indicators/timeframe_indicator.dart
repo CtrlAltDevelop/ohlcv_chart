@@ -73,19 +73,19 @@ class TimeframeIndicator extends Indicator {
   /// tell apart here.
   @override
   List<IndicatorLine> get lines => [
-    for (final line in applied.lines)
-      IndicatorLine(
-        '${line.label}@${formatTimeframe(timeframe)}',
-        shape: line.shape,
-      ),
-  ];
+        for (final line in applied.lines)
+          IndicatorLine(
+            '${line.label}@${formatTimeframe(timeframe)}',
+            shape: line.shape,
+          ),
+      ];
 
   @override
   List<Object?> get settings => [
-    timeframe.inMilliseconds,
-    applied.name,
-    ...applied.settings,
-  ];
+        timeframe.inMilliseconds,
+        applied.name,
+        ...applied.settings,
+      ];
 
   @override
   List<double> get guides => applied.guides;

@@ -82,10 +82,10 @@ class GannFan extends TwoPointDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('gannFan'),
-    ...anchorsJson(),
-    'ratios': ratios,
-  };
+        ...baseJson('gannFan'),
+        ...anchorsJson(),
+        'ratios': ratios,
+      };
 }
 
 /// A box between two anchors, ruled at the same fractions across and down.
@@ -156,10 +156,10 @@ class GannBox extends TwoPointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('gannBox'),
-    ...anchorsJson(),
-    'ratios': ratios,
-    'showDiagonals': showDiagonals,
-    'fillOpacity': fillOpacity,
-  };
+        ...baseJson('gannBox'),
+        ...anchorsJson(),
+        'ratios': ratios,
+        'showDiagonals': showDiagonals,
+        'fillOpacity': fillOpacity,
+      };
 }

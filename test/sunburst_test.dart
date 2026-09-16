@@ -91,8 +91,8 @@ void main() {
     });
 
     test('nothing to show, or no room, lays out nothing', () {
-      expect(layOutSunburst(const [], innerRadius: 0, outerRadius: 100),
-          isEmpty);
+      expect(
+          layOutSunburst(const [], innerRadius: 0, outerRadius: 100), isEmpty);
       expect(layOutSunburst(_items, innerRadius: 50, outerRadius: 50), isEmpty);
       expect(
         layOutSunburst(

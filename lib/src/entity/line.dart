@@ -95,14 +95,14 @@ abstract class ChartLine {
   /// Subclasses build their own map on top of this one.
   @protected
   Map<String, dynamic> baseJson(String type) => <String, dynamic>{
-    'type': type,
-    'color': color.toARGB32(),
-    'thickness': thickness,
-    'style': style.name,
-    'locked': locked,
-    'showLabel': showLabel,
-    'hidden': hidden,
-  };
+        'type': type,
+        'color': color.toARGB32(),
+        'thickness': thickness,
+        'style': style.name,
+        'locked': locked,
+        'showLabel': showLabel,
+        'hidden': hidden,
+      };
 }
 
 /// Readers for the values a drawing's JSON map holds.

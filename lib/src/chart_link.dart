@@ -66,10 +66,10 @@ class ChartLink {
 
   /// A link that carries everything, for charts of the same instrument.
   ChartLink.all()
-    : window = true,
-      crosshair = true,
-      crosshairPrice = true,
-      priceScale = true;
+      : window = true,
+        crosshair = true,
+        crosshairPrice = true,
+        priceScale = true;
 
   /// Whether the visible window is carried between charts.
   final bool window;

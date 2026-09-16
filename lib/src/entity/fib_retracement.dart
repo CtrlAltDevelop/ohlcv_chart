@@ -93,10 +93,10 @@ class FibRetracement extends TwoPointDrawing implements AlertingDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('fibRetracement'),
-    ...anchorsJson(),
-    'levels': levels,
-    'fillLevels': fillLevels,
-    'alert': alert,
-  };
+        ...baseJson('fibRetracement'),
+        ...anchorsJson(),
+        'levels': levels,
+        'fillLevels': fillLevels,
+        'alert': alert,
+      };
 }

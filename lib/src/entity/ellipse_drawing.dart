@@ -64,9 +64,9 @@ class EllipseDrawing extends TwoPointDrawing
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('ellipse'),
-    ...anchorsJson(),
-    'fillOpacity': fillOpacity,
-    if (label != null) 'label': label,
-  };
+        ...baseJson('ellipse'),
+        ...anchorsJson(),
+        'fillOpacity': fillOpacity,
+        if (label != null) 'label': label,
+      };
 }

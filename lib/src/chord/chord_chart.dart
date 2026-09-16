@@ -262,8 +262,7 @@ ChordLayout layOutChord(
   final box = padding.deflateRect(Offset.zero & size);
   if (box.width <= 0 || box.height <= 0) return ChordLayout.empty;
 
-  final radius =
-      math.min(box.width, box.height) / 2 - math.max(0, labelWidth);
+  final radius = math.min(box.width, box.height) / 2 - math.max(0, labelWidth);
   if (radius <= 0) return ChordLayout.empty;
   final center = box.center;
   final thickness = math.min(ringThickness, radius);
@@ -576,10 +575,10 @@ class _ChordChartState extends State<ChordChart>
           final width = constraints.hasBoundedWidth
               ? constraints.maxWidth
               : widget.defaultSize;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultSize;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultSize;
           _layout = layOutChord(
             widget.nodes,
             widget.flows,
@@ -696,23 +695,21 @@ class ChordChartPainter extends CustomPainter {
     for (final ribbon in layout.ribbons) {
       // The larger end's colour, so a ribbon reads as belonging to the node
       // it mostly comes from.
-      final owner =
-          layout.totals.totalAt(ribbon.fromIndex) >=
-                  layout.totals.totalAt(ribbon.toIndex)
-              ? ribbon.fromIndex
-              : ribbon.toIndex;
+      final owner = layout.totals.totalAt(ribbon.fromIndex) >=
+              layout.totals.totalAt(ribbon.toIndex)
+          ? ribbon.fromIndex
+          : ribbon.toIndex;
       final base = ribbon.flow.color ?? colorOf(owner);
-      final touchesHeld = node == null ||
-          ribbon.fromIndex == node ||
-          ribbon.toIndex == node;
+      final touchesHeld =
+          node == null || ribbon.fromIndex == node || ribbon.toIndex == node;
       final held = flow == null || flow == ribbon.index;
       final dimmed = chart.fadeUntouched && (!touchesHeld || !held);
       canvas.drawPath(
         ribbon.shape,
         Paint()
           ..color = base.withValues(
-            alpha: (chart.ribbonOpacity * (dimmed ? 0.25 : 1.4))
-                .clamp(0.0, 1.0),
+            alpha:
+                (chart.ribbonOpacity * (dimmed ? 0.25 : 1.4)).clamp(0.0, 1.0),
           ),
       );
       if (chart.ribbonStroke > 0 && !dimmed) {
@@ -733,17 +730,14 @@ class ChordChartPainter extends CustomPainter {
     for (final arc in layout.arcs) {
       if (arc.sweepAngle <= 0) continue;
       final base = colorOf(arc.index);
-      final dimmed =
-          chart.fadeUntouched && node != null && node != arc.index;
+      final dimmed = chart.fadeUntouched && node != null && node != arc.index;
       canvas.drawArc(
         ringRect,
         arc.startAngle,
         arc.sweepAngle,
         false,
         Paint()
-          ..color = dimmed
-              ? base.withValues(alpha: 0.35)
-              : base
+          ..color = dimmed ? base.withValues(alpha: 0.35) : base
           ..style = PaintingStyle.stroke
           ..strokeWidth = layout.ringThickness,
       );
@@ -752,15 +746,13 @@ class ChordChartPainter extends CustomPainter {
         final painter = textCache.get(arc.node.label, labelStyle);
         final at = layout.center +
             Offset(
-              math.cos(arc.midAngle),
-              math.sin(arc.midAngle),
-            ) *
+                  math.cos(arc.midAngle),
+                  math.sin(arc.midAngle),
+                ) *
                 (layout.radius + 6);
         // Pushed outwards from the ring: left of it on the left half, right
         // of it on the right, so a label never sits on the ring.
-        final left = math.cos(arc.midAngle) < 0
-            ? at.dx - painter.width
-            : at.dx;
+        final left = math.cos(arc.midAngle) < 0 ? at.dx - painter.width : at.dx;
         painter.paint(
           canvas,
           Offset(

@@ -69,8 +69,8 @@ class MeasureDrawing extends TwoPointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('measure'),
-    ...anchorsJson(),
-    'fillOpacity': fillOpacity,
-  };
+        ...baseJson('measure'),
+        ...anchorsJson(),
+        'fillOpacity': fillOpacity,
+      };
 }

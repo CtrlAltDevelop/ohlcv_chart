@@ -68,13 +68,13 @@ class RegressionChannel extends TwoPointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('regression'),
-    ...anchorsJson(),
-    'deviations': deviations,
-    'showBands': showBands,
-    'extend': extend,
-    'fillOpacity': fillOpacity,
-  };
+        ...baseJson('regression'),
+        ...anchorsJson(),
+        'deviations': deviations,
+        'showBands': showBands,
+        'extend': extend,
+        'fillOpacity': fillOpacity,
+      };
 }
 
 /// A least-squares line through the closes of a stretch of candles, and

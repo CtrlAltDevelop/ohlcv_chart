@@ -81,8 +81,7 @@ class LiquidityBin {
 
   /// Which side dominates it, and by how much, from -1 (all long) to 1 (all
   /// short).
-  double get imbalance =>
-      total > 0 ? (shortSize - longSize) / total : 0;
+  double get imbalance => total > 0 ? (shortSize - longSize) / total : 0;
 }
 
 /// Buckets [levels] into [binCount] price bands between [min] and [max].
@@ -122,8 +121,7 @@ List<LiquidityBin> liquidityBins(
   for (final level in priced) {
     if (level.price < low || level.price > high) continue;
     // The top price belongs to the last bucket rather than one past the end.
-    final index =
-        math.min(binCount - 1, ((level.price - low) / width).floor());
+    final index = math.min(binCount - 1, ((level.price - low) / width).floor());
     if (index < 0) continue;
     if (level.side == LiquiditySide.long) {
       longs[index] += level.drawnSize;
@@ -261,7 +259,6 @@ class LiquidityMapLayout {
     }
     return sum;
   }
-
 }
 
 /// Lays out [bins] in [size], bars growing in from the side they belong to.
@@ -543,10 +540,10 @@ class _LiquidityMapChartState extends State<LiquidityMapChart>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 360.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultHeight;
           _layout = layOutLiquidityMap(
             widget.bins,
             size: Size(width, height),
@@ -709,9 +706,8 @@ class LiquidityMapChartPainter extends CustomPainter {
         canvas.drawRect(
           laid.longRect,
           Paint()
-            ..color = lit
-                ? chart.longColor
-                : chart.longColor.withValues(alpha: 0.75),
+            ..color =
+                lit ? chart.longColor : chart.longColor.withValues(alpha: 0.75),
         );
       }
       if (laid.shortRect.width > 0) {

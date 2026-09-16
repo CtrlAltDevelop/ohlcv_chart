@@ -61,10 +61,10 @@ class FibFan extends TwoPointDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('fibFan'),
-    ...anchorsJson(),
-    'levels': levels,
-  };
+        ...baseJson('fibFan'),
+        ...anchorsJson(),
+        'levels': levels,
+      };
 }
 
 /// Vertical lines at Fibonacci multiples of the span between two anchors.
@@ -116,10 +116,10 @@ class FibTimeZones extends TwoPointDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('fibTimeZones'),
-    ...anchorsJson(),
-    'levels': levels,
-  };
+        ...baseJson('fibTimeZones'),
+        ...anchorsJson(),
+        'levels': levels,
+      };
 }
 
 /// A Fibonacci projection from a three-leg move.
@@ -196,8 +196,8 @@ class FibExtension extends ThreePointDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-    ...baseJson('fibExtension'),
-    ...threeAnchorsJson(),
-    'levels': levels,
-  };
+        ...baseJson('fibExtension'),
+        ...threeAnchorsJson(),
+        'levels': levels,
+      };
 }

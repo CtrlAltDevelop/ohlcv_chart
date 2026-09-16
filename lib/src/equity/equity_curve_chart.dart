@@ -222,7 +222,8 @@ EquityCurveLayout layOutEquityCurve(
   final room = math.max(0.0, bounds.height - math.max(0.0, gap));
   final lower = room * share;
   final upper = room - lower;
-  final equityRect = Rect.fromLTWH(bounds.left, bounds.top, bounds.width, upper);
+  final equityRect =
+      Rect.fromLTWH(bounds.left, bounds.top, bounds.width, upper);
   final drawdownRect = Rect.fromLTWH(
     bounds.left,
     bounds.bottom - lower,
@@ -254,7 +255,8 @@ EquityCurveLayout layOutEquityCurve(
   }
 
   final step = points.length == 1 ? 0.0 : bounds.width / (points.length - 1);
-  double x(int i) => points.length == 1 ? bounds.center.dx : bounds.left + i * step;
+  double x(int i) =>
+      points.length == 1 ? bounds.center.dx : bounds.left + i * step;
 
   return EquityCurveLayout(
     equityRect: equityRect,
@@ -279,8 +281,7 @@ EquityCurveLayout layOutEquityCurve(
           drawdownRect.top +
               (deepest >= 0
                   ? 0.0
-                  : (falls[i] / deepest).clamp(0.0, 1.0) *
-                      drawdownRect.height),
+                  : (falls[i] / deepest).clamp(0.0, 1.0) * drawdownRect.height),
         ),
     ],
   );
@@ -788,8 +789,10 @@ class EquityCurveChartPainter extends CustomPainter {
       layout.drawdown[at].dx + 4,
       layout.drawdownRect.right - tp.width,
     );
-    tp.paint(canvas, Offset(math.max(layout.drawdownRect.left, left),
-        layout.drawdown[at].dy - tp.height - 2));
+    tp.paint(
+        canvas,
+        Offset(math.max(layout.drawdownRect.left, left),
+            layout.drawdown[at].dy - tp.height - 2));
   }
 
   void _paintCrosshair(Canvas canvas) {
@@ -876,9 +879,8 @@ class EquityCurveChartPainter extends CustomPainter {
     final count = math.min(4, points.length);
     var written = -double.infinity;
     for (var i = 0; i < count; i++) {
-      final index = count == 1
-          ? 0
-          : ((points.length - 1) * (i / (count - 1))).round();
+      final index =
+          count == 1 ? 0 : ((points.length - 1) * (i / (count - 1))).round();
       final time = _timeAt(index);
       if (time == null) continue;
       final tp = textCache.get(_formatTime(time), style);

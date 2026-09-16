@@ -84,7 +84,9 @@ void main() {
 
     test('a flat line sits in the middle of its tile', () {
       final layout = layOutSparklineGrid(
-        const [SparklineTile(label: 'x', values: [5, 5, 5])],
+        const [
+          SparklineTile(label: 'x', values: [5, 5, 5])
+        ],
         size: const Size(400, 200),
       );
       final laid = layout.tiles.single;
@@ -96,12 +98,13 @@ void main() {
 
     test('a break in the values is a break in the line', () {
       final layout = layOutSparklineGrid(
-        const [SparklineTile(label: 'x', values: [1, double.nan, 3])],
+        const [
+          SparklineTile(label: 'x', values: [1, double.nan, 3])
+        ],
         size: const Size(400, 200),
       );
       expect(layout.tiles.single.points[1], isNull);
-      expect(layout.tiles.single.lastPoint,
-          layout.tiles.single.points[2]);
+      expect(layout.tiles.single.lastPoint, layout.tiles.single.points[2]);
     });
 
     test('progress reveals each line left to right', () {

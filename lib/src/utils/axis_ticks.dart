@@ -23,9 +23,8 @@ double niceStep(double span, int target) {
   if (!span.isFinite || span <= 0 || target <= 0) return 0;
 
   final raw = span / target;
-  final magnitude = math
-      .pow(10, (math.log(raw) / math.ln10).floor())
-      .toDouble();
+  final magnitude =
+      math.pow(10, (math.log(raw) / math.ln10).floor()).toDouble();
   if (magnitude <= 0 || !magnitude.isFinite) return 0;
 
   final normalized = raw / magnitude;

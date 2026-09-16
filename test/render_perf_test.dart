@@ -152,15 +152,15 @@ void main() {
         expect(
           perCandle,
           lessThanOrEqualTo(budget[type]! + 0.25),
-          reason:
-              '$type spent ${perCandle.toStringAsFixed(2)} draw calls per '
+          reason: '$type spent ${perCandle.toStringAsFixed(2)} draw calls per '
               'candle ($extraDraws more for $extraCandles more candles, '
               '${narrow.draws} -> ${wide.draws})',
         );
       });
     }
 
-    testWidgets('the volume moving averages are stroked once, not per segment', (
+    testWidgets('the volume moving averages are stroked once, not per segment',
+        (
       tester,
     ) async {
       await tester.pumpWidget(_chart(_market()));
@@ -289,8 +289,7 @@ void main() {
       expect(
         painter.chartPaints,
         chartBefore,
-        reason:
-            'dragging the crosshair redrew the chart '
+        reason: 'dragging the crosshair redrew the chart '
             '${painter.chartPaints - chartBefore} times',
       );
       await finger.up();
@@ -326,8 +325,7 @@ void main() {
       expect(
         painter.chartPaints,
         chartBefore,
-        reason:
-            'moving the pointer redrew the chart '
+        reason: 'moving the pointer redrew the chart '
             '${painter.chartPaints - chartBefore} times',
       );
       // The same painter throughout: a rebuild would have replaced it, and

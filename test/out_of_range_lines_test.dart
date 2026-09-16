@@ -68,23 +68,24 @@ Widget _chart({
   required List<KLineEntity> data,
   ChartDrawingController? controller,
   bool showNowPrice = false,
-}) => MaterialApp(
-  home: Scaffold(
-    body: SizedBox(
-      width: _width,
-      height: _height,
-      child: KChartWidget(
-        data,
-        ChartColors(),
-        isTrendLine: false,
-        timeFrame: const Duration(minutes: 15),
-        showNowPrice: showNowPrice,
-        lockPriceScale: true,
-        drawingController: controller,
+}) =>
+    MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: _width,
+          height: _height,
+          child: KChartWidget(
+            data,
+            ChartColors(),
+            isTrendLine: false,
+            timeFrame: const Duration(minutes: 15),
+            showNowPrice: showNowPrice,
+            lockPriceScale: true,
+            drawingController: controller,
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
 
 /// Lays the chart out, then records one draw pass of [draw] on its own.
 ///

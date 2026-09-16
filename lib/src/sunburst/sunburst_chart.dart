@@ -64,8 +64,7 @@ class SunburstArc {
   Path pathAround(Offset center) {
     final outer = Rect.fromCircle(center: center, radius: outerRadius);
     final inner = Rect.fromCircle(center: center, radius: innerRadius);
-    final path = Path()
-      ..arcTo(outer, startAngle, sweepAngle, true);
+    final path = Path()..arcTo(outer, startAngle, sweepAngle, true);
     if (innerRadius <= 0) {
       path.lineTo(center.dx, center.dy);
     } else {
@@ -386,9 +385,7 @@ class _SunburstChartState extends State<SunburstChart>
     if (index == _touched) return;
     setState(() => _touched = index);
     widget.onTouch?.call(
-      arc == null
-          ? null
-          : SunburstTouchDetails(arc: arc, center: _center),
+      arc == null ? null : SunburstTouchDetails(arc: arc, center: _center),
     );
   }
 

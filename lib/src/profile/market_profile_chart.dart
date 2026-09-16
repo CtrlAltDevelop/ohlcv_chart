@@ -117,9 +117,8 @@ MarketProfile buildMarketProfile(
   if (high == low) high = low + (tickSize ?? 1);
 
   final rows = math.max(1, rowCount ?? ((high - low) / (tickSize ?? 1)).ceil());
-  final tick = tickSize != null && rowCount == null
-      ? tickSize
-      : (high - low) / rows;
+  final tick =
+      tickSize != null && rowCount == null ? tickSize : (high - low) / rows;
   if (tick <= 0 || rows > 4000) return MarketProfile.empty;
 
   final periods = List.generate(rows, (_) => <int>[]);
@@ -232,8 +231,8 @@ List<MarketProfileBar> layOutMarketProfile(
 
   final height = bounds.height / profile.rows.length;
   final busiest = profile.busiest;
-  final block = blockWidth ??
-      (busiest <= 0 ? bounds.width : bounds.width / busiest);
+  final block =
+      blockWidth ?? (busiest <= 0 ? bounds.width : bounds.width / busiest);
   final spacing = math.min(math.max(0.0, rowSpacing), height);
 
   return [
@@ -458,9 +457,7 @@ class _MarketProfileChartState extends State<MarketProfileChart>
     if (index == _touched) return;
     setState(() => _touched = index);
     widget.onTouch?.call(
-      index == null
-          ? null
-          : MarketProfileTouchDetails(bar: _bars[index]),
+      index == null ? null : MarketProfileTouchDetails(bar: _bars[index]),
     );
   }
 
@@ -641,9 +638,8 @@ class MarketProfileChartPainter extends CustomPainter {
       final inside = profile.inValueArea(bar.row.price);
       final color = inside ? chart.valueAreaColor : chart.blockColor;
       final shown = math.max(1, (bar.row.count * t).ceil());
-      final letters = chart.showLetters &&
-          bar.blockWidth >= 6 &&
-          bar.rect.height >= 7;
+      final letters =
+          chart.showLetters && bar.blockWidth >= 6 && bar.rect.height >= 7;
 
       for (var i = 0; i < shown; i++) {
         final left = bar.rect.left + i * bar.blockWidth;

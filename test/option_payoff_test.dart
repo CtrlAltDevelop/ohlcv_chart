@@ -111,14 +111,14 @@ void main() {
       expect(layout.priceAt(1000), 200);
     });
 
-    test('nothing to show, no room, or a backwards range lays out nothing',
-        () {
+    test('nothing to show, no room, or a backwards range lays out nothing', () {
       expect(
         layOutOptionPayoff(const [], _bounds, minPrice: 0, maxPrice: 1).isEmpty,
         isTrue,
       );
       expect(
-        layOutOptionPayoff(_spread, Rect.zero, minPrice: 0, maxPrice: 1).isEmpty,
+        layOutOptionPayoff(_spread, Rect.zero, minPrice: 0, maxPrice: 1)
+            .isEmpty,
         isTrue,
       );
       expect(

@@ -140,9 +140,8 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     // A toggle shows a tick where it is set and nothing where it is not, so the
     // labels stay in one column either way.
-    final leading = checked != null
-        ? (checked! ? Icons.check_rounded : null)
-        : icon;
+    final leading =
+        checked != null ? (checked! ? Icons.check_rounded : null) : icon;
 
     return Row(
       children: [

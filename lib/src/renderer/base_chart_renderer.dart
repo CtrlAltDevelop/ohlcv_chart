@@ -251,9 +251,8 @@ abstract class BaseChartRenderer<T> {
     }
 
     if (showLabel) {
-      final String label = value % 1 == 0
-          ? value.toInt().toString()
-          : value.toStringAsFixed(1);
+      final String label =
+          value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(1);
       final tp = TextPainter(
         text: TextSpan(text: label, style: getTextStyle(color.withAlpha(255))),
         textDirection: TextDirection.ltr,

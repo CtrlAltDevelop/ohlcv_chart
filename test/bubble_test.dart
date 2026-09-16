@@ -89,7 +89,8 @@ void main() {
         bubbleRange(const [BubblePoint(x: 3, y: 3)]),
         (minX: 2.0, maxX: 4.0, minY: 2.0, maxY: 4.0),
       );
-      expect(bubbleRange(const []), (minX: 0.0, maxX: 1.0, minY: 0.0, maxY: 1.0));
+      expect(
+          bubbleRange(const []), (minX: 0.0, maxX: 1.0, minY: 0.0, maxY: 1.0));
     });
 
     test('nothing to show, or no room, lays out nothing', () {

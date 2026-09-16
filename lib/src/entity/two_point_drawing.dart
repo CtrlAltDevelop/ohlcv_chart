@@ -74,11 +74,11 @@ abstract class TwoPointDrawing extends ChartLine {
   /// Both anchors, ready to be merged into a subclass's JSON map.
   @protected
   Map<String, dynamic> anchorsJson() => <String, dynamic>{
-    'time1': time1.toIso8601String(),
-    'price1': price1,
-    if (time2 != null) 'time2': time2!.toIso8601String(),
-    if (price2 != null) 'price2': price2,
-  };
+        'time1': time1.toIso8601String(),
+        'price1': price1,
+        if (time2 != null) 'time2': time2!.toIso8601String(),
+        if (price2 != null) 'price2': price2,
+      };
 }
 
 /// The first anchor of a serialised two-point drawing.
@@ -87,12 +87,12 @@ abstract class TwoPointDrawing extends ChartLine {
 /// back to the epoch and a price of zero rather than failing the whole load.
 ({DateTime time, double price}) firstAnchorFromJson(
   Map<String, dynamic> json,
-) => (
-  time:
-      LineJson.time(json, 'time1') ??
-      DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-  price: LineJson.number(json, 'price1'),
-);
+) =>
+    (
+      time: LineJson.time(json, 'time1') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      price: LineJson.number(json, 'price1'),
+    );
 
 /// A drawing anchored to three (time, price) points.
 ///
@@ -132,8 +132,8 @@ abstract class ThreePointDrawing extends TwoPointDrawing {
   /// All three anchors, ready to be merged into a subclass's JSON map.
   @protected
   Map<String, dynamic> threeAnchorsJson() => <String, dynamic>{
-    ...anchorsJson(),
-    if (time3 != null) 'time3': time3!.toIso8601String(),
-    if (price3 != null) 'price3': price3,
-  };
+        ...anchorsJson(),
+        if (time3 != null) 'time3': time3!.toIso8601String(),
+        if (price3 != null) 'price3': price3,
+      };
 }

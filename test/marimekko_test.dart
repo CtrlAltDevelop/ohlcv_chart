@@ -129,8 +129,8 @@ void main() {
     });
 
     test('nothing to show lays out nothing', () {
-      expect(layOutMarimekko(const [], size: const Size(300, 200)).isEmpty,
-          true);
+      expect(
+          layOutMarimekko(const [], size: const Size(300, 200)).isEmpty, true);
       expect(layOutMarimekko(_columns, size: Size.zero).isEmpty, true);
       expect(
         layOutMarimekko(
@@ -188,8 +188,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('takes its default height in an unbounded box',
-        (tester) async {
+    testWidgets('takes its default height in an unbounded box', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

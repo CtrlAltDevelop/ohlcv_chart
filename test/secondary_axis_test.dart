@@ -162,9 +162,8 @@ void main() {
       // The rows are ruled at the round prices, not at the round percentages
       // the second axis marks — one set of lines, the one the prices agree
       // with.
-      final rows = probe.ys
-          .where((y) => y >= renderer.chartRect.top - 0.5)
-          .toSet();
+      final rows =
+          probe.ys.where((y) => y >= renderer.chartRect.top - 0.5).toSet();
       for (final tick in renderer.priceTicks(8)) {
         final y = renderer.getY(tick);
         if (y < renderer.chartRect.top || y > renderer.chartRect.bottom) {

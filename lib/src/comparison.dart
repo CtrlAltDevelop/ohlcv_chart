@@ -64,17 +64,19 @@ class ComparisonSeries {
     ComparisonScale scale = ComparisonScale.percent,
     double thickness = 1.5,
     LineStyle style = LineStyle.solid,
-  }) => ComparisonSeries(
-    label: label,
-    points: [
-      for (final candle in candles)
-        if (candle.dateTime case final time?) (time: time, value: candle.close),
-    ],
-    color: color,
-    scale: scale,
-    thickness: thickness,
-    style: style,
-  );
+  }) =>
+      ComparisonSeries(
+        label: label,
+        points: [
+          for (final candle in candles)
+            if (candle.dateTime case final time?)
+              (time: time, value: candle.close),
+        ],
+        color: color,
+        scale: scale,
+        thickness: thickness,
+        style: style,
+      );
 
   /// The points, oldest first.
   ///
@@ -118,15 +120,15 @@ class ComparisonSeries {
 
   @override
   int get hashCode => Object.hash(
-    label,
-    color,
-    scale,
-    thickness,
-    style,
-    points.length,
-    points.isEmpty ? null : points.first,
-    points.isEmpty ? null : points.last,
-  );
+        label,
+        color,
+        scale,
+        thickness,
+        style,
+        points.length,
+        points.isEmpty ? null : points.first,
+        points.isEmpty ? null : points.last,
+      );
 }
 
 /// A comparison lined up against the chart's own candles.
@@ -239,11 +241,12 @@ double? comparisonPriceAt(
 List<ResolvedComparison> resolveComparisons(
   List<KLineEntity> candles,
   List<ComparisonSeries> comparisons,
-) => [
-  for (final (index, series) in comparisons.indexed)
-    ResolvedComparison(
-      series: series,
-      values: alignComparison(candles, series),
-      ordinal: index,
-    ),
-];
+) =>
+    [
+      for (final (index, series) in comparisons.indexed)
+        ResolvedComparison(
+          series: series,
+          values: alignComparison(candles, series),
+          ordinal: index,
+        ),
+    ];

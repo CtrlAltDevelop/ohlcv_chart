@@ -53,18 +53,18 @@ class IndicatorTemplate {
   /// One of your own, or a built-in configured past what the catalog
   /// describes, has no entry to rebuild it from — see `indicatorToJson`.
   List<Indicator> get unsaveable => [
-    for (final indicator in indicators)
-      if (indicatorToJson(indicator) == null) indicator,
-  ];
+        for (final indicator in indicators)
+          if (indicatorToJson(indicator) == null) indicator,
+      ];
 
   /// Writes the template out, ready for `jsonEncode`.
   Map<String, dynamic> toJson() => {
-    'name': name,
-    'indicators': [
-      for (final indicator in indicators)
-        if (indicatorToJson(indicator) case final v?) v,
-    ],
-  };
+        'name': name,
+        'indicators': [
+          for (final indicator in indicators)
+            if (indicatorToJson(indicator) case final v?) v,
+        ],
+      };
 
   /// A copy under a different [name], or with different [indicators].
   IndicatorTemplate copyWith({String? name, List<Indicator>? indicators}) =>
@@ -78,30 +78,30 @@ class IndicatorTemplate {
   /// Nothing here is privileged: they are ordinary templates, listed so an
   /// empty template menu has something in it on the first run.
   static List<IndicatorTemplate> get starters => [
-    IndicatorTemplate(
-      name: 'Trend',
-      indicators: [
-        MaIndicator(period: 20),
-        MaIndicator(period: 50),
-        MaIndicator(period: 200),
-      ],
-    ),
-    IndicatorTemplate(
-      name: 'Momentum',
-      indicators: [RsiIndicator(period: 14), MacdIndicator()],
-    ),
-    IndicatorTemplate(
-      name: 'Volatility',
-      indicators: [
-        BollIndicator(period: 20, deviations: 2),
-        AtrIndicator(period: 14),
-      ],
-    ),
-    IndicatorTemplate(
-      name: 'Volume',
-      indicators: [VolumeMaIndicator(period: 20), ObvIndicator()],
-    ),
-  ];
+        IndicatorTemplate(
+          name: 'Trend',
+          indicators: [
+            MaIndicator(period: 20),
+            MaIndicator(period: 50),
+            MaIndicator(period: 200),
+          ],
+        ),
+        IndicatorTemplate(
+          name: 'Momentum',
+          indicators: [RsiIndicator(period: 14), MacdIndicator()],
+        ),
+        IndicatorTemplate(
+          name: 'Volatility',
+          indicators: [
+            BollIndicator(period: 20, deviations: 2),
+            AtrIndicator(period: 14),
+          ],
+        ),
+        IndicatorTemplate(
+          name: 'Volume',
+          indicators: [VolumeMaIndicator(period: 20), ObvIndicator()],
+        ),
+      ];
 
   @override
   bool operator ==(Object other) =>
@@ -184,8 +184,8 @@ class IndicatorTemplates {
 
   /// Writes them all out, ready for `jsonEncode`.
   Map<String, dynamic> toJson() => {
-    'templates': [for (final template in _byName.values) template.toJson()],
-  };
+        'templates': [for (final template in _byName.values) template.toJson()],
+      };
 
   @override
   String toString() => 'IndicatorTemplates(${_byName.keys.join(', ')})';

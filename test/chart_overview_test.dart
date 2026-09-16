@@ -66,16 +66,16 @@ class _FakeHost implements KChartHost {
 }
 
 List<KLineEntity> series(int count) => [
-  for (var i = 0; i < count; i++)
-    KLineEntity.fromCustom(
-      open: 100.0 + i,
-      high: 101.0 + i,
-      low: 99.0 + i,
-      close: 100.0 + i,
-      vol: 10,
-      dateTime: DateTime.utc(2024).add(Duration(minutes: i)),
-    ),
-];
+      for (var i = 0; i < count; i++)
+        KLineEntity.fromCustom(
+          open: 100.0 + i,
+          high: 101.0 + i,
+          low: 99.0 + i,
+          close: 100.0 + i,
+          vol: 10,
+          dateTime: DateTime.utc(2024).add(Duration(minutes: i)),
+        ),
+    ];
 
 /// The overview at a known 400px wide, over [count] candles.
 ({Widget widget, KChartController controller, _FakeHost host}) harness(

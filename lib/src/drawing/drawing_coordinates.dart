@@ -154,9 +154,8 @@ class _DrawingCoordinatesDialogState extends State<DrawingCoordinatesDialog> {
           child: Text(text.cancel),
         ),
         FilledButton(
-          onPressed: editable
-              ? () => Navigator.of(context).pop(_apply())
-              : null,
+          onPressed:
+              editable ? () => Navigator.of(context).pop(_apply()) : null,
           child: Text(text.apply),
         ),
       ],
@@ -230,9 +229,8 @@ class _DrawingCoordinatesDialogState extends State<DrawingCoordinatesDialog> {
               ),
             ),
       ],
-      onChanged: enabled
-          ? (value) => setState(() => _indices[index] = value)
-          : null,
+      onChanged:
+          enabled ? (value) => setState(() => _indices[index] = value) : null,
     );
   }
 }

@@ -281,8 +281,8 @@ OpenInterestLayout layOutOpenInterest(
       : interest.left + interest.width * progress.clamp(0.0, 1.0);
 
   double yIn(Rect panel, double value, double low, double high) =>
-      panel.bottom - ((value - low) / (high - low)).clamp(0.0, 1.0) *
-          panel.height;
+      panel.bottom -
+      ((value - low) / (high - low)).clamp(0.0, 1.0) * panel.height;
 
   final interestPoints = <Offset?>[];
   final pricePoints = <Offset?>[];
@@ -577,10 +577,10 @@ class _OpenInterestChartState extends State<OpenInterestChart>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.defaultHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.defaultHeight;
           _layout = layOutOpenInterest(
             widget.points,
             size: Size(width, height),
@@ -746,9 +746,7 @@ class OpenInterestChartPainter extends CustomPainter {
       canvas,
       layout.interestPoints,
       chart.interestColor,
-      fillTo: chart.interestFillOpacity > 0
-          ? layout.interestRect.bottom
-          : null,
+      fillTo: chart.interestFillOpacity > 0 ? layout.interestRect.bottom : null,
       fillOpacity: chart.interestFillOpacity,
     );
     if (chart.showPrice) {
@@ -768,9 +766,8 @@ class OpenInterestChartPainter extends CustomPainter {
         final bar = layout.fundingBars[i];
         if (bar == null) continue;
         final rate = chart.points[i].drawnFunding ?? 0;
-        final color = rate >= 0
-            ? chart.positiveFundingColor
-            : chart.negativeFundingColor;
+        final color =
+            rate >= 0 ? chart.positiveFundingColor : chart.negativeFundingColor;
         canvas.drawRect(
           bar,
           Paint()

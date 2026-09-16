@@ -387,9 +387,7 @@ class DumbbellChart extends StatefulWidget {
 
   /// How tall the chart is in a box that sets no height.
   double get intrinsicHeight =>
-      padding.vertical +
-      rows.length * rowHeight +
-      (showAxis ? axisHeight : 0);
+      padding.vertical + rows.length * rowHeight + (showAxis ? axisHeight : 0);
 
   @override
   State<DumbbellChart> createState() => _DumbbellChartState();
@@ -456,10 +454,10 @@ class _DumbbellChartState extends State<DumbbellChart>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 360.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.intrinsicHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.intrinsicHeight;
           _layout = layOutDumbbell(
             widget.rows,
             size: Size(width, height),
@@ -603,8 +601,7 @@ class DumbbellChartPainter extends CustomPainter {
 
     for (final laid in layout.rows) {
       final row = laid.row;
-      final end = row.toColor ??
-          (row.rose ? chart.riseColor : chart.fallColor);
+      final end = row.toColor ?? (row.rose ? chart.riseColor : chart.fallColor);
       final start = row.fromColor ?? chart.fromColor;
 
       if (touched == laid.index) {

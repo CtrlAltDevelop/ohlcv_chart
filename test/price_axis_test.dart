@@ -15,22 +15,23 @@ MainRenderer _renderer({
   required double min,
   PriceAxisScale scale = PriceAxisScale.linear,
   double? percentBase,
-}) => MainRenderer(
-  _rect,
-  max,
-  min,
-  20,
-  const [],
-  false,
-  2,
-  const ChartStyle(),
-  ChartColors(),
-  1,
-  VerticalTextAlignment.left,
-  false,
-  priceScale: scale,
-  percentBase: percentBase,
-);
+}) =>
+    MainRenderer(
+      _rect,
+      max,
+      min,
+      20,
+      const [],
+      false,
+      2,
+      const ChartStyle(),
+      ChartColors(),
+      1,
+      VerticalTextAlignment.left,
+      false,
+      priceScale: scale,
+      percentBase: percentBase,
+    );
 
 Widget _chart({
   PriceAxisScale scale = PriceAxisScale.linear,

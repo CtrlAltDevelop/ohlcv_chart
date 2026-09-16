@@ -560,7 +560,9 @@ class FunnelChartPainter extends CustomPainter {
     final share = segment.index == 0
         ? ''
         : ' · ${(segment.ofFirst * 100).toStringAsFixed(1)}%';
-    return name == null || name.isEmpty ? '$value$share' : '$name\n$value$share';
+    return name == null || name.isEmpty
+        ? '$value$share'
+        : '$name\n$value$share';
   }
 
   void _paintLabel(

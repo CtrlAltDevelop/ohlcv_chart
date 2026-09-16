@@ -145,8 +145,7 @@ class DrawingToolbar extends StatelessWidget {
                   color: _borderColor,
                   width: style.toolbarBorderWidth,
                 ),
-          boxShadow:
-              style.toolbarShadows ??
+          boxShadow: style.toolbarShadows ??
               [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: .32),
@@ -764,10 +763,10 @@ class _LineStylePanel extends StatelessWidget {
   final VoidCallback onSelected;
 
   String _name(LineStyle lineStyle) => switch (lineStyle) {
-    LineStyle.solid => translations.solid,
-    LineStyle.dashed => translations.dashed,
-    LineStyle.dotted => translations.dotted,
-  };
+        LineStyle.solid => translations.solid,
+        LineStyle.dashed => translations.dashed,
+        LineStyle.dotted => translations.dotted,
+      };
 
   @override
   Widget build(BuildContext context) {

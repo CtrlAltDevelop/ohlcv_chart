@@ -411,7 +411,8 @@ class TreemapChartPainter extends CustomPainter {
       final shape = RRect.fromRectAndRadius(rect, radius);
 
       if (tile.item.isGroup) {
-        fill.color = tile.item.color ?? chart.groupColor ?? const Color(0x33000000);
+        fill.color =
+            tile.item.color ?? chart.groupColor ?? const Color(0x33000000);
         canvas.drawRRect(shape, fill);
         _paintGroupLabel(canvas, tile, t);
         continue;

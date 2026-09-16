@@ -13,7 +13,7 @@ import 'series_math.dart';
 class MaIndicator extends Indicator {
   /// Creates a moving average over [period] candles.
   MaIndicator({this.period = 5, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles the average covers.
   final int period;
@@ -45,15 +45,16 @@ class MaIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries([
-    graftTail(
-      candles,
-      previous.lines[0],
-      from,
-      period - 1,
-      (slice) => smaSeries(slice, period),
-    ),
-  ]);
+  ) =>
+      IndicatorSeries([
+        graftTail(
+          candles,
+          previous.lines[0],
+          from,
+          period - 1,
+          (slice) => smaSeries(slice, period),
+        ),
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -64,7 +65,7 @@ class MaIndicator extends Indicator {
 class EmaIndicator extends Indicator {
   /// Creates an exponential average over [period] candles.
   EmaIndicator({this.period = 5, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles the average covers.
   final int period;
@@ -128,10 +129,10 @@ class BollIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('BOLL'),
-    IndicatorLine('UB'),
-    IndicatorLine('LB'),
-  ];
+        IndicatorLine('BOLL'),
+        IndicatorLine('UB'),
+        IndicatorLine('LB'),
+      ];
 
   @override
   List<Object?> get settings => [period, deviations];
@@ -150,14 +151,15 @@ class BollIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries(
-    // The bands warm up a candle after the average they sit around, so the
-    // window is `period` rather than `period - 1`.
-    graftTailLines(candles, previous.lines, from, period, (slice) {
-      final bands = bollSeries(slice, period, deviations);
-      return [bands.middle, bands.upper, bands.lower];
-    }),
-  );
+  ) =>
+      IndicatorSeries(
+        // The bands warm up a candle after the average they sit around, so the
+        // window is `period` rather than `period - 1`.
+        graftTailLines(candles, previous.lines, from, period, (slice) {
+          final bands = bollSeries(slice, period, deviations);
+          return [bands.middle, bands.upper, bands.lower];
+        }),
+      );
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -198,8 +200,8 @@ class SarIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('SAR', shape: IndicatorShape.dots),
-  ];
+        IndicatorLine('SAR', shape: IndicatorShape.dots),
+      ];
 
   @override
   List<Object?> get settings => [start, step, maximum];
@@ -209,8 +211,8 @@ class SarIndicator extends Indicator {
 
   @override
   IndicatorSeries compute(List<KLineEntity> candles) => IndicatorSeries([
-    sarSeries(candles, start: start, step: step, maximum: maximum),
-  ]);
+        sarSeries(candles, start: start, step: step, maximum: maximum),
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -273,7 +275,7 @@ class VwapIndicator extends Indicator {
 class AnchoredVwapIndicator extends Indicator {
   /// Creates a VWAP anchored at the candle [anchor] counts in.
   AnchoredVwapIndicator({this.anchor = 0, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// Which candle the average is measured from, as an index into the series.
   ///
@@ -344,11 +346,11 @@ class SessionVwapIndicator extends Indicator {
   // the daily one's.
   @override
   String get name => switch (session) {
-    PivotSession.day => 'SVWAP',
-    PivotSession.week => 'SVWAPW',
-    PivotSession.month => 'SVWAPM',
-    PivotSession.year => 'SVWAPY',
-  };
+        PivotSession.day => 'SVWAP',
+        PivotSession.week => 'SVWAPW',
+        PivotSession.month => 'SVWAPM',
+        PivotSession.year => 'SVWAPY',
+      };
 
   @override
   String get label => deviations > 0
@@ -357,10 +359,10 @@ class SessionVwapIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('VWAP'),
-    IndicatorLine('UB'),
-    IndicatorLine('LB'),
-  ];
+        IndicatorLine('VWAP'),
+        IndicatorLine('UB'),
+        IndicatorLine('LB'),
+      ];
 
   // The numeric setting comes first: a catalog entry reads these positionally,
   // and stops at the first one that is not a number.
@@ -387,11 +389,11 @@ class SessionVwapIndicator extends Indicator {
 
 /// Writes a session the way a platform labels it: `D`, `W`, `M`, `Y`.
 String _sessionLabel(PivotSession session) => switch (session) {
-  PivotSession.day => 'D',
-  PivotSession.week => 'W',
-  PivotSession.month => 'M',
-  PivotSession.year => 'Y',
-};
+      PivotSession.day => 'D',
+      PivotSession.week => 'W',
+      PivotSession.month => 'M',
+      PivotSession.year => 'Y',
+    };
 
 /// The pivot of the session before, with its supports and resistances.
 ///
@@ -446,14 +448,14 @@ class PivotPointsIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => const [
-    IndicatorLine('P'),
-    IndicatorLine('R1'),
-    IndicatorLine('R2'),
-    IndicatorLine('R3'),
-    IndicatorLine('S1'),
-    IndicatorLine('S2'),
-    IndicatorLine('S3'),
-  ];
+        IndicatorLine('P'),
+        IndicatorLine('R1'),
+        IndicatorLine('R2'),
+        IndicatorLine('R3'),
+        IndicatorLine('S1'),
+        IndicatorLine('S2'),
+        IndicatorLine('S3'),
+      ];
 
   @override
   List<Object?> get settings => [method, session];
@@ -463,21 +465,22 @@ class PivotPointsIndicator extends Indicator {
 
   @override
   IndicatorSeries compute(List<KLineEntity> candles) => IndicatorSeries(
-    pivotSeries(candles, method: method, sessionOf: session.keyOf),
-  );
+        pivotSeries(candles, method: method, sessionOf: session.keyOf),
+      );
 
   @override
   Color defaultColor(
     int line,
     ChartColors theme,
     int ordinal,
-  ) => switch (line) {
-    // The pivot itself carries the session; the supports and resistances take
-    // the up and down colours, fading with how far out they are.
-    0 => theme.vwapColor,
-    1 || 2 || 3 => theme.dnColor.withValues(alpha: 1 - (line - 1) * 0.25),
-    _ => theme.upColor.withValues(alpha: 1 - (line - 4) * 0.25),
-  };
+  ) =>
+      switch (line) {
+        // The pivot itself carries the session; the supports and resistances take
+        // the up and down colours, fading with how far out they are.
+        0 => theme.vwapColor,
+        1 || 2 || 3 => theme.dnColor.withValues(alpha: 1 - (line - 1) * 0.25),
+        _ => theme.upColor.withValues(alpha: 1 - (line - 4) * 0.25),
+      };
 }
 
 /// Volume gathered by price rather than by time, drawn across the candles.
@@ -575,10 +578,10 @@ class MacdIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('MACD', shape: IndicatorShape.histogram),
-    IndicatorLine('DIF'),
-    IndicatorLine('DEA'),
-  ];
+        IndicatorLine('MACD', shape: IndicatorShape.histogram),
+        IndicatorLine('DIF'),
+        IndicatorLine('DEA'),
+      ];
 
   /// The histogram flips sign about zero, so the pane has to show where zero
   /// is; without it the bars change colour across an invisible axis.
@@ -602,25 +605,26 @@ class MacdIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries(
-    // The two averages behind the difference cannot be recovered from it, so
-    // the slowest of the three sets how far back to pick the recursion up.
-    graftTailLines(
-      candles,
-      previous.lines,
-      from,
-      recursiveLookback([fast, slow, signal].reduce(max)),
-      (slice) {
-        final series = macdSeries(
-          slice,
-          fast: fast,
-          slow: slow,
-          signal: signal,
-        );
-        return [series.macd, series.dif, series.dea];
-      },
-    ),
-  );
+  ) =>
+      IndicatorSeries(
+        // The two averages behind the difference cannot be recovered from it, so
+        // the slowest of the three sets how far back to pick the recursion up.
+        graftTailLines(
+          candles,
+          previous.lines,
+          from,
+          recursiveLookback([fast, slow, signal].reduce(max)),
+          (slice) {
+            final series = macdSeries(
+              slice,
+              fast: fast,
+              slow: slow,
+              signal: signal,
+            );
+            return [series.macd, series.dif, series.dea];
+          },
+        ),
+      );
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -673,10 +677,10 @@ class KdjIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('K'),
-    IndicatorLine('D'),
-    IndicatorLine('J'),
-  ];
+        IndicatorLine('K'),
+        IndicatorLine('D'),
+        IndicatorLine('J'),
+      ];
 
   @override
   List<Object?> get settings => [period, kSmoothing, dSmoothing];
@@ -708,7 +712,7 @@ class KdjIndicator extends Indicator {
 class RsiIndicator extends Indicator {
   /// Creates an RSI over [period] candles.
   RsiIndicator({this.period = 14, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles the index covers.
   final int period;
@@ -743,17 +747,18 @@ class RsiIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries([
-    // Wilder's smoothing keeps state the RSI values do not show, so this waits
-    // the seed out rather than resuming from it.
-    graftTail(
-      candles,
-      previous.lines[0],
-      from,
-      recursiveLookback(period),
-      (slice) => rsiSeries(slice, period),
-    ),
-  ]);
+  ) =>
+      IndicatorSeries([
+        // Wilder's smoothing keeps state the RSI values do not show, so this waits
+        // the seed out rather than resuming from it.
+        graftTail(
+          candles,
+          previous.lines[0],
+          from,
+          recursiveLookback(period),
+          (slice) => rsiSeries(slice, period),
+        ),
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -764,7 +769,7 @@ class RsiIndicator extends Indicator {
 class WrIndicator extends Indicator {
   /// Creates a Williams %R over [period] candles.
   WrIndicator({this.period = 14, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles the range covers.
   final int period;
@@ -799,16 +804,17 @@ class WrIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries([
-    // The window reaches back `period` candles, not `period - 1`.
-    graftTail(
-      candles,
-      previous.lines[0],
-      from,
-      period,
-      (slice) => wrSeries(slice, period),
-    ),
-  ]);
+  ) =>
+      IndicatorSeries([
+        // The window reaches back `period` candles, not `period - 1`.
+        graftTail(
+          candles,
+          previous.lines[0],
+          from,
+          period,
+          (slice) => wrSeries(slice, period),
+        ),
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -819,7 +825,7 @@ class WrIndicator extends Indicator {
 class CciIndicator extends Indicator {
   /// Creates a CCI over [period] candles.
   CciIndicator({this.period = 14, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles the index covers.
   final int period;
@@ -851,15 +857,16 @@ class CciIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries([
-    graftTail(
-      candles,
-      previous.lines[0],
-      from,
-      period - 1,
-      (slice) => cciSeries(slice, period),
-    ),
-  ]);
+  ) =>
+      IndicatorSeries([
+        graftTail(
+          candles,
+          previous.lines[0],
+          from,
+          period - 1,
+          (slice) => cciSeries(slice, period),
+        ),
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -870,7 +877,7 @@ class CciIndicator extends Indicator {
 class AtrIndicator extends Indicator {
   /// Creates an ATR over [period] candles.
   AtrIndicator({this.period = 14, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles the average covers.
   final int period;
@@ -958,7 +965,7 @@ class ObvIndicator extends Indicator {
 class MfiIndicator extends Indicator {
   /// Creates an MFI over [period] candles.
   MfiIndicator({this.period = 14, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles the index covers.
   final int period;
@@ -993,17 +1000,18 @@ class MfiIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries([
-    // Each candle's flow is read against the one before it, so the
-    // window is a candle longer than the period.
-    graftTail(
-      candles,
-      previous.lines[0],
-      from,
-      period,
-      (slice) => mfiSeries(slice, period),
-    ),
-  ]);
+  ) =>
+      IndicatorSeries([
+        // Each candle's flow is read against the one before it, so the
+        // window is a candle longer than the period.
+        graftTail(
+          candles,
+          previous.lines[0],
+          from,
+          period,
+          (slice) => mfiSeries(slice, period),
+        ),
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -1029,10 +1037,10 @@ class DmiIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('+DI'),
-    IndicatorLine('-DI'),
-    IndicatorLine('ADX'),
-  ];
+        IndicatorLine('+DI'),
+        IndicatorLine('-DI'),
+        IndicatorLine('ADX'),
+      ];
 
   @override
   List<Object?> get settings => [period];
@@ -1147,10 +1155,10 @@ class KeltnerIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('KC'),
-    IndicatorLine('UB'),
-    IndicatorLine('LB'),
-  ];
+        IndicatorLine('KC'),
+        IndicatorLine('UB'),
+        IndicatorLine('LB'),
+      ];
 
   @override
   List<Object?> get settings => [period, atrPeriod, multiplier];
@@ -1193,10 +1201,10 @@ class DonchianIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('DC'),
-    IndicatorLine('UB'),
-    IndicatorLine('LB'),
-  ];
+        IndicatorLine('DC'),
+        IndicatorLine('UB'),
+        IndicatorLine('LB'),
+      ];
 
   @override
   List<Object?> get settings => [period];
@@ -1215,12 +1223,13 @@ class DonchianIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries(
-    graftTailLines(candles, previous.lines, from, period - 1, (slice) {
-      final bands = donchianSeries(slice, period);
-      return [bands.middle, bands.upper, bands.lower];
-    }),
-  );
+  ) =>
+      IndicatorSeries(
+        graftTailLines(candles, previous.lines, from, period - 1, (slice) {
+          final bands = donchianSeries(slice, period);
+          return [bands.middle, bands.upper, bands.lower];
+        }),
+      );
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -1266,20 +1275,20 @@ class IchimokuIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('Tenkan'),
-    IndicatorLine('Kijun'),
-    IndicatorLine('SpanA'),
-    IndicatorLine('SpanB'),
-    IndicatorLine('Chikou'),
-  ];
+        IndicatorLine('Tenkan'),
+        IndicatorLine('Kijun'),
+        IndicatorLine('SpanA'),
+        IndicatorLine('SpanB'),
+        IndicatorLine('Chikou'),
+      ];
 
   @override
   List<Object?> get settings => [
-    conversionPeriod,
-    basePeriod,
-    spanPeriod,
-    displacement,
-  ];
+        conversionPeriod,
+        basePeriod,
+        spanPeriod,
+        displacement,
+      ];
 
   @override
   List<IndicatorFill> get fills => const [IndicatorFill(2, 3)];
@@ -1320,7 +1329,7 @@ class IchimokuIndicator extends Indicator {
 class ZigZagIndicator extends Indicator {
   /// Creates a zigzag that turns on a [depth] percent reversal.
   ZigZagIndicator({this.depth = 0, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How far price must reverse, in percent, to end a swing.
   ///
@@ -1339,8 +1348,8 @@ class ZigZagIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('ZigZag', shape: IndicatorShape.pivotLine),
-  ];
+        IndicatorLine('ZigZag', shape: IndicatorShape.pivotLine),
+      ];
 
   @override
   List<Object?> get settings => [depth];
@@ -1388,8 +1397,8 @@ class FibonacciIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    for (final ratio in ratios) IndicatorLine(_trim(ratio)),
-  ];
+        for (final ratio in ratios) IndicatorLine(_trim(ratio)),
+      ];
 
   @override
   List<Object?> get settings => [depth, ratios.join(',')];
@@ -1405,8 +1414,8 @@ class FibonacciIndicator extends Indicator {
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
       // The swing's own ends stand out from the levels between them.
       line == 0 || line == ratios.length - 1
-      ? theme.avgColor
-      : theme.fibonacciColor;
+          ? theme.avgColor
+          : theme.fibonacciColor;
 }
 
 /// Elliott wave labels over the zigzag's pivots.
@@ -1417,7 +1426,7 @@ class FibonacciIndicator extends Indicator {
 class ElliottWaveIndicator extends Indicator {
   /// Creates wave labels over swings of at least [depth] percent.
   ElliottWaveIndicator({this.depth = 0, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How far price must reverse, in percent, to end a wave.
   ///
@@ -1438,8 +1447,8 @@ class ElliottWaveIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('Wave', shape: IndicatorShape.markers),
-  ];
+        IndicatorLine('Wave', shape: IndicatorShape.markers),
+      ];
 
   @override
   List<Object?> get settings => [depth];
@@ -1533,7 +1542,7 @@ class StochRsiIndicator extends Indicator {
 class RocIndicator extends Indicator {
   /// Creates a rate of change over [period] candles.
   RocIndicator({this.period = 12, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles back the comparison is made.
   final int period;
@@ -1568,15 +1577,16 @@ class RocIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries([
-    graftTail(
-      candles,
-      previous.lines[0],
-      from,
-      period,
-      (slice) => rocSeries(slice, period),
-    ),
-  ]);
+  ) =>
+      IndicatorSeries([
+        graftTail(
+          candles,
+          previous.lines[0],
+          from,
+          period,
+          (slice) => rocSeries(slice, period),
+        ),
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -1605,9 +1615,9 @@ class TrixIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('TRIX'),
-    IndicatorLine('Signal'),
-  ];
+        IndicatorLine('TRIX'),
+        IndicatorLine('Signal'),
+      ];
 
   @override
   List<Object?> get settings => [period, signalPeriod];
@@ -1637,7 +1647,7 @@ class TrixIndicator extends Indicator {
 class VolumeMaIndicator extends Indicator {
   /// Creates a volume average over [period] candles.
   VolumeMaIndicator({this.period = 20, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// How many candles the average covers.
   final int period;
@@ -1672,15 +1682,16 @@ class VolumeMaIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries([
-    graftTail(
-      candles,
-      previous.lines[0],
-      from,
-      period - 1,
-      (slice) => volumeMaSeries(slice, period),
-    ),
-  ]);
+  ) =>
+      IndicatorSeries([
+        graftTail(
+          candles,
+          previous.lines[0],
+          from,
+          period - 1,
+          (slice) => volumeMaSeries(slice, period),
+        ),
+      ]);
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>
@@ -1691,7 +1702,7 @@ class VolumeMaIndicator extends Indicator {
 class AwesomeIndicator extends Indicator {
   /// Creates an awesome oscillator from the [fast] and [slow] periods.
   AwesomeIndicator({this.fast = 5, this.slow = 34, Color? color})
-    : super(colors: color == null ? null : [color]);
+      : super(colors: color == null ? null : [color]);
 
   /// Period of the faster average.
   final int fast;
@@ -1710,8 +1721,8 @@ class AwesomeIndicator extends Indicator {
 
   @override
   List<IndicatorLine> get lines => [
-    IndicatorLine('AO', shape: IndicatorShape.histogram),
-  ];
+        IndicatorLine('AO', shape: IndicatorShape.histogram),
+      ];
 
   @override
   List<Object?> get settings => [fast, slow];
@@ -1805,12 +1816,13 @@ class AroonIndicator extends Indicator {
     List<KLineEntity> candles,
     IndicatorSeries previous,
     int from,
-  ) => IndicatorSeries(
-    graftTailLines(candles, previous.lines, from, period, (slice) {
-      final aroon = aroonSeries(slice, period);
-      return [aroon.up, aroon.down];
-    }),
-  );
+  ) =>
+      IndicatorSeries(
+        graftTailLines(candles, previous.lines, from, period, (slice) {
+          final aroon = aroonSeries(slice, period);
+          return [aroon.up, aroon.down];
+        }),
+      );
 
   @override
   Color defaultColor(int line, ChartColors theme, int ordinal) =>

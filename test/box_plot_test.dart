@@ -206,7 +206,9 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: BoxPlotChart(
-              entries: [BoxPlotEntry.fromSamples(const [1, 2, 3])],
+              entries: [
+                BoxPlotEntry.fromSamples(const [1, 2, 3])
+              ],
               animationDuration: const Duration(milliseconds: 200),
             ),
           ),

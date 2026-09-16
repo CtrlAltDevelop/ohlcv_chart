@@ -17,7 +17,11 @@ void main() {
   group('the spread', () {
     test('series pair up on the times both have', () {
       final aligned = alignPairSeries(
-        [(time: _d(2), value: 2), (time: _d(1), value: 1), (time: _d(3), value: 3)],
+        [
+          (time: _d(2), value: 2),
+          (time: _d(1), value: 1),
+          (time: _d(3), value: 3)
+        ],
         [(time: _d(1), value: 10), (time: _d(3), value: 30)],
       );
       expect([for (final p in aligned) p.time], [_d(1), _d(3)]);
@@ -55,7 +59,8 @@ void main() {
       expect(z.take(2), [null, null]);
       expect(z[2], closeTo(1.2247, 1e-4));
       expect(rollingZScore(const [4, 4, 4], 2), [null, 0, 0]);
-      expect(rollingZScore(const [1, double.nan, 3, 4], 2), [null, null, null, 1]);
+      expect(
+          rollingZScore(const [1, double.nan, 3, 4], 2), [null, null, null, 1]);
     });
 
     test('signals enter at the threshold and exit on the way back', () {

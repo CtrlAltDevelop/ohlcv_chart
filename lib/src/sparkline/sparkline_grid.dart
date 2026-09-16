@@ -447,8 +447,7 @@ class SparklineGrid extends StatefulWidget {
   final String? semanticLabel;
 
   /// How many rows the grid takes.
-  int get rows =>
-      columns <= 0 ? 0 : (tiles.length / columns).ceil();
+  int get rows => columns <= 0 ? 0 : (tiles.length / columns).ceil();
 
   /// How tall the grid is in a box that sets no height.
   double get intrinsicHeight => tiles.isEmpty
@@ -528,10 +527,10 @@ class _SparklineGridState extends State<SparklineGrid>
         builder: (context, constraints) {
           final width =
               constraints.hasBoundedWidth ? constraints.maxWidth : 320.0;
-          final height = constraints.hasBoundedHeight &&
-                  constraints.maxHeight.isFinite
-              ? constraints.maxHeight
-              : widget.intrinsicHeight;
+          final height =
+              constraints.hasBoundedHeight && constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : widget.intrinsicHeight;
           _layout = layOutSparklineGrid(
             widget.tiles,
             size: Size(width, height),
@@ -654,8 +653,7 @@ class SparklineGridPainter extends CustomPainter {
 
     for (final laid in layout.tiles) {
       final tile = laid.tile;
-      final color =
-          tile.color ?? (tile.rose ? grid.riseColor : grid.fallColor);
+      final color = tile.color ?? (tile.rose ? grid.riseColor : grid.fallColor);
 
       final tileColor = grid.tileColor;
       if (tileColor != null) {
@@ -675,8 +673,7 @@ class SparklineGridPainter extends CustomPainter {
         final from = tile.first;
         if (from != null && laid.max > laid.min) {
           final y = laid.sparkRect.bottom -
-              (from - laid.min) / (laid.max - laid.min) *
-                  laid.sparkRect.height;
+              (from - laid.min) / (laid.max - laid.min) * laid.sparkRect.height;
           canvas.drawLine(
             Offset(laid.sparkRect.left, y),
             Offset(laid.sparkRect.right, y),
@@ -743,7 +740,8 @@ class SparklineGridPainter extends CustomPainter {
         }
       }
 
-      if (touched == laid.index && sample != null &&
+      if (touched == laid.index &&
+          sample != null &&
           sample! < laid.points.length) {
         final at = laid.points[sample!];
         if (at != null) {

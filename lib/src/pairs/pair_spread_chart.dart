@@ -91,8 +91,7 @@ List<double> pairSpread(
     [
       for (final point in points)
         switch (mode) {
-          PairSpreadMode.ratio =>
-            point.b == 0 ? double.nan : point.a / point.b,
+          PairSpreadMode.ratio => point.b == 0 ? double.nan : point.a / point.b,
           PairSpreadMode.logRatio => point.a > 0 && point.b > 0
               ? math.log(point.a / point.b)
               : double.nan,
@@ -672,7 +671,8 @@ class _PairSpreadChartState extends State<PairSpreadChart>
         final height = constraints.hasBoundedHeight
             ? constraints.maxHeight
             : widget.defaultHeight;
-        final box = widget.padding.deflateRect(Offset.zero & Size(width, height));
+        final box =
+            widget.padding.deflateRect(Offset.zero & Size(width, height));
         final plot = Rect.fromLTRB(
           box.left + (widget.showValueAxis ? widget.axisWidth : 0),
           box.top,
@@ -842,8 +842,7 @@ class PairSpreadChartPainter extends CustomPainter {
     _paintLine(
       canvas,
       [
-        for (var i = 0; i < shown; i++)
-          layout.zScores[i] ?? double.nan,
+        for (var i = 0; i < shown; i++) layout.zScores[i] ?? double.nan,
       ],
       layout.zY,
       chart.zColor,
@@ -1043,9 +1042,8 @@ class PairSpreadChartPainter extends CustomPainter {
     final count = math.min(5, layout.count);
     var written = -double.infinity;
     for (var i = 0; i < count; i++) {
-      final index = count == 1
-          ? 0
-          : ((layout.count - 1) * (i / (count - 1))).round();
+      final index =
+          count == 1 ? 0 : ((layout.count - 1) * (i / (count - 1))).round();
       if (index >= chart.points.length) continue;
       final tp = textCache.get(_formatTime(chart.points[index].time), style);
       final left = (layout.xOf(index) - tp.width / 2).clamp(
@@ -1062,9 +1060,8 @@ class PairSpreadChartPainter extends CustomPainter {
     final format = chart.valueFormatter;
     if (format != null) return format(value);
     final span = (layout.spreadMax - layout.spreadMin).abs();
-    final decimals = span <= 0
-        ? 2
-        : (2 - (math.log(span) / math.ln10).floor()).clamp(0, 6);
+    final decimals =
+        span <= 0 ? 2 : (2 - (math.log(span) / math.ln10).floor()).clamp(0, 6);
     return value.toStringAsFixed(decimals);
   }
 

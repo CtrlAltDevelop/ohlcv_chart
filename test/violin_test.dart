@@ -73,7 +73,8 @@ void main() {
         layout.series[0].bandRect.right,
         closeTo(layout.series[1].bandRect.left, 1e-9),
       );
-      expect(layout.positionOf(layout.max), lessThan(layout.positionOf(layout.min)));
+      expect(layout.positionOf(layout.max),
+          lessThan(layout.positionOf(layout.min)));
     });
 
     test('a ridgeline stacks down the chart and overlaps', () {
@@ -105,7 +106,8 @@ void main() {
       final layout = layOutViolin(series, size: const Size(400, 200));
       final laid = layout.series.first;
       expect(laid.boxRect, isNotNull);
-      expect(laid.medianAt.dy, closeTo(layout.positionOf(laid.stats.median), 1e-9));
+      expect(laid.medianAt.dy,
+          closeTo(layout.positionOf(laid.stats.median), 1e-9));
       expect(laid.whiskerTo.dy, lessThan(laid.whiskerFrom.dy));
     });
 
@@ -183,8 +185,7 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('takes its default height in an unbounded box',
-        (tester) async {
+    testWidgets('takes its default height in an unbounded box', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

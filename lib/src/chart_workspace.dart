@@ -74,7 +74,7 @@ class ChartWorkspace {
       chartType: _enumByName(ChartType.values, json['chartType']),
       priceAxisScale:
           _enumByName(PriceAxisScale.values, json['priceAxisScale']) ??
-          PriceAxisScale.linear,
+              PriceAxisScale.linear,
       invertPriceAxis: json['invertPriceAxis'] == true,
     );
   }
@@ -104,9 +104,9 @@ class ChartWorkspace {
   /// are left out of the saved workspace rather than saved as something else, and
   /// listed here so an app can say so instead of silently losing them.
   List<Indicator> get unsaveable => [
-    for (final indicator in indicators)
-      if (indicatorToJson(indicator) == null) indicator,
-  ];
+        for (final indicator in indicators)
+          if (indicatorToJson(indicator) == null) indicator,
+      ];
 
   /// Writes the workspace out, ready for `jsonEncode`.
   Map<String, dynamic> toJson() {
@@ -134,17 +134,17 @@ class ChartWorkspace {
     ChartType? chartType,
     PriceAxisScale? priceAxisScale,
     bool? invertPriceAxis,
-  }) => ChartWorkspace(
-    indicators: indicators ?? this.indicators,
-    drawings: drawings ?? this.drawings,
-    chartType: chartType ?? this.chartType,
-    priceAxisScale: priceAxisScale ?? this.priceAxisScale,
-    invertPriceAxis: invertPriceAxis ?? this.invertPriceAxis,
-  );
+  }) =>
+      ChartWorkspace(
+        indicators: indicators ?? this.indicators,
+        drawings: drawings ?? this.drawings,
+        chartType: chartType ?? this.chartType,
+        priceAxisScale: priceAxisScale ?? this.priceAxisScale,
+        invertPriceAxis: invertPriceAxis ?? this.invertPriceAxis,
+      );
 
   @override
-  String toString() =>
-      'ChartWorkspace(${indicators.length} indicators, '
+  String toString() => 'ChartWorkspace(${indicators.length} indicators, '
       '${drawings?.length ?? 0} drawings, $priceAxisScale)';
 
   static T? _enumByName<T extends Enum>(List<T> values, Object? name) {
