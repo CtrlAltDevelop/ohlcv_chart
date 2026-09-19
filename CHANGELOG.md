@@ -42,12 +42,30 @@
     `SeasonalityChart.radius`.
   - Cards, labels and chrome: `SeriesTooltip.borderRadius`,
     `ChartStyle.labelCornerRadius`, `DrawingStyle.labelCornerRadius`,
-    `DrawingStyle.toolbarBorderRadius` and `DrawingStyle.popoverBorderRadius`.
+    `DrawingStyle.toolbarBorderRadius`, `DrawingStyle.popoverBorderRadius`,
+    `DepthChartStyle.radius` and `HeatmapLegend.radius`.
 
   Each default draws the shape it drew before, so only code that passed a
   radius needs changing. Radii that describe a circle — dots, pie and gauge
   arcs, drawing handles, event marks, the rounded ends of the depth ratio bar
   — stay `double`.
+
+- **The charts no longer leak their laid-out text.** A `TextPainter` holds a
+  native paragraph and has to be disposed, and none of them were:
+  - `TextPainterCache` disposes the painter it evicts, the ones `clear()`
+    drops, and everything it still holds when the new `dispose()` is called.
+    All 39 charts that own a cache now dispose it when their state goes.
+  - The depth chart laid out every label afresh on every paint and threw the
+    painters away; it goes through a cache like every other chart.
+  - The legend rows, axis labels, marker labels and event glyphs that cannot be
+    cached — a multi-span legend, an icon in its own font — are disposed as
+    soon as they are painted.
+  - `KChartWidget` disposes the `CurvedAnimation` wrapping each scroll
+    animation instead of leaving one behind per fling.
+
+  Across the test suite this was over eight thousand undisposed painters. The
+  suite now runs under `leak_tracker` (`test/flutter_test_config.dart`), so a
+  widget that leaves a disposable behind fails its file.
 
 ## 2.6.0 - 2026-09-16
 
