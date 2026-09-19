@@ -1,5 +1,10 @@
 # ohlcv_chart
 
+[![pub package](https://img.shields.io/pub/v/ohlcv_chart.svg)](https://pub.dev/packages/ohlcv_chart)
+[![pub points](https://img.shields.io/pub/points/ohlcv_chart)](https://pub.dev/packages/ohlcv_chart/score)
+[![CI](https://github.com/CtrlAltDevelop/ohlcv_chart/actions/workflows/ci.yml/badge.svg)](https://github.com/CtrlAltDevelop/ohlcv_chart/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/CtrlAltDevelop/ohlcv_chart/blob/main/LICENSE)
+
 A candlestick chart for Flutter with 31 indicators and 29 drawing tools, and 39
 other chart widgets: the order book and the tape, the charts a backtest report
 is built from, and the ones a dashboard is. Everything is rendered with
@@ -374,15 +379,21 @@ indicator and drawing tool is included; there is no paid tier.
 
 ## Requirements
 
-- Dart 3.6 or later
-- Flutter 3.27 or later
+- Dart 3.12.0 or later
+- Flutter 3.44.0 or later
 
 ## Installation
 
 ```yaml
 dependencies:
-  ohlcv_chart: ^2.6.0
+  material_ui: ">=1.0.0 <2.0.0"
+  ohlcv_chart: ">=3.0.0 <4.0.0"
 ```
+
+Every widget here is built on the `material_ui` package rather than the
+Material library that used to ship inside the Flutter SDK, so import
+`package:material_ui/material_ui.dart` where your app imported
+`package:flutter/material.dart`.
 
 ## Quick start
 

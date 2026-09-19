@@ -3,7 +3,7 @@ description: >-
   Candlestick charts for Flutter with 31 indicators, 29 drawing tools and 39
   more chart widgets: depth, order flow, series, pie, treemap, sankey. Pure
   CustomPainter, no WebView.
-version: 2.6.0
+version: 3.0.0
 homepage: https://github.com/CtrlAltDevelop
 repository: https://github.com/CtrlAltDevelop/ohlcv_chart
 issue_tracker: https://github.com/CtrlAltDevelop/ohlcv_chart/issues
