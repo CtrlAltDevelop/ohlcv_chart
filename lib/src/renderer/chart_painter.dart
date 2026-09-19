@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../drawing/line_painting.dart';
 import '../drawing/shape_geometry.dart';
@@ -2413,8 +2413,7 @@ class ChartPainter extends BaseChartPainter {
   void drawPaths(Canvas canvas, Size size) {
     for (final line in _withDraft(paths)) {
       final points = [
-        for (final point in line.points)
-          if (_anchor(point.time, point.price) case final v?) v,
+        for (final point in line.points) ?_anchor(point.time, point.price),
       ];
       if (points.isEmpty) continue;
       if (points.length == 1) {

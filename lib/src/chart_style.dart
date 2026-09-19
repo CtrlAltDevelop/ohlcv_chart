@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Alignment, Color;
+import 'package:material_ui/material_ui.dart' show Alignment, Color;
 
 import 'trading.dart';
 

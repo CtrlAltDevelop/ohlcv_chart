@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 import 'package:ohlcv_chart/src/renderer/chart_painter.dart';
@@ -431,7 +431,7 @@ void main() {
           List<double?>.filled(30, value),
           alerts: const [IndicatorAlert(level: 50)],
         ),
-      ], onIndicatorAlert: (_, __, ___, v) => reports.add(v));
+      ], onIndicatorAlert: (_, _, _, v) => reports.add(v));
 
       await tester.pumpWidget(chart(10));
       await tester.pumpAndSettle();
@@ -452,7 +452,7 @@ void main() {
           List<double?>.filled(30, value),
           alerts: const [IndicatorAlert(level: 50)],
         ),
-      ], onIndicatorAlert: (_, __, ___, v) => reports.add(v));
+      ], onIndicatorAlert: (_, _, _, v) => reports.add(v));
 
       await tester.pumpWidget(chart(10));
       await tester.pumpAndSettle();
@@ -470,7 +470,7 @@ void main() {
             List<double?>.filled(30, null),
             alerts: const [IndicatorAlert(level: 50)],
           ),
-        ], onIndicatorAlert: (_, __, ___, v) => reports.add(v)),
+        ], onIndicatorAlert: (_, _, _, v) => reports.add(v)),
       );
       await tester.pumpAndSettle();
 

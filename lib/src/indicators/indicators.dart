@@ -1,6 +1,6 @@
 import 'dart:math' show max;
 
-import 'package:flutter/material.dart' show Color;
+import 'package:material_ui/material_ui.dart' show Color;
 
 import '../chart_style.dart';
 import '../entity/k_line_entity.dart';

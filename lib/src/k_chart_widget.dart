@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
@@ -993,7 +993,7 @@ class _KChartWidgetState extends State<KChartWidget>
   List<ChartLine> get _selection {
     final controller = widget.drawingController;
     if (controller != null) return controller.selection;
-    return [..._localAlsoSelected, if (_localSelection case final v?) v];
+    return [..._localAlsoSelected, ?_localSelection];
   }
 
   /// Adds [line] to the selection, or takes it out if it is already in.

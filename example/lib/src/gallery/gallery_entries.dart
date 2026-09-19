@@ -5,7 +5,7 @@
 // list, so a chart is described and drawn in one place. A chart with more than
 // one thing worth showing has a variant each; the app stacks them down the
 // page, and the tool sets them side by side in panels.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 
 import 'gallery_data.dart';

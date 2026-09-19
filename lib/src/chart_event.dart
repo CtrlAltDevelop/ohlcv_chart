@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// What kind of thing happened, which decides the mark's default look.
 enum ChartEventKind {

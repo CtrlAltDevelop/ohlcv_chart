@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Canvas, Paint, Path;
+import 'package:material_ui/material_ui.dart' show Canvas, Paint, Path;
 
 /// Collects the pieces of one series and draws them in a single call.
 ///

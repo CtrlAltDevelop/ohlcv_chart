@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 import 'package:ohlcv_chart/src/renderer/chart_painter.dart';
@@ -337,7 +337,7 @@ void main() {
       final order = ChartOrder(id: '1', price: price, side: TradeSide.buy);
 
       await tester.pumpWidget(
-        _chart(_candles(), orders: [order], onOrderMoved: (_, __) {}),
+        _chart(_candles(), orders: [order], onOrderMoved: (_, _) {}),
       );
       await tester.pumpAndSettle();
 
@@ -363,7 +363,7 @@ void main() {
               draggable: false,
             ),
           ],
-          onOrderMoved: (_, __) {},
+          onOrderMoved: (_, _) {},
         ),
       );
       await tester.pumpAndSettle();
@@ -383,7 +383,7 @@ void main() {
         _chart(
           _candles(),
           orders: [far, near],
-          onOrderMoved: (_, __) {},
+          onOrderMoved: (_, _) {},
           style: ChartStyle(trading: const TradingStyle(grabTolerance: 200)),
         ),
       );

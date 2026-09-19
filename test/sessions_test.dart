@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 import 'package:ohlcv_chart/src/renderer/chart_painter.dart';
@@ -266,7 +266,7 @@ void main() {
 
     testWidgets('returning null leaves the usual colour', (tester) async {
       await tester.pumpWidget(
-        _chart(_halfHourly(_on(1, 0), 48), candleColor: (_, __) => null),
+        _chart(_halfHourly(_on(1, 0), 48), candleColor: (_, _) => null),
       );
       await tester.pumpAndSettle();
 

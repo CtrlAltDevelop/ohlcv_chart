@@ -1,5 +1,5 @@
 // The gallery: every chart in the package, one page each.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../demo_state.dart';
 import 'gallery_entries.dart';

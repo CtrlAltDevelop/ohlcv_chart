@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Color;
+import 'package:material_ui/material_ui.dart' show Color;
 
 /// Every colour the depth chart paints with.
 class DepthChartColors {

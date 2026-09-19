@@ -89,8 +89,7 @@ class ChartDrawings {
     if (entries is! List) return ChartDrawings();
     return ChartDrawings([
       for (final entry in entries)
-        if (entry is Map<String, dynamic>)
-          if (drawingFromJson(entry) case final v?) v,
+        if (entry is Map<String, dynamic>) ?drawingFromJson(entry),
     ]);
   }
 

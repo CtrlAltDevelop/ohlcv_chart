@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 
 /// The sheet behind "Add indicator": pick a type, set it up, colour it.

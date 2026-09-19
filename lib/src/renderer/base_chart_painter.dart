@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart'
+import 'package:material_ui/material_ui.dart'
     show Color, TextStyle, Rect, Canvas, Size, CustomPainter;
 
 import '../chart_style.dart' show ChartStyle;
@@ -10,7 +10,7 @@ import '../indicators/resolved_indicator.dart';
 import '../utils/date_format_util.dart';
 import 'base_dimension.dart';
 
-export 'package:flutter/material.dart'
+export 'package:material_ui/material_ui.dart'
     show Color, TextStyle, Rect, Canvas, Size, CustomPainter;
 
 /// BaseChartPainter

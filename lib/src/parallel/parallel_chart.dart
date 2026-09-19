@@ -733,7 +733,7 @@ class ParallelChartPainter extends CustomPainter {
     final order = [
       for (var i = 0; i < layout.lines.length; i++)
         if (i != touched) i,
-      if (touched != null) touched!,
+      ?touched,
     ];
     for (final i in order) {
       final laid = layout.lines[i];
