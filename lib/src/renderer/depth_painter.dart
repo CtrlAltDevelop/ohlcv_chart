@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:material_ui/material_ui.dart';
 
+import '../corner_radius.dart';
+import 'text_painter_cache.dart';
 import '../depth_mode.dart';
 import '../depth_style.dart';
 import '../depth_translations.dart';
@@ -22,6 +24,7 @@ class DepthChartPainter extends CustomPainter {
     this.chartStyle,
     this.offset,
     this.chartTranslations, {
+    required this.textCache,
     this.mode = DepthChartMode.cumulative,
     this.scale = DepthScale.linear,
     double? zoom,
@@ -313,7 +316,6 @@ class DepthChartPainter extends CustomPainter {
   void drawText(Canvas canvas) {
     for (int j = 0; j < mLineCount; j++) {
       final tp = getTextPainter(_axisLabel(j));
-      tp.layout();
       tp.paint(
         canvas,
         Offset(mWidth - tp.width, mDrawHeight / mLineCount * j + tp.height / 2),
@@ -323,14 +325,12 @@ class DepthChartPainter extends CustomPainter {
     final startText =
         NumberUtil.formatFixed(mBuyData!.first.price, quoteUnit) ?? '';
     final startTP = getTextPainter(startText);
-    startTP.layout();
     startTP.paint(canvas, Offset(0, getBottomTextY(startTP.height)));
 
     final centerPrice = (mBuyData!.last.price + mSellData!.first.price) / 2;
 
     final center = NumberUtil.formatFixed(centerPrice, quoteUnit) ?? '';
     final centerTP = getTextPainter(center);
-    centerTP.layout();
     centerTP.paint(
       canvas,
       Offset(mDrawWidth - centerTP.width / 2, getBottomTextY(centerTP.height)),
@@ -339,7 +339,6 @@ class DepthChartPainter extends CustomPainter {
     final endText =
         NumberUtil.formatFixed(mSellData!.last.price, quoteUnit) ?? '';
     final endTP = getTextPainter(endText);
-    endTP.layout();
     endTP.paint(
       canvas,
       Offset(mWidth - endTP.width, getBottomTextY(endTP.height)),
@@ -352,7 +351,6 @@ class DepthChartPainter extends CustomPainter {
         ) ??
         '';
     final leftHalfTP = getTextPainter(leftHalfText);
-    leftHalfTP.layout();
     leftHalfTP.paint(
       canvas,
       Offset(
@@ -368,7 +366,6 @@ class DepthChartPainter extends CustomPainter {
         ) ??
         '';
     final rightHalfTP = getTextPainter(rightHalfText);
-    rightHalfTP.layout();
     rightHalfTP.paint(
       canvas,
       Offset(
@@ -440,6 +437,7 @@ class DepthChartPainter extends CustomPainter {
       translations: chartTranslations,
       chartColors: chartColors,
       chartStyle: chartStyle,
+      textCache: textCache,
       price: NumberUtil.format(entity.price, quoteUnit) ?? '',
       amount: NumberUtil.formatCompact(entity.vol, baseUnit),
       size: level == null
@@ -456,10 +454,7 @@ class DepthChartPainter extends CustomPainter {
     );
 
     final rect = Rect.fromLTWH(dx, dy, popupPainter.width, popupPainter.height);
-    final boxRect = RRect.fromRectAndRadius(
-      rect,
-      Radius.circular(chartStyle.radius),
-    );
+    final boxRect = roundedBox(rect, chartStyle.radius);
 
     canvas.drawRRect(boxRect, selectPaint!);
     canvas.drawRRect(boxRect, selectBorderPaint!);
@@ -503,6 +498,7 @@ class DepthChartPainter extends CustomPainter {
       translations: chartTranslations,
       chartColors: chartColors,
       chartStyle: chartStyle,
+      textCache: textCache,
       price: NumberUtil.format(entity.price, quoteUnit) ?? '',
       amount: NumberUtil.formatCompact(entity.vol, baseUnit),
       size: level == null
@@ -523,10 +519,7 @@ class DepthChartPainter extends CustomPainter {
     );
 
     final rect = Rect.fromLTWH(dx, dy, popupPainter.width, popupPainter.height);
-    final boxRect = RRect.fromRectAndRadius(
-      rect,
-      Radius.circular(chartStyle.radius),
-    );
+    final boxRect = roundedBox(rect, chartStyle.radius);
 
     canvas.drawRRect(boxRect, selectPaint!);
     canvas.drawRRect(boxRect, selectBorderPaint!);
@@ -569,12 +562,12 @@ class DepthChartPainter extends CustomPainter {
 
   double getSellX(int position) => position * mSellPointWidth! + mDrawWidth;
 
-  TextPainter getTextPainter(String text) => TextPainter(
-    text: TextSpan(
-      text: text,
-      style: TextStyle(color: chartColors.defaultTextColor, fontSize: 10),
-    ),
-    textDirection: TextDirection.ltr,
+  /// Holds the laid-out labels between frames, and owns their disposal.
+  final TextPainterCache textCache;
+
+  TextPainter getTextPainter(String text) => textCache.get(
+    text,
+    TextStyle(color: chartColors.defaultTextColor, fontSize: 10),
   );
 
   double getBottomTextY(double textHeight) =>
@@ -626,6 +619,7 @@ class PopupPainter {
     required DepthChartTranslations translations,
     required this.chartColors,
     required this.chartStyle,
+    required this.textCache,
     required String price,
     required String amount,
     String? size,
@@ -633,10 +627,10 @@ class PopupPainter {
     pricePaint = _getTextPainter(translations.price, price);
     amountPaint = _getTextPainter(translations.amount, amount);
     sizePaint = size == null ? null : _getTextPainter(translations.size, size);
-    pricePaint.layout();
-    amountPaint.layout();
-    sizePaint?.layout();
   }
+
+  /// Holds the laid-out labels between frames, and owns their disposal.
+  final TextPainterCache textCache;
 
   final DepthChartColors chartColors;
   final DepthChartStyle chartStyle;
@@ -686,14 +680,8 @@ class PopupPainter {
     );
   }
 
-  TextPainter _getTextPainter(String label, String content) {
-    return TextPainter(
-      text: TextSpan(
-        text: '$label $content',
-        style: TextStyle(color: chartColors.annotationColor, fontSize: 9),
-      ),
-      textAlign: TextAlign.start,
-      textDirection: TextDirection.ltr,
-    );
-  }
+  TextPainter _getTextPainter(String label, String content) => textCache.get(
+    '$label $content',
+    TextStyle(color: chartColors.annotationColor, fontSize: 9),
+  );
 }

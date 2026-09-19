@@ -1,4 +1,4 @@
-import 'package:material_ui/material_ui.dart' show Color;
+import 'package:material_ui/material_ui.dart' show BorderRadius, Color, Radius;
 
 /// Every colour the depth chart paints with.
 class DepthChartColors {
@@ -53,7 +53,7 @@ class DepthChartStyle {
   /// Creates a style, defaulting to the values the chart ships with.
   const DepthChartStyle({
     this.lineWidth = 1.0,
-    this.radius = 4.0,
+    this.radius = const BorderRadius.all(Radius.circular(4)),
     this.strokeWidth = 0.6,
     this.space = 2.0,
     this.padding = 6.0,
@@ -67,7 +67,9 @@ class DepthChartStyle {
   });
 
   final double lineWidth;
-  final double radius;
+
+  /// The rounding of the readout box's corners, as drawn on the screen.
+  final BorderRadius radius;
   final double strokeWidth;
 
   final double space;

@@ -349,6 +349,7 @@ class _HeatmapChartState extends State<HeatmapChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }
@@ -754,7 +755,7 @@ class HeatmapLegend extends StatelessWidget {
     this.labelStyle,
     this.height = 10,
     this.width,
-    this.radius = 3,
+    this.radius = const BorderRadius.all(Radius.circular(3)),
     this.gap = 6,
   });
 
@@ -776,8 +777,8 @@ class HeatmapLegend extends StatelessWidget {
   /// How long the bar is; null lets it take the room it is given.
   final double? width;
 
-  /// The bar's corner radius.
-  final double radius;
+  /// The rounding of the bar's corners, as drawn on the screen.
+  final BorderRadius radius;
 
   /// Space between the bar and its labels.
   final double gap;
@@ -790,7 +791,7 @@ class HeatmapLegend extends StatelessWidget {
     final colors = scale.colors;
     Widget bar = DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
+        borderRadius: radius,
         // One colour would make a gradient of nothing, so it is doubled.
         gradient: LinearGradient(
           colors: colors.length >= 2
