@@ -275,7 +275,9 @@ class _SeriesPageState extends State<SeriesPage> {
                       _profit,
                       color: _green,
                       negativeColor: _red,
-                      radius: 3,
+                      radius: const BorderRadius.vertical(
+                        top: Radius.circular(3),
+                      ),
                       minWidth: 1,
                       maxWidth: 12,
                     ),
@@ -353,7 +355,9 @@ class _SeriesPageState extends State<SeriesPage> {
                       const [1.4, 2.2, 3.1, 1.8, 2.6, 2.1],
                       color: _red,
                       stack: 'flow',
-                      radius: 3,
+                      radius: const BorderRadius.vertical(
+                        top: Radius.circular(3),
+                      ),
                       label: 'Out',
                     ),
                   ],

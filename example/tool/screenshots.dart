@@ -1976,7 +1976,9 @@ Widget seriesGalleryScene() {
                           profits,
                           color: _seriesGreen,
                           negativeColor: _seriesRed,
-                          radius: 3,
+                          radius: const BorderRadius.vertical(
+                            top: Radius.circular(3),
+                          ),
                           maxWidth: 14,
                         ),
                       ],
@@ -2317,7 +2319,9 @@ Widget seriesPanelsScene() {
                     label: 'P/L',
                     color: _seriesGreen,
                     negativeColor: _seriesRed,
-                    radius: 3,
+                    radius: const BorderRadius.vertical(
+                      top: Radius.circular(3),
+                    ),
                     minWidth: 3.5,
                     maxWidth: 12,
                   ),
@@ -2693,7 +2697,7 @@ Widget seriesHorizontalScene() {
               label: 'Out',
               color: _seriesRed,
               stack: 'flow',
-              radius: 3,
+              radius: const BorderRadius.horizontal(right: Radius.circular(3)),
               maxWidth: 18,
               labelBuilder: (index, point) =>
                   seriesUsd((income[index] + point.y!) * 1000),
@@ -2764,7 +2768,7 @@ Widget seriesRangesScene() {
                         ),
                     ],
                     color: _seriesGreen,
-                    radius: 3,
+                    radius: const BorderRadius.all(Radius.circular(3)),
                     maxWidth: 34,
                     colorBuilder: (index, point) =>
                         index == 0 || index == steps.length - 1

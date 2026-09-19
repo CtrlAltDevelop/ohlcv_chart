@@ -814,19 +814,17 @@ class SeriesChartPainter extends CustomPainter {
 
       if (track != null) {
         trackPath.addRRect(
-          RRect.fromRectAndRadius(
+          RRect.fromRectAndCorners(
             _trackRect(centre, width),
-            Radius.circular(math.min(bars.radius, width / 2)),
-          ),
+            topLeft: bars.radius.topLeft,
+            topRight: bars.radius.topRight,
+            bottomLeft: bars.radius.bottomLeft,
+            bottomRight: bars.radius.bottomRight,
+          ).scaleRadii(),
         );
       }
 
-      final shape = seriesBarBox(
-        rect: rect,
-        radius: bars.radius,
-        horizontal: _horizontal,
-        positive: to >= from,
-      );
+      final shape = seriesBarBox(rect: rect, radius: bars.radius);
       if (shape == null) continue;
       if (bars.gradient != null) {
         shaded.add(shape);

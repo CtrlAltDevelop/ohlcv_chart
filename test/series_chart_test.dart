@@ -53,7 +53,7 @@ void main() {
               [3, -2, 5, -1, 4],
               color: Colors.green,
               negativeColor: Colors.red,
-              radius: 3,
+              radius: const BorderRadius.vertical(top: Radius.circular(3)),
               trackColor: Colors.white10,
             ),
             LineSeries.values(

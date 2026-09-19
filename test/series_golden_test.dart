@@ -79,7 +79,7 @@ void main() {
               _wave(18, phase: 1),
               color: _green,
               negativeColor: _red,
-              radius: 3,
+              radius: const BorderRadius.vertical(top: Radius.circular(3)),
               minWidth: 3.5,
               maxWidth: 12,
             ),

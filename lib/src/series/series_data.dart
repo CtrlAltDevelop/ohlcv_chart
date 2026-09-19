@@ -451,7 +451,7 @@ final class BarSeries extends PlotSeries {
     this.widthFactor = 0.6,
     this.minWidth = 0,
     this.maxWidth = double.infinity,
-    this.radius = 0,
+    this.radius = BorderRadius.zero,
     this.trackColor,
     this.stack,
     this.border,
@@ -474,7 +474,7 @@ final class BarSeries extends PlotSeries {
     this.widthFactor = 0.6,
     this.minWidth = 0,
     this.maxWidth = double.infinity,
-    this.radius = 0,
+    this.radius = BorderRadius.zero,
     this.trackColor,
     this.stack,
     this.border,
@@ -501,10 +501,14 @@ final class BarSeries extends PlotSeries {
   /// The widest a bar may be.
   final double maxWidth;
 
-  /// Corner radius on the end away from the baseline — the top of a bar above
-  /// it, the bottom of one below. In a stack only the outermost bar is
-  /// rounded.
-  final double radius;
+  /// The rounding of each bar's corners, as drawn on the screen: `topLeft` is
+  /// the bar's top-left corner whichever way the bar grows. Rounding only the
+  /// end away from the baseline is
+  /// `BorderRadius.vertical(top: Radius.circular(4))` for bars above it, and
+  /// `BorderRadius.horizontal(right: …)` on a horizontal chart. Radii too big
+  /// for the bar are scaled down to fit. In a stack only the outermost bar
+  /// shows its rounding.
+  final BorderRadius radius;
 
   /// A full-height bar painted behind each one, such as a faint track.
   final Color? trackColor;

@@ -97,7 +97,7 @@ BarSeries.values(
   color: green,
   negativeColor: red,            // or colorBuilder: (index, point) => …
   baseline: 0,                   // bars grow from here, up or down
-  radius: 3,                     // on the end away from the baseline
+  radius: BorderRadius.vertical(top: Radius.circular(3)),  // screen corners
   widthFactor: .6,               // share of the room between two x values
   minWidth: 3.5,
   maxWidth: 12,
@@ -119,8 +119,13 @@ unstacked series can be combined.
 ```dart
 SeriesChart(
   series: [
-    BarSeries.values(deposits, color: green, stack: 'flow', radius: 0),
-    BarSeries.values(withdrawals, color: red, stack: 'flow', radius: 3),
+    BarSeries.values(deposits, color: green, stack: 'flow'),
+    BarSeries.values(
+      withdrawals,
+      color: red,
+      stack: 'flow',
+      radius: BorderRadius.vertical(top: Radius.circular(3)),
+    ),
   ],
 );
 ```
@@ -222,7 +227,12 @@ values horizontally, producing a horizontal bar chart:
 ```dart
 SeriesChart(
   orientation: SeriesOrientation.horizontal,
-  series: [BarSeries.values(byCategory, radius: 3)],
+  series: [
+    BarSeries.values(
+      byCategory,
+      radius: BorderRadius.horizontal(right: Radius.circular(3)),
+    ),
+  ],
   xAxis: SeriesXAxis(labels: categoryNames),
 );
 ```

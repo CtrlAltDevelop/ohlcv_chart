@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'dart:ui';
+
+import 'package:flutter/painting.dart';
 
 import 'series_data.dart';
 
@@ -220,52 +221,16 @@ Path seriesRunPath(
   return path.transform(_swapAxes);
 }
 
-/// The shape of one bar filling [rect], rounded by [radius] on the end away
-/// from its baseline — the top of an upright bar above it, the right-hand end
-/// of a horizontal one.
+/// The shape of one bar filling [rect], with [radius] on its corners.
+///
+/// The radii are read as they are drawn on the screen, and scaled down
+/// together when they are too big for [rect].
 ///
 /// Returns null for a bar with no width or no length.
-RRect? seriesBarBox({
-  required Rect rect,
-  required double radius,
-  required bool horizontal,
-  required bool positive,
-}) {
+RRect? seriesBarBox({required Rect rect, required BorderRadius radius}) {
   if (rect.width <= 0 || rect.height <= 0) return null;
-  // Never more than half the bar's width, nor more than its whole length.
-  final across = horizontal ? rect.height : rect.width;
-  final along = horizontal ? rect.width : rect.height;
-  final r = Radius.circular(
-    math.max(0.0, math.min(radius, math.min(across / 2, along))),
-  );
-  final start = horizontal
-      ? (positive ? _Corners.right : _Corners.left)
-      : (positive ? _Corners.top : _Corners.bottom);
-  return RRect.fromRectAndCorners(
-    rect,
-    topLeft: start.topLeft ? r : Radius.zero,
-    topRight: start.topRight ? r : Radius.zero,
-    bottomLeft: start.bottomLeft ? r : Radius.zero,
-    bottomRight: start.bottomRight ? r : Radius.zero,
-  );
-}
-
-/// Which two corners of a bar are the rounded end.
-class _Corners {
-  const _Corners({
-    this.topLeft = false,
-    this.topRight = false,
-    this.bottomLeft = false,
-    this.bottomRight = false,
-  });
-
-  static const top = _Corners(topLeft: true, topRight: true);
-  static const bottom = _Corners(bottomLeft: true, bottomRight: true);
-  static const left = _Corners(topLeft: true, bottomLeft: true);
-  static const right = _Corners(topRight: true, bottomRight: true);
-
-  final bool topLeft;
-  final bool topRight;
-  final bool bottomLeft;
-  final bool bottomRight;
+  if (radius == BorderRadius.zero) {
+    return RRect.fromRectAndRadius(rect, Radius.zero);
+  }
+  return radius.toRRect(rect).scaleRadii();
 }
