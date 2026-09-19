@@ -1,0 +1,31 @@
+# The gate in front of main. Everything it runs lives once in
+# CtrlAltDevelop/ci-workflows, so a fix there fixes all of the packages at
+# once — format, analyze --fatal-infos, test, the example, a CHANGELOG entry
+# for the pubspec version, and the pub.dev score with no points lost.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  package:
+    name: Package
+    uses: CtrlAltDevelop/ci-workflows/.github/workflows/dart-package.yml@v1.1.0
+    permissions:
+      contents: read
+    with:
+      sdk: flutter
+      # Goldens are rasterised, so they are only stable on the platform that
+      # recorded them.
+      runs-on: macos-latest
