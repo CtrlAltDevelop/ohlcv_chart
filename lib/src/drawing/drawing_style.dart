@@ -72,7 +72,7 @@ class DrawingStyle {
     this.toolbarBackgroundColor,
     this.toolbarBorderColor,
     this.toolbarBorderWidth = 1.0,
-    this.toolbarBorderRadius = 26.0,
+    this.toolbarBorderRadius = const BorderRadius.all(Radius.circular(26)),
     this.toolbarPadding = const EdgeInsets.symmetric(
       horizontal: 6,
       vertical: 2,
@@ -87,7 +87,7 @@ class DrawingStyle {
     this.deleteColor = const Color(0xFFFF5252),
     this.doneColor = const Color(0xFF00E676),
     this.popoverBackgroundColor,
-    this.popoverBorderRadius = 14.0,
+    this.popoverBorderRadius = const BorderRadius.all(Radius.circular(14)),
     this.swatchSize = 26.0,
     this.swatchesPerRow = 5,
     this.handleRadius = 6.0,
@@ -111,7 +111,7 @@ class DrawingStyle {
     this.labelBackgroundColor,
     this.labelBackgroundAlpha = 220,
     this.labelBorderWidth = 1.4,
-    this.labelCornerRadius = 5.0,
+    this.labelCornerRadius = const BorderRadius.all(Radius.circular(5)),
     this.labelPadding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
   });
 
@@ -189,7 +189,7 @@ class DrawingStyle {
   final double toolbarBorderWidth;
 
   /// Corner radius of the toolbar.
-  final double toolbarBorderRadius;
+  final BorderRadius toolbarBorderRadius;
 
   /// Space between the toolbar's outline and its buttons.
   final EdgeInsets toolbarPadding;
@@ -225,7 +225,7 @@ class DrawingStyle {
   final Color? popoverBackgroundColor;
 
   /// Corner radius of the popovers.
-  final double popoverBorderRadius;
+  final BorderRadius popoverBorderRadius;
 
   /// Side length of one colour swatch.
   final double swatchSize;
@@ -306,7 +306,7 @@ class DrawingStyle {
   final double labelBorderWidth;
 
   /// Corner radius of the label.
-  final double labelCornerRadius;
+  final BorderRadius labelCornerRadius;
 
   /// Space between a label's outline and its text.
   final EdgeInsets labelPadding;
@@ -346,7 +346,7 @@ class DrawingStyle {
     Color? toolbarBackgroundColor,
     Color? toolbarBorderColor,
     double? toolbarBorderWidth,
-    double? toolbarBorderRadius,
+    BorderRadius? toolbarBorderRadius,
     EdgeInsets? toolbarPadding,
     List<BoxShadow>? toolbarShadows,
     Offset? toolbarInitialOffset,
@@ -358,7 +358,7 @@ class DrawingStyle {
     Color? deleteColor,
     Color? doneColor,
     Color? popoverBackgroundColor,
-    double? popoverBorderRadius,
+    BorderRadius? popoverBorderRadius,
     double? swatchSize,
     int? swatchesPerRow,
     double? handleRadius,
@@ -382,7 +382,7 @@ class DrawingStyle {
     Color? labelBackgroundColor,
     int? labelBackgroundAlpha,
     double? labelBorderWidth,
-    double? labelCornerRadius,
+    BorderRadius? labelCornerRadius,
     EdgeInsets? labelPadding,
   }) {
     return DrawingStyle(

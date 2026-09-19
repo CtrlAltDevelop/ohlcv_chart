@@ -56,7 +56,7 @@ patterns.
 | `fromY: 0` | `baseline: 0` |
 | `color` / per-rod colour | `color` + `negativeColor`, or `colorBuilder` |
 | `width` | `width`, or `widthFactor` with `minWidth` / `maxWidth` |
-| `borderRadius` rounded away from zero | `radius` — always on the end away from the baseline |
+| `borderRadius` rounded away from zero | `radius` — a `BorderRadius`, read as the corners are drawn |
 | `backDrawRodData` | `trackColor` |
 | `gradient` | `gradient` |
 | `fromY` per rod, for a floating bar | `SeriesPoint(x, y, low: ...)` |
@@ -150,7 +150,7 @@ SizedBox(
       tooltip: SeriesTooltip(
         placement: SeriesTooltipPlacement.above,
         backgroundColor: context.backgroundPaper,
-        borderRadius: 10,
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         builder: (context, d) => BalanceTooltip(
           value: formatUsd(d.values.first.value),

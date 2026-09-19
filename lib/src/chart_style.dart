@@ -1,4 +1,5 @@
-import 'package:material_ui/material_ui.dart' show Alignment, Color;
+import 'package:material_ui/material_ui.dart'
+    show Alignment, BorderRadius, Color, Radius;
 
 import 'trading.dart';
 
@@ -478,7 +479,7 @@ class ChartStyle {
     this.axisLabelPadding = 4.0,
     this.priceAxisWidth = 0.0,
     this.secondaryPriceAxisWidth = 56.0,
-    this.labelCornerRadius = 3.0,
+    this.labelCornerRadius = const BorderRadius.all(Radius.circular(3)),
     this.legendPadding = 4.0,
     this.legendSpacing = 2.0,
     this.watermarkAlignment = Alignment.center,
@@ -644,7 +645,7 @@ class ChartStyle {
   final double secondaryPriceAxisWidth;
 
   /// Corner radius of the axis label and legend pills.
-  final double labelCornerRadius;
+  final BorderRadius labelCornerRadius;
 
   /// Space between an indicator legend's pill and its text.
   final double legendPadding;
@@ -701,7 +702,7 @@ class ChartStyle {
     double? axisLabelPadding,
     double? priceAxisWidth,
     double? secondaryPriceAxisWidth,
-    double? labelCornerRadius,
+    BorderRadius? labelCornerRadius,
     double? legendPadding,
     double? legendSpacing,
     Alignment? watermarkAlignment,

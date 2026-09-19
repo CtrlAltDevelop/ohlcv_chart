@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 
+import '../corner_radius.dart';
 import '../drawing/line_painting.dart';
 import '../drawing/shape_geometry.dart';
 import '../entity/horizontal_line.dart';
@@ -2279,12 +2280,14 @@ class ChartPainter extends BaseChartPainter {
         callout.color,
       );
       final padding = drawingStyle.labelPadding;
-      final rect = RRect.fromLTRBR(
-        box.dx - padding.left,
-        box.dy - tp.height / 2 - padding.top,
-        box.dx + tp.width + padding.right,
-        box.dy + tp.height / 2 + padding.bottom,
-        Radius.circular(drawingStyle.labelCornerRadius),
+      final rect = roundedBox(
+        Rect.fromLTRB(
+          box.dx - padding.left,
+          box.dy - tp.height / 2 - padding.top,
+          box.dx + tp.width + padding.right,
+          box.dy + tp.height / 2 + padding.bottom,
+        ),
+        drawingStyle.labelCornerRadius,
       );
 
       canvas.drawRRect(
@@ -2589,12 +2592,14 @@ class ChartPainter extends BaseChartPainter {
     Color borderColor,
   ) {
     final padding = drawingStyle.labelPadding;
-    final rect = RRect.fromLTRBR(
-      textOffset.dx - padding.left,
-      textOffset.dy - padding.top,
-      textOffset.dx + tp.width + padding.right,
-      textOffset.dy + tp.height + padding.bottom,
-      Radius.circular(drawingStyle.labelCornerRadius),
+    final rect = roundedBox(
+      Rect.fromLTRB(
+        textOffset.dx - padding.left,
+        textOffset.dy - padding.top,
+        textOffset.dx + tp.width + padding.right,
+        textOffset.dy + tp.height + padding.bottom,
+      ),
+      drawingStyle.labelCornerRadius,
     );
 
     canvas.drawRRect(
@@ -3082,12 +3087,9 @@ class ChartPainter extends BaseChartPainter {
     final top = y - tp.height / 2 - padding / 2;
 
     canvas.drawRRect(
-      RRect.fromLTRBR(
-        left,
-        top,
-        left + tagWidth,
-        top + tp.height + padding,
-        Radius.circular(chartStyle.labelCornerRadius),
+      roundedBox(
+        Rect.fromLTRB(left, top, left + tagWidth, top + tp.height + padding),
+        chartStyle.labelCornerRadius,
       ),
       Paint()
         ..color = color

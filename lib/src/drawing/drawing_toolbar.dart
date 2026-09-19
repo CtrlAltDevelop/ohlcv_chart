@@ -138,7 +138,7 @@ class DrawingToolbar extends StatelessWidget {
         padding: style.toolbarPadding,
         decoration: BoxDecoration(
           color: _background,
-          borderRadius: BorderRadius.circular(style.toolbarBorderRadius),
+          borderRadius: style.toolbarBorderRadius,
           border: style.toolbarBorderWidth <= 0
               ? null
               : Border.all(
@@ -462,7 +462,7 @@ class _PopoverState extends State<_Popover> {
   @override
   Widget build(BuildContext context) {
     final touchSize = widget.style.iconSize + 16;
-    final radius = BorderRadius.circular(widget.style.popoverBorderRadius);
+    final radius = widget.style.popoverBorderRadius;
 
     return MenuAnchor(
       controller: _controller,

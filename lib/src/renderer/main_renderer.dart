@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 
 import '../chart_type.dart';
+import '../corner_radius.dart';
 import '../comparison.dart';
 import '../drawing/line_painting.dart';
 import '../entity/candle_entity.dart';
@@ -1078,12 +1079,14 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
       if (chartStyle.axisLabelBackground) {
         canvas.drawRRect(
-          RRect.fromLTRBR(
-            offsetX - padding / 2,
-            offsetY,
-            offsetX + tp.width + padding / 2,
-            offsetY + tp.height,
-            Radius.circular(chartStyle.labelCornerRadius),
+          roundedBox(
+            Rect.fromLTRB(
+              offsetX - padding / 2,
+              offsetY,
+              offsetX + tp.width + padding / 2,
+              offsetY + tp.height,
+            ),
+            chartStyle.labelCornerRadius,
           ),
           Paint()..color = chartColors.effectiveAxisLabelBgColor,
         );

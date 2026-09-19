@@ -88,7 +88,7 @@ class ChartTheme {
     thicknessOptions: [1, 2, 3, 5],
     swatchesPerRow: 3,
     toolbarAxis: Axis.vertical,
-    toolbarBorderRadius: 18,
+    toolbarBorderRadius: BorderRadius.all(Radius.circular(18)),
     toolbarInitialOffset: Offset(12, 28),
     accentColor: Color(0xFF4DABF7),
     iconSize: 18,

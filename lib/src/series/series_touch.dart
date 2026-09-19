@@ -85,7 +85,7 @@ class SeriesTooltip {
     this.margin = 8,
     this.backgroundColor = const Color(0xF2202329),
     this.borderColor,
-    this.borderRadius = 8,
+    this.borderRadius = const BorderRadius.all(Radius.circular(8)),
     this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
     this.titleStyle,
     this.valueStyle,
@@ -117,7 +117,7 @@ class SeriesTooltip {
   final Color? borderColor;
 
   /// Card corner radius.
-  final double borderRadius;
+  final BorderRadius borderRadius;
 
   /// Space inside the card.
   final EdgeInsets padding;

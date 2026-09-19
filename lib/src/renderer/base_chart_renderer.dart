@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../corner_radius.dart';
+
 export '../chart_style.dart';
 
 abstract class BaseChartRenderer<T> {
@@ -14,7 +16,7 @@ abstract class BaseChartRenderer<T> {
     Color? gridColumnColor,
     double gridStrokeWidth = 0.5,
     double separatorWidth = 1.0,
-    this.labelCornerRadius = 3.0,
+    this.labelCornerRadius = const BorderRadius.all(Radius.circular(3)),
     this.legendPadding = 4.0,
     this.legendBgColor,
     this.priceAxisGutter = 0.0,
@@ -37,7 +39,7 @@ abstract class BaseChartRenderer<T> {
   }
 
   /// Corner radius of the legend pill.
-  final double labelCornerRadius;
+  final BorderRadius labelCornerRadius;
 
   /// Space between the legend pill and its text.
   final double legendPadding;
@@ -200,12 +202,14 @@ abstract class BaseChartRenderer<T> {
     final background = legendBgColor;
     if (background != null && background.a > 0) {
       canvas.drawRRect(
-        RRect.fromLTRBR(
-          offset.dx - legendPadding,
-          offset.dy - legendPadding / 2,
-          offset.dx + tp.width + legendPadding,
-          offset.dy + tp.height + legendPadding / 2,
-          Radius.circular(labelCornerRadius),
+        roundedBox(
+          Rect.fromLTRB(
+            offset.dx - legendPadding,
+            offset.dy - legendPadding / 2,
+            offset.dx + tp.width + legendPadding,
+            offset.dy + tp.height + legendPadding / 2,
+          ),
+          labelCornerRadius,
         ),
         Paint()..color = background,
       );

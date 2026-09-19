@@ -763,7 +763,7 @@ class _SeriesChartState extends State<SeriesChart>
     return DecoratedBox(
       decoration: BoxDecoration(
         color: tooltip.backgroundColor,
-        borderRadius: BorderRadius.circular(tooltip.borderRadius),
+        borderRadius: tooltip.borderRadius,
         border: tooltip.borderColor == null
             ? null
             : Border.all(color: tooltip.borderColor!),
