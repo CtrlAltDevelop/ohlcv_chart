@@ -8,12 +8,12 @@ import 'test_utils.dart';
 const _grabAnything = DrawingStyle(hitTestTolerance: 10000);
 
 Widget _host(Widget child) => MaterialApp(
-      home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
-    );
+  home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
+);
 
 /// A chart with [tool] armed, collecting whatever the user places.
 ({Widget widget, List<ChartLine> placed, List<KLineEntity> data})
-    _chartWithTool(
+_chartWithTool(
   DrawingTool tool, {
   DrawingStyle style = const DrawingStyle(),
   bool selectAfterDrawing = true,
@@ -408,16 +408,16 @@ void main() {
       final crossings = <double>[];
 
       Widget build() => _host(
-            KChartWidget(
-              data,
-              ChartColors(),
-              isTrendLine: true,
-              timeFrame: const Duration(minutes: 15),
-              showNowPrice: false,
-              drawings: [level],
-              onAlertCrossed: (line, candle) => crossings.add(candle.close),
-            ),
-          );
+        KChartWidget(
+          data,
+          ChartColors(),
+          isTrendLine: true,
+          timeFrame: const Duration(minutes: 15),
+          showNowPrice: false,
+          drawings: [level],
+          onAlertCrossed: (line, candle) => crossings.add(candle.close),
+        ),
+      );
 
       await tester.pumpWidget(build());
       await tester.pumpAndSettle();
@@ -451,16 +451,16 @@ void main() {
       var fired = 0;
 
       Widget build() => _host(
-            KChartWidget(
-              data,
-              ChartColors(),
-              isTrendLine: true,
-              timeFrame: const Duration(minutes: 15),
-              showNowPrice: false,
-              drawings: [level],
-              onAlertCrossed: (line, candle) => fired++,
-            ),
-          );
+        KChartWidget(
+          data,
+          ChartColors(),
+          isTrendLine: true,
+          timeFrame: const Duration(minutes: 15),
+          showNowPrice: false,
+          drawings: [level],
+          onAlertCrossed: (line, candle) => fired++,
+        ),
+      );
 
       await tester.pumpWidget(build());
       data.last.close = 110;

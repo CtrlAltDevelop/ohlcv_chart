@@ -25,19 +25,19 @@ List<KLineEntity> _walk(List<double> closes, {double wick = 0}) {
 
 /// Draws [data] on a chart, to check the transform's output is drawable.
 Widget _chart(List<KLineEntity> data) => MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 500,
-          height: 600,
-          child: KChartWidget(
-            data,
-            ChartColors(),
-            isTrendLine: false,
-            timeFrame: const Duration(minutes: 15),
-          ),
-        ),
+  home: Scaffold(
+    body: SizedBox(
+      width: 500,
+      height: 600,
+      child: KChartWidget(
+        data,
+        ChartColors(),
+        isTrendLine: false,
+        timeFrame: const Duration(minutes: 15),
       ),
-    );
+    ),
+  ),
+);
 
 void main() {
   group('three-line break', () {

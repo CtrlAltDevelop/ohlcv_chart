@@ -421,7 +421,8 @@ class MarimekkoChart extends StatefulWidget {
     MarimekkoCell cell,
     MarimekkoColumn column,
     double share,
-  )? tooltipBuilder;
+  )?
+  tooltipBuilder;
 
   /// How tall the chart is in a box that sets no height.
   final double defaultHeight;
@@ -499,12 +500,13 @@ class _MarimekkoChartState extends State<MarimekkoChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 420.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.defaultHeight;
+              ? constraints.maxHeight
+              : widget.defaultHeight;
           _layout = layOutMarimekko(
             widget.columns,
             size: Size(width, height),
@@ -606,17 +608,21 @@ class MarimekkoChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final headerStyle = chart.headerStyle ??
+    final headerStyle =
+        chart.headerStyle ??
         const TextStyle(color: Color(0xFFB4B8C0), fontSize: 11);
-    final cellStyle = chart.cellStyle ??
+    final cellStyle =
+        chart.cellStyle ??
         const TextStyle(color: Color(0xFF15171C), fontSize: 10);
 
     for (final column in layout.columns) {
       for (final laid in column.cells) {
         if (laid.rect.height <= 0) continue;
-        final base = laid.cell.color ??
+        final base =
+            laid.cell.color ??
             chart.palette[laid.category % math.max(1, chart.palette.length)];
-        final lit = touched?.columnIndex == laid.columnIndex &&
+        final lit =
+            touched?.columnIndex == laid.columnIndex &&
             touched?.cellIndex == laid.cellIndex;
         canvas.drawRect(
           laid.rect,
@@ -624,7 +630,8 @@ class MarimekkoChartPainter extends CustomPainter {
         );
 
         if (chart.showCellLabels && laid.rect.height >= chart.minLabelHeight) {
-          final text = chart.cellFormatter?.call(laid.cell, laid.share) ??
+          final text =
+              chart.cellFormatter?.call(laid.cell, laid.share) ??
               laid.cell.label;
           final painter = textCache.get(text, cellStyle);
           if (painter.width <= laid.rect.width - 6) {
@@ -642,7 +649,7 @@ class MarimekkoChartPainter extends CustomPainter {
       if (chart.showHeaders && column.headerRect.height > 0) {
         final text = chart.showWidthShare
             ? '${column.column.label}  '
-                '${(column.widthShare * 100).toStringAsFixed(0)}%'
+                  '${(column.widthShare * 100).toStringAsFixed(0)}%'
             : column.column.label;
         final painter = textCache.get(text, headerStyle);
         // Clipped to the column, so a narrow one does not write over its

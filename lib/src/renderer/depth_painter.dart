@@ -345,7 +345,8 @@ class DepthChartPainter extends CustomPainter {
       Offset(mWidth - endTP.width, getBottomTextY(endTP.height)),
     );
 
-    final leftHalfText = NumberUtil.formatFixed(
+    final leftHalfText =
+        NumberUtil.formatFixed(
           (mBuyData!.first.price + centerPrice) / 2,
           quoteUnit,
         ) ??
@@ -360,7 +361,8 @@ class DepthChartPainter extends CustomPainter {
       ),
     );
 
-    final rightHalfText = NumberUtil.formatFixed(
+    final rightHalfText =
+        NumberUtil.formatFixed(
           (mSellData!.last.price + centerPrice) / 2,
           quoteUnit,
         ) ??
@@ -440,8 +442,9 @@ class DepthChartPainter extends CustomPainter {
       chartStyle: chartStyle,
       price: NumberUtil.format(entity.price, quoteUnit) ?? '',
       amount: NumberUtil.formatCompact(entity.vol, baseUnit),
-      size:
-          level == null ? null : NumberUtil.formatCompact(level.size, baseUnit),
+      size: level == null
+          ? null
+          : NumberUtil.formatCompact(level.size, baseUnit),
     );
 
     dx = dx < mWidth * 0.25
@@ -502,8 +505,9 @@ class DepthChartPainter extends CustomPainter {
       chartStyle: chartStyle,
       price: NumberUtil.format(entity.price, quoteUnit) ?? '',
       amount: NumberUtil.formatCompact(entity.vol, baseUnit),
-      size:
-          level == null ? null : NumberUtil.formatCompact(level.size, baseUnit),
+      size: level == null
+          ? null
+          : NumberUtil.formatCompact(level.size, baseUnit),
     );
 
     dx = dx < mWidth * 0.75
@@ -566,12 +570,12 @@ class DepthChartPainter extends CustomPainter {
   double getSellX(int position) => position * mSellPointWidth! + mDrawWidth;
 
   TextPainter getTextPainter(String text) => TextPainter(
-        text: TextSpan(
-          text: text,
-          style: TextStyle(color: chartColors.defaultTextColor, fontSize: 10),
-        ),
-        textDirection: TextDirection.ltr,
-      );
+    text: TextSpan(
+      text: text,
+      style: TextStyle(color: chartColors.defaultTextColor, fontSize: 10),
+    ),
+    textDirection: TextDirection.ltr,
+  );
 
   double getBottomTextY(double textHeight) =>
       (mPaddingBottom - textHeight) / 2 + mDrawHeight;
@@ -588,15 +592,15 @@ class DepthChartPainter extends CustomPainter {
   /// Percentages are laid out exactly like plain volumes — only their labels
   /// differ — so they share the linear spacing.
   double _spaced(double volume) => switch (scale) {
-        DepthScale.log => log(1 + max(0, volume)),
-        _ => volume,
-      };
+    DepthScale.log => log(1 + max(0, volume)),
+    _ => volume,
+  };
 
   /// The volume that sits [fraction] of the way up the axis.
   double _volumeAt(double fraction) => switch (scale) {
-        DepthScale.log => exp(_spaced(mMaxVolume ?? 0) * fraction) - 1,
-        _ => (mMaxVolume ?? 0) * fraction,
-      };
+    DepthScale.log => exp(_spaced(mMaxVolume ?? 0) * fraction) - 1,
+    _ => (mMaxVolume ?? 0) * fraction,
+  };
 
   /// The axis label for the gridline [line] rows down from the top.
   String _axisLabel(int line) {

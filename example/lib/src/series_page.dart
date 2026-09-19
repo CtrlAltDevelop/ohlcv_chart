@@ -58,11 +58,11 @@ class _SeriesPageState extends State<SeriesPage> {
   ];
 
   static List<double> _walk(double base, double swing, double phase) => [
-        for (var i = 0; i < _days; i++)
-          base +
-              math.sin(i / 9 + phase) * base * swing +
-              math.cos(i / 2.5 + phase) * base * swing * 0.3,
-      ];
+    for (var i = 0; i < _days; i++)
+      base +
+          math.sin(i / 9 + phase) * base * swing +
+          math.cos(i / 2.5 + phase) * base * swing * 0.3,
+  ];
 
   /// What each asset is worth, for the pie.
   static const _holdings = [42.0, 26.0, 18.0, 14.0];
@@ -87,9 +87,9 @@ class _SeriesPageState extends State<SeriesPage> {
           hour < 2 && day > 4
               ? null
               : (math.sin(hour / 2.4) + 1.4) *
-                      (math.cos(day / 2.1 + 1) + 1.6) *
-                      14 +
-                  (hour * day % 5) * 2.0,
+                        (math.cos(day / 2.1 + 1) + 1.6) *
+                        14 +
+                    (hour * day % 5) * 2.0,
       ],
   ];
   static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -142,8 +142,8 @@ class _SeriesPageState extends State<SeriesPage> {
                       dotBuilder: _sparkIndex == null
                           ? null
                           : (i, _) => i == _sparkIndex
-                              ? const SeriesDot(radius: 3)
-                              : null,
+                                ? const SeriesDot(radius: 3)
+                                : null,
                     ),
                   ],
                   xAxis: SeriesXAxis.hidden,
@@ -444,8 +444,8 @@ class _SeriesPageState extends State<SeriesPage> {
               _square == null
                   ? 'Orders by hour and weekday'
                   : '${_weekdays[_square!.x]} '
-                      '${(_square!.y + 9).toString().padLeft(2, '0')}:00 — '
-                      '${_square!.value?.round() ?? 0} orders',
+                        '${(_square!.y + 9).toString().padLeft(2, '0')}:00 — '
+                        '${_square!.value?.round() ?? 0} orders',
               [
                 SizedBox(
                   height: 280,
@@ -505,7 +505,7 @@ class _SeriesPageState extends State<SeriesPage> {
                       () => _corner = d == null
                           ? null
                           : '${_measures[d.featureIndex]} '
-                              '${d.value.toStringAsFixed(1)}',
+                                '${d.value.toStringAsFixed(1)}',
                     ),
                     animationDuration: const Duration(milliseconds: 600),
                   ),
@@ -530,22 +530,21 @@ class _SeriesPageState extends State<SeriesPage> {
     Color border,
     String title,
     List<Widget> children,
-  ) =>
-      Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: paper,
-          border: Border.all(color: border),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 12),
-            ...children,
-          ],
-        ),
-      );
+  ) => Container(
+    margin: const EdgeInsets.only(bottom: 16),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: paper,
+      border: Border.all(color: border),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 12),
+        ...children,
+      ],
+    ),
+  );
 }

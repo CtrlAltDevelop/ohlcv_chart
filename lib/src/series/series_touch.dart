@@ -66,8 +66,8 @@ class SeriesCrosshairLine {
 typedef SeriesMarkerBuilder = SeriesDot? Function(SeriesTouchValue value);
 
 /// Builds a tooltip for the touched values; return null to show none.
-typedef SeriesTooltipBuilder = Widget? Function(
-    BuildContext context, SeriesTouchDetails details);
+typedef SeriesTooltipBuilder =
+    Widget? Function(BuildContext context, SeriesTouchDetails details);
 
 /// The card that names the touched values.
 @immutable

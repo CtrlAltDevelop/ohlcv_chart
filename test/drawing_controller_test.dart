@@ -9,8 +9,8 @@ import 'test_utils.dart';
 const _grabAnything = DrawingStyle(hitTestTolerance: 10000);
 
 Widget _host(Widget child) => MaterialApp(
-      home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
-    );
+  home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
+);
 
 Widget _chart({
   required ChartDrawingController controller,

@@ -8,8 +8,8 @@ import 'package:ohlcv_chart/src/renderer/chart_painter.dart';
 import 'test_utils.dart';
 
 Widget _host(Widget child) => MaterialApp(
-      home: Scaffold(body: SizedBox(width: 400, height: 500, child: child)),
-    );
+  home: Scaffold(body: SizedBox(width: 400, height: 500, child: child)),
+);
 
 Widget _chart(
   List<KLineEntity>? data, {
@@ -30,9 +30,9 @@ Widget _chart(
 
 /// One instance of every catalog entry drawn in [placement], at its defaults.
 List<Indicator> _catalogInstances(IndicatorPlacement placement) => [
-      for (final type in indicatorCatalog)
-        if (type.placement == placement) type.create(),
-    ];
+  for (final type in indicatorCatalog)
+    if (type.placement == placement) type.create(),
+];
 
 /// The chart's painter, to inspect what it was actually handed to draw.
 ChartPainter _painterOf(WidgetTester tester) => tester

@@ -108,8 +108,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       WaterfallTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(

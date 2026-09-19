@@ -175,7 +175,8 @@ class GaugeLayout {
         ? 0.0
         : math.min(box.width / extent.width, box.height / extent.height);
     // Place the unit extent's centre on the box's centre.
-    final center = box.center -
+    final center =
+        box.center -
         Offset(extent.center.dx * radius, extent.center.dy * radius);
     return GaugeLayout(
       center: center,
@@ -557,8 +558,10 @@ class GaugeChartPainter extends CustomPainter {
     );
 
     // The ranges, each a butt-ended arc so neighbours meet cleanly.
-    final rangeThickness =
-        math.min(chart.rangeThickness ?? thickness, layout.radius);
+    final rangeThickness = math.min(
+      chart.rangeThickness ?? thickness,
+      layout.radius,
+    );
     final rangeRect = Rect.fromCircle(
       center: layout.center,
       radius: layout.radius - rangeThickness / 2,
@@ -651,7 +654,8 @@ class GaugeChartPainter extends CustomPainter {
       final tp = textCache.get(ticks.labelFor(value), style);
       // Pushed in by half the label's diagonal so it clears the mark whichever
       // way round the dial it faces.
-      final distance = outer -
+      final distance =
+          outer -
           ticks.majorLength -
           ticks.labelGap -
           math.sqrt(tp.width * tp.width + tp.height * tp.height) / 2;

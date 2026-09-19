@@ -58,20 +58,20 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     super.priceAxisGutter = 0.0,
     super.priceAxisGutterOnLeft = false,
   }) : super(
-          chartRect: mainRect,
-          maxValue: maxValue,
-          minValue: minValue,
-          topPadding: topPadding,
-          fixedLength: fixedLength,
-          gridColor: chartColors.gridColor,
-          separatorColor: chartColors.effectiveSeparatorColor,
-          gridColumnColor: chartColors.effectiveGridColumnColor,
-          gridStrokeWidth: chartStyle.gridStrokeWidth,
-          separatorWidth: chartStyle.separatorWidth,
-          labelCornerRadius: chartStyle.labelCornerRadius,
-          legendPadding: chartStyle.legendPadding,
-          legendBgColor: chartColors.effectiveLegendBgColor,
-        ) {
+         chartRect: mainRect,
+         maxValue: maxValue,
+         minValue: minValue,
+         topPadding: topPadding,
+         fixedLength: fixedLength,
+         gridColor: chartColors.gridColor,
+         separatorColor: chartColors.effectiveSeparatorColor,
+         gridColumnColor: chartColors.effectiveGridColumnColor,
+         gridStrokeWidth: chartStyle.gridStrokeWidth,
+         separatorWidth: chartStyle.separatorWidth,
+         labelCornerRadius: chartStyle.labelCornerRadius,
+         legendPadding: chartStyle.legendPadding,
+         legendBgColor: chartColors.effectiveLegendBgColor,
+       ) {
     mCandleWidth = chartStyle.candleWidth;
     mCandleLineWidth = chartStyle.candleLineWidth;
     mLinePaint = Paint()
@@ -185,9 +185,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
     return switch (scale) {
       PriceAxisScale.percentage => () {
-          final move = (price / base - 1) * 100;
-          return '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
-        }(),
+        final move = (price / base - 1) * 100;
+        return '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
+      }(),
       PriceAxisScale.indexedTo100 => (price / base * 100).toStringAsFixed(2),
       _ => formatPrice(price),
     };
@@ -244,7 +244,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
         if (value == null || !value.isFinite) continue;
         spans.add(
           TextSpan(
-            text: '${overlay.indicator.lines[line].label}:'
+            text:
+                '${overlay.indicator.lines[line].label}:'
                 '${format(value)}    ',
             style: getTextStyle(overlay.colorFor(line, chartColors)),
           ),
@@ -386,7 +387,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       final text = move == null
           ? '${comparison.series.label}:${format(value)}'
           : '${comparison.series.label}:'
-              '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
+                '${move >= 0 ? '+' : ''}${move.toStringAsFixed(2)}%';
       spans.add(
         TextSpan(
           text: '$text    ',
@@ -533,10 +534,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     double height,
     double from,
     double to,
-  ) =>
-      fromLeft
-          ? Rect.fromLTWH(chartRect.left + from, top, to - from, height)
-          : Rect.fromLTWH(chartRect.right - to, top, to - from, height);
+  ) => fromLeft
+      ? Rect.fromLTWH(chartRect.left + from, top, to - from, height)
+      : Rect.fromLTWH(chartRect.right - to, top, to - from, height);
 
   @override
   void drawChart(
@@ -658,7 +658,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       ),
       chartPaint
         ..style = PaintingStyle.fill
-        ..color = candleColor?.call(point, index) ??
+        ..color =
+            candleColor?.call(point, index) ??
             (above ? chartColors.upColor : chartColors.dnColor),
     );
   }
@@ -680,7 +681,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     final tick = mCandleWidth / 2;
 
     chartPaint
-      ..color = candleColor?.call(point, index) ??
+      ..color =
+          candleColor?.call(point, index) ??
           (rising ? chartColors.upColor : chartColors.dnColor)
       ..strokeWidth = mCandleLineWidth
       ..style = PaintingStyle.fill;
@@ -823,7 +825,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   ///
   /// Built once for the pane it fills, since it is measured from the pane and
   /// not from the data.
-  Shader get _fillShader => mLineFillShader ??= LinearGradient(
+  Shader get _fillShader => mLineFillShader ??=
+      LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         tileMode: TileMode.clamp,
@@ -913,7 +916,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     }
 
     chartPaint
-      ..color = candleColor?.call(curPoint, index) ??
+      ..color =
+          candleColor?.call(curPoint, index) ??
           (isRising ? chartColors.upColor : chartColors.dnColor)
       ..style = PaintingStyle.fill;
 
@@ -1106,7 +1110,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       );
     }
 
-    final columns = columnXs ??
+    final columns =
+        columnXs ??
         [
           for (int i = 0; i <= gridColumns; i++)
             chartRect.width / gridColumns * i,

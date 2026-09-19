@@ -80,12 +80,12 @@ class ChartEvent {
 
   /// The single letter each kind is marked with by default.
   static String defaultLabelOf(ChartEventKind kind) => switch (kind) {
-        ChartEventKind.earnings => 'E',
-        ChartEventKind.dividend => 'D',
-        ChartEventKind.split => 'S',
-        ChartEventKind.news => 'N',
-        ChartEventKind.custom => '•',
-      };
+    ChartEventKind.earnings => 'E',
+    ChartEventKind.dividend => 'D',
+    ChartEventKind.split => 'S',
+    ChartEventKind.news => 'N',
+    ChartEventKind.custom => '•',
+  };
 
   @override
   bool operator ==(Object other) =>

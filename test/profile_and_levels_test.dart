@@ -310,10 +310,10 @@ void main() {
 
   group('volume profile', () {
     List<KLineEntity> traded() => [
-          candle(100, high: 101, low: 99, vol: 10, minute: 0),
-          candle(100, high: 101, low: 99, vol: 30, minute: 1),
-          candle(110, high: 111, low: 109, vol: 5, minute: 2),
-        ];
+      candle(100, high: 101, low: 99, vol: 10, minute: 0),
+      candle(100, high: 101, low: 99, vol: 30, minute: 1),
+      candle(110, high: 111, low: 109, vol: 5, minute: 2),
+    ];
 
     test('gathers volume into bands of price', () {
       final profile = volumeProfile(traded(), bins: 12);

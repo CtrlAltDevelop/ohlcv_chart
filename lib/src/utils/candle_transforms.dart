@@ -186,8 +186,9 @@ abstract final class CandleTransforms {
         continue;
       }
 
-      final recent =
-          spans.length <= lines ? spans : spans.sublist(spans.length - lines);
+      final recent = spans.length <= lines
+          ? spans
+          : spans.sublist(spans.length - lines);
       var highest = recent.first.high;
       var lowest = recent.first.low;
       for (final span in recent) {

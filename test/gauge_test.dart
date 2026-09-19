@@ -43,12 +43,7 @@ void main() {
     });
 
     test('an empty range puts every value at the start', () {
-      const flat = GaugeLayout(
-        center: Offset.zero,
-        radius: 1,
-        min: 5,
-        max: 5,
-      );
+      const flat = GaugeLayout(center: Offset.zero, radius: 1, min: 5, max: 5);
       expect(flat.fractionOf(5), 0);
     });
 
@@ -84,15 +79,22 @@ void main() {
 
   group('ticks', () {
     test('a count divides the range evenly', () {
-      expect(
-          const GaugeTicks(count: 4).majorValues(0, 100), [0, 25, 50, 75, 100]);
+      expect(const GaugeTicks(count: 4).majorValues(0, 100), [
+        0,
+        25,
+        50,
+        75,
+        100,
+      ]);
     });
 
     test('an interval steps from the start and stops inside the range', () {
-      expect(
-        const GaugeTicks(interval: 30).majorValues(0, 100),
-        [0, 30, 60, 90],
-      );
+      expect(const GaugeTicks(interval: 30).majorValues(0, 100), [
+        0,
+        30,
+        60,
+        90,
+      ]);
     });
 
     test('nothing to divide, or no marks asked for, gives no marks', () {
@@ -105,10 +107,7 @@ void main() {
       const ticks = GaugeTicks();
       expect(ticks.labelFor(25), '25');
       expect(ticks.labelFor(12.5), '12.5');
-      expect(
-        GaugeTicks(formatter: (v) => '${v.round()}%').labelFor(40),
-        '40%',
-      );
+      expect(GaugeTicks(formatter: (v) => '${v.round()}%').labelFor(40), '40%');
     });
   });
 
@@ -121,18 +120,17 @@ void main() {
 
   group('the widget', () {
     Widget host(Widget chart) => MaterialApp(
-          home: Scaffold(
-            body:
-                Center(child: SizedBox(width: 240, height: 240, child: chart)),
-          ),
-        );
+      home: Scaffold(
+        body: Center(child: SizedBox(width: 240, height: 240, child: chart)),
+      ),
+    );
 
     testWidgets('draws over many shapes without a fuss', (tester) async {
       for (final (start, sweep) in [
         (-135.0, 270.0),
         (-90.0, 180.0),
         (0.0, 360.0),
-        (0.0, 0.0)
+        (0.0, 0.0),
       ]) {
         await tester.pumpWidget(
           host(

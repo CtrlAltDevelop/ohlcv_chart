@@ -431,12 +431,13 @@ class _BulletChartState extends State<BulletChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 320.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 320.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.intrinsicHeight;
+              ? constraints.maxHeight
+              : widget.intrinsicHeight;
           final size = Size(width, height);
           final valueWidth = widget.showValues ? 56.0 : 0.0;
           _layout = layOutBullet(
@@ -550,9 +551,11 @@ class BulletChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final labelStyle = chart.labelStyle ??
+    final labelStyle =
+        chart.labelStyle ??
         const TextStyle(color: Color(0xFFB4B8C0), fontSize: 11);
-    final valueStyle = chart.valueStyle ??
+    final valueStyle =
+        chart.valueStyle ??
         const TextStyle(
           color: Color(0xFFE9ECEF),
           fontSize: 11,

@@ -68,9 +68,9 @@ class TriangleDrawing extends ThreePointDrawing
 
   @override
   Map<String, dynamic> toJson() => {
-        ...baseJson('triangle'),
-        ...threeAnchorsJson(),
-        'fillOpacity': fillOpacity,
-        if (label != null) 'label': label,
-      };
+    ...baseJson('triangle'),
+    ...threeAnchorsJson(),
+    'fillOpacity': fillOpacity,
+    if (label != null) 'label': label,
+  };
 }

@@ -212,12 +212,11 @@ Path seriesRunPath(
     return path;
   }
   addSeriesRun(
-      path,
-      [
-        for (final p in points) Offset(p.dy, p.dx),
-      ],
-      curve,
-      stepPosition: stepPosition);
+    path,
+    [for (final p in points) Offset(p.dy, p.dx)],
+    curve,
+    stepPosition: stepPosition,
+  );
   return path.transform(_swapAxes);
 }
 

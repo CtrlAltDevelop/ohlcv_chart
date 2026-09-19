@@ -109,12 +109,12 @@ class TrendLine extends TwoPointDrawing implements AlertingDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...baseJson('trend'),
-        ...anchorsJson(),
-        if (label1 != null) 'label1': label1,
-        if (label2 != null) 'label2': label2,
-        'extend': extend.name,
-        'arrow': arrow,
-        'alert': alert,
-      };
+    ...baseJson('trend'),
+    ...anchorsJson(),
+    if (label1 != null) 'label1': label1,
+    if (label2 != null) 'label2': label2,
+    'extend': extend.name,
+    'arrow': arrow,
+    'alert': alert,
+  };
 }

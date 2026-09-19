@@ -139,17 +139,18 @@ List<({DateTime time, int count})> tradeTimelineExposure(
 }) {
   if (trades.isEmpty) return const [];
   final clock = now ?? _latest(trades);
-  final events = <({DateTime time, int change})>[
-    for (final trade in trades) ...[
-      (time: trade.entryTime, change: 1),
-      (time: trade.endAt(clock), change: -1),
-    ],
-  ]..sort((a, b) {
-      final byTime = a.time.compareTo(b.time);
-      // Leaving before entering at one instant keeps back-to-back trades
-      // from counting twice.
-      return byTime != 0 ? byTime : a.change.compareTo(b.change);
-    });
+  final events =
+      <({DateTime time, int change})>[
+        for (final trade in trades) ...[
+          (time: trade.entryTime, change: 1),
+          (time: trade.endAt(clock), change: -1),
+        ],
+      ]..sort((a, b) {
+        final byTime = a.time.compareTo(b.time);
+        // Leaving before entering at one instant keeps back-to-back trades
+        // from counting twice.
+        return byTime != 0 ? byTime : a.change.compareTo(b.change);
+      });
 
   final steps = <({DateTime time, int count})>[];
   var count = 0;
@@ -312,12 +313,12 @@ TradeTimelineLayout layOutTradeTimeline(
   if (!to.isAfter(from)) to = from.add(const Duration(minutes: 1));
 
   TradeTimelineLayout emptyLayout() => TradeTimelineLayout(
-        bounds: bounds,
-        start: from,
-        end: to,
-        lanes: const [],
-        bars: const [],
-      );
+    bounds: bounds,
+    start: from,
+    end: to,
+    lanes: const [],
+    bars: const [],
+  );
   if (trades.isEmpty || bounds.width <= 0 || bounds.height <= 0) {
     return emptyLayout();
   }
@@ -341,8 +342,9 @@ TradeTimelineLayout layOutTradeTimeline(
       for (var i = 0; i < trades.length; i++)
         if (laneOf[i] == lane) i,
     ];
-    final rows =
-        packTradeRows([for (final i in members) trades[i]], now: clock);
+    final rows = packTradeRows([
+      for (final i in members) trades[i],
+    ], now: clock);
     for (var k = 0; k < members.length; k++) {
       rowOf[members[k]] = rows[k];
       rowCounts[lane] = math.max(rowCounts[lane], rows[k] + 1);
@@ -350,10 +352,12 @@ TradeTimelineLayout layOutTradeTimeline(
   }
 
   final totalRows = rowCounts.fold(0, (sum, count) => sum + count);
-  final gaps = math.max(0.0, laneGap) * (laneKeys.length - 1) +
+  final gaps =
+      math.max(0.0, laneGap) * (laneKeys.length - 1) +
       math.max(0.0, rowGap) * (totalRows - laneKeys.length);
-  final rowHeight =
-      math.min(maxRowHeight, (bounds.height - gaps) / totalRows).toDouble();
+  final rowHeight = math
+      .min(maxRowHeight, (bounds.height - gaps) / totalRows)
+      .toDouble();
   if (rowHeight <= 0) return emptyLayout();
 
   final lanes = <TradeTimelineLane>[];
@@ -600,7 +604,8 @@ class TradeTimelineChart extends StatefulWidget {
   final Widget? Function(
     BuildContext context,
     TradeTimelineTouchDetails details,
-  )? tooltipBuilder;
+  )?
+  tooltipBuilder;
 
   /// How far the card sits from the bar.
   final double tooltipMargin;
@@ -684,7 +689,9 @@ class _TradeTimelineChartState extends State<TradeTimelineChart>
         bar == null
             ? null
             : TradeTimelineTouchDetails(
-                bar: bar, time: layout.timeAt(local.dx)),
+                bar: bar,
+                time: layout.timeAt(local.dx),
+              ),
       );
     }
   }
@@ -701,7 +708,8 @@ class _TradeTimelineChartState extends State<TradeTimelineChart>
   @override
   Widget build(BuildContext context) {
     final t = widget.animationCurve.transform(_animation.value);
-    final named = widget.showLaneLabels &&
+    final named =
+        widget.showLaneLabels &&
         widget.trades.any((trade) => trade.lane != null);
 
     Widget chart = LayoutBuilder(
@@ -714,7 +722,8 @@ class _TradeTimelineChartState extends State<TradeTimelineChart>
             : widget.defaultHeight;
         final size = Size(width, height);
         final box = widget.padding.deflateRect(Offset.zero & size);
-        final below = (widget.showTimeAxis ? widget.timeAxisHeight : 0) +
+        final below =
+            (widget.showTimeAxis ? widget.timeAxisHeight : 0) +
             (widget.showExposure ? widget.exposureHeight + 4 : 0);
         final plot = Rect.fromLTRB(
           box.left + (named ? widget.laneLabelWidth : 0),
@@ -834,8 +843,10 @@ class _TimelineTooltipLayout extends SingleChildLayoutDelegate {
     var top = anchor.top - margin - childSize.height;
     if (top < 0) top = anchor.bottom + margin;
     return Offset(
-      (pointerX - childSize.width / 2)
-          .clamp(0.0, math.max(0.0, size.width - childSize.width)),
+      (pointerX - childSize.width / 2).clamp(
+        0.0,
+        math.max(0.0, size.width - childSize.width),
+      ),
       top.clamp(0.0, math.max(0.0, size.height - childSize.height)),
     );
   }
@@ -899,8 +910,9 @@ class TradeTimelineChartPainter extends CustomPainter {
     final span = layout.end.difference(layout.start).inMicroseconds;
     return [
       for (var i = 0; i < count; i++)
-        layout.start
-            .add(Duration(microseconds: (span * i / (count - 1)).round())),
+        layout.start.add(
+          Duration(microseconds: (span * i / (count - 1)).round()),
+        ),
     ];
   }
 
@@ -912,11 +924,7 @@ class TradeTimelineChartPainter extends CustomPainter {
       ..strokeWidth = 1;
     for (final tick in ticks) {
       final x = layout.xOf(tick);
-      canvas.drawLine(
-        Offset(x, layout.bounds.top),
-        Offset(x, _bottom),
-        paint,
-      );
+      canvas.drawLine(Offset(x, layout.bounds.top), Offset(x, _bottom), paint);
     }
   }
 
@@ -943,13 +951,14 @@ class TradeTimelineChartPainter extends CustomPainter {
       canvas
         ..save()
         ..clipRect(
-          Rect.fromLTRB(labelLeft, lane.rect.top - chart.laneGap / 2,
-              lane.rect.left - 6, lane.rect.bottom + chart.laneGap / 2),
+          Rect.fromLTRB(
+            labelLeft,
+            lane.rect.top - chart.laneGap / 2,
+            lane.rect.left - 6,
+            lane.rect.bottom + chart.laneGap / 2,
+          ),
         );
-      tp.paint(
-        canvas,
-        Offset(labelLeft, lane.rect.center.dy - tp.height / 2),
-      );
+      tp.paint(canvas, Offset(labelLeft, lane.rect.center.dy - tp.height / 2));
       canvas.restore();
     }
   }
@@ -983,7 +992,9 @@ class TradeTimelineChartPainter extends CustomPainter {
         bar.rect.left,
         bar.rect.top,
         math.max(
-            chart.minBarWidth.clamp(0.0, bar.rect.width), bar.rect.width * t),
+          chart.minBarWidth.clamp(0.0, bar.rect.width),
+          bar.rect.width * t,
+        ),
         bar.rect.height,
       );
       final radius = Radius.circular(

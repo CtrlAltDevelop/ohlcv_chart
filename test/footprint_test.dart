@@ -50,10 +50,7 @@ void main() {
     test('a bar without a high or low takes its levels', () {
       final bar = FootprintBar(
         time: DateTime(2024),
-        levels: const [
-          FootprintLevel(price: 5),
-          FootprintLevel(price: 9),
-        ],
+        levels: const [FootprintLevel(price: 5), FootprintLevel(price: 9)],
       );
       expect(bar.bottom, 5);
       expect(bar.top, 9);
@@ -69,8 +66,12 @@ void main() {
 
   group('the layout', () {
     test('bars take a column each, spacing taken off the cells', () {
-      final layout =
-          layOutFootprint(_bars, _bounds, tickSize: 1, barSpacing: 10);
+      final layout = layOutFootprint(
+        _bars,
+        _bounds,
+        tickSize: 1,
+        barSpacing: 10,
+      );
       expect(layout.columns.length, 2);
       expect(layout.columns.first.rect.width, 100);
       expect(layout.columns.first.cells.first.rect.left, 5);
@@ -103,9 +104,10 @@ void main() {
       expect(layout.columns.first.closeY, 75);
       final noCandle = layOutFootprint(
         [
-          FootprintBar(time: DateTime(2024), levels: const [
-            FootprintLevel(price: 100, askVolume: 1),
-          ])
+          FootprintBar(
+            time: DateTime(2024),
+            levels: const [FootprintLevel(price: 100, askVolume: 1)],
+          ),
         ],
         _bounds,
         tickSize: 1,
@@ -120,21 +122,23 @@ void main() {
     });
 
     test('a point in a cell finds it, and the gaps find nothing', () {
-      final layout =
-          layOutFootprint(_bars, _bounds, tickSize: 1, barSpacing: 10);
-      final cell = layout.columns.last.cells.first;
-      expect(
-        footprintCellAt(layout, cell.rect.center)?.level.price,
-        100,
+      final layout = layOutFootprint(
+        _bars,
+        _bounds,
+        tickSize: 1,
+        barSpacing: 10,
       );
+      final cell = layout.columns.last.cells.first;
+      expect(footprintCellAt(layout, cell.rect.center)?.level.price, 100);
       // The gap between two columns belongs to neither.
       expect(footprintCellAt(layout, const Offset(97, 150)), isNull);
     });
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       FootprintTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -175,9 +179,7 @@ void main() {
     testWidgets('survives its data changing, with numbers off', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: FootprintChart(bars: _bars, tickSize: 1),
-          ),
+          home: Scaffold(body: FootprintChart(bars: _bars, tickSize: 1)),
         ),
       );
       await tester.pumpWidget(

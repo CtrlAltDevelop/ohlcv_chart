@@ -103,8 +103,10 @@ void main() {
     test('the same label is the same category across columns', () {
       final layout = layOutMarimekko(_columns, size: const Size(300, 200));
       expect(layout.categories, ['BTC', 'ETH']);
-      expect(layout.columns[0].cells[0].category,
-          layout.columns[1].cells[0].category);
+      expect(
+        layout.columns[0].cells[0].category,
+        layout.columns[1].cells[0].category,
+      );
     });
 
     test('the header takes its room off the top', () {
@@ -130,13 +132,14 @@ void main() {
 
     test('nothing to show lays out nothing', () {
       expect(
-          layOutMarimekko(const [], size: const Size(300, 200)).isEmpty, true);
+        layOutMarimekko(const [], size: const Size(300, 200)).isEmpty,
+        true,
+      );
       expect(layOutMarimekko(_columns, size: Size.zero).isEmpty, true);
       expect(
-        layOutMarimekko(
-          const [MarimekkoColumn(label: 'x', cells: [])],
-          size: const Size(300, 200),
-        ).isEmpty,
+        layOutMarimekko(const [
+          MarimekkoColumn(label: 'x', cells: []),
+        ], size: const Size(300, 200)).isEmpty,
         true,
       );
     });
@@ -179,8 +182,9 @@ void main() {
       expect(find.byType(MarimekkoChart), findsOneWidget);
 
       final box = tester.getRect(find.byType(MarimekkoChart));
-      final gesture =
-          await tester.startGesture(Offset(box.right - 40, box.bottom - 20));
+      final gesture = await tester.startGesture(
+        Offset(box.right - 40, box.bottom - 20),
+      );
       await tester.pump();
       expect(cell?.label, 'BTC');
       expect(column?.label, 'Perps');

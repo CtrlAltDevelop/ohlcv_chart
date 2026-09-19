@@ -9,8 +9,8 @@ import 'package:ohlcv_chart/src/series/series_paths.dart';
 import 'package:ohlcv_chart/src/series/series_scale.dart';
 
 List<List<double?>> _valuesOf(List<PlotSeries> series) => [
-      for (final s in series) [for (final p in s.points) p.isGap ? null : p.y],
-    ];
+  for (final s in series) [for (final p in s.points) p.isGap ? null : p.y],
+];
 
 SeriesViewport _fit(
   List<PlotSeries> series, {
@@ -21,18 +21,17 @@ SeriesViewport _fit(
   double? maxX,
   double? minY,
   double? maxY,
-}) =>
-    fitSeriesViewport(
-      series: series,
-      values: _valuesOf(series),
-      xAxis: xAxis,
-      yAxis: yAxis,
-      referenceLines: referenceLines,
-      minX: minX,
-      maxX: maxX,
-      minY: minY,
-      maxY: maxY,
-    );
+}) => fitSeriesViewport(
+  series: series,
+  values: _valuesOf(series),
+  xAxis: xAxis,
+  yAxis: yAxis,
+  referenceLines: referenceLines,
+  minX: minX,
+  maxX: maxX,
+  minY: minY,
+  maxY: maxY,
+);
 
 void main() {
   group('fitSeriesViewport', () {

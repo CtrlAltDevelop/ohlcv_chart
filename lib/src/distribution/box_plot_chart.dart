@@ -37,13 +37,7 @@ class BoxPlotStats {
         if (value.isFinite) value,
     ]..sort();
     if (sorted.isEmpty) {
-      return const BoxPlotStats(
-        lower: 0,
-        q1: 0,
-        median: 0,
-        q3: 0,
-        upper: 0,
-      );
+      return const BoxPlotStats(lower: 0, q1: 0, median: 0, q3: 0, upper: 0);
     }
 
     double quantile(double p) {
@@ -129,12 +123,7 @@ class BoxPlotStats {
 @immutable
 class BoxPlotEntry {
   /// Creates an entry summarised by [stats].
-  const BoxPlotEntry({
-    required this.stats,
-    this.label,
-    this.color,
-    this.data,
-  });
+  const BoxPlotEntry({required this.stats, this.label, this.color, this.data});
 
   /// Creates an entry by summarising [samples] itself.
   BoxPlotEntry.fromSamples(
@@ -434,7 +423,7 @@ class BoxPlotChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched entry; null shows none.
   final Widget? Function(BuildContext context, BoxPlotTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the column.
   final double tooltipMargin;
@@ -706,8 +695,8 @@ class BoxPlotChartPainter extends CustomPainter {
     final line = grid == null
         ? null
         : (Paint()
-          ..color = grid
-          ..strokeWidth = 1);
+            ..color = grid
+            ..strokeWidth = 1);
 
     for (final tick in ticks) {
       final y = span == 0
@@ -794,11 +783,7 @@ class BoxPlotChartPainter extends CustomPainter {
       ..color = color
       ..isAntiAlias = true;
     for (final y in box.outlierYs) {
-      canvas.drawCircle(
-        Offset(centerX, from(y)),
-        chart.outlierRadius,
-        dot,
-      );
+      canvas.drawCircle(Offset(centerX, from(y)), chart.outlierRadius, dot);
     }
   }
 
@@ -808,10 +793,7 @@ class BoxPlotChartPainter extends CustomPainter {
     final style = seriesAxisLabelStyle.merge(chart.entryLabelStyle);
     final tp = textCache.get(name, style);
     if (tp.width > box.band.width) return;
-    tp.paint(
-      canvas,
-      Offset(box.centerX - tp.width / 2, plot.bottom + 3),
-    );
+    tp.paint(canvas, Offset(box.centerX - tp.width / 2, plot.bottom + 3));
   }
 
   Color _colorOf(BoxPlotBox box) {

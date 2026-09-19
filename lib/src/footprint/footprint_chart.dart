@@ -172,20 +172,12 @@ class FootprintCell {
   final Rect rect;
 
   /// The half of the cell the bid volume is written in.
-  Rect get bidRect => Rect.fromLTRB(
-        rect.left,
-        rect.top,
-        rect.center.dx,
-        rect.bottom,
-      );
+  Rect get bidRect =>
+      Rect.fromLTRB(rect.left, rect.top, rect.center.dx, rect.bottom);
 
   /// The half the ask volume is written in.
-  Rect get askRect => Rect.fromLTRB(
-        rect.center.dx,
-        rect.top,
-        rect.right,
-        rect.bottom,
-      );
+  Rect get askRect =>
+      Rect.fromLTRB(rect.center.dx, rect.top, rect.right, rect.bottom);
 
   /// Whether [local] is inside the cell.
   bool contains(Offset local) => rect.contains(local);
@@ -545,7 +537,7 @@ class FootprintChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched cell; null shows none.
   final Widget? Function(BuildContext context, FootprintTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the cell.
   final double tooltipMargin;
@@ -576,8 +568,9 @@ class _FootprintChartState extends State<FootprintChart> {
     final key = cell == null ? null : (cell.barIndex, cell.level.price);
     if (key == _touched) return;
     setState(() => _touched = key);
-    widget.onTouch
-        ?.call(cell == null ? null : FootprintTouchDetails(cell: cell));
+    widget.onTouch?.call(
+      cell == null ? null : FootprintTouchDetails(cell: cell),
+    );
   }
 
   void _leave() {
@@ -795,7 +788,8 @@ class FootprintChartPainter extends CustomPainter {
     }
 
     if (!chart.showNumbers) return;
-    final style = chart.numberStyle ??
+    final style =
+        chart.numberStyle ??
         TextStyle(
           fontSize: math.min(9, cell.rect.height - 1),
           height: 1,
@@ -856,8 +850,8 @@ class FootprintChartPainter extends CustomPainter {
 
     final style = seriesAxisLabelStyle.merge(chart.axisLabelStyle);
     final every = math.max(1, chart.priceLabelEvery);
-    final steps =
-        ((layout.maxPrice - layout.minPrice) / layout.tickSize).floor();
+    final steps = ((layout.maxPrice - layout.minPrice) / layout.tickSize)
+        .floor();
     if (steps <= 0 || steps > 2000) return;
 
     for (var i = 0; i <= steps; i++) {

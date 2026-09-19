@@ -21,25 +21,24 @@ Widget _chart(
   ValueChanged<ChartEvent>? onEventTapped,
   ChartStyle? style,
   ChartColors? colors,
-}) =>
-    MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 500,
-          height: 600,
-          child: KChartWidget(
-            data,
-            colors ?? ChartColors(),
-            isTrendLine: false,
-            timeFrame: const Duration(minutes: 1),
-            showNowPrice: false,
-            chartStyle: style ?? ChartStyle(),
-            events: events,
-            onEventTapped: onEventTapped,
-          ),
-        ),
+}) => MaterialApp(
+  home: Scaffold(
+    body: SizedBox(
+      width: 500,
+      height: 600,
+      child: KChartWidget(
+        data,
+        colors ?? ChartColors(),
+        isTrendLine: false,
+        timeFrame: const Duration(minutes: 1),
+        showNowPrice: false,
+        chartStyle: style ?? ChartStyle(),
+        events: events,
+        onEventTapped: onEventTapped,
       ),
-    );
+    ),
+  ),
+);
 
 /// The painter the chart is currently drawing with.
 ChartPainter _painterOf(WidgetTester tester) {
@@ -171,11 +170,11 @@ void main() {
 
     test('two events over the same thing are equal', () {
       ChartEvent of() => ChartEvent(
-            time: _at(5),
-            kind: ChartEventKind.dividend,
-            label: 'D',
-            detail: 'ex-date',
-          );
+        time: _at(5),
+        kind: ChartEventKind.dividend,
+        label: 'D',
+        detail: 'ex-date',
+      );
 
       expect(of(), of());
       expect(of().hashCode, of().hashCode);
@@ -232,12 +231,9 @@ void main() {
     testWidgets('a tap away from a badge reports nothing', (tester) async {
       final tapped = <ChartEvent>[];
       await tester.pumpWidget(
-        _chart(
-            _candles(),
-            [
-              ChartEvent(time: _at(30)),
-            ],
-            onEventTapped: tapped.add),
+        _chart(_candles(), [
+          ChartEvent(time: _at(30)),
+        ], onEventTapped: tapped.add),
       );
       await tester.pumpAndSettle();
 

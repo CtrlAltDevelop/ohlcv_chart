@@ -91,10 +91,10 @@ class PitchforkDrawing extends ThreePointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...baseJson('pitchfork'),
-        ...threeAnchorsJson(),
-        'kind': kind.name,
-        'levels': levels,
-        'fillOpacity': fillOpacity,
-      };
+    ...baseJson('pitchfork'),
+    ...threeAnchorsJson(),
+    'kind': kind.name,
+    'levels': levels,
+    'fillOpacity': fillOpacity,
+  };
 }

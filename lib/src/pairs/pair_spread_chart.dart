@@ -87,17 +87,15 @@ List<double> pairSpread(
   List<PairPoint> points, {
   PairSpreadMode mode = PairSpreadMode.ratio,
   double hedgeRatio = 1,
-}) =>
-    [
-      for (final point in points)
-        switch (mode) {
-          PairSpreadMode.ratio => point.b == 0 ? double.nan : point.a / point.b,
-          PairSpreadMode.logRatio => point.a > 0 && point.b > 0
-              ? math.log(point.a / point.b)
-              : double.nan,
-          PairSpreadMode.difference => point.a - hedgeRatio * point.b,
-        },
-    ];
+}) => [
+  for (final point in points)
+    switch (mode) {
+      PairSpreadMode.ratio => point.b == 0 ? double.nan : point.a / point.b,
+      PairSpreadMode.logRatio =>
+        point.a > 0 && point.b > 0 ? math.log(point.a / point.b) : double.nan,
+      PairSpreadMode.difference => point.a - hedgeRatio * point.b,
+    },
+];
 
 /// The mean and standard deviation of the [lookback] values ending at each
 /// index; null until the window is full, or while it holds a gap.
@@ -282,9 +280,10 @@ class PairSpreadLayout {
   /// The point nearest [dx], or null when there is none.
   int? indexAt(double dx) {
     if (count <= 0 || spreadRect.width <= 0) return null;
-    return ((dx - spreadRect.left) / spreadRect.width * count)
-        .floor()
-        .clamp(0, count - 1);
+    return ((dx - spreadRect.left) / spreadRect.width * count).floor().clamp(
+      0,
+      count - 1,
+    );
   }
 }
 
@@ -327,8 +326,12 @@ PairSpreadLayout layOutPairSpread(
     bounds.width,
     room - lower,
   );
-  final zRect =
-      Rect.fromLTWH(bounds.left, bounds.bottom - lower, bounds.width, lower);
+  final zRect = Rect.fromLTWH(
+    bounds.left,
+    bounds.bottom - lower,
+    bounds.width,
+    lower,
+  );
 
   var low = double.infinity;
   var high = double.negativeInfinity;
@@ -561,7 +564,7 @@ class PairSpreadChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched point; null shows none.
   final Widget? Function(BuildContext context, PairSpreadTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the point.
   final double tooltipMargin;
@@ -671,8 +674,9 @@ class _PairSpreadChartState extends State<PairSpreadChart>
         final height = constraints.hasBoundedHeight
             ? constraints.maxHeight
             : widget.defaultHeight;
-        final box =
-            widget.padding.deflateRect(Offset.zero & Size(width, height));
+        final box = widget.padding.deflateRect(
+          Offset.zero & Size(width, height),
+        );
         final plot = Rect.fromLTRB(
           box.left + (widget.showValueAxis ? widget.axisWidth : 0),
           box.top,
@@ -841,9 +845,7 @@ class PairSpreadChartPainter extends CustomPainter {
     );
     _paintLine(
       canvas,
-      [
-        for (var i = 0; i < shown; i++) layout.zScores[i] ?? double.nan,
-      ],
+      [for (var i = 0; i < shown; i++) layout.zScores[i] ?? double.nan],
       layout.zY,
       chart.zColor,
       chart.lineWidth,
@@ -1042,8 +1044,9 @@ class PairSpreadChartPainter extends CustomPainter {
     final count = math.min(5, layout.count);
     var written = -double.infinity;
     for (var i = 0; i < count; i++) {
-      final index =
-          count == 1 ? 0 : ((layout.count - 1) * (i / (count - 1))).round();
+      final index = count == 1
+          ? 0
+          : ((layout.count - 1) * (i / (count - 1))).round();
       if (index >= chart.points.length) continue;
       final tp = textCache.get(_formatTime(chart.points[index].time), style);
       final left = (layout.xOf(index) - tp.width / 2).clamp(
@@ -1060,8 +1063,9 @@ class PairSpreadChartPainter extends CustomPainter {
     final format = chart.valueFormatter;
     if (format != null) return format(value);
     final span = (layout.spreadMax - layout.spreadMin).abs();
-    final decimals =
-        span <= 0 ? 2 : (2 - (math.log(span) / math.ln10).floor()).clamp(0, 6);
+    final decimals = span <= 0
+        ? 2
+        : (2 - (math.log(span) / math.ln10).floor()).clamp(0, 6);
     return value.toStringAsFixed(decimals);
   }
 

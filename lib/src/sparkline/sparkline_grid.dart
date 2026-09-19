@@ -132,8 +132,12 @@ class SparklineGridLayout {
   });
 
   /// Nothing to draw.
-  static const empty =
-      SparklineGridLayout(size: Size.zero, tiles: [], columns: 0, rows: 0);
+  static const empty = SparklineGridLayout(
+    size: Size.zero,
+    tiles: [],
+    columns: 0,
+    rows: 0,
+  );
 
   /// The box the grid was laid out in.
   final Size size;
@@ -441,7 +445,7 @@ class SparklineGrid extends StatefulWidget {
   /// Builds the card shown over a touched tile; null shows its label and the
   /// value under the finger.
   final Widget Function(BuildContext context, SparklineTile tile, int sample)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// What a screen reader announces for the grid.
   final String? semanticLabel;
@@ -525,12 +529,13 @@ class _SparklineGridState extends State<SparklineGrid>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 320.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 320.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.intrinsicHeight;
+              ? constraints.maxHeight
+              : widget.intrinsicHeight;
           _layout = layOutSparklineGrid(
             widget.tiles,
             size: Size(width, height),
@@ -644,11 +649,14 @@ class SparklineGridPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final labelStyle = grid.labelStyle ??
+    final labelStyle =
+        grid.labelStyle ??
         const TextStyle(color: Color(0xFFE9ECEF), fontSize: 11);
-    final subtitleStyle = grid.subtitleStyle ??
+    final subtitleStyle =
+        grid.subtitleStyle ??
         const TextStyle(color: Color(0xFF909196), fontSize: 9);
-    final valueStyle = grid.valueStyle ??
+    final valueStyle =
+        grid.valueStyle ??
         const TextStyle(color: Color(0xFFB4B8C0), fontSize: 11);
 
     for (final laid in layout.tiles) {
@@ -672,7 +680,8 @@ class SparklineGridPainter extends CustomPainter {
       if (grid.showBaseline) {
         final from = tile.first;
         if (from != null && laid.max > laid.min) {
-          final y = laid.sparkRect.bottom -
+          final y =
+              laid.sparkRect.bottom -
               (from - laid.min) / (laid.max - laid.min) * laid.sparkRect.height;
           canvas.drawLine(
             Offset(laid.sparkRect.left, y),
@@ -771,10 +780,7 @@ class SparklineGridPainter extends CustomPainter {
           final total = label.height + under.height;
           label.paint(
             canvas,
-            Offset(
-              laid.labelRect.left,
-              laid.labelRect.center.dy - total / 2,
-            ),
+            Offset(laid.labelRect.left, laid.labelRect.center.dy - total / 2),
           );
           under.paint(
             canvas,
@@ -788,7 +794,8 @@ class SparklineGridPainter extends CustomPainter {
       }
 
       if (laid.valueRect.width > 4) {
-        final text = grid.valueFormatter?.call(tile) ??
+        final text =
+            grid.valueFormatter?.call(tile) ??
             tile.valueLabel ??
             (tile.last == null ? '' : _number(tile.last!));
         if (text.isNotEmpty) {

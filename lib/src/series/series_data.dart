@@ -8,9 +8,7 @@ class SeriesErrorRange {
   const SeriesErrorRange(this.lowerBy, this.upperBy);
 
   /// A range reaching [by] either side of the value.
-  const SeriesErrorRange.symmetric(double by)
-      : lowerBy = by,
-        upperBy = by;
+  const SeriesErrorRange.symmetric(double by) : lowerBy = by, upperBy = by;
 
   /// How far below the value the range reaches.
   final double lowerBy;
@@ -78,9 +76,8 @@ class SeriesPoint {
 
 /// Points at `x = 0, 1, 2, …` for a list of plain values.
 List<SeriesPoint> pointsOf(List<double?> values) => [
-      for (var i = 0; i < values.length; i++)
-        SeriesPoint(i.toDouble(), values[i]),
-    ];
+  for (var i = 0; i < values.length; i++) SeriesPoint(i.toDouble(), values[i]),
+];
 
 /// How a [LineSeries] joins one point to the next.
 enum LineCurve {
@@ -163,8 +160,8 @@ class SeriesDot {
 typedef SeriesDotBuilder = SeriesDot? Function(int index, SeriesPoint point);
 
 /// Writes the label drawn beside one point, or returns null for none.
-typedef SeriesPointLabelBuilder = String? Function(
-    int index, SeriesPoint point);
+typedef SeriesPointLabelBuilder =
+    String? Function(int index, SeriesPoint point);
 
 /// How a series draws the error bars of points that carry
 /// [SeriesPoint.xError] or [SeriesPoint.yError].
@@ -214,28 +211,26 @@ class SeriesFill {
     double opacity = 0.24,
     Color? negativeColor,
     bool toBaseline = true,
-  }) =>
-      SeriesFill(
-        gradient: _fade(color, opacity),
-        negativeGradient: negativeColor == null
-            ? null
-            : _fade(negativeColor, opacity, upward: true),
-        toBaseline: toBaseline,
-      );
+  }) => SeriesFill(
+    gradient: _fade(color, opacity),
+    negativeGradient: negativeColor == null
+        ? null
+        : _fade(negativeColor, opacity, upward: true),
+    toBaseline: toBaseline,
+  );
 
   static LinearGradient _fade(
     Color color,
     double opacity, {
     bool upward = false,
-  }) =>
-      LinearGradient(
-        begin: upward ? Alignment.bottomCenter : Alignment.topCenter,
-        end: upward ? Alignment.topCenter : Alignment.bottomCenter,
-        colors: [
-          color.withValues(alpha: opacity),
-          color.withValues(alpha: 0),
-        ],
-      );
+  }) => LinearGradient(
+    begin: upward ? Alignment.bottomCenter : Alignment.topCenter,
+    end: upward ? Alignment.topCenter : Alignment.bottomCenter,
+    colors: [
+      color.withValues(alpha: opacity),
+      color.withValues(alpha: 0),
+    ],
+  );
 
   /// Flat colour above the baseline; ignored when [gradient] is set.
   final Color? color;
@@ -269,13 +264,13 @@ class SeriesFill {
 
   @override
   int get hashCode => Object.hash(
-        color,
-        gradient,
-        negativeColor,
-        negativeGradient,
-        toBaseline,
-        mirrorBelowBaseline,
-      );
+    color,
+    gradient,
+    negativeColor,
+    negativeGradient,
+    toBaseline,
+    mirrorBelowBaseline,
+  );
 }
 
 /// The area between two [LineSeries] on the same chart — a band between a

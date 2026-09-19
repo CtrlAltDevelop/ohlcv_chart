@@ -34,36 +34,36 @@ const _shortScenes = {
 /// One per entry, named after it, so `--dart-define=only=treemap` shoots the
 /// treemap and `screenshots/treemap.png` is what the treemap's doc page shows.
 List<Scene> buildGalleryScenes() => [
-      for (final entry in galleryEntries())
-        (
-          name: entry.id,
-          size: _squareScenes.contains(entry.id)
-              ? square
-              : _shortScenes.contains(entry.id)
-                  ? shortWide
-                  : gallery,
-          act: null,
-          build: () => _galleryScene(entry),
-        ),
-    ];
+  for (final entry in galleryEntries())
+    (
+      name: entry.id,
+      size: _squareScenes.contains(entry.id)
+          ? square
+          : _shortScenes.contains(entry.id)
+          ? shortWide
+          : gallery,
+      act: null,
+      build: () => _galleryScene(entry),
+    ),
+];
 
 /// One entry, as a row of panels — a panel per variant.
 Widget _galleryScene(GalleryEntry entry) => ColoredBox(
-      color: _seriesBackground,
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Row(
-          children: [
-            for (final variant in entry.variants)
-              Expanded(
-                child: seriesPanel(
-                  variant.title,
-                  figure: variant.figure,
-                  figureColor: variant.figureColor ?? Colors.white,
-                  variant.build(),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
+  color: _seriesBackground,
+  child: Padding(
+    padding: const EdgeInsets.all(6),
+    child: Row(
+      children: [
+        for (final variant in entry.variants)
+          Expanded(
+            child: seriesPanel(
+              variant.title,
+              figure: variant.figure,
+              figureColor: variant.figureColor ?? Colors.white,
+              variant.build(),
+            ),
+          ),
+      ],
+    ),
+  ),
+);

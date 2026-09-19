@@ -57,13 +57,13 @@ List<KLineEntity> walk(int count, {int seed = 7}) {
 }
 
 KLineEntity retick(KLineEntity candle, double close) => KLineEntity.fromCustom(
-      open: candle.open,
-      high: max(candle.high, close),
-      low: min(candle.low, close),
-      close: close,
-      vol: candle.vol + 10,
-      dateTime: candle.dateTime!,
-    );
+  open: candle.open,
+  high: max(candle.high, close),
+  low: min(candle.low, close),
+  close: close,
+  vol: candle.vol + 10,
+  dateTime: candle.dateTime!,
+);
 
 /// Indicators built on a running total rather than a re-added window.
 ///
@@ -273,18 +273,18 @@ class _CountingMa extends MaIndicator {
 }
 
 KLineEntity _at(DateTime time, double close) => KLineEntity.fromCustom(
-      open: close,
-      high: close + 1,
-      low: close - 1,
-      close: close,
-      vol: 100,
-      dateTime: time,
-    );
+  open: close,
+  high: close + 1,
+  low: close - 1,
+  close: close,
+  vol: 100,
+  dateTime: time,
+);
 
 List<KLineEntity> _series(int count, {int from = 0}) => [
-      for (var i = 0; i < count; i++)
-        _at(DateTime.utc(2024).add(Duration(minutes: from + i)), 100.0 + i),
-    ];
+  for (var i = 0; i < count; i++)
+    _at(DateTime.utc(2024).add(Duration(minutes: from + i)), 100.0 + i),
+];
 
 void _cacheTests() {
   group('IndicatorCache', () {

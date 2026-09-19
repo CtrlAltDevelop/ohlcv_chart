@@ -8,18 +8,18 @@ import 'package:ohlcv_chart/ohlcv_chart.dart';
 /// lines with a tooltip look like. Run `flutter test --update-goldens` after a
 /// deliberate change to how they are drawn.
 Widget _framed(Widget child) => MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: const Color(0xFF17181C),
-        body: Center(
-          child: SizedBox(
-            width: 480,
-            height: 300,
-            child: Padding(padding: const EdgeInsets.all(12), child: child),
-          ),
-        ),
+  debugShowCheckedModeBanner: false,
+  home: Scaffold(
+    backgroundColor: const Color(0xFF17181C),
+    body: Center(
+      child: SizedBox(
+        width: 480,
+        height: 300,
+        child: Padding(padding: const EdgeInsets.all(12), child: child),
       ),
-    );
+    ),
+  ),
+);
 
 const _purple = Color(0xFF9775FA);
 const _green = Color(0xFF12B886);
@@ -28,9 +28,9 @@ const _amber = Color(0xFFFAB005);
 const _gridColor = Color(0xFF2C2E33);
 
 List<double> _wave(int count, {double phase = 0, double scale = 1}) => [
-      for (var i = 0; i < count; i++)
-        (math.sin(i / 3 + phase) * 40 + i * 1.5 - 12) * scale,
-    ];
+  for (var i = 0; i < count; i++)
+    (math.sin(i / 3 + phase) * 40 + i * 1.5 - 12) * scale,
+];
 
 void main() {
   testWidgets('an area crossing zero', (tester) async {

@@ -175,8 +175,8 @@ class BookHeatmapLayout {
   double priceAt(double dy) => plot.height <= 0
       ? minPrice
       : maxPrice -
-          ((dy - plot.top) / plot.height).clamp(0.0, 1.0) *
-              (maxPrice - minPrice);
+            ((dy - plot.top) / plot.height).clamp(0.0, 1.0) *
+                (maxPrice - minPrice);
 }
 
 /// The price range [snapshots] cover.
@@ -430,10 +430,8 @@ class BookHeatmapChart extends StatefulWidget {
   final ValueChanged<BookHeatmapTouchDetails?>? onTouch;
 
   /// Builds a card shown beside the pointer; null shows none.
-  final Widget? Function(
-    BuildContext context,
-    BookHeatmapTouchDetails details,
-  )? tooltipBuilder;
+  final Widget? Function(BuildContext context, BookHeatmapTouchDetails details)?
+  tooltipBuilder;
 
   /// How far the card sits from the pointer.
   final double tooltipMargin;
@@ -684,8 +682,8 @@ class BookHeatmapChartPainter extends CustomPainter {
 
   void _paintPrices(Canvas canvas) {
     if (!chart.showPriceAxis || layout.rowHeight <= 0) return;
-    final steps =
-        ((layout.maxPrice - layout.minPrice) / layout.tickSize).floor();
+    final steps = ((layout.maxPrice - layout.minPrice) / layout.tickSize)
+        .floor();
     if (steps <= 0 || steps > 2000) return;
     final every = math.max(1, chart.priceLabelEvery);
     final style = seriesAxisLabelStyle.merge(chart.axisLabelStyle);
@@ -694,10 +692,7 @@ class BookHeatmapChartPainter extends CustomPainter {
       final tp = textCache.get(_formatPrice(price), style);
       final left = layout.plot.left - 6 - tp.width;
       if (left < 0) continue;
-      tp.paint(
-        canvas,
-        Offset(left, layout.yOf(price) - tp.height / 2),
-      );
+      tp.paint(canvas, Offset(left, layout.yOf(price) - tp.height / 2));
     }
   }
 

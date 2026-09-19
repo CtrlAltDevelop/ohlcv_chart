@@ -95,8 +95,8 @@ final class HeatmapGradientScale extends HeatmapScale {
     Color color, {
     double lowOpacity = 0.12,
     super.emptyColor,
-  })  : colors = [color.withValues(alpha: lowOpacity), color],
-        stops = null;
+  }) : colors = [color.withValues(alpha: lowOpacity), color],
+       stops = null;
 
   @override
   final List<Color> colors;
@@ -122,9 +122,9 @@ final class HeatmapGradientScale extends HeatmapScale {
   }
 
   static List<double> _evenStops(int count) => [
-        for (var i = 0; i < count; i++)
-          count < 2 ? 0.0 : lerpDouble(0, 1, i / (count - 1))!,
-      ];
+    for (var i = 0; i < count; i++)
+      count < 2 ? 0.0 : lerpDouble(0, 1, i / (count - 1))!,
+  ];
 }
 
 /// One band of a [HeatmapStepScale].
@@ -189,7 +189,7 @@ final class HeatmapStepScale extends HeatmapScale {
 /// A row shorter than the widest one simply has no cells past its end, so a
 /// ragged table is drawn as the gaps it is.
 List<HeatmapCell> heatmapCellsOf(List<List<double?>> values) => [
-      for (var y = 0; y < values.length; y++)
-        for (var x = 0; x < values[y].length; x++)
-          HeatmapCell(x: x, y: y, value: values[y][x]),
-    ];
+  for (var y = 0; y < values.length; y++)
+    for (var x = 0; x < values[y].length; x++)
+      HeatmapCell(x: x, y: y, value: values[y][x]),
+];

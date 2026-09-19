@@ -24,13 +24,13 @@ const _slices = [
 ];
 
 VolatilityLayout _layOut() => layOutVolatility(
-      _slices,
-      _bounds,
-      minX: 90,
-      maxX: 110,
-      minVol: 0.3,
-      maxVol: 0.5,
-    );
+  _slices,
+  _bounds,
+  minX: 90,
+  maxX: 110,
+  minVol: 0.3,
+  maxVol: 0.5,
+);
 
 void main() {
   group('the layout', () {
@@ -107,23 +107,34 @@ void main() {
 
     test('nothing to show, or no room, lays out nothing', () {
       expect(
-        layOutVolatility(const [], _bounds,
-                minX: 0, maxX: 1, minVol: 0, maxVol: 1)
-            .isEmpty,
+        layOutVolatility(
+          const [],
+          _bounds,
+          minX: 0,
+          maxX: 1,
+          minVol: 0,
+          maxVol: 1,
+        ).isEmpty,
         isTrue,
       );
       expect(
-        layOutVolatility(_slices, Rect.zero,
-                minX: 0, maxX: 1, minVol: 0, maxVol: 1)
-            .isEmpty,
+        layOutVolatility(
+          _slices,
+          Rect.zero,
+          minX: 0,
+          maxX: 1,
+          minVol: 0,
+          maxVol: 1,
+        ).isEmpty,
         isTrue,
       );
     });
   });
 
   group('the widget', () {
-    testWidgets('draws, reports one reading per curve, and takes its height',
-        (tester) async {
+    testWidgets('draws, reports one reading per curve, and takes its height', (
+      tester,
+    ) async {
       VolatilityTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -162,8 +173,9 @@ void main() {
       expect(touched, isNull);
     });
 
-    testWidgets('draws itself in and survives its data changing',
-        (tester) async {
+    testWidgets('draws itself in and survives its data changing', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

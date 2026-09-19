@@ -7,10 +7,19 @@ const _bounds = Rect.fromLTWH(0, 0, 400, 100);
 void main() {
   group('binning', () {
     test('samples are counted into bins of equal width', () {
-      final bins = histogramBins(
-        const [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        binCount: 2,
-      );
+      final bins = histogramBins(const [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+      ], binCount: 2);
       expect(bins.map((b) => b.from), [0, 5]);
       expect(bins.map((b) => b.to), [5, 10]);
       // A sample on a boundary goes up; the last bin keeps its upper edge.
@@ -47,11 +56,12 @@ void main() {
     });
 
     test(
-        'values that are not numbers are left out, and nothing bins to nothing',
-        () {
-      expect(histogramBins(const [double.nan, double.infinity]), isEmpty);
-      expect(histogramBins(const []), isEmpty);
-    });
+      'values that are not numbers are left out, and nothing bins to nothing',
+      () {
+        expect(histogramBins(const [double.nan, double.infinity]), isEmpty);
+        expect(histogramBins(const []), isEmpty);
+      },
+    );
   });
 
   group('the layout', () {
@@ -76,10 +86,7 @@ void main() {
     test('a count past the top is clamped, and no counts draw flat', () {
       final bars = layOutHistogram(bins, _bounds, maxCount: 0.5);
       expect(bars.first.rect.height, 100);
-      expect(
-        layOutHistogram(bins, _bounds, maxCount: 0).first.rect.height,
-        0,
-      );
+      expect(layOutHistogram(bins, _bounds, maxCount: 0).first.rect.height, 0);
     });
 
     test('nothing to show, or no room, lays out nothing', () {
@@ -95,8 +102,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       HistogramTouchDetails? touched;
       final bins = histogramBins(const [-2, -1, 0, 1, 2, 2], binCount: 4);
       await tester.pumpWidget(

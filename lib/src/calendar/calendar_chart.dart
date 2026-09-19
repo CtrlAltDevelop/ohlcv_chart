@@ -104,8 +104,12 @@ class CalendarLayout {
   });
 
   /// An empty calendar.
-  static const CalendarLayout empty =
-      CalendarLayout(months: [], cells: [], cellSize: 0, height: 0);
+  static const CalendarLayout empty = CalendarLayout(
+    months: [],
+    cells: [],
+    cellSize: 0,
+    height: 0,
+  );
 
   /// The month panels, in order.
   final List<CalendarMonthPanel> months;
@@ -169,16 +173,22 @@ CalendarLayout layOutCalendar(
   }
 
   final months = <DateTime>[];
-  for (var month = earliest;
-      !month.isAfter(latest) && months.length < 240;
-      month = DateTime(month.year, month.month + 1)) {
+  for (
+    var month = earliest;
+    !month.isAfter(latest) && months.length < 240;
+    month = DateTime(month.year, month.month + 1)
+  ) {
     months.add(month);
   }
 
   final gap = math.max(0.0, monthSpacing);
-  final perRow = (monthsPerRow ??
-          math.max(1, ((bounds.width + gap) / (minPanelWidth + gap)).floor()))
-      .clamp(1, months.length);
+  final perRow =
+      (monthsPerRow ??
+              math.max(
+                1,
+                ((bounds.width + gap) / (minPanelWidth + gap)).floor(),
+              ))
+          .clamp(1, months.length);
   final rows = (months.length / perRow).ceil();
   final panelWidth = (bounds.width - gap * (perRow - 1)) / perRow;
   if (panelWidth <= 0) return CalendarLayout.empty;
@@ -470,7 +480,7 @@ class CalendarChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched day; null shows none.
   final Widget? Function(BuildContext context, CalendarTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the day.
   final double tooltipMargin;
@@ -545,10 +555,7 @@ class _CalendarChartState extends State<CalendarChart>
     widget.onTouch?.call(
       cell == null
           ? null
-          : CalendarTouchDetails(
-              cell: cell,
-              month: _layout.months[cell.month],
-            ),
+          : CalendarTouchDetails(cell: cell, month: _layout.months[cell.month]),
     );
   }
 
@@ -589,7 +596,8 @@ class _CalendarChartState extends State<CalendarChart>
           cellSpacing: widget.cellSpacing,
           // A weekday row is written under the month's title, so the header
           // needs the room for both rather than stacking them on each other.
-          headerHeight: widget.headerHeight +
+          headerHeight:
+              widget.headerHeight +
               (widget.showWeekdayHeader ? calendarWeekdayRowHeight : 0),
           monthSpacing: widget.monthSpacing,
           minPanelWidth: widget.minPanelWidth,
@@ -730,15 +738,13 @@ class CalendarChartPainter extends CustomPainter {
 
     for (final cell in layout.cells) {
       final value = cell.value;
-      final color = cell.day?.color ??
+      final color =
+          cell.day?.color ??
           (value == null || !value.isFinite
               ? chart.scale.emptyColor
               : chart.scale.colorAt(value, min, max));
       fill.color = t >= 1 ? color : color.withValues(alpha: color.a * t);
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(cell.rect, radius),
-        fill,
-      );
+      canvas.drawRRect(RRect.fromRectAndRadius(cell.rect, radius), fill);
       if (chart.showDayNumbers) _paintDayNumber(canvas, cell, color);
     }
 
@@ -768,7 +774,8 @@ class CalendarChartPainter extends CustomPainter {
 
   void _paintDayNumber(Canvas canvas, CalendarCell cell, Color color) {
     if (layout.cellSize < 14) return;
-    final style = chart.dayNumberStyle ??
+    final style =
+        chart.dayNumberStyle ??
         TextStyle(
           fontSize: math.min(10, layout.cellSize / 2),
           color: color.computeLuminance() > 0.5
@@ -777,10 +784,7 @@ class CalendarChartPainter extends CustomPainter {
         );
     final tp = textCache.get('${cell.date.day}', style);
     if (tp.width > cell.rect.width - 2) return;
-    tp.paint(
-      canvas,
-      cell.rect.center - Offset(tp.width / 2, tp.height / 2),
-    );
+    tp.paint(canvas, cell.rect.center - Offset(tp.width / 2, tp.height / 2));
   }
 
   void _paintHeader(Canvas canvas, CalendarMonthPanel month) {
@@ -829,7 +833,8 @@ class CalendarChartPainter extends CustomPainter {
     final name = names.length >= 12
         ? names[month.firstDay.month - 1]
         : '${month.firstDay.month}';
-    final spansYears = layout.months.isNotEmpty &&
+    final spansYears =
+        layout.months.isNotEmpty &&
         layout.months.first.firstDay.year != layout.months.last.firstDay.year;
     final head = spansYears ? '$name ${month.firstDay.year}' : name;
     if (month.days == 0) return head;

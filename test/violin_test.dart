@@ -73,8 +73,10 @@ void main() {
         layout.series[0].bandRect.right,
         closeTo(layout.series[1].bandRect.left, 1e-9),
       );
-      expect(layout.positionOf(layout.max),
-          lessThan(layout.positionOf(layout.min)));
+      expect(
+        layout.positionOf(layout.max),
+        lessThan(layout.positionOf(layout.min)),
+      );
     });
 
     test('a ridgeline stacks down the chart and overlaps', () {
@@ -84,13 +86,19 @@ void main() {
         shape: ViolinShape.ridgeline,
         overlap: 0.5,
       );
-      expect(layout.series[1].bandRect.top,
-          greaterThan(layout.series[0].bandRect.top));
-      expect(layout.series[1].bandRect.top,
-          lessThan(layout.series[0].bandRect.bottom));
+      expect(
+        layout.series[1].bandRect.top,
+        greaterThan(layout.series[0].bandRect.top),
+      );
+      expect(
+        layout.series[1].bandRect.top,
+        lessThan(layout.series[0].bandRect.bottom),
+      );
       // Values run across a ridgeline, not up it.
-      expect(layout.positionOf(layout.max),
-          greaterThan(layout.positionOf(layout.min)));
+      expect(
+        layout.positionOf(layout.max),
+        greaterThan(layout.positionOf(layout.min)),
+      );
     });
 
     test('shapes share one scale, so their areas compare', () {
@@ -106,8 +114,10 @@ void main() {
       final layout = layOutViolin(series, size: const Size(400, 200));
       final laid = layout.series.first;
       expect(laid.boxRect, isNotNull);
-      expect(laid.medianAt.dy,
-          closeTo(layout.positionOf(laid.stats.median), 1e-9));
+      expect(
+        laid.medianAt.dy,
+        closeTo(layout.positionOf(laid.stats.median), 1e-9),
+      );
       expect(laid.whiskerTo.dy, lessThan(laid.whiskerFrom.dy));
     });
 
@@ -137,10 +147,9 @@ void main() {
       expect(layOutViolin(const [], size: const Size(400, 200)).isEmpty, true);
       expect(layOutViolin(series, size: Size.zero).isEmpty, true);
       expect(
-        layOutViolin(
-          const [ViolinSeries(label: 'a', samples: [])],
-          size: const Size(400, 200),
-        ).isEmpty,
+        layOutViolin(const [
+          ViolinSeries(label: 'a', samples: []),
+        ], size: const Size(400, 200)).isEmpty,
         true,
       );
     });
@@ -153,8 +162,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws and reports the series under the finger',
-        (tester) async {
+    testWidgets('draws and reports the series under the finger', (
+      tester,
+    ) async {
       ViolinSeries? touched;
       await tester.pumpWidget(
         MaterialApp(

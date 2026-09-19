@@ -32,17 +32,16 @@ SeriesChart _bare(
   ValueChanged<SeriesTouchDetails?>? onTouch,
   Duration animationDuration = Duration.zero,
   bool animateOnMount = true,
-}) =>
-    SeriesChart(
-      series: [LineSeries.values(values)],
-      xAxis: SeriesXAxis.hidden,
-      yAxis: SeriesYAxis.hidden,
-      touch: touch,
-      controller: controller,
-      onTouch: onTouch,
-      animationDuration: animationDuration,
-      animateOnMount: animateOnMount,
-    );
+}) => SeriesChart(
+  series: [LineSeries.values(values)],
+  xAxis: SeriesXAxis.hidden,
+  yAxis: SeriesYAxis.hidden,
+  touch: touch,
+  controller: controller,
+  onTouch: onTouch,
+  animationDuration: animationDuration,
+  animateOnMount: animateOnMount,
+);
 
 void main() {
   testWidgets('draws every kind of series and furniture', (tester) async {

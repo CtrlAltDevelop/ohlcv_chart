@@ -187,7 +187,7 @@ List<double?> anchoredVwapSeries(List<KLineEntity> candles, int anchor) {
 /// whichever one preceded it — the same reading [CandleTransforms.bucketIndices]
 /// takes.
 ({List<double?> vwap, List<double?> upper, List<double?> lower})
-    sessionVwapSeries(
+sessionVwapSeries(
   List<KLineEntity> candles, {
   PivotSession session = PivotSession.day,
   double deviations = 1,
@@ -694,10 +694,12 @@ List<double?> mfiSeries(List<KLineEntity> candles, int period) {
     }
     if (i < period) continue;
 
-    final plus100 =
-        smoothedRange == 0 ? 0.0 : 100 * smoothedPlus / smoothedRange;
-    final minus100 =
-        smoothedRange == 0 ? 0.0 : 100 * smoothedMinus / smoothedRange;
+    final plus100 = smoothedRange == 0
+        ? 0.0
+        : 100 * smoothedPlus / smoothedRange;
+    final minus100 = smoothedRange == 0
+        ? 0.0
+        : 100 * smoothedMinus / smoothedRange;
     plusDi[i] = plus100;
     minusDi[i] = minus100;
 
@@ -719,12 +721,12 @@ List<double?> mfiSeries(List<KLineEntity> candles, int period) {
 
 /// The greater of the candle's own range and its gap from [previous]'s close.
 double trueRange(KLineEntity entity, KLineEntity previous) => max(
-      entity.high - entity.low,
-      max(
-        (entity.high - previous.close).abs(),
-        (entity.low - previous.close).abs(),
-      ),
-    );
+  entity.high - entity.low,
+  max(
+    (entity.high - previous.close).abs(),
+    (entity.low - previous.close).abs(),
+  ),
+);
 
 double _typicalPrice(KLineEntity entity) =>
     (entity.high + entity.low + entity.close) / 3;
@@ -732,7 +734,7 @@ double _typicalPrice(KLineEntity entity) =>
 /// Keltner channels: an [period] EMA of the close with [multiplier] average
 /// true ranges either side of it.
 ({List<double?> upper, List<double?> middle, List<double?> lower})
-    keltnerSeries(
+keltnerSeries(
   List<KLineEntity> candles, {
   required int period,
   required int atrPeriod,
@@ -756,7 +758,7 @@ double _typicalPrice(KLineEntity entity) =>
 /// Donchian channels: the highest high and lowest low over [period] candles,
 /// with their midline.
 ({List<double?> upper, List<double?> middle, List<double?> lower})
-    donchianSeries(List<KLineEntity> candles, int period) {
+donchianSeries(List<KLineEntity> candles, int period) {
   final upper = List<double?>.filled(candles.length, null);
   final middle = List<double?>.filled(candles.length, null);
   final lower = List<double?>.filled(candles.length, null);
@@ -875,7 +877,8 @@ double _typicalPrice(KLineEntity entity) =>
   List<double?> spanA,
   List<double?> spanB,
   List<double?> lagging,
-}) ichimokuSeries(
+})
+ichimokuSeries(
   List<KLineEntity> candles, {
   required int conversionPeriod,
   required int basePeriod,
@@ -1249,8 +1252,9 @@ List<double> _emaOf(List<double> values, int period) {
   final weight = 2 / (period + 1);
   var previous = values.first;
   for (var i = 0; i < values.length; i++) {
-    previous =
-        i == 0 ? values[i] : values[i] * weight + previous * (1 - weight);
+    previous = i == 0
+        ? values[i]
+        : values[i] * weight + previous * (1 - weight);
     out[i] = previous;
   }
   return out;
@@ -1412,7 +1416,8 @@ List<double?>? atrTail(
 
   var running = seed;
   for (var i = from; i < candles.length; i++) {
-    running = (running * (period - 1) + trueRange(candles[i], candles[i - 1])) /
+    running =
+        (running * (period - 1) + trueRange(candles[i], candles[i - 1])) /
         period;
     out[i] = running;
   }

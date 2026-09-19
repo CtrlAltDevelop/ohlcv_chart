@@ -11,11 +11,7 @@ import '../utils/axis_ticks.dart';
 @immutable
 class VolatilityPoint {
   /// Creates a reading of [volatility] at [x].
-  const VolatilityPoint({
-    required this.x,
-    required this.volatility,
-    this.data,
-  });
+  const VolatilityPoint({required this.x, required this.volatility, this.data});
 
   /// The strike, moneyness or maturity this reading belongs to.
   final double x;
@@ -414,7 +410,7 @@ class VolatilityCurveChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched strike; null shows none.
   final Widget? Function(BuildContext context, VolatilityTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the crosshair.
   final double tooltipMargin;
@@ -709,7 +705,13 @@ class VolatilityCurveChartPainter extends CustomPainter {
         final current = points[i];
         final midX = (previous.dx + current.dx) / 2;
         path.cubicTo(
-            midX, previous.dy, midX, current.dy, current.dx, current.dy);
+          midX,
+          previous.dy,
+          midX,
+          current.dy,
+          current.dx,
+          current.dy,
+        );
       }
       if (curve.slice.dashed) {
         _drawDashed(canvas, path, pen);
@@ -803,8 +805,8 @@ class VolatilityCurveChartPainter extends CustomPainter {
     final line = grid == null
         ? null
         : (Paint()
-          ..color = grid
-          ..strokeWidth = 1);
+            ..color = grid
+            ..strokeWidth = 1);
 
     for (final tick in niceTicks(
       layout.minVol,

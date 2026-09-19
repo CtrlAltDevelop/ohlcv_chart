@@ -19,23 +19,22 @@ Widget _chart(
   List<KLineEntity> data,
   List<ComparisonSeries> comparisons, {
   ChartColors? colors,
-}) =>
-    MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 500,
-          height: 600,
-          child: KChartWidget(
-            data,
-            colors ?? ChartColors(),
-            isTrendLine: false,
-            timeFrame: const Duration(minutes: 15),
-            showNowPrice: false,
-            comparisons: comparisons,
-          ),
-        ),
+}) => MaterialApp(
+  home: Scaffold(
+    body: SizedBox(
+      width: 500,
+      height: 600,
+      child: KChartWidget(
+        data,
+        colors ?? ChartColors(),
+        isTrendLine: false,
+        timeFrame: const Duration(minutes: 15),
+        showNowPrice: false,
+        comparisons: comparisons,
       ),
-    );
+    ),
+  ),
+);
 
 /// The painter the chart is currently drawing with.
 ChartPainter _painterOf(WidgetTester tester) {
@@ -180,12 +179,9 @@ void main() {
 
     test('a comparison on its own prices ignores the pin entirely', () {
       final data = _candles([for (var i = 0; i < 10; i++) 100.0 + i]);
-      final resolved = resolvedOf(
-          data,
-          [
-            for (var i = 0; i < 10; i++) 50.0 + i,
-          ],
-          scale: ComparisonScale.price);
+      final resolved = resolvedOf(data, [
+        for (var i = 0; i < 10; i++) 50.0 + i,
+      ], scale: ComparisonScale.price);
 
       expect(comparisonAnchor(resolved, data, 0, 9), isNull);
       expect(comparisonPriceAt(resolved, 3, null), 53);
@@ -275,24 +271,17 @@ void main() {
       final colors = ChartColors();
 
       await tester.pumpWidget(
-        _chart(
-            data,
-            [
-              ComparisonSeries(
-                label: 'A',
-                points: [
-                  for (var i = 0; i < 60; i++) (time: _at(i), value: 50.0)
-                ],
-              ),
-              ComparisonSeries(
-                label: 'B',
-                points: [
-                  for (var i = 0; i < 60; i++) (time: _at(i), value: 70.0)
-                ],
-                color: const Color(0xFF00FF00),
-              ),
-            ],
-            colors: colors),
+        _chart(data, [
+          ComparisonSeries(
+            label: 'A',
+            points: [for (var i = 0; i < 60; i++) (time: _at(i), value: 50.0)],
+          ),
+          ComparisonSeries(
+            label: 'B',
+            points: [for (var i = 0; i < 60; i++) (time: _at(i), value: 70.0)],
+            color: const Color(0xFF00FF00),
+          ),
+        ], colors: colors),
       );
 
       final renderer = _painterOf(tester).mMainRenderer;
@@ -375,9 +364,9 @@ void main() {
   group('a comparison is compared by value', () {
     test('two built from the same points are equal', () {
       ComparisonSeries of() => ComparisonSeries(
-            label: 'ETH',
-            points: [(time: _at(0), value: 1), (time: _at(1), value: 2)],
-          );
+        label: 'ETH',
+        points: [(time: _at(0), value: 1), (time: _at(1), value: 2)],
+      );
 
       expect(of(), of());
       expect(of().hashCode, of().hashCode);

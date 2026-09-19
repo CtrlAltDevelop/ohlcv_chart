@@ -27,8 +27,7 @@ void main() {
       expect(slices[2].startAngle, closeTo(math.pi * 1.5, 1e-9));
     });
 
-    test(
-        'sections worth nothing are left out, and nothing at all lays out '
+    test('sections worth nothing are left out, and nothing at all lays out '
         'as nothing', () {
       final some = layOutPie(
         sections: const [
@@ -153,18 +152,8 @@ void main() {
   group('radar geometry', () {
     test('features are spread evenly, the first at twelve o\'clock', () {
       const centre = Offset(100, 100);
-      final top = radarCorner(
-        centre: centre,
-        radius: 50,
-        count: 4,
-        index: 0,
-      );
-      final right = radarCorner(
-        centre: centre,
-        radius: 50,
-        count: 4,
-        index: 1,
-      );
+      final top = radarCorner(centre: centre, radius: 50, count: 4, index: 0);
+      final right = radarCorner(centre: centre, radius: 50, count: 4, index: 1);
       expect(top.dx, closeTo(100, 1e-9));
       expect(top.dy, closeTo(50, 1e-9));
       expect(right.dx, closeTo(150, 1e-9));
@@ -218,7 +207,8 @@ void main() {
 
       // Right of the middle is the first section, which starts at twelve.
       await tester.tapAt(
-          tester.getCenter(find.byType(PieChart)) + const Offset(60, 10));
+        tester.getCenter(find.byType(PieChart)) + const Offset(60, 10),
+      );
       await tester.pump();
       expect(touched.first?.index, 0);
     });

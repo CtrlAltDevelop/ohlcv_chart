@@ -50,10 +50,7 @@ void main() {
       expect(arcs.first.innerRadius, 0);
       expect(arcs.first.outerRadius, 45);
       expect(arcs.last.innerRadius, isNot(45));
-      expect(
-        arcs.firstWhere((a) => a.depth == 1).innerRadius,
-        55,
-      );
+      expect(arcs.firstWhere((a) => a.depth == 1).innerRadius, 55);
     });
 
     test('maxDepth stops at the ring asked for', () {
@@ -92,7 +89,9 @@ void main() {
 
     test('nothing to show, or no room, lays out nothing', () {
       expect(
-          layOutSunburst(const [], innerRadius: 0, outerRadius: 100), isEmpty);
+        layOutSunburst(const [], innerRadius: 0, outerRadius: 100),
+        isEmpty,
+      );
       expect(layOutSunburst(_items, innerRadius: 50, outerRadius: 50), isEmpty);
       expect(
         layOutSunburst(
@@ -120,8 +119,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       SunburstTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(

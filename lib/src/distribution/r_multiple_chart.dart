@@ -11,10 +11,9 @@ import 'histogram_chart.dart';
 /// [pnl] and [risk] are paired by position; a pair whose risk is not a positive
 /// number is skipped, since a trade with no risk defined has no R.
 List<double> rMultiplesFrom(List<double> pnl, List<double> risk) => [
-      for (var i = 0; i < math.min(pnl.length, risk.length); i++)
-        if (pnl[i].isFinite && risk[i].isFinite && risk[i] > 0)
-          pnl[i] / risk[i],
-    ];
+  for (var i = 0; i < math.min(pnl.length, risk.length); i++)
+    if (pnl[i].isFinite && risk[i].isFinite && risk[i] > 0) pnl[i] / risk[i],
+];
 
 /// What a set of trade results, in R, add up to.
 @immutable
@@ -178,8 +177,8 @@ List<RMultipleStat> defaultRMultipleStats(
   Color? signed(double value) => value > 0
       ? profitColor
       : value < 0
-          ? lossColor
-          : null;
+      ? lossColor
+      : null;
   return [
     RMultipleStat('Trades', '${stats.count}'),
     RMultipleStat('Win rate', '${(stats.winRate * 100).toStringAsFixed(1)}%'),
@@ -308,7 +307,7 @@ class RMultipleChart extends StatelessWidget {
 
   /// Builds a card shown beside the touched bin; null shows none.
   final Widget? Function(BuildContext context, HistogramTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How long the bars take to grow in; zero draws them at once.
   final Duration animationDuration;
@@ -373,12 +372,13 @@ class RMultipleChart extends StatelessWidget {
             children: [
               if (showStats) ...[
                 _StatsRow(
-                  stats: (statsBuilder ??
+                  stats:
+                      (statsBuilder ??
                       (s) => defaultRMultipleStats(
-                            s,
-                            profitColor: profitColor,
-                            lossColor: lossColor,
-                          ))(stats),
+                        s,
+                        profitColor: profitColor,
+                        lossColor: lossColor,
+                      ))(stats),
                   labelStyle: seriesAxisLabelStyle.merge(statLabelStyle),
                   valueStyle: const TextStyle(
                     fontSize: 13,

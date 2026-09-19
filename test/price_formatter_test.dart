@@ -90,8 +90,9 @@ void main() {
         _chart(priceFormatter: (p) => '\$${p.toStringAsFixed(1)}'),
       );
 
-      _painterOf(tester)
-          .paint(Canvas(ui.PictureRecorder()), const Size(_width, _height));
+      _painterOf(
+        tester,
+      ).paint(Canvas(ui.PictureRecorder()), const Size(_width, _height));
       expect(tester.takeException(), isNull);
     });
   });

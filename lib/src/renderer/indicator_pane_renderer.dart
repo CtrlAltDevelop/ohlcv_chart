@@ -30,20 +30,20 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
     super.priceAxisGutter = 0.0,
     super.priceAxisGutterOnLeft = false,
   }) : super(
-          chartRect: rect,
-          maxValue: maxValue,
-          minValue: minValue,
-          topPadding: topPadding,
-          fixedLength: fixedLength,
-          gridColor: chartColors.gridColor,
-          separatorColor: chartColors.effectiveSeparatorColor,
-          gridColumnColor: chartColors.effectiveGridColumnColor,
-          gridStrokeWidth: chartStyle.gridStrokeWidth,
-          separatorWidth: chartStyle.separatorWidth,
-          labelCornerRadius: chartStyle.labelCornerRadius,
-          legendPadding: chartStyle.legendPadding,
-          legendBgColor: chartColors.effectiveLegendBgColor,
-        );
+         chartRect: rect,
+         maxValue: maxValue,
+         minValue: minValue,
+         topPadding: topPadding,
+         fixedLength: fixedLength,
+         gridColor: chartColors.gridColor,
+         separatorColor: chartColors.effectiveSeparatorColor,
+         gridColumnColor: chartColors.effectiveGridColumnColor,
+         gridStrokeWidth: chartStyle.gridStrokeWidth,
+         separatorWidth: chartStyle.separatorWidth,
+         labelCornerRadius: chartStyle.labelCornerRadius,
+         legendPadding: chartStyle.legendPadding,
+         legendBgColor: chartColors.effectiveLegendBgColor,
+       );
 
   /// Geometry.
   final ChartStyle chartStyle;
@@ -170,7 +170,8 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
     for (var line = 0; line < indicator.lines.length; line++) {
       spans.add(
         TextSpan(
-          text: '${indicator.lines[line].label}:'
+          text:
+              '${indicator.lines[line].label}:'
               '${formatValue(resolved.valueAt(line, index))}    ',
           style: getTextStyle(resolved.colorFor(line, chartColors)),
         ),
@@ -257,7 +258,8 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       }
     }
 
-    final columns = columnXs ??
+    final columns =
+        columnXs ??
         [
           for (var i = 0; i <= gridColumns; i++)
             chartRect.width / gridColumns * i,

@@ -75,10 +75,7 @@ void main() {
       final layout = layOutOpenInterest(_points, size: const Size(400, 200));
       expect(layout.priceMin, 59000);
       expect(layout.priceMax, 62000);
-      expect(
-        layout.pricePoints[1]!.dy,
-        closeTo(layout.interestRect.top, 1e-9),
-      );
+      expect(layout.pricePoints[1]!.dy, closeTo(layout.interestRect.top, 1e-9));
     });
 
     test('funding bars hang off the zero line, either way', () {
@@ -101,10 +98,9 @@ void main() {
     });
 
     test('a reading with no funding gets no bar', () {
-      final layout = layOutOpenInterest(
-        const [OpenInterestPoint(time: 1, openInterest: 10)],
-        size: const Size(400, 200),
-      );
+      final layout = layOutOpenInterest(const [
+        OpenInterestPoint(time: 1, openInterest: 10),
+      ], size: const Size(400, 200));
       expect(layout.fundingBars.single, isNull);
     });
 
@@ -138,10 +134,9 @@ void main() {
       );
       expect(layOutOpenInterest(_points, size: Size.zero).isEmpty, true);
       expect(
-        layOutOpenInterest(
-          const [OpenInterestPoint(time: 1, openInterest: double.nan)],
-          size: const Size(400, 200),
-        ).isEmpty,
+        layOutOpenInterest(const [
+          OpenInterestPoint(time: 1, openInterest: double.nan),
+        ], size: const Size(400, 200)).isEmpty,
         true,
       );
     });
@@ -158,8 +153,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws and reports the reading under the finger',
-        (tester) async {
+    testWidgets('draws and reports the reading under the finger', (
+      tester,
+    ) async {
       OpenInterestPoint? touched;
       OpenInterestMove? move;
       await tester.pumpWidget(
@@ -182,8 +178,9 @@ void main() {
       expect(find.byType(OpenInterestChart), findsOneWidget);
 
       final box = tester.getRect(find.byType(OpenInterestChart));
-      final gesture =
-          await tester.startGesture(Offset(box.left + 1, box.center.dy));
+      final gesture = await tester.startGesture(
+        Offset(box.left + 1, box.center.dy),
+      );
       await tester.pump();
       expect(touched?.openInterest, 100);
       expect(move, OpenInterestMove.flat);

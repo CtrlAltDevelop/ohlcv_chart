@@ -64,9 +64,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: Column(
-              children: [
-                RMultipleChart(results: _results, semanticLabel: 'R'),
-              ],
+              children: [RMultipleChart(results: _results, semanticLabel: 'R')],
             ),
           ),
         ),
@@ -95,9 +93,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: RMultipleChart(results: [], showStats: false),
-          ),
+          home: Scaffold(body: RMultipleChart(results: [], showStats: false)),
         ),
       );
       expect(find.text('Trades'), findsNothing);

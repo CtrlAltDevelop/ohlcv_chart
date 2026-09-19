@@ -25,18 +25,19 @@ class TextAnnotation extends ChartLine implements LabelledDrawing {
 
   /// Rebuilds a note from [json].
   factory TextAnnotation.fromJson(Map<String, dynamic> json) => TextAnnotation(
-        time: LineJson.time(json, 'time') ??
-            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-        price: LineJson.number(json, 'price'),
-        text: LineJson.text(json, 'text'),
-        pointer: LineJson.flag(json, 'pointer', true),
-        color: LineJson.color(json, const Color(0xFFFFFFFF)),
-        thickness: LineJson.number(json, 'thickness', 1),
-        style: LineJson.style(json),
-        locked: LineJson.flag(json, 'locked'),
-        showLabel: LineJson.flag(json, 'showLabel', true),
-        hidden: LineJson.flag(json, 'hidden'),
-      );
+    time:
+        LineJson.time(json, 'time') ??
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    price: LineJson.number(json, 'price'),
+    text: LineJson.text(json, 'text'),
+    pointer: LineJson.flag(json, 'pointer', true),
+    color: LineJson.color(json, const Color(0xFFFFFFFF)),
+    thickness: LineJson.number(json, 'thickness', 1),
+    style: LineJson.style(json),
+    locked: LineJson.flag(json, 'locked'),
+    showLabel: LineJson.flag(json, 'showLabel', true),
+    hidden: LineJson.flag(json, 'hidden'),
+  );
 
   /// The candle the note is pinned to.
   DateTime time;
@@ -58,10 +59,10 @@ class TextAnnotation extends ChartLine implements LabelledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...baseJson('text'),
-        'time': time.toIso8601String(),
-        'price': price,
-        if (text != null) 'text': text,
-        'pointer': pointer,
-      };
+    ...baseJson('text'),
+    'time': time.toIso8601String(),
+    'price': price,
+    if (text != null) 'text': text,
+    'pointer': pointer,
+  };
 }

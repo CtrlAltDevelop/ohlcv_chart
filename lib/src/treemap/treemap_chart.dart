@@ -136,7 +136,7 @@ class TreemapChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched leaf; null shows none.
   final Widget? Function(BuildContext context, TreemapTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the tile.
   final double tooltipMargin;
@@ -259,8 +259,9 @@ class _TreemapChartState extends State<TreemapChart>
         final tiles = _layout(size);
 
         final touched = _touched;
-        final details =
-            touched == null ? null : TreemapTouchDetails(tile: touched);
+        final details = touched == null
+            ? null
+            : TreemapTouchDetails(tile: touched);
         final builder = widget.tooltipBuilder;
         final tooltip = details == null || builder == null
             ? null
@@ -485,10 +486,7 @@ class TreemapChartPainter extends CustomPainter {
     final tp = textCache.get(text, style);
     final room = header.deflate(4);
     if (tp.width > room.width || tp.height > header.height) return;
-    tp.paint(
-      canvas,
-      Offset(room.left, header.center.dy - tp.height / 2),
-    );
+    tp.paint(canvas, Offset(room.left, header.center.dy - tp.height / 2));
   }
 
   void _paintLeafLabel(Canvas canvas, TreemapTile tile, Rect rect) {
@@ -499,7 +497,8 @@ class TreemapChartPainter extends CustomPainter {
     final room = chart.labelPadding.deflateRect(rect);
     if (room.width <= 0 || room.height <= 0) return;
 
-    final style = chart.labelStyle ??
+    final style =
+        chart.labelStyle ??
         TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -516,8 +515,8 @@ class TreemapChartPainter extends CustomPainter {
   /// Black or white, whichever reads on [background].
   static Color _readableOn(Color background) =>
       background.computeLuminance() > 0.5
-          ? const Color(0xDD000000)
-          : const Color(0xFFFFFFFF);
+      ? const Color(0xDD000000)
+      : const Color(0xFFFFFFFF);
 
   @override
   bool shouldRepaint(TreemapChartPainter oldDelegate) =>

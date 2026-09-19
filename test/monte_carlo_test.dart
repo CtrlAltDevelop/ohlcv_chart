@@ -11,11 +11,11 @@ final _paths = <List<double>>[
 ];
 
 MonteCarloResult _result({double? ruinLevel}) => MonteCarloResult.fromPaths(
-      _paths,
-      startingEquity: 100,
-      percentiles: const [0, 0.5, 1],
-      ruinLevel: ruinLevel,
-    );
+  _paths,
+  startingEquity: 100,
+  percentiles: const [0, 0.5, 1],
+  ruinLevel: ruinLevel,
+);
 
 void main() {
   group('reading paths', () {
@@ -58,10 +58,16 @@ void main() {
 
   group('simulating', () {
     test('a seed repeats the run', () {
-      final a =
-          runMonteCarlo(const [0.01, -0.02, 0.03], seed: 3, pathCount: 50);
-      final b =
-          runMonteCarlo(const [0.01, -0.02, 0.03], seed: 3, pathCount: 50);
+      final a = runMonteCarlo(
+        const [0.01, -0.02, 0.03],
+        seed: 3,
+        pathCount: 50,
+      );
+      final b = runMonteCarlo(
+        const [0.01, -0.02, 0.03],
+        seed: 3,
+        pathCount: 50,
+      );
       expect(a.paths, b.paths);
       expect(a.paths.length, 50);
       expect(a.steps, 3);
@@ -146,18 +152,16 @@ void main() {
     });
 
     test('nothing to show lays out nothing', () {
-      expect(
-        layOutMonteCarlo(runMonteCarlo(const []), bounds).isEmpty,
-        isTrue,
-      );
+      expect(layOutMonteCarlo(runMonteCarlo(const []), bounds).isEmpty, isTrue);
       expect(layOutMonteCarlo(_result(), Rect.zero).isEmpty, isTrue);
       expect(layOutMonteCarlo(_result(), bounds).stepAt(10), isNotNull);
     });
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       MonteCarloTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(

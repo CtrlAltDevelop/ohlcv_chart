@@ -27,7 +27,7 @@ void main() {
       final scales = parallelScales(
         const [ParallelAxis(label: 'x', min: 0, max: 100)],
         const [
-          ParallelLine(label: 'a', values: [50])
+          ParallelLine(label: 'a', values: [50]),
         ],
       );
       expect(scales.single.min, 0);
@@ -56,7 +56,7 @@ void main() {
       final scales = parallelScales(
         const [ParallelAxis(label: 'x')],
         const [
-          ParallelLine(label: 'a', values: [null])
+          ParallelLine(label: 'a', values: [null]),
         ],
       );
       expect(scales.single.max, greaterThan(scales.single.min));
@@ -85,20 +85,13 @@ void main() {
         layout.lines[0].points[1]!.dy,
         closeTo(layout.plotRect.bottom, 1e-9),
       );
-      expect(
-        layout.lines[1].points[1]!.dy,
-        closeTo(layout.plotRect.top, 1e-9),
-      );
+      expect(layout.lines[1].points[1]!.dy, closeTo(layout.plotRect.top, 1e-9));
     });
 
     test('a missing value breaks the line there', () {
-      final layout = layOutParallel(
-        _axes,
-        const [
-          ParallelLine(label: 'a', values: [1, null, 3])
-        ],
-        size: const Size(400, 200),
-      );
+      final layout = layOutParallel(_axes, const [
+        ParallelLine(label: 'a', values: [1, null, 3]),
+      ], size: const Size(400, 200));
       expect(layout.lines.single.points[1], isNull);
       expect(layout.lines.single.points[0], isNotNull);
     });

@@ -37,8 +37,8 @@ class TreemapItem {
     this.label,
     this.color,
     this.data,
-  })  : value = 0,
-        colorValue = null;
+  }) : value = 0,
+       colorValue = null;
 
   /// How much room a leaf takes, relative to the others. Ignored for a group.
   final double value;
@@ -186,7 +186,8 @@ void _layOutLevel(
 
     final item = entry.item;
     // A header only where it leaves the children something to be laid out in.
-    final header = item.isGroup &&
+    final header =
+        item.isGroup &&
             groupHeaderHeight > 0 &&
             rect.height > groupHeaderHeight * 2
         ? Rect.fromLTWH(rect.left, rect.top, rect.width, groupHeaderHeight)
@@ -257,15 +258,15 @@ void _squarify(List<_Entry> entries, Rect bounds) {
       final width = last
           ? remaining.width
           : remaining.height <= 0
-              ? 0.0
-              : rowArea / remaining.height;
+          ? 0.0
+          : rowArea / remaining.height;
       var top = remaining.top;
       for (var i = start; i < end; i++) {
         final height = i == end - 1
             ? remaining.bottom - top
             : width <= 0
-                ? 0.0
-                : entries[i].area / width;
+            ? 0.0
+            : entries[i].area / width;
         entries[i].rect = Rect.fromLTWH(remaining.left, top, width, height);
         top += height;
       }
@@ -280,15 +281,15 @@ void _squarify(List<_Entry> entries, Rect bounds) {
       final height = last
           ? remaining.height
           : remaining.width <= 0
-              ? 0.0
-              : rowArea / remaining.width;
+          ? 0.0
+          : rowArea / remaining.width;
       var left = remaining.left;
       for (var i = start; i < end; i++) {
         final width = i == end - 1
             ? remaining.right - left
             : height <= 0
-                ? 0.0
-                : entries[i].area / height;
+            ? 0.0
+            : entries[i].area / height;
         entries[i].rect = Rect.fromLTWH(left, remaining.top, width, height);
         left += width;
       }

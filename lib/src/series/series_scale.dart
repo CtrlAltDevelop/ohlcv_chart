@@ -227,9 +227,11 @@ List<double> _xTicks(
   if (labels != null && axis.labelBuilder == null) {
     final every = interval == null ? 1 : math.max(1, interval.round());
     return [
-      for (var i = math.max(0, left.ceil());
-          i <= right.floor() && i < labels.length;
-          i++)
+      for (
+        var i = math.max(0, left.ceil());
+        i <= right.floor() && i < labels.length;
+        i++
+      )
         if (labels[i].isNotEmpty && i % every == 0) i.toDouble(),
     ];
   }
@@ -319,10 +321,10 @@ class SeriesGeometry {
     final horizontal = orientation == SeriesOrientation.horizontal;
     final valueRoom = yAxis.show
         ? (horizontal
-                ? _lineHeight(seriesAxisLabelStyle.merge(yAxis.style)) +
-                    yAxis.gap
-                : yAxis.width) +
-            _titleRoom(yAxis.title, yAxis.titleStyle)
+                  ? _lineHeight(seriesAxisLabelStyle.merge(yAxis.style)) +
+                        yAxis.gap
+                  : yAxis.width) +
+              _titleRoom(yAxis.title, yAxis.titleStyle)
         : 0.0;
     final xRoom = xAxis.show
         ? xAxis.height + _titleRoom(xAxis.title, xAxis.titleStyle)

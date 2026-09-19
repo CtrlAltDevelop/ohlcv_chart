@@ -55,8 +55,9 @@ class MonteCarloResult {
     double? ruinLevel,
   }) {
     final levels = [...percentiles]..sort();
-    final length =
-        paths.isEmpty ? 0 : paths.map((path) => path.length).reduce(math.min);
+    final length = paths.isEmpty
+        ? 0
+        : paths.map((path) => path.length).reduce(math.min);
 
     final bands = [for (final _ in levels) List<double>.filled(length, 0)];
     final column = List<double>.filled(paths.length, 0);
@@ -114,9 +115,9 @@ class MonteCarloResult {
 
   /// Where the paths ended, lowest first.
   List<double> get finalEquities => [
-        for (final path in paths)
-          if (path.length > steps) path[steps]
-      ]..sort();
+    for (final path in paths)
+      if (path.length > steps) path[steps],
+  ]..sort();
 
   /// The final value [p] of the way up the outcomes: 0.05 is the worst 5%.
   double finalEquityAt(double p) => _quantile(finalEquities, p);
@@ -358,9 +359,9 @@ MonteCarloLayout layOutMonteCarlo(
     actual: const [],
   );
   List<Offset> line(List<double> values) => [
-        for (var step = 0; step <= steps && step < values.length; step++)
-          Offset(shell.xOf(step), shell.yOf(values[step])),
-      ];
+    for (var step = 0; step <= steps && step < values.length; step++)
+      Offset(shell.xOf(step), shell.yOf(values[step])),
+  ];
 
   return MonteCarloLayout(
     plot: bounds,
@@ -551,7 +552,7 @@ class MonteCarloChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched step; null shows none.
   final Widget? Function(BuildContext context, MonteCarloTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the median.
   final double tooltipMargin;
@@ -968,8 +969,8 @@ class MonteCarloChartPainter extends CustomPainter {
     final line = grid == null
         ? null
         : (Paint()
-          ..color = grid
-          ..strokeWidth = 1);
+            ..color = grid
+            ..strokeWidth = 1);
 
     for (final tick in niceTicks(
       layout.min,
@@ -992,15 +993,15 @@ class MonteCarloChartPainter extends CustomPainter {
 
     if (!chart.showStepAxis || layout.steps <= 0) return;
     var written = -double.infinity;
-    for (final tick
-        in niceTicks(0, layout.steps.toDouble(), target: chart.tickCount)) {
+    for (final tick in niceTicks(
+      0,
+      layout.steps.toDouble(),
+      target: chart.tickCount,
+    )) {
       if (tick != tick.roundToDouble()) continue;
       final step = tick.round();
       final format = chart.stepFormatter;
-      final tp = textCache.get(
-        format == null ? '$step' : format(step),
-        style,
-      );
+      final tp = textCache.get(format == null ? '$step' : format(step), style);
       final left = (layout.xOf(step) - tp.width / 2).clamp(
         layout.plot.left,
         math.max(layout.plot.left, layout.plot.right - tp.width),

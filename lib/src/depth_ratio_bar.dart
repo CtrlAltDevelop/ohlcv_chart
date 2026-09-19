@@ -113,7 +113,7 @@ class DepthRatioBar extends StatelessWidget {
     return Semantics(
       label: known
           ? '${chartTranslations.bids} ${_percent(bidShare)}, '
-              '${chartTranslations.asks} ${_percent(askShare)}'
+                '${chartTranslations.asks} ${_percent(askShare)}'
           : null,
       excludeSemantics: known,
       child: Row(
@@ -169,10 +169,10 @@ class DepthRatioBar extends StatelessWidget {
   }
 
   Widget _half(double width, Color color, BorderRadius radius) => Container(
-        width: width,
-        height: chartStyle.ratioBarHeight,
-        decoration: BoxDecoration(color: color, borderRadius: radius),
-      );
+    width: width,
+    height: chartStyle.ratioBarHeight,
+    decoration: BoxDecoration(color: color, borderRadius: radius),
+  );
 
   static String _percent(double share) =>
       '${(share * 100).toStringAsFixed(2)}%';

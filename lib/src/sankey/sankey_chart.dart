@@ -9,12 +9,7 @@ import '../treemap/treemap_data.dart' show treemapPalette;
 @immutable
 class SankeyNode {
   /// Creates the node known as [id].
-  const SankeyNode({
-    required this.id,
-    this.label,
-    this.color,
-    this.data,
-  });
+  const SankeyNode({required this.id, this.label, this.color, this.data});
 
   /// What links name this node by. Unique within a chart.
   final String id;
@@ -311,10 +306,7 @@ SankeyLayout layOutSankey(
     usedIn[to] += thickness;
   }
 
-  return SankeyLayout(
-    nodes: [for (final box in boxes) box!],
-    links: ribbons,
-  );
+  return SankeyLayout(nodes: [for (final box in boxes) box!], links: ribbons);
 }
 
 /// The node bar under [local], or null when there is none.
@@ -445,7 +437,7 @@ class SankeyChart extends StatefulWidget {
 
   /// Builds a card shown beside what was touched; null shows none.
   final Widget? Function(BuildContext context, SankeyTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from what was touched.
   final double tooltipMargin;
@@ -693,7 +685,8 @@ class SankeyChartPainter extends CustomPainter {
     final highlighted = touchedNode == null ? null : layout.nodes[touchedNode!];
 
     for (final ribbon in layout.links) {
-      final dimmed = chart.fadeUntouched &&
+      final dimmed =
+          chart.fadeUntouched &&
           highlighted != null &&
           ribbon.source.index != highlighted.index &&
           ribbon.target.index != highlighted.index;
@@ -738,14 +731,14 @@ class SankeyChartPainter extends CustomPainter {
 
   /// The ribbon as it looks [t] of the way in: grown from the source bar.
   Path _grown(SankeyLinkRibbon ribbon, double t) => SankeyLinkRibbon(
-        link: ribbon.link,
-        index: ribbon.index,
-        source: ribbon.source,
-        target: ribbon.target,
-        sourceTop: ribbon.sourceTop,
-        targetTop: ribbon.targetTop,
-        thickness: ribbon.thickness * t,
-      ).path;
+    link: ribbon.link,
+    index: ribbon.index,
+    source: ribbon.source,
+    target: ribbon.target,
+    sourceTop: ribbon.sourceTop,
+    targetTop: ribbon.targetTop,
+    thickness: ribbon.thickness * t,
+  ).path;
 
   Color _nodeColor(SankeyNodeBox box) {
     final own = box.node.color;
@@ -790,7 +783,8 @@ class SankeyChartPainter extends CustomPainter {
   void _paintLabel(Canvas canvas, Size size, SankeyNodeBox box) {
     final text = _labelOf(box);
     if (text == null || text.isEmpty) return;
-    final style = chart.labelStyle ??
+    final style =
+        chart.labelStyle ??
         const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,

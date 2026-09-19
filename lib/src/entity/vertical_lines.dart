@@ -21,16 +21,17 @@ class VerticalLine extends ChartLine implements LabelledDrawing {
 
   /// Rebuilds a vertical line from [json].
   factory VerticalLine.fromJson(Map<String, dynamic> json) => VerticalLine(
-        time: LineJson.time(json, 'time') ??
-            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-        title: LineJson.text(json, 'title'),
-        color: LineJson.color(json),
-        thickness: LineJson.number(json, 'thickness', 2),
-        style: LineJson.style(json),
-        locked: LineJson.flag(json, 'locked'),
-        showLabel: LineJson.flag(json, 'showLabel'),
-        hidden: LineJson.flag(json, 'hidden'),
-      );
+    time:
+        LineJson.time(json, 'time') ??
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    title: LineJson.text(json, 'title'),
+    color: LineJson.color(json),
+    thickness: LineJson.number(json, 'thickness', 2),
+    style: LineJson.style(json),
+    locked: LineJson.flag(json, 'locked'),
+    showLabel: LineJson.flag(json, 'showLabel'),
+    hidden: LineJson.flag(json, 'hidden'),
+  );
 
   /// The instant the line sits at.
   DateTime time;
@@ -46,8 +47,8 @@ class VerticalLine extends ChartLine implements LabelledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...baseJson('vertical'),
-        'time': time.toIso8601String(),
-        if (title != null) 'title': title,
-      };
+    ...baseJson('vertical'),
+    'time': time.toIso8601String(),
+    if (title != null) 'title': title,
+  };
 }

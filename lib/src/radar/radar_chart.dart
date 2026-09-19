@@ -330,14 +330,14 @@ class _RadarChartState extends State<RadarChart>
         final names = widget.features.isEmpty
             ? 0.0
             : _text
-                    .get(
-                      widget.features.reduce(
-                        (a, b) => a.length >= b.length ? a : b,
-                      ),
-                      seriesAxisLabelStyle.merge(widget.featureStyle),
-                    )
-                    .width /
-                2;
+                      .get(
+                        widget.features.reduce(
+                          (a, b) => a.length >= b.length ? a : b,
+                        ),
+                        seriesAxisLabelStyle.merge(widget.featureStyle),
+                      )
+                      .width /
+                  2;
         final radius = math.max(
           0.0,
           widget.radius ??
@@ -425,21 +425,21 @@ class RadarLayout {
 
   /// The corner of feature [index] at [value].
   Offset cornerFor(int index, double value) => radarCorner(
-        centre: centre,
-        radius: radiusFor(value),
-        count: count,
-        index: index,
-        startAngle: startAngle,
-      );
+    centre: centre,
+    radius: radiusFor(value),
+    count: count,
+    index: index,
+    startAngle: startAngle,
+  );
 
   /// The corner of feature [index] on the ring at [t] of the way out.
   Offset ringCorner(int index, double t) => radarCorner(
-        centre: centre,
-        radius: radius * t,
-        count: count,
-        index: index,
-        startAngle: startAngle,
-      );
+    centre: centre,
+    radius: radius * t,
+    count: count,
+    index: index,
+    startAngle: startAngle,
+  );
 }
 
 /// Paints a [RadarChart]: the web, the feature names and the outlines.
@@ -526,11 +526,13 @@ class RadarChartPainter extends CustomPainter {
       final corner = layout.ringCorner(i, 1);
       final direction = corner - layout.centre;
       final distance = direction.distance;
-      final out =
-          distance == 0 ? Offset.zero : direction / distance * chart.featureGap;
+      final out = distance == 0
+          ? Offset.zero
+          : direction / distance * chart.featureGap;
       // Pushed clear of the web by half the label, so a name on the left ends
       // where the web starts rather than lying over it.
-      final at = corner +
+      final at =
+          corner +
           out +
           Offset(
             (direction.dx / (distance == 0 ? 1 : distance)) * tp.width / 2,

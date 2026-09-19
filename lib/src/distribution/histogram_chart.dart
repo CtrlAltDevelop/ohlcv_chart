@@ -156,8 +156,9 @@ List<HistogramBar> layOutHistogram(
         final bin = bins[i];
         final left = x(bin.from);
         final right = x(bin.to);
-        final height =
-            maxCount <= 0 ? 0.0 : (bin.count / maxCount).clamp(0.0, 1.0) * top;
+        final height = maxCount <= 0
+            ? 0.0
+            : (bin.count / maxCount).clamp(0.0, 1.0) * top;
         return HistogramBar(
           bin: bin,
           index: i,
@@ -300,7 +301,7 @@ class HistogramChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched bar; null shows none.
   final Widget? Function(BuildContext context, HistogramTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the bar.
   final double tooltipMargin;
@@ -590,8 +591,8 @@ class HistogramChartPainter extends CustomPainter {
     final line = grid == null
         ? null
         : (Paint()
-          ..color = grid
-          ..strokeWidth = 1);
+            ..color = grid
+            ..strokeWidth = 1);
 
     for (final tick in ticks) {
       final y = plot.bottom - (tick / maxCount).clamp(0.0, 1.0) * plot.height;

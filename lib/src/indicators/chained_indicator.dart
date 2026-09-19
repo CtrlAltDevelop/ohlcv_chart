@@ -64,12 +64,12 @@ class ChainedIndicator extends Indicator {
 
   @override
   List<Object?> get settings => [
-        source.name,
-        ...source.settings,
-        sourceLine,
-        applied.name,
-        ...applied.settings,
-      ];
+    source.name,
+    ...source.settings,
+    sourceLine,
+    applied.name,
+    ...applied.settings,
+  ];
 
   @override
   List<double> get guides => applied.guides;
@@ -127,8 +127,7 @@ class ChainedIndicator extends Indicator {
     KLineEntity candle,
     double value,
     ChartColors theme,
-  ) =>
-      applied.colorForPoint(line, index, candle, value, theme);
+  ) => applied.colorForPoint(line, index, candle, value, theme);
 
   @override
   String? markerLabel(int line, int index) => applied.markerLabel(line, index);
@@ -168,7 +167,8 @@ List<KLineEntity> flattenToCandles(
           low: last,
           close: last,
           vol: candles[i].vol,
-          dateTime: candles[i].dateTime ??
+          dateTime:
+              candles[i].dateTime ??
               DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
         );
       }(),

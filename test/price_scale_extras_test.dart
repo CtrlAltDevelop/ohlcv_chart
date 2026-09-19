@@ -19,27 +19,26 @@ Widget _chart(
   bool highLow = false,
   PriceAxisScale scale = PriceAxisScale.linear,
   ChartType type = ChartType.candles,
-}) =>
-    MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 500,
-          height: 600,
-          child: KChartWidget(
-            data,
-            ChartColors(),
-            isTrendLine: false,
-            timeFrame: const Duration(minutes: 1),
-            showNowPrice: false,
-            chartType: type,
-            priceAxisScale: scale,
-            invertPriceAxis: invert,
-            showAverageClose: average,
-            showHighLowOnAxis: highLow,
-          ),
-        ),
+}) => MaterialApp(
+  home: Scaffold(
+    body: SizedBox(
+      width: 500,
+      height: 600,
+      child: KChartWidget(
+        data,
+        ChartColors(),
+        isTrendLine: false,
+        timeFrame: const Duration(minutes: 1),
+        showNowPrice: false,
+        chartType: type,
+        priceAxisScale: scale,
+        invertPriceAxis: invert,
+        showAverageClose: average,
+        showHighLowOnAxis: highLow,
       ),
-    );
+    ),
+  ),
+);
 
 ChartPainter _painterOf(WidgetTester tester) {
   final paint = tester.widget<CustomPaint>(
@@ -263,8 +262,9 @@ void main() {
       var high = -double.infinity;
       var low = double.infinity;
       for (var i = painter.mStartIndex; i <= painter.mStopIndex; i++) {
-        high =
-            high > painter.candles![i].high ? high : painter.candles![i].high;
+        high = high > painter.candles![i].high
+            ? high
+            : painter.candles![i].high;
         low = low < painter.candles![i].low ? low : painter.candles![i].low;
       }
       expect(painter.mMainHighMaxValue, closeTo(high, 1e-9));

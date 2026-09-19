@@ -39,12 +39,12 @@ class WaterfallStep {
     Color? color,
     Object? data,
   }) : this(
-          value: value,
-          label: label,
-          kind: WaterfallKind.total,
-          color: color,
-          data: data,
-        );
+         value: value,
+         label: label,
+         kind: WaterfallKind.total,
+         color: color,
+         data: data,
+       );
 
   /// How much the step moves the total, or what a first total starts at.
   final double value;
@@ -355,7 +355,7 @@ class WaterfallChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched step; null shows none.
   final Widget? Function(BuildContext context, WaterfallTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the bar.
   final double tooltipMargin;
@@ -663,7 +663,8 @@ class WaterfallChartPainter extends CustomPainter {
   void _paintValue(Canvas canvas, WaterfallBar bar) {
     if (!chart.showValues) return;
     final value = bar.isTotal ? bar.end : bar.change;
-    final style = chart.valueStyle ??
+    final style =
+        chart.valueStyle ??
         seriesAxisLabelStyle.copyWith(fontWeight: FontWeight.w600);
     final tp = textCache.get(_format(value, signed: !bar.isTotal), style);
     if (tp.width > bar.band.width) return;
@@ -694,8 +695,8 @@ class WaterfallChartPainter extends CustomPainter {
       final line = grid == null
           ? null
           : (Paint()
-            ..color = grid
-            ..strokeWidth = 1);
+              ..color = grid
+              ..strokeWidth = 1);
       for (final tick in niceTicks(min, max, target: chart.tickCount)) {
         final y = _y(tick);
         if (line != null) {
@@ -725,9 +726,9 @@ class WaterfallChartPainter extends CustomPainter {
     if (format != null) return format(value);
     final whole = value.round();
     final grouped = whole.abs().toString().replaceAllMapped(
-          RegExp(r'\B(?=(\d{3})+(?!\d))'),
-          (_) => ',',
-        );
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => ',',
+    );
     if (whole < 0) return '-$grouped';
     return signed && whole > 0 ? '+$grouped' : grouped;
   }

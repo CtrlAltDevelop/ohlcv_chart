@@ -63,28 +63,20 @@ void main() {
     });
 
     test('a link into a full column is dropped when it points backwards', () {
-      final layout = layOutSankey(
-        _nodes,
-        const [
-          ..._links,
-          SankeyLink(source: 'saved', target: 'salary', value: 10),
-        ],
-        _bounds,
-      );
+      final layout = layOutSankey(_nodes, const [
+        ..._links,
+        SankeyLink(source: 'saved', target: 'salary', value: 10),
+      ], _bounds);
       expect(layout.links.length, 3);
     });
 
     test('links naming an unknown node, itself or nothing are dropped', () {
-      final layout = layOutSankey(
-        _nodes,
-        const [
-          SankeyLink(source: 'salary', target: 'nowhere', value: 10),
-          SankeyLink(source: 'salary', target: 'salary', value: 10),
-          SankeyLink(source: 'salary', target: 'budget', value: 0),
-          SankeyLink(source: 'salary', target: 'budget', value: double.nan),
-        ],
-        _bounds,
-      );
+      final layout = layOutSankey(_nodes, const [
+        SankeyLink(source: 'salary', target: 'nowhere', value: 10),
+        SankeyLink(source: 'salary', target: 'salary', value: 10),
+        SankeyLink(source: 'salary', target: 'budget', value: 0),
+        SankeyLink(source: 'salary', target: 'budget', value: double.nan),
+      ], _bounds);
       expect(layout.links, isEmpty);
       expect(layout.nodes.every((n) => n.rect.height == 0), isTrue);
     });
@@ -99,7 +91,9 @@ void main() {
     test('a point inside a bar finds its node', () {
       final layout = layOutSankey(_nodes, _links, _bounds);
       expect(
-          sankeyNodeAt(layout, layout.nodes[1].rect.center)?.node.id, 'budget');
+        sankeyNodeAt(layout, layout.nodes[1].rect.center)?.node.id,
+        'budget',
+      );
       expect(sankeyNodeAt(layout, const Offset(100, 5)), isNull);
     });
 
@@ -114,8 +108,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       SankeyTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -140,8 +135,9 @@ void main() {
       expect(size.height, 280);
 
       final topLeft = tester.getTopLeft(find.byType(SankeyChart));
-      final gesture =
-          await tester.startGesture(topLeft + Offset(7, size.height / 2));
+      final gesture = await tester.startGesture(
+        topLeft + Offset(7, size.height / 2),
+      );
       await tester.pump();
       expect(touched?.node?.node.id, 'salary');
       expect(find.text('card'), findsOneWidget);

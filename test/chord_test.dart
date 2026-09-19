@@ -19,20 +19,18 @@ const _flows = [
 void main() {
   group('the totals', () {
     test('count what leaves and what arrives at each node', () {
-      final totals = ChordTotals.of(
-        [for (final node in _nodes) node.label],
-        _flows,
-      );
+      final totals = ChordTotals.of([
+        for (final node in _nodes) node.label,
+      ], _flows);
       expect(totals.out, [40, 25, 30]);
       expect(totals.into, [30, 40, 25]);
       expect(totals.totalAt(0), 70);
     });
 
     test('the grand total counts every flow at both its ends', () {
-      final totals = ChordTotals.of(
-        [for (final node in _nodes) node.label],
-        _flows,
-      );
+      final totals = ChordTotals.of([
+        for (final node in _nodes) node.label,
+      ], _flows);
       expect(totals.grandTotal, (40 + 25 + 30) * 2);
     });
 
@@ -58,8 +56,12 @@ void main() {
 
   group('the layout', () {
     test('arcs are as long as the flow through their node', () {
-      final layout =
-          layOutChord(_nodes, _flows, size: const Size(300, 300), padAngle: 0);
+      final layout = layOutChord(
+        _nodes,
+        _flows,
+        size: const Size(300, 300),
+        padAngle: 0,
+      );
       final sweeps = [for (final arc in layout.arcs) arc.sweepAngle];
       expect(sweeps.reduce((a, b) => a + b), closeTo(2 * math.pi, 1e-9));
       // Binance carries 70 of 190.
@@ -74,10 +76,7 @@ void main() {
         padAngle: 0.1,
       );
       final sweeps = [for (final arc in layout.arcs) arc.sweepAngle];
-      expect(
-        sweeps.reduce((a, b) => a + b),
-        closeTo(2 * math.pi - 0.3, 1e-9),
-      );
+      expect(sweeps.reduce((a, b) => a + b), closeTo(2 * math.pi - 0.3, 1e-9));
       // Still in true proportion to each other.
       expect(sweeps[0] / sweeps[1], closeTo(70 / 65, 1e-9));
     });
@@ -139,8 +138,10 @@ void main() {
     });
 
     test('nothing to show lays out nothing', () {
-      expect(layOutChord(const [], _flows, size: const Size(300, 300)).isEmpty,
-          true);
+      expect(
+        layOutChord(const [], _flows, size: const Size(300, 300)).isEmpty,
+        true,
+      );
       expect(layOutChord(_nodes, _flows, size: Size.zero).isEmpty, true);
       expect(
         layOutChord(_nodes, const [], size: const Size(300, 300)).isEmpty,
@@ -158,7 +159,8 @@ void main() {
         labelWidth: 0,
       );
       final arc = layout.arcs.first;
-      final onRing = layout.center +
+      final onRing =
+          layout.center +
           Offset(math.cos(arc.midAngle), math.sin(arc.midAngle)) *
               (layout.radius - layout.ringThickness / 2);
       expect(layout.arcAt(onRing)?.index, 0);
@@ -205,11 +207,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: ChordChart(
-                nodes: _nodes,
-                flows: _flows,
-                defaultSize: 200,
-              ),
+              child: ChordChart(nodes: _nodes, flows: _flows, defaultSize: 200),
             ),
           ),
         ),

@@ -117,21 +117,30 @@ void main() {
         isTrue,
       );
       expect(
-        layOutOptionPayoff(_spread, Rect.zero, minPrice: 0, maxPrice: 1)
-            .isEmpty,
+        layOutOptionPayoff(
+          _spread,
+          Rect.zero,
+          minPrice: 0,
+          maxPrice: 1,
+        ).isEmpty,
         isTrue,
       );
       expect(
-        layOutOptionPayoff(_spread, _bounds, minPrice: 10, maxPrice: 10)
-            .isEmpty,
+        layOutOptionPayoff(
+          _spread,
+          _bounds,
+          minPrice: 10,
+          maxPrice: 10,
+        ).isEmpty,
         isTrue,
       );
     });
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       OptionPayoffTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -173,8 +182,9 @@ void main() {
       expect(touched, isNull);
     });
 
-    testWidgets('draws itself in and survives its legs changing',
-        (tester) async {
+    testWidgets('draws itself in and survives its legs changing', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

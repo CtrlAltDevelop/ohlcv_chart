@@ -150,16 +150,15 @@ class _SeriesRangeSelectorState extends State<SeriesRangeSelector> {
 
           GestureDragUpdateCallback drag(
             SeriesWindow Function(SeriesWindow from, double units) move,
-          ) =>
-              (details) {
-                // A selector with no width has nothing to measure a drag against.
-                if (width <= 0) return;
-                final from = _dragFrom ?? widget.window;
-                final units =
-                    (details.globalPosition.dx - _dragOrigin) / width * domain;
-                final next = move(from, units);
-                if (next != widget.window) widget.onChanged(next);
-              };
+          ) => (details) {
+            // A selector with no width has nothing to measure a drag against.
+            if (width <= 0) return;
+            final from = _dragFrom ?? widget.window;
+            final units =
+                (details.globalPosition.dx - _dragOrigin) / width * domain;
+            final next = move(from, units);
+            if (next != widget.window) widget.onChanged(next);
+          };
 
           final pan = drag((from, units) {
             final span = from.span;
@@ -245,50 +244,46 @@ class _SeriesRangeSelectorState extends State<SeriesRangeSelector> {
     required GestureDragUpdateCallback onUpdate,
     required MouseCursor cursor,
     required Widget child,
-  }) =>
-      GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        dragStartBehavior: DragStartBehavior.down,
-        onHorizontalDragStart: _begin,
-        onHorizontalDragUpdate: onUpdate,
-        onHorizontalDragEnd: _end,
-        onHorizontalDragCancel: _end,
-        child: MouseRegion(cursor: cursor, child: child),
-      );
+  }) => GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    dragStartBehavior: DragStartBehavior.down,
+    onHorizontalDragStart: _begin,
+    onHorizontalDragUpdate: onUpdate,
+    onHorizontalDragEnd: _end,
+    onHorizontalDragCancel: _end,
+    child: MouseRegion(cursor: cursor, child: child),
+  );
 
   Widget _handle(
     double centre,
     GestureDragUpdateCallback onUpdate,
-  ) =>
-      Positioned(
-        left: centre - _handleHitWidth / 2,
-        top: 0,
-        bottom: 0,
-        width: _handleHitWidth,
-        child: _draggable(
-          onUpdate: onUpdate,
-          cursor: SystemMouseCursors.resizeLeftRight,
-          child: Center(
-            child: Container(
-              width: _handleWidth,
-              height: 22,
-              decoration: BoxDecoration(
-                color: widget.handleColor,
-                border: Border.all(color: widget.handleBorderColor),
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                      width: 1, height: 10, color: widget.handleGripColor),
-                  const SizedBox(width: 2),
-                  Container(
-                      width: 1, height: 10, color: widget.handleGripColor),
-                ],
-              ),
-            ),
+  ) => Positioned(
+    left: centre - _handleHitWidth / 2,
+    top: 0,
+    bottom: 0,
+    width: _handleHitWidth,
+    child: _draggable(
+      onUpdate: onUpdate,
+      cursor: SystemMouseCursors.resizeLeftRight,
+      child: Center(
+        child: Container(
+          width: _handleWidth,
+          height: 22,
+          decoration: BoxDecoration(
+            color: widget.handleColor,
+            border: Border.all(color: widget.handleBorderColor),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(width: 1, height: 10, color: widget.handleGripColor),
+              const SizedBox(width: 2),
+              Container(width: 1, height: 10, color: widget.handleGripColor),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }

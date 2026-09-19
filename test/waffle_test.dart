@@ -29,10 +29,9 @@ void main() {
     });
 
     test('a given total leaves the rest of the grid empty', () {
-      final counts = waffleCounts(
-        const [WaffleSlice(label: 'a', value: 30, color: Color(0xFF000000))],
-        total: 100,
-      );
+      final counts = waffleCounts(const [
+        WaffleSlice(label: 'a', value: 30, color: Color(0xFF000000)),
+      ], total: 100);
       expect(counts, [30]);
     });
 
@@ -62,7 +61,9 @@ void main() {
       );
       expect(layout.cells, hasLength(100));
       expect(
-          layout.cells.first.width, closeTo(layout.cells.first.height, 1e-9));
+        layout.cells.first.width,
+        closeTo(layout.cells.first.height, 1e-9),
+      );
       // The first ten cells are the bottom row.
       for (var i = 0; i < 10; i++) {
         expect(layout.owners[i], 0);
@@ -105,9 +106,13 @@ void main() {
     test('nothing to show lays out nothing', () {
       expect(layOutWaffle(const [10], size: Size.zero).isEmpty, true);
       expect(
-          layOutWaffle(const [10], size: const Size(200, 200), columns: 0)
-              .isEmpty,
-          true);
+        layOutWaffle(
+          const [10],
+          size: const Size(200, 200),
+          columns: 0,
+        ).isEmpty,
+        true,
+      );
     });
 
     test('a point finds the slice under it, and nothing in a gap', () {

@@ -102,11 +102,11 @@ class HeatmapLayout {
 
   /// The square at column [x], row [y].
   Rect cellRect(int x, int y) => Rect.fromLTWH(
-        grid.left + x * columnWidth,
-        grid.top + y * rowHeight,
-        columnWidth,
-        rowHeight,
-      ).deflate(spacing / 2);
+    grid.left + x * columnWidth,
+    grid.top + y * rowHeight,
+    columnWidth,
+    rowHeight,
+  ).deflate(spacing / 2);
 
   /// The square under [local], or null when it is off the grid.
   (int, int)? cellAt(Offset local) {
@@ -286,7 +286,7 @@ class HeatmapChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched square; null shows none.
   final Widget? Function(BuildContext context, HeatmapTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the square.
   final double tooltipMargin;
@@ -354,8 +354,8 @@ class _HeatmapChartState extends State<HeatmapChart>
 
   /// The cells by position, so a square is looked up rather than searched for.
   Map<(int, int), HeatmapCell> get _byPosition => {
-        for (final cell in widget.cells) (cell.x, cell.y): cell,
-      };
+    for (final cell in widget.cells) (cell.x, cell.y): cell,
+  };
 
   int get _columns {
     final given = widget.columns;
@@ -598,12 +598,12 @@ class HeatmapChartPainter extends CustomPainter {
     final side = chart.border;
     final outline =
         side != null && side.style != BorderStyle.none && side.width > 0
-            ? (Paint()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = side.width
-              ..color = side.color
-              ..isAntiAlias = true)
-            : null;
+        ? (Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = side.width
+            ..color = side.color
+            ..isAntiAlias = true)
+        : null;
     // One path per colour, so a grid of a thousand squares is a handful of
     // draws rather than a thousand.
     final byColor = <Color, Path>{};
@@ -620,10 +620,11 @@ class HeatmapChartPainter extends CustomPainter {
     }
     byColor.forEach((color, path) {
       canvas.drawPath(
-          path,
-          Paint()
-            ..color = color
-            ..isAntiAlias = true);
+        path,
+        Paint()
+          ..color = color
+          ..isAntiAlias = true,
+      );
     });
 
     final at = touched;
@@ -673,7 +674,8 @@ class HeatmapChartPainter extends CustomPainter {
       final rect = layout.cellRect(cell.x, cell.y);
       // A label that cannot fit is left out rather than drawn over its
       // neighbours.
-      final style = chart.labelStyle ??
+      final style =
+          chart.labelStyle ??
           TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -681,10 +683,7 @@ class HeatmapChartPainter extends CustomPainter {
           );
       final tp = textCache.get(text, style);
       if (tp.width > rect.width || tp.height > rect.height) continue;
-      tp.paint(
-        canvas,
-        rect.center - Offset(tp.width / 2, tp.height / 2),
-      );
+      tp.paint(canvas, rect.center - Offset(tp.width / 2, tp.height / 2));
     }
   }
 
@@ -736,8 +735,8 @@ class HeatmapChartPainter extends CustomPainter {
   /// Black or white, whichever reads on [background].
   static Color _readableOn(Color background) =>
       background.computeLuminance() > 0.5
-          ? const Color(0xDD000000)
-          : const Color(0xFFFFFFFF);
+      ? const Color(0xDD000000)
+      : const Color(0xFFFFFFFF);
 
   @override
   bool shouldRepaint(HeatmapChartPainter oldDelegate) => true;
@@ -816,15 +815,9 @@ class HeatmapLegend extends StatelessWidget {
     return Row(
       mainAxisSize: fills ? MainAxisSize.max : MainAxisSize.min,
       children: [
-        if (low != null) ...[
-          Text(low!, style: style),
-          SizedBox(width: gap),
-        ],
+        if (low != null) ...[Text(low!, style: style), SizedBox(width: gap)],
         bar,
-        if (high != null) ...[
-          SizedBox(width: gap),
-          Text(high!, style: style),
-        ],
+        if (high != null) ...[SizedBox(width: gap), Text(high!, style: style)],
       ],
     );
   }

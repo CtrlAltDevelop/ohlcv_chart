@@ -331,7 +331,7 @@ class BubbleChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched bubble; null shows none.
   final Widget? Function(BuildContext context, BubbleTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the bubble.
   final double tooltipMargin;
@@ -465,8 +465,9 @@ class _BubbleChartState extends State<BubbleChart>
         final circle = touched == null
             ? null
             : _circles.where((c) => c.index == touched).firstOrNull;
-        final details =
-            circle == null ? null : BubbleTouchDetails(circle: circle);
+        final details = circle == null
+            ? null
+            : BubbleTouchDetails(circle: circle);
         final builder = widget.tooltipBuilder;
         final tooltip = details == null || builder == null
             ? null
@@ -657,8 +658,8 @@ class BubbleChartPainter extends CustomPainter {
     final line = grid == null
         ? null
         : (Paint()
-          ..color = grid
-          ..strokeWidth = 1);
+            ..color = grid
+            ..strokeWidth = 1);
 
     final spanY = maxY - minY;
     for (final tick in niceTicks(minY, maxY, target: chart.tickCount)) {
@@ -743,7 +744,8 @@ class BubbleChartPainter extends CustomPainter {
   void _paintLabel(Canvas canvas, BubbleCircle circle, Color color) {
     final name = circle.point.label;
     if (name == null || name.isEmpty) return;
-    final style = chart.labelStyle ??
+    final style =
+        chart.labelStyle ??
         TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -753,10 +755,7 @@ class BubbleChartPainter extends CustomPainter {
         );
     final tp = textCache.get(name, style);
     if (tp.width > circle.radius * 1.8) return;
-    tp.paint(
-      canvas,
-      circle.center - Offset(tp.width / 2, tp.height / 2),
-    );
+    tp.paint(canvas, circle.center - Offset(tp.width / 2, tp.height / 2));
   }
 
   Color _colorOf(BubbleCircle circle) {

@@ -83,26 +83,17 @@ void main() {
     });
 
     test('a flat line sits in the middle of its tile', () {
-      final layout = layOutSparklineGrid(
-        const [
-          SparklineTile(label: 'x', values: [5, 5, 5])
-        ],
-        size: const Size(400, 200),
-      );
+      final layout = layOutSparklineGrid(const [
+        SparklineTile(label: 'x', values: [5, 5, 5]),
+      ], size: const Size(400, 200));
       final laid = layout.tiles.single;
-      expect(
-        laid.points.first!.dy,
-        closeTo(laid.sparkRect.center.dy, 1e-6),
-      );
+      expect(laid.points.first!.dy, closeTo(laid.sparkRect.center.dy, 1e-6));
     });
 
     test('a break in the values is a break in the line', () {
-      final layout = layOutSparklineGrid(
-        const [
-          SparklineTile(label: 'x', values: [1, double.nan, 3])
-        ],
-        size: const Size(400, 200),
-      );
+      final layout = layOutSparklineGrid(const [
+        SparklineTile(label: 'x', values: [1, double.nan, 3]),
+      ], size: const Size(400, 200));
       expect(layout.tiles.single.points[1], isNull);
       expect(layout.tiles.single.lastPoint, layout.tiles.single.points[2]);
     });
@@ -124,8 +115,11 @@ void main() {
       );
       expect(layOutSparklineGrid(_tiles, size: Size.zero).isEmpty, true);
       expect(
-        layOutSparklineGrid(_tiles, size: const Size(400, 200), columns: 0)
-            .isEmpty,
+        layOutSparklineGrid(
+          _tiles,
+          size: const Size(400, 200),
+          columns: 0,
+        ).isEmpty,
         true,
       );
     });

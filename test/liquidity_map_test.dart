@@ -12,12 +12,7 @@ const _levels = [
 void main() {
   group('the bins', () {
     test('sides are counted apart, in the bucket they fall in', () {
-      final bins = liquidityBins(
-        _levels,
-        binCount: 4,
-        min: 60000,
-        max: 80000,
-      );
+      final bins = liquidityBins(_levels, binCount: 4, min: 60000, max: 80000);
       expect(bins, hasLength(4));
       expect(bins[0].longSize, 70); // 60,000 and 62,000
       expect(bins[0].shortSize, 0);
@@ -27,9 +22,7 @@ void main() {
 
     test('the top price lands in the last bucket, not past the end', () {
       final bins = liquidityBins(
-        const [
-          LiquidityLevel(price: 100, size: 5, side: LiquiditySide.short),
-        ],
+        const [LiquidityLevel(price: 100, size: 5, side: LiquiditySide.short)],
         binCount: 4,
         min: 0,
         max: 100,
@@ -158,8 +151,10 @@ void main() {
     });
 
     test('nothing to show lays out nothing', () {
-      expect(layOutLiquidityMap(const [], size: const Size(400, 200)).isEmpty,
-          true);
+      expect(
+        layOutLiquidityMap(const [], size: const Size(400, 200)).isEmpty,
+        true,
+      );
       expect(layOutLiquidityMap(bins, size: Size.zero).isEmpty, true);
     });
 
@@ -176,8 +171,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws and reports the bucket under the finger',
-        (tester) async {
+    testWidgets('draws and reports the bucket under the finger', (
+      tester,
+    ) async {
       LiquidityBin? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -202,8 +198,9 @@ void main() {
       expect(find.byType(LiquidityMapChart), findsOneWidget);
 
       final box = tester.getRect(find.byType(LiquidityMapChart));
-      final gesture =
-          await tester.startGesture(Offset(box.center.dx, box.bottom - 10));
+      final gesture = await tester.startGesture(
+        Offset(box.center.dx, box.bottom - 10),
+      );
       await tester.pump();
       expect(touched?.longSize, 70);
       await gesture.up();

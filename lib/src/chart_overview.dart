@@ -244,8 +244,9 @@ class _ChartOverviewState extends State<ChartOverview> {
               size: Size(width, widget.height),
               painter: _OverviewPainter(
                 candles: widget.candles,
-                lastClose:
-                    widget.candles.isEmpty ? null : widget.candles.last.close,
+                lastClose: widget.candles.isEmpty
+                    ? null
+                    : widget.candles.last.close,
                 colors: colors,
                 firstVisible: range?.firstIndex,
                 lastVisible: range?.lastIndex,

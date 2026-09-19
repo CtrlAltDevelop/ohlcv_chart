@@ -43,10 +43,7 @@ void main() {
 
     test('exposure counts what is open, not doubling a hand-over', () {
       final steps = tradeTimelineExposure(_trades);
-      expect(
-        [for (final s in steps) s.count],
-        [1, 2, 2, 1, 0],
-      );
+      expect([for (final s in steps) s.count], [1, 2, 2, 1, 0]);
       expect(steps[2].time, _h(4));
     });
   });
@@ -84,8 +81,12 @@ void main() {
     });
 
     test('trades outside the span are left out, the rest are cut to it', () {
-      final layout =
-          layOutTradeTimeline(_trades, bounds, start: _h(5), end: _h(9));
+      final layout = layOutTradeTimeline(
+        _trades,
+        bounds,
+        start: _h(5),
+        end: _h(9),
+      );
       expect([for (final b in layout.bars) b.index], [1, 2]);
       expect(layout.bars.first.rect.left, 0);
     });
@@ -105,10 +106,9 @@ void main() {
       final quick = layout.bars[1];
       expect(quick.rect.width, 2);
       expect(
-          layout
-              .barAt(Offset(quick.rect.left + 3, quick.rect.center.dy))
-              ?.index,
-          1);
+        layout.barAt(Offset(quick.rect.left + 3, quick.rect.center.dy))?.index,
+        1,
+      );
     });
 
     test('times and positions convert both ways', () {
@@ -126,8 +126,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       TradeTimelineTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -163,8 +164,9 @@ void main() {
       expect(touched, isNull);
     });
 
-    testWidgets('animates, and survives open trades and changes',
-        (tester) async {
+    testWidgets('animates, and survives open trades and changes', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

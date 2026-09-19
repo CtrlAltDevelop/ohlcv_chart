@@ -110,8 +110,10 @@ void main() {
         size: const Size(400, 200),
         labelWidth: 0,
       );
-      expect(half.rows.first.barRect.width,
-          closeTo(full.rows.first.barRect.width / 2, 1e-6));
+      expect(
+        half.rows.first.barRect.width,
+        closeTo(full.rows.first.barRect.width / 2, 1e-6),
+      );
       expect(half.rows.first.targetX, full.rows.first.targetX);
     });
 
@@ -129,9 +131,12 @@ void main() {
       expect(layOutBullet(const [], size: const Size(400, 200)).isEmpty, true);
       expect(layOutBullet(_rows, size: Size.zero).isEmpty, true);
       expect(
-        layOutBullet(_rows,
-                size: const Size(20, 200), labelWidth: 200, labelGap: 30)
-            .isEmpty,
+        layOutBullet(
+          _rows,
+          size: const Size(20, 200),
+          labelWidth: 200,
+          labelGap: 30,
+        ).isEmpty,
         true,
       );
     });

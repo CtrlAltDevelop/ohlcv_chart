@@ -108,8 +108,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       EquityTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -151,8 +152,9 @@ void main() {
       expect(touched, isNull);
     });
 
-    testWidgets('draws itself in and survives its data changing',
-        (tester) async {
+    testWidgets('draws itself in and survives its data changing', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

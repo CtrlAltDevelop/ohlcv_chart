@@ -45,13 +45,14 @@ enum SlopeScale {
 /// Nulls stay null: a series that was not there has no rank. Ties take the
 /// same rank, and the ranks after them skip, the way places in a table do.
 List<int?> rankValues(List<double?> values, {bool ascending = false}) {
-  final order = <int>[
-    for (var i = 0; i < values.length; i++)
-      if (values[i] != null && values[i]!.isFinite) i,
-  ]..sort((a, b) {
-      final compare = values[a]!.compareTo(values[b]!);
-      return ascending ? compare : -compare;
-    });
+  final order =
+      <int>[
+        for (var i = 0; i < values.length; i++)
+          if (values[i] != null && values[i]!.isFinite) i,
+      ]..sort((a, b) {
+        final compare = values[a]!.compareTo(values[b]!);
+        return ascending ? compare : -compare;
+      });
   final ranks = List<int?>.filled(values.length, null);
   var place = 0;
   for (var i = 0; i < order.length; i++) {
@@ -82,15 +83,15 @@ class SlopeSeriesLayout {
 
   /// Its first drawn point, for a label at the left; null when it has none.
   Offset? get firstPoint => points.cast<Offset?>().firstWhere(
-        (point) => point != null,
-        orElse: () => null,
-      );
+    (point) => point != null,
+    orElse: () => null,
+  );
 
   /// Its last drawn point, for a label at the right.
   Offset? get lastPoint => points.reversed.cast<Offset?>().firstWhere(
-        (point) => point != null,
-        orElse: () => null,
-      );
+    (point) => point != null,
+    orElse: () => null,
+  );
 }
 
 /// Where every series of a [SlopeChart] runs.
@@ -212,18 +213,16 @@ SlopeLayout layOutSlope(
     final byPeriod = <List<int?>>[];
     for (var p = 0; p < periods; p++) {
       byPeriod.add(
-        rankValues(
-          [
-            for (final one in series)
-              p < one.values.length ? one.values[p] : null,
-          ],
-          ascending: ascending,
-        ),
+        rankValues([
+          for (final one in series)
+            p < one.values.length ? one.values[p] : null,
+        ], ascending: ascending),
       );
     }
     for (var i = 0; i < series.length; i++) {
-      plotted
-          .add([for (var p = 0; p < periods; p++) byPeriod[p][i]?.toDouble()]);
+      plotted.add([
+        for (var p = 0; p < periods; p++) byPeriod[p][i]?.toDouble(),
+      ]);
     }
   } else {
     for (final one in series) {
@@ -453,7 +452,7 @@ class SlopeChart extends StatefulWidget {
   /// Builds the card shown over a touched series; null shows its label and
   /// the value at the period nearest the finger.
   final Widget Function(BuildContext context, SlopeSeries series, int period)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How tall the chart is in a box that sets no height.
   final double defaultHeight;
@@ -540,12 +539,13 @@ class _SlopeChartState extends State<SlopeChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 420.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.defaultHeight;
+              ? constraints.maxHeight
+              : widget.defaultHeight;
           _layout = layOutSlope(
             widget.series,
             size: Size(width, height),
@@ -595,8 +595,9 @@ class _SlopeChartState extends State<SlopeChart>
   Widget _tooltip(BuildContext context, int index) {
     final series = widget.series[index];
     final laid = _layout.series[index];
-    final period =
-        _period.clamp(0, math.max(0, laid.points.length - 1)).toInt();
+    final period = _period
+        .clamp(0, math.max(0, laid.points.length - 1))
+        .toInt();
     final at = laid.points[period] ?? laid.lastPoint ?? _layout.plotRect.center;
     final build = widget.tooltipBuilder;
     final value = period < series.values.length ? series.values[period] : null;
@@ -658,9 +659,11 @@ class SlopeChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final labelStyle = chart.labelStyle ??
+    final labelStyle =
+        chart.labelStyle ??
         const TextStyle(color: Color(0xFFB4B8C0), fontSize: 11);
-    final headerStyle = chart.headerStyle ??
+    final headerStyle =
+        chart.headerStyle ??
         const TextStyle(color: Color(0xFF909196), fontSize: 11);
 
     // The period columns, and their names over them.
@@ -679,8 +682,10 @@ class SlopeChartPainter extends CustomPainter {
         painter.paint(
           canvas,
           Offset(
-            (x - painter.width / 2)
-                .clamp(0.0, math.max(0.0, size.width - painter.width)),
+            (x - painter.width / 2).clamp(
+              0.0,
+              math.max(0.0, size.width - painter.width),
+            ),
             math.max(0, layout.plotRect.top - painter.height - 4),
           ),
         );
@@ -688,7 +693,8 @@ class SlopeChartPainter extends CustomPainter {
     }
 
     for (final laid in layout.series) {
-      final base = laid.series.color ??
+      final base =
+          laid.series.color ??
           chart.palette[laid.index % math.max(1, chart.palette.length)];
       final dimmed =
           touched != null && chart.fadeUntouched && touched != laid.index;
@@ -722,8 +728,9 @@ class SlopeChartPainter extends CustomPainter {
         path,
         Paint()
           ..color = color
-          ..strokeWidth =
-              touched == laid.index ? chart.lineWidth + 1 : chart.lineWidth
+          ..strokeWidth = touched == laid.index
+              ? chart.lineWidth + 1
+              : chart.lineWidth
           ..style = PaintingStyle.stroke
           ..strokeJoin = StrokeJoin.round
           ..strokeCap = StrokeCap.round,

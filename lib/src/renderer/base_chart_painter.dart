@@ -210,7 +210,8 @@ abstract class BaseChartPainter extends CustomPainter {
 
     final firstTime =
         candles?.firstOrNull?.dateTime?.millisecondsSinceEpoch ?? 0;
-    final secondTime = ((candles?.length ?? 0) > 1
+    final secondTime =
+        ((candles?.length ?? 0) > 1
             ? candles?.elementAt(1).dateTime?.millisecondsSinceEpoch
             : null) ??
         0;
@@ -399,8 +400,9 @@ abstract class BaseChartPainter extends CustomPainter {
     if (mainHeight < minMainHeight) {
       final requested = volHeight + totalSecondaryHeight;
       final room = max(mDisplayHeight - minMainHeight, 0.0);
-      final factor =
-          requested <= 0 ? 0.0 : (room / requested).clamp(0.0, 1.0).toDouble();
+      final factor = requested <= 0
+          ? 0.0
+          : (room / requested).clamp(0.0, 1.0).toDouble();
       volHeight *= factor;
       paneHeights = [for (final height in paneHeights) height * factor];
       totalSecondaryHeight *= factor;

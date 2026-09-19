@@ -100,8 +100,7 @@ void main() {
       expect(geometry.pxToXAt(const Offset(180, 50)), 5);
     });
 
-    test(
-        'lays the value axis along the bottom and the x axis down the '
+    test('lays the value axis along the bottom and the x axis down the '
         'left', () {
       final geometry = SeriesGeometry.layout(
         size: const Size(200, 100),
@@ -184,16 +183,30 @@ void main() {
     });
 
     test('a stack stands in one place rather than side by side', () {
-      final stacked = paintChart([
-        BarSeries.values(const [1, 1],
-            stack: 'a', color: const Color(0xFF110000)),
-        BarSeries.values(const [1, 1],
-            stack: 'a', color: const Color(0xFF220000)),
-      ], xAxis: SeriesXAxis.hidden, yAxis: SeriesYAxis.hidden);
-      final beside = paintChart([
-        BarSeries.values(const [1, 1], color: const Color(0xFF110000)),
-        BarSeries.values(const [1, 1], color: const Color(0xFF220000)),
-      ], xAxis: SeriesXAxis.hidden, yAxis: SeriesYAxis.hidden);
+      final stacked = paintChart(
+        [
+          BarSeries.values(
+            const [1, 1],
+            stack: 'a',
+            color: const Color(0xFF110000),
+          ),
+          BarSeries.values(
+            const [1, 1],
+            stack: 'a',
+            color: const Color(0xFF220000),
+          ),
+        ],
+        xAxis: SeriesXAxis.hidden,
+        yAxis: SeriesYAxis.hidden,
+      );
+      final beside = paintChart(
+        [
+          BarSeries.values(const [1, 1], color: const Color(0xFF110000)),
+          BarSeries.values(const [1, 1], color: const Color(0xFF220000)),
+        ],
+        xAxis: SeriesXAxis.hidden,
+        yAxis: SeriesYAxis.hidden,
+      );
 
       expect(stacked.paths[0].center.dx, stacked.paths[1].center.dx);
       expect(
@@ -205,12 +218,16 @@ void main() {
 
   group('floating bars and error bars', () {
     test('a bar with a low runs between its two ends', () {
-      final recorder = paintChart([
-        const BarSeries(
-          points: [SeriesPoint(0, 8, low: 4)],
-          color: Color(0xFF00FF00),
-        ),
-      ], xAxis: SeriesXAxis.hidden, yAxis: SeriesYAxis.hidden);
+      final recorder = paintChart(
+        [
+          const BarSeries(
+            points: [SeriesPoint(0, 8, low: 4)],
+            color: Color(0xFF00FF00),
+          ),
+        ],
+        xAxis: SeriesXAxis.hidden,
+        yAxis: SeriesYAxis.hidden,
+      );
 
       final bar = recorder.paths.single;
       expect(bar.top, greaterThan(0));
@@ -235,13 +252,15 @@ void main() {
     });
 
     test('an error range draws a bar with a cap at either end', () {
-      final recorder = paintChart([
-        const ScatterSeries(
-          points: [
-            SeriesPoint(0, 5, yError: SeriesErrorRange.symmetric(1)),
-          ],
-        ),
-      ], xAxis: SeriesXAxis.hidden, yAxis: SeriesYAxis.hidden);
+      final recorder = paintChart(
+        [
+          const ScatterSeries(
+            points: [SeriesPoint(0, 5, yError: SeriesErrorRange.symmetric(1))],
+          ),
+        ],
+        xAxis: SeriesXAxis.hidden,
+        yAxis: SeriesYAxis.hidden,
+      );
 
       // The bar itself and one cap at each end.
       expect(recorder.lines, hasLength(3));
@@ -331,10 +350,11 @@ void main() {
       // Where the corner sits is what changes, so the paths differ in metric
       // length rather than in their bounds.
       expect(
-        seriesRunPath(points, LineCurve.step, stepPosition: 0)
-            .computeMetrics()
-            .first
-            .length,
+        seriesRunPath(
+          points,
+          LineCurve.step,
+          stepPosition: 0,
+        ).computeMetrics().first.length,
         closeTo(20, 1e-6),
       );
     });

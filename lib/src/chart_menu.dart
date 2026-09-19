@@ -68,9 +68,8 @@ typedef ChartMenuRequest = ({
 /// The request's `defaults` are what the chart would have shown, so returning
 /// them with something appended adds an item, and returning a list of your own
 /// replaces the menu entirely. An empty list shows no menu at all.
-typedef ChartMenuBuilder = List<ChartMenuEntry> Function(
-  ChartMenuRequest request,
-);
+typedef ChartMenuBuilder =
+    List<ChartMenuEntry> Function(ChartMenuRequest request);
 
 /// Shows [entries] as a Material menu at [position] on the screen.
 ///
@@ -140,8 +139,9 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     // A toggle shows a tick where it is set and nothing where it is not, so the
     // labels stay in one column either way.
-    final leading =
-        checked != null ? (checked! ? Icons.check_rounded : null) : icon;
+    final leading = checked != null
+        ? (checked! ? Icons.check_rounded : null)
+        : icon;
 
     return Row(
       children: [

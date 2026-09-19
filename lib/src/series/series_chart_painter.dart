@@ -187,17 +187,17 @@ class SeriesChartPainter extends CustomPainter {
       final dx = rect.width > 0
           ? _lerp(rect.left + 4, rect.right - 4 - tp.width, (align.x + 1) / 2)
           : align.x < 0
-              ? rect.left - tp.width - 2
-              : align.x > 0
-                  ? rect.left + 2
-                  : rect.left - tp.width / 2;
+          ? rect.left - tp.width - 2
+          : align.x > 0
+          ? rect.left + 2
+          : rect.left - tp.width / 2;
       final dy = rect.height > 0
           ? _lerp(rect.top + 2, rect.bottom - 2 - tp.height, (align.y + 1) / 2)
           : align.y < 0
-              ? rect.top - tp.height - 2
-              : align.y > 0
-                  ? rect.top + 2
-                  : rect.top - tp.height / 2;
+          ? rect.top - tp.height - 2
+          : align.y > 0
+          ? rect.top + 2
+          : rect.top - tp.height / 2;
       tp.paint(
         canvas,
         Offset(
@@ -432,11 +432,11 @@ class SeriesChartPainter extends CustomPainter {
   }
 
   Path _runPath(LineSeries line, List<Offset> run) => seriesRunPath(
-        run,
-        line.curve,
-        stepPosition: line.stepPosition,
-        transpose: _horizontal,
-      );
+    run,
+    line.curve,
+    stepPosition: line.stepPosition,
+    transpose: _horizontal,
+  );
 
   void _paintLine(
     Canvas canvas,
@@ -530,12 +530,13 @@ class SeriesChartPainter extends CustomPainter {
 
     if (_isAbove(basePx, low)) {
       final upper = fill.gradient;
-      final gradient = fill.negativeGradient ??
+      final gradient =
+          fill.negativeGradient ??
           (upper == null
               ? null
               : fill.mirrorBelowBaseline
-                  ? _mirrored(upper)
-                  : upper);
+              ? _mirrored(upper)
+              : upper);
       final paint = _areaPaint(
         gradient,
         fill.negativeColor ?? fill.color,
@@ -563,8 +564,10 @@ class SeriesChartPainter extends CustomPainter {
       final second = series[between.to];
       if (first is! LineSeries || second is! LineSeries) continue;
       final top = _runs(first, _rowOf(between.from)).expand((r) => r).toList();
-      final bottom =
-          _runs(second, _rowOf(between.to)).expand((r) => r).toList();
+      final bottom = _runs(
+        second,
+        _rowOf(between.to),
+      ).expand((r) => r).toList();
       if (top.length < 2 || bottom.length < 2) continue;
 
       final path = Path()
@@ -574,11 +577,7 @@ class SeriesChartPainter extends CustomPainter {
           Offset.zero,
         )
         ..close();
-      final paint = _areaPaint(
-        between.gradient,
-        between.color,
-        geometry.plot,
-      );
+      final paint = _areaPaint(between.gradient, between.color, geometry.plot);
       if (paint != null) canvas.drawPath(path, paint);
     }
   }
@@ -1056,10 +1055,10 @@ void paintSeriesDot(
   final ringPaint = ring == null || dot.strokeWidth <= 0
       ? null
       : (Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = dot.strokeWidth
-        ..color = ring
-        ..isAntiAlias = true);
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = dot.strokeWidth
+          ..color = ring
+          ..isAntiAlias = true);
 
   switch (dot.shape) {
     case SeriesDotShape.circle:
@@ -1093,16 +1092,8 @@ void paintSeriesDot(
         ..isAntiAlias = true;
       final r = dot.radius;
       canvas
-        ..drawLine(
-          centre + Offset(-r, -r),
-          centre + Offset(r, r),
-          stroke,
-        )
-        ..drawLine(
-          centre + Offset(-r, r),
-          centre + Offset(r, -r),
-          stroke,
-        );
+        ..drawLine(centre + Offset(-r, -r), centre + Offset(r, r), stroke)
+        ..drawLine(centre + Offset(-r, r), centre + Offset(r, -r), stroke);
   }
 }
 

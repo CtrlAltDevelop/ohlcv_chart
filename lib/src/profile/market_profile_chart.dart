@@ -117,8 +117,9 @@ MarketProfile buildMarketProfile(
   if (high == low) high = low + (tickSize ?? 1);
 
   final rows = math.max(1, rowCount ?? ((high - low) / (tickSize ?? 1)).ceil());
-  final tick =
-      tickSize != null && rowCount == null ? tickSize : (high - low) / rows;
+  final tick = tickSize != null && rowCount == null
+      ? tickSize
+      : (high - low) / rows;
   if (tick <= 0 || rows > 4000) return MarketProfile.empty;
 
   final periods = List.generate(rows, (_) => <int>[]);
@@ -166,8 +167,9 @@ MarketProfile buildMarketProfile(
   var held = levels[poc].count;
   while (held < want && (lowIndex > 0 || highIndex < levels.length - 1)) {
     final below = lowIndex > 0 ? levels[lowIndex - 1].count : -1;
-    final above =
-        highIndex < levels.length - 1 ? levels[highIndex + 1].count : -1;
+    final above = highIndex < levels.length - 1
+        ? levels[highIndex + 1].count
+        : -1;
     if (above >= below) {
       highIndex++;
       held += above;
@@ -384,7 +386,8 @@ class MarketProfileChart extends StatefulWidget {
   final Widget? Function(
     BuildContext context,
     MarketProfileTouchDetails details,
-  )? tooltipBuilder;
+  )?
+  tooltipBuilder;
 
   /// How far the card sits from the row.
   final double tooltipMargin;
@@ -626,7 +629,8 @@ class MarketProfileChartPainter extends CustomPainter {
     final t = animation.clamp(0.0, 1.0);
     final profile = chart.profile;
     final fill = Paint()..isAntiAlias = true;
-    final style = chart.letterStyle ??
+    final style =
+        chart.letterStyle ??
         TextStyle(
           fontSize: math.min(10, bars.first.band.height),
           height: 1,
@@ -659,10 +663,7 @@ class MarketProfileChartPainter extends CustomPainter {
         canvas.drawRect(block, fill);
         final tp = textCache.get(_letterFor(bar.row.periods[i]), style);
         if (tp.width <= block.width && tp.height <= block.height) {
-          tp.paint(
-            canvas,
-            block.center - Offset(tp.width / 2, tp.height / 2),
-          );
+          tp.paint(canvas, block.center - Offset(tp.width / 2, tp.height / 2));
         }
       }
 

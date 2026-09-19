@@ -222,8 +222,12 @@ EquityCurveLayout layOutEquityCurve(
   final room = math.max(0.0, bounds.height - math.max(0.0, gap));
   final lower = room * share;
   final upper = room - lower;
-  final equityRect =
-      Rect.fromLTWH(bounds.left, bounds.top, bounds.width, upper);
+  final equityRect = Rect.fromLTWH(
+    bounds.left,
+    bounds.top,
+    bounds.width,
+    upper,
+  );
   final drawdownRect = Rect.fromLTWH(
     bounds.left,
     bounds.bottom - lower,
@@ -437,7 +441,7 @@ class EquityCurveChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched reading; null shows none.
   final Widget? Function(BuildContext context, EquityTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the reading.
   final double tooltipMargin;
@@ -713,8 +717,9 @@ class EquityCurveChartPainter extends CustomPainter {
       canvas.drawPath(
         fill,
         Paint()
-          ..color =
-              chart.lineColor.withValues(alpha: chart.fillOpacity.clamp(0, 1))
+          ..color = chart.lineColor.withValues(
+            alpha: chart.fillOpacity.clamp(0, 1),
+          )
           ..isAntiAlias = true,
       );
     }
@@ -744,8 +749,9 @@ class EquityCurveChartPainter extends CustomPainter {
       ..drawPath(
         path,
         Paint()
-          ..color = chart.drawdownColor
-              .withValues(alpha: chart.drawdownOpacity.clamp(0, 1))
+          ..color = chart.drawdownColor.withValues(
+            alpha: chart.drawdownOpacity.clamp(0, 1),
+          )
           ..isAntiAlias = true,
       )
       ..drawLine(
@@ -790,9 +796,12 @@ class EquityCurveChartPainter extends CustomPainter {
       layout.drawdownRect.right - tp.width,
     );
     tp.paint(
-        canvas,
-        Offset(math.max(layout.drawdownRect.left, left),
-            layout.drawdown[at].dy - tp.height - 2));
+      canvas,
+      Offset(
+        math.max(layout.drawdownRect.left, left),
+        layout.drawdown[at].dy - tp.height - 2,
+      ),
+    );
   }
 
   void _paintCrosshair(Canvas canvas) {
@@ -824,8 +833,8 @@ class EquityCurveChartPainter extends CustomPainter {
     final line = grid == null
         ? null
         : (Paint()
-          ..color = grid
-          ..strokeWidth = 1);
+            ..color = grid
+            ..strokeWidth = 1);
 
     final span = layout.maxEquity - layout.minEquity;
     for (final tick in niceTicks(
@@ -833,7 +842,8 @@ class EquityCurveChartPainter extends CustomPainter {
       layout.maxEquity,
       target: chart.tickCount,
     )) {
-      final y = layout.equityRect.bottom -
+      final y =
+          layout.equityRect.bottom -
           (tick - layout.minEquity) / span * layout.equityRect.height;
       if (line != null) {
         canvas.drawLine(
@@ -850,7 +860,8 @@ class EquityCurveChartPainter extends CustomPainter {
 
     if (chart.showDrawdownAxis && layout.deepestDrawdown < 0) {
       for (final fraction in [0.0, layout.deepestDrawdown]) {
-        final y = layout.drawdownRect.top +
+        final y =
+            layout.drawdownRect.top +
             (fraction / layout.deepestDrawdown) * layout.drawdownRect.height;
         final tp = textCache.get(_formatPercent(fraction), style);
         final left = layout.drawdownRect.left - 6 - tp.width;
@@ -861,8 +872,10 @@ class EquityCurveChartPainter extends CustomPainter {
               left,
               (y - tp.height / 2).clamp(
                 layout.drawdownRect.top,
-                math.max(layout.drawdownRect.top,
-                    layout.drawdownRect.bottom - tp.height),
+                math.max(
+                  layout.drawdownRect.top,
+                  layout.drawdownRect.bottom - tp.height,
+                ),
               ),
             ),
           );
@@ -879,13 +892,16 @@ class EquityCurveChartPainter extends CustomPainter {
     final count = math.min(4, points.length);
     var written = -double.infinity;
     for (var i = 0; i < count; i++) {
-      final index =
-          count == 1 ? 0 : ((points.length - 1) * (i / (count - 1))).round();
+      final index = count == 1
+          ? 0
+          : ((points.length - 1) * (i / (count - 1))).round();
       final time = _timeAt(index);
       if (time == null) continue;
       final tp = textCache.get(_formatTime(time), style);
-      final left = (points[index].dx - tp.width / 2)
-          .clamp(layout.equityRect.left, layout.equityRect.right - tp.width);
+      final left = (points[index].dx - tp.width / 2).clamp(
+        layout.equityRect.left,
+        layout.equityRect.right - tp.width,
+      );
       if (left < written) continue;
       tp.paint(canvas, Offset(left, layout.drawdownRect.bottom + 3));
       written = left + tp.width + 6;

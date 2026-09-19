@@ -39,13 +39,13 @@ class OptionLeg {
     double contractSize = 1,
     String? label,
   }) : this(
-          kind: OptionKind.call,
-          strike: strike,
-          premium: premium,
-          quantity: quantity,
-          contractSize: contractSize,
-          label: label,
-        );
+         kind: OptionKind.call,
+         strike: strike,
+         premium: premium,
+         quantity: quantity,
+         contractSize: contractSize,
+         label: label,
+       );
 
   /// Sells [quantity] calls struck at [strike] for [premium] each.
   const OptionLeg.shortCall({
@@ -55,13 +55,13 @@ class OptionLeg {
     double contractSize = 1,
     String? label,
   }) : this(
-          kind: OptionKind.call,
-          strike: strike,
-          premium: premium,
-          quantity: -quantity,
-          contractSize: contractSize,
-          label: label,
-        );
+         kind: OptionKind.call,
+         strike: strike,
+         premium: premium,
+         quantity: -quantity,
+         contractSize: contractSize,
+         label: label,
+       );
 
   /// Buys [quantity] puts struck at [strike] for [premium] each.
   const OptionLeg.longPut({
@@ -71,13 +71,13 @@ class OptionLeg {
     double contractSize = 1,
     String? label,
   }) : this(
-          kind: OptionKind.put,
-          strike: strike,
-          premium: premium,
-          quantity: quantity,
-          contractSize: contractSize,
-          label: label,
-        );
+         kind: OptionKind.put,
+         strike: strike,
+         premium: premium,
+         quantity: quantity,
+         contractSize: contractSize,
+         label: label,
+       );
 
   /// Sells [quantity] puts struck at [strike] for [premium] each.
   const OptionLeg.shortPut({
@@ -87,13 +87,13 @@ class OptionLeg {
     double contractSize = 1,
     String? label,
   }) : this(
-          kind: OptionKind.put,
-          strike: strike,
-          premium: premium,
-          quantity: -quantity,
-          contractSize: contractSize,
-          label: label,
-        );
+         kind: OptionKind.put,
+         strike: strike,
+         premium: premium,
+         quantity: -quantity,
+         contractSize: contractSize,
+         label: label,
+       );
 
   /// What the leg is.
   final OptionKind kind;
@@ -163,11 +163,7 @@ double optionPayoff(List<OptionLeg> legs, double price) {
 ///
 /// The payoff is a straight line between strikes, so a crossing is found
 /// exactly by looking either side of each strike.
-List<double> optionBreakEvens(
-  List<OptionLeg> legs,
-  double min,
-  double max,
-) {
+List<double> optionBreakEvens(List<OptionLeg> legs, double min, double max) {
   if (legs.isEmpty || max <= min) return const [];
 
   final points = <double>{min, max};
@@ -253,14 +249,14 @@ class OptionPayoffLayout {
   double yOf(double payoff) => maxPayoff == minPayoff
       ? plot.center.dy
       : plot.bottom -
-          (payoff - minPayoff) / (maxPayoff - minPayoff) * plot.height;
+            (payoff - minPayoff) / (maxPayoff - minPayoff) * plot.height;
 
   /// The price at [dx].
   double priceAt(double dx) => plot.width <= 0
       ? minPrice
       : minPrice +
-          ((dx - plot.left) / plot.width).clamp(0.0, 1.0) *
-              (maxPrice - minPrice);
+            ((dx - plot.left) / plot.width).clamp(0.0, 1.0) *
+                (maxPrice - minPrice);
 }
 
 /// Works out the payoff of [legs] across [bounds].
@@ -497,7 +493,8 @@ class OptionPayoffChart extends StatefulWidget {
   final Widget? Function(
     BuildContext context,
     OptionPayoffTouchDetails details,
-  )? tooltipBuilder;
+  )?
+  tooltipBuilder;
 
   /// How far the card sits from the line.
   final double tooltipMargin;
@@ -625,8 +622,9 @@ class _OptionPayoffChartState extends State<OptionPayoffChart>
         );
 
         final price = _touched;
-        final details =
-            price == null || _layout.isEmpty ? null : _detailsAt(price);
+        final details = price == null || _layout.isEmpty
+            ? null
+            : _detailsAt(price);
         final builder = widget.tooltipBuilder;
         final tooltip = details == null || builder == null
             ? null
@@ -776,12 +774,20 @@ class OptionPayoffChartPainter extends CustomPainter {
         (
           chart.profitColor,
           Rect.fromLTRB(
-              layout.plot.left, layout.plot.top, layout.plot.right, zero)
+            layout.plot.left,
+            layout.plot.top,
+            layout.plot.right,
+            zero,
+          ),
         ),
         (
           chart.lossColor,
           Rect.fromLTRB(
-              layout.plot.left, zero, layout.plot.right, layout.plot.bottom)
+            layout.plot.left,
+            zero,
+            layout.plot.right,
+            layout.plot.bottom,
+          ),
         ),
       ]) {
         if (band.height <= 0) continue;
@@ -806,12 +812,20 @@ class OptionPayoffChartPainter extends CustomPainter {
       (
         chart.profitColor,
         Rect.fromLTRB(
-            layout.plot.left, layout.plot.top, layout.plot.right, zero)
+          layout.plot.left,
+          layout.plot.top,
+          layout.plot.right,
+          zero,
+        ),
       ),
       (
         chart.lossColor,
         Rect.fromLTRB(
-            layout.plot.left, zero, layout.plot.right, layout.plot.bottom)
+          layout.plot.left,
+          zero,
+          layout.plot.right,
+          layout.plot.bottom,
+        ),
       ),
     ]) {
       if (band.height <= 0) continue;
@@ -879,8 +893,11 @@ class OptionPayoffChartPainter extends CustomPainter {
   }
 
   void _paintBreakEvens(Canvas canvas) {
-    final prices =
-        optionBreakEvens(chart.legs, layout.minPrice, layout.maxPrice);
+    final prices = optionBreakEvens(
+      chart.legs,
+      layout.minPrice,
+      layout.maxPrice,
+    );
     if (prices.isEmpty) return;
     final style = seriesAxisLabelStyle
         .merge(chart.axisLabelStyle)
@@ -933,8 +950,8 @@ class OptionPayoffChartPainter extends CustomPainter {
     final line = grid == null
         ? null
         : (Paint()
-          ..color = grid
-          ..strokeWidth = 1);
+            ..color = grid
+            ..strokeWidth = 1);
 
     for (final tick in niceTicks(
       layout.minPayoff,

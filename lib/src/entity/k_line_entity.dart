@@ -71,16 +71,16 @@ class KLineEntity extends KEntity {
 
   /// Serialises the candle's raw OHLCV values back to a JSON map.
   Map<String, dynamic> toJson() => {
-        'dateTime': dateTime?.toIso8601String(),
-        'open': open,
-        'close': close,
-        'high': high,
-        'low': low,
-        'vol': vol,
-        'amount': amount,
-        'ratio': ratio,
-        'change': change,
-      };
+    'dateTime': dateTime?.toIso8601String(),
+    'open': open,
+    'close': close,
+    'high': high,
+    'low': low,
+    'vol': vol,
+    'amount': amount,
+    'ratio': ratio,
+    'change': change,
+  };
 
   @override
   String toString() {

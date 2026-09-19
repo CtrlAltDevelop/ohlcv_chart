@@ -85,12 +85,18 @@ void main() {
       expect(range.maxX, 11);
       expect(range.minY, -2);
       expect(range.maxY, 22);
-      expect(
-        bubbleRange(const [BubblePoint(x: 3, y: 3)]),
-        (minX: 2.0, maxX: 4.0, minY: 2.0, maxY: 4.0),
-      );
-      expect(
-          bubbleRange(const []), (minX: 0.0, maxX: 1.0, minY: 0.0, maxY: 1.0));
+      expect(bubbleRange(const [BubblePoint(x: 3, y: 3)]), (
+        minX: 2.0,
+        maxX: 4.0,
+        minY: 2.0,
+        maxY: 4.0,
+      ));
+      expect(bubbleRange(const []), (
+        minX: 0.0,
+        maxX: 1.0,
+        minY: 0.0,
+        maxY: 1.0,
+      ));
     });
 
     test('nothing to show, or no room, lays out nothing', () {
@@ -122,8 +128,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       BubbleTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -153,7 +160,8 @@ void main() {
 
       // The only point sits in the middle of the plot area.
       final topLeft = tester.getTopLeft(find.byType(BubbleChart));
-      final plotCenter = topLeft +
+      final plotCenter =
+          topLeft +
           Offset(44 + (size.width - 44) / 2, (size.height - 18 - 14) / 2);
       final gesture = await tester.startGesture(plotCenter);
       await tester.pump();

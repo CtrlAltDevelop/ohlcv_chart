@@ -219,12 +219,7 @@ OpenInterestLayout layOutOpenInterest(
   final interestHeight = box.height - panelGap - fundingHeight;
   if (interestHeight <= 0) return OpenInterestLayout.empty;
 
-  final interest = Rect.fromLTWH(
-    box.left,
-    box.top,
-    plotWidth,
-    interestHeight,
-  );
+  final interest = Rect.fromLTWH(box.left, box.top, plotWidth, interestHeight);
   final funding = Rect.fromLTWH(
     box.left,
     interest.bottom + panelGap,
@@ -488,7 +483,7 @@ class OpenInterestChart extends StatefulWidget {
   /// Called with a reading and what it did when one is touched, and with
   /// nulls when the touch leaves.
   final void Function(OpenInterestPoint? point, OpenInterestMove? move)?
-      onTouch;
+  onTouch;
 
   /// Builds the card shown over a touched reading; null shows its open
   /// interest, its funding and what the pair did.
@@ -496,7 +491,8 @@ class OpenInterestChart extends StatefulWidget {
     BuildContext context,
     OpenInterestPoint point,
     OpenInterestMove move,
-  )? tooltipBuilder;
+  )?
+  tooltipBuilder;
 
   /// How tall the chart is in a box that sets no height.
   final double defaultHeight;
@@ -575,12 +571,13 @@ class _OpenInterestChartState extends State<OpenInterestChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 420.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.defaultHeight;
+              ? constraints.maxHeight
+              : widget.defaultHeight;
           _layout = layOutOpenInterest(
             widget.points,
             size: Size(width, height),
@@ -648,10 +645,7 @@ class _OpenInterestChartState extends State<OpenInterestChart>
     return Positioned(
       left: math.max(
         0,
-        math.min(
-          _layout.columnX[index] - 40,
-          _layout.size.width - 140,
-        ),
+        math.min(_layout.columnX[index] - 40, _layout.size.width - 140),
       ),
       top: 4,
       child: IgnorePointer(child: child),
@@ -661,12 +655,12 @@ class _OpenInterestChartState extends State<OpenInterestChart>
 
 /// What a [OpenInterestMove] is called, for a tooltip or a legend.
 String moveLabel(OpenInterestMove move) => switch (move) {
-      OpenInterestMove.newLongs => 'New longs',
-      OpenInterestMove.longsClosing => 'Longs closing',
-      OpenInterestMove.newShorts => 'New shorts',
-      OpenInterestMove.shortsCovering => 'Shorts covering',
-      OpenInterestMove.flat => '—',
-    };
+  OpenInterestMove.newLongs => 'New longs',
+  OpenInterestMove.longsClosing => 'Longs closing',
+  OpenInterestMove.newShorts => 'New shorts',
+  OpenInterestMove.shortsCovering => 'Shorts covering',
+  OpenInterestMove.flat => '—',
+};
 
 String _interest(OpenInterestChart chart, double value) {
   final format = chart.interestFormatter;
@@ -710,7 +704,8 @@ class OpenInterestChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final axisStyle = chart.axisStyle ??
+    final axisStyle =
+        chart.axisStyle ??
         const TextStyle(color: Color(0xFF909196), fontSize: 10);
 
     if (chart.axisSteps > 0) {
@@ -718,9 +713,11 @@ class OpenInterestChartPainter extends CustomPainter {
         ..color = chart.gridColor
         ..strokeWidth = 1;
       for (var i = 0; i <= chart.axisSteps; i++) {
-        final value = layout.interestMin +
+        final value =
+            layout.interestMin +
             (layout.interestMax - layout.interestMin) * i / chart.axisSteps;
-        final y = layout.interestRect.bottom -
+        final y =
+            layout.interestRect.bottom -
             layout.interestRect.height * i / chart.axisSteps;
         canvas.drawLine(
           Offset(layout.interestRect.left, y),
@@ -733,8 +730,10 @@ class OpenInterestChartPainter extends CustomPainter {
             canvas,
             Offset(
               layout.interestRect.right + 6,
-              (y - painter.height / 2)
-                  .clamp(0.0, math.max(0.0, size.height - painter.height)),
+              (y - painter.height / 2).clamp(
+                0.0,
+                math.max(0.0, size.height - painter.height),
+              ),
             ),
           );
         }
@@ -766,8 +765,9 @@ class OpenInterestChartPainter extends CustomPainter {
         final bar = layout.fundingBars[i];
         if (bar == null) continue;
         final rate = chart.points[i].drawnFunding ?? 0;
-        final color =
-            rate >= 0 ? chart.positiveFundingColor : chart.negativeFundingColor;
+        final color = rate >= 0
+            ? chart.positiveFundingColor
+            : chart.negativeFundingColor;
         canvas.drawRect(
           bar,
           Paint()
@@ -789,11 +789,7 @@ class OpenInterestChartPainter extends CustomPainter {
       );
       final point = layout.interestPoints[at];
       if (point != null) {
-        canvas.drawCircle(
-          point,
-          3,
-          Paint()..color = chart.interestColor,
-        );
+        canvas.drawCircle(point, 3, Paint()..color = chart.interestColor);
       }
     }
   }

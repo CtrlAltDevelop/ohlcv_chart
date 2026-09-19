@@ -37,25 +37,24 @@ Widget _chart(
   Color? Function(CandleEntity, int)? candleColor,
   ChartType type = ChartType.candles,
   ChartColors? colors,
-}) =>
-    MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 500,
-          height: 600,
-          child: KChartWidget(
-            data,
-            colors ?? ChartColors(),
-            isTrendLine: false,
-            timeFrame: const Duration(minutes: 30),
-            showNowPrice: false,
-            chartType: type,
-            session: session,
-            candleColor: candleColor,
-          ),
-        ),
+}) => MaterialApp(
+  home: Scaffold(
+    body: SizedBox(
+      width: 500,
+      height: 600,
+      child: KChartWidget(
+        data,
+        colors ?? ChartColors(),
+        isTrendLine: false,
+        timeFrame: const Duration(minutes: 30),
+        showNowPrice: false,
+        chartType: type,
+        session: session,
+        candleColor: candleColor,
       ),
-    );
+    ),
+  ),
+);
 
 ChartPainter _painterOf(WidgetTester tester) {
   final paint = tester.widget<CustomPaint>(

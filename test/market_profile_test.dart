@@ -8,11 +8,11 @@ const _bounds = Rect.fromLTWH(0, 0, 200, 100);
 
 /// Four candles, all overlapping 10–11, with two reaching further up.
 List<KLineEntity> _session() => [
-      candle(10.5, high: 11, low: 10, minute: 0),
-      candle(10.5, high: 11, low: 10, minute: 1),
-      candle(11.5, high: 12, low: 11, minute: 2),
-      candle(12.5, high: 13, low: 12, minute: 3),
-    ];
+  candle(10.5, high: 11, low: 10, minute: 0),
+  candle(10.5, high: 11, low: 10, minute: 1),
+  candle(11.5, high: 12, low: 11, minute: 2),
+  candle(12.5, high: 13, low: 12, minute: 3),
+];
 
 void main() {
   group('building the profile', () {
@@ -103,8 +103,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       MarketProfileTouchDetails? touched;
       final profile = buildMarketProfile(_session(), tickSize: 1);
       await tester.pumpWidget(

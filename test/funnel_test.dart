@@ -63,10 +63,10 @@ void main() {
     test('nothing to show, or no room, lays out nothing', () {
       expect(layOutFunnel(const [], _bounds), isEmpty);
       expect(layOutFunnel(_stages, Rect.zero), isEmpty);
-      final zeros = layOutFunnel(
-        const [FunnelStage(value: 0), FunnelStage(value: double.nan)],
-        _bounds,
-      );
+      final zeros = layOutFunnel(const [
+        FunnelStage(value: 0),
+        FunnelStage(value: double.nan),
+      ], _bounds);
       expect(zeros.map((s) => s.ofFirst), [0, 0]);
       expect(zeros.map((s) => s.ofPrevious), [1, 0]);
     });
@@ -85,11 +85,10 @@ void main() {
 
   group('the widget', () {
     Widget host(Widget chart) => MaterialApp(
-          home: Scaffold(
-            body:
-                Center(child: SizedBox(width: 400, height: 300, child: chart)),
-          ),
-        );
+      home: Scaffold(
+        body: Center(child: SizedBox(width: 400, height: 300, child: chart)),
+      ),
+    );
 
     testWidgets('draws both shapes, and nothing, without a fuss', (
       tester,
@@ -117,8 +116,9 @@ void main() {
       );
 
       final origin = tester.getTopLeft(find.byType(FunnelChart));
-      final gesture =
-          await tester.startGesture(origin + const Offset(200, 150));
+      final gesture = await tester.startGesture(
+        origin + const Offset(200, 150),
+      );
       await tester.pump();
       expect(reported?.stage.label, 'Signed up');
       expect(find.text('card Signed up'), findsOneWidget);

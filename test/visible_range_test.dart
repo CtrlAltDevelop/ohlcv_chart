@@ -18,24 +18,23 @@ Widget _chart(
   List<KLineEntity> data, {
   KChartController? controller,
   ValueChanged<ChartVisibleRange>? onVisibleRangeChanged,
-}) =>
-    MaterialApp(
-      home: Scaffold(
-        body: SizedBox(
-          width: 500,
-          height: 600,
-          child: KChartWidget(
-            data,
-            ChartColors(),
-            isTrendLine: false,
-            timeFrame: const Duration(minutes: 1),
-            showNowPrice: false,
-            controller: controller,
-            onVisibleRangeChanged: onVisibleRangeChanged,
-          ),
-        ),
+}) => MaterialApp(
+  home: Scaffold(
+    body: SizedBox(
+      width: 500,
+      height: 600,
+      child: KChartWidget(
+        data,
+        ChartColors(),
+        isTrendLine: false,
+        timeFrame: const Duration(minutes: 1),
+        showNowPrice: false,
+        controller: controller,
+        onVisibleRangeChanged: onVisibleRangeChanged,
       ),
-    );
+    ),
+  ),
+);
 
 void main() {
   group('the range itself', () {

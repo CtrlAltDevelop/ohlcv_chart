@@ -102,15 +102,15 @@ class ChartOrder {
   /// What the chart draws while one is being dragged, before the host has said
   /// anything about the move.
   ChartOrder movedTo(double price) => ChartOrder(
-        id: id,
-        price: price,
-        side: side,
-        kind: kind,
-        quantity: quantity,
-        label: label,
-        color: color,
-        draggable: draggable,
-      );
+    id: id,
+    price: price,
+    side: side,
+    kind: kind,
+    quantity: quantity,
+    label: label,
+    color: color,
+    draggable: draggable,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -245,15 +245,14 @@ class TradingStyle {
     double? dashLength,
     double? dashGap,
     double? grabTolerance,
-  }) =>
-      TradingStyle(
-        lineWidth: lineWidth ?? this.lineWidth,
-        orderStyle: orderStyle ?? this.orderStyle,
-        positionStyle: positionStyle ?? this.positionStyle,
-        dashLength: dashLength ?? this.dashLength,
-        dashGap: dashGap ?? this.dashGap,
-        grabTolerance: grabTolerance ?? this.grabTolerance,
-      );
+  }) => TradingStyle(
+    lineWidth: lineWidth ?? this.lineWidth,
+    orderStyle: orderStyle ?? this.orderStyle,
+    positionStyle: positionStyle ?? this.positionStyle,
+    dashLength: dashLength ?? this.dashLength,
+    dashGap: dashGap ?? this.dashGap,
+    grabTolerance: grabTolerance ?? this.grabTolerance,
+  );
 }
 
 /// Writes 0.5 as `0.5` and 2.0 as `2`, so a tag reads `Buy 2`.
@@ -330,8 +329,9 @@ class TradingSession {
     // to the day before it.
     if (since >= open) return weekdays.contains(time.weekday);
     if (since < close) {
-      final yesterday =
-          time.weekday == DateTime.monday ? DateTime.sunday : time.weekday - 1;
+      final yesterday = time.weekday == DateTime.monday
+          ? DateTime.sunday
+          : time.weekday - 1;
       return weekdays.contains(yesterday);
     }
     return false;

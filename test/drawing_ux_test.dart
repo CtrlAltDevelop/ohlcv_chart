@@ -12,8 +12,8 @@ DateTime _at(int minute) =>
     DateTime.utc(2024, 1, 1).add(Duration(minutes: minute));
 
 Widget _host(Widget child) => MaterialApp(
-      home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
-    );
+  home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
+);
 
 /// A chart over [controller]'s drawings, with the tools live.
 ({Widget widget, List<KLineEntity> data}) _chart(
@@ -610,13 +610,13 @@ void main() {
 
     test('a ray and an extended line reach further than a segment', () {
       TrendLine of(LineExtension extend) => TrendLine(
-            time1: _at(10),
-            price1: 100,
-            time2: _at(20),
-            price2: 110,
-            extend: extend,
-            alert: true,
-          );
+        time1: _at(10),
+        price1: 100,
+        time2: _at(20),
+        price2: 110,
+        extend: extend,
+        alert: true,
+      );
 
       expect(of(LineExtension.right).alertLevelsAt(_at(40)).single, 130);
       expect(of(LineExtension.right).alertLevelsAt(_at(0)), isEmpty);

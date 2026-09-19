@@ -40,12 +40,12 @@ List<KLineEntity> _market({int count = 80, double start = 100}) {
 }
 
 Widget _framed(Widget child) => MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: const Color(0xFF17181C),
-        body: Center(child: SizedBox(width: 480, height: 420, child: child)),
-      ),
-    );
+  debugShowCheckedModeBanner: false,
+  home: Scaffold(
+    backgroundColor: const Color(0xFF17181C),
+    body: Center(child: SizedBox(width: 480, height: 420, child: child)),
+  ),
+);
 
 Widget _chart({
   List<KLineEntity>? data,
@@ -58,26 +58,25 @@ Widget _chart({
   bool volHidden = false,
   PriceAxisScale? secondaryPriceAxisScale,
   String Function(double)? priceFormatter,
-}) =>
-    _framed(
-      KChartWidget(
-        data ?? _market(),
-        ChartColors(),
-        isTrendLine: true,
-        timeFrame: const Duration(minutes: 15),
-        showNowPrice: false,
-        showScrollToNowButton: false,
-        chartType: chartType,
-        priceAxisScale: priceAxisScale,
-        secondaryPriceAxisScale: secondaryPriceAxisScale,
-        priceFormatter: priceFormatter,
-        indicators: indicators,
-        drawings: drawings,
-        chartStyle: style,
-        showOhlcLegend: showOhlcLegend,
-        volHidden: volHidden,
-      ),
-    );
+}) => _framed(
+  KChartWidget(
+    data ?? _market(),
+    ChartColors(),
+    isTrendLine: true,
+    timeFrame: const Duration(minutes: 15),
+    showNowPrice: false,
+    showScrollToNowButton: false,
+    chartType: chartType,
+    priceAxisScale: priceAxisScale,
+    secondaryPriceAxisScale: secondaryPriceAxisScale,
+    priceFormatter: priceFormatter,
+    indicators: indicators,
+    drawings: drawings,
+    chartStyle: style,
+    showOhlcLegend: showOhlcLegend,
+    volHidden: volHidden,
+  ),
+);
 
 void main() {
   Future<void> matches(WidgetTester tester, Widget widget, String name) async {

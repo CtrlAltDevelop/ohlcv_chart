@@ -8,14 +8,14 @@ import 'test_utils.dart';
 
 /// Candles whose highs and lows straddle the close by [spread].
 List<KLineEntity> spreadCandles(List<double> closes, {double spread = 2}) => [
-      for (var i = 0; i < closes.length; i++)
-        candle(
-          closes[i],
-          high: closes[i] + spread,
-          low: closes[i] - spread,
-          minute: i,
-        ),
-    ];
+  for (var i = 0; i < closes.length; i++)
+    candle(
+      closes[i],
+      high: closes[i] + spread,
+      low: closes[i] - spread,
+      minute: i,
+    ),
+];
 
 void main() {
   group('channels', () {
@@ -195,16 +195,16 @@ void main() {
     /// Hourly candles across [hours], flat-ranged so the typical price is the
     /// close, with a volume of 1 each.
     List<KLineEntity> hours(int count, List<double> closes) => [
-          for (var i = 0; i < count; i++)
-            KLineEntity.fromCustom(
-              open: closes[i],
-              high: closes[i],
-              low: closes[i],
-              close: closes[i],
-              vol: 1,
-              dateTime: DateTime.utc(2024, 1, 1).add(Duration(hours: i)),
-            ),
-        ];
+      for (var i = 0; i < count; i++)
+        KLineEntity.fromCustom(
+          open: closes[i],
+          high: closes[i],
+          low: closes[i],
+          close: closes[i],
+          vol: 1,
+          dateTime: DateTime.utc(2024, 1, 1).add(Duration(hours: i)),
+        ),
+    ];
 
     test('averages the session so far, and begins again the next day', () {
       // 24 hours at 100, then 24 at 200.

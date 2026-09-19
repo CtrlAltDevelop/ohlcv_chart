@@ -70,10 +70,7 @@ enum SeasonalityAggregate {
 
 /// Makes [values] into one number, as [aggregate] says; null when there are
 /// none.
-double? seasonalAggregate(
-  List<double> values,
-  SeasonalityAggregate aggregate,
-) {
+double? seasonalAggregate(List<double> values, SeasonalityAggregate aggregate) {
   if (values.isEmpty) return null;
   switch (aggregate) {
     case SeasonalityAggregate.compound:
@@ -185,16 +182,12 @@ SeasonalityTable seasonalityTable(
       rowOf = (time) => time.year - first;
       columnOf = (time) => time.month - 1;
     case SeasonalityGrid.weekdayByHour:
-      rows = [
-        for (var d = 0; d < 7; d++) label(weekdayLabels, d, '${d + 1}'),
-      ];
+      rows = [for (var d = 0; d < 7; d++) label(weekdayLabels, d, '${d + 1}')];
       columns = [for (var h = 0; h < 24; h++) h.toString().padLeft(2, '0')];
       rowOf = (time) => time.weekday - 1;
       columnOf = (time) => time.hour;
     case SeasonalityGrid.weekdayByMonth:
-      rows = [
-        for (var d = 0; d < 7; d++) label(weekdayLabels, d, '${d + 1}'),
-      ];
+      rows = [for (var d = 0; d < 7; d++) label(weekdayLabels, d, '${d + 1}')];
       columns = [
         for (var m = 0; m < 12; m++) label(monthLabels, m, '${m + 1}'),
       ];
@@ -231,13 +224,10 @@ SeasonalityTable seasonalityTable(
     ],
     columnSummary: [
       for (var c = 0; c < columns.length; c++)
-        seasonalAggregate(
-          [
-            for (final row in values)
-              if (row[c] != null) row[c]!,
-          ],
-          SeasonalityAggregate.mean,
-        ),
+        seasonalAggregate([
+          for (final row in values)
+            if (row[c] != null) row[c]!,
+        ], SeasonalityAggregate.mean),
     ],
   );
 }
@@ -406,10 +396,8 @@ class SeasonalityChart extends StatelessWidget {
   final ValueChanged<SeasonalityTouchDetails?>? onTouch;
 
   /// Builds a card shown beside the touched square; null shows none.
-  final Widget? Function(
-    BuildContext context,
-    SeasonalityTouchDetails details,
-  )? tooltipBuilder;
+  final Widget? Function(BuildContext context, SeasonalityTouchDetails details)?
+  tooltipBuilder;
 
   /// How long the squares take to fade in; zero draws them at once.
   final Duration animationDuration;
@@ -535,10 +523,12 @@ class SeasonalityChart extends StatelessWidget {
           ? (cell) => cell.isEmpty ? null : format(cell.value!)
           : null,
       labelStyle: labelStyle,
-      onTouch:
-          touch == null ? null : (t) => touch(t == null ? null : details(t)),
-      tooltipBuilder:
-          builder == null ? null : (context, t) => builder(context, details(t)),
+      onTouch: touch == null
+          ? null
+          : (t) => touch(t == null ? null : details(t)),
+      tooltipBuilder: builder == null
+          ? null
+          : (context, t) => builder(context, details(t)),
       animationDuration: animationDuration,
       animationCurve: animationCurve,
       animateOnMount: animateOnMount,

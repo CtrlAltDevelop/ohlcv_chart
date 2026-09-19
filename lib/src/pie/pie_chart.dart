@@ -440,7 +440,8 @@ class _PieChartState extends State<PieChart>
 
   Widget _badge(PieSlice slice, Offset centre) {
     final section = widget.sections[slice.index];
-    final at = slice.pointAt(centre, section.badgePosition) +
+    final at =
+        slice.pointAt(centre, section.badgePosition) +
         slice.direction * section.offset;
     return Positioned(
       left: at.dx,
@@ -530,7 +531,8 @@ class PieChartPainter extends CustomPainter {
       final label = section.label;
       if (label == null || label.isEmpty) continue;
       final tp = textCache.get(label, _labelStyle.merge(section.labelStyle));
-      final at = centre +
+      final at =
+          centre +
           shift +
           slice.direction *
               (slice.innerRadius +

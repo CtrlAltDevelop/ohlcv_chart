@@ -47,7 +47,9 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: GalleryPage(state: state))),
+        MaterialApp(
+          home: Scaffold(body: GalleryPage(state: state)),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -71,7 +73,9 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: GalleryPage(state: state))),
+        MaterialApp(
+          home: Scaffold(body: GalleryPage(state: state)),
+        ),
       );
       await tester.enterText(find.byType(TextField), 'waffle');
       await tester.pumpAndSettle();
@@ -92,7 +96,9 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: GalleryPage(state: state))),
+        MaterialApp(
+          home: Scaffold(body: GalleryPage(state: state)),
+        ),
       );
       // Searched for rather than scrolled to: the list is lazy, and the card
       // is a long way down it.

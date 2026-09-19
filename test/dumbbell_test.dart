@@ -28,10 +28,7 @@ void main() {
       );
       expect(layout.rows[0].fromCenter.dx, closeTo(layout.plotRect.left, 1e-9));
       expect(layout.rows[0].toCenter.dx, closeTo(layout.plotRect.right, 1e-9));
-      expect(
-        layout.rows[1].fromCenter.dx,
-        closeTo(layout.xOf(80), 1e-9),
-      );
+      expect(layout.rows[1].fromCenter.dx, closeTo(layout.xOf(80), 1e-9));
     });
 
     test('rows stack down the plot, evenly', () {
@@ -57,10 +54,9 @@ void main() {
     });
 
     test('a flat chart still has a range', () {
-      final layout = layOutDumbbell(
-        const [DumbbellRow(label: 'a', from: 5, to: 5)],
-        size: const Size(400, 200),
-      );
+      final layout = layOutDumbbell(const [
+        DumbbellRow(label: 'a', from: 5, to: 5),
+      ], size: const Size(400, 200));
       expect(layout.max, greaterThan(layout.min));
     });
 
@@ -122,13 +118,14 @@ void main() {
 
     test('nothing to show lays out nothing', () {
       expect(
-          layOutDumbbell(const [], size: const Size(400, 200)).isEmpty, true);
+        layOutDumbbell(const [], size: const Size(400, 200)).isEmpty,
+        true,
+      );
       expect(layOutDumbbell(_rows, size: Size.zero).isEmpty, true);
       expect(
-        layOutDumbbell(
-          const [DumbbellRow(label: 'a', from: double.nan, to: double.nan)],
-          size: const Size(400, 200),
-        ).isEmpty,
+        layOutDumbbell(const [
+          DumbbellRow(label: 'a', from: double.nan, to: double.nan),
+        ], size: const Size(400, 200)).isEmpty,
         true,
       );
     });
@@ -188,11 +185,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: DumbbellChart(
-                rows: _rows,
-                rowHeight: 30,
-                axisHeight: 20,
-              ),
+              child: DumbbellChart(rows: _rows, rowHeight: 30, axisHeight: 20),
             ),
           ),
         ),

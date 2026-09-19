@@ -15,8 +15,10 @@ void main() {
 
     test('each makes the samples into one number', () {
       double? of(SeasonalityAggregate a) => seasonalAggregate(values, a);
-      expect(of(SeasonalityAggregate.compound),
-          closeTo(1.1 * 0.95 * 1.02 * 1.03 - 1, 1e-12));
+      expect(
+        of(SeasonalityAggregate.compound),
+        closeTo(1.1 * 0.95 * 1.02 * 1.03 - 1, 1e-12),
+      );
       expect(of(SeasonalityAggregate.sum), closeTo(0.1, 1e-12));
       expect(of(SeasonalityAggregate.mean), closeTo(0.025, 1e-12));
       expect(of(SeasonalityAggregate.median), closeTo(0.025, 1e-12));
@@ -101,8 +103,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('builds a heatmap with summaries and reports touches',
-        (tester) async {
+    testWidgets('builds a heatmap with summaries and reports touches', (
+      tester,
+    ) async {
       SeasonalityTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -131,8 +134,9 @@ void main() {
 
       final chart = tester.getRect(find.byType(HeatmapChart));
       // The bottom-right square: the summary row and column meet there.
-      final gesture =
-          await tester.startGesture(chart.bottomRight - const Offset(8, 36));
+      final gesture = await tester.startGesture(
+        chart.bottomRight - const Offset(8, 36),
+      );
       await tester.pump(const Duration(milliseconds: 150));
       expect(touched?.isRowSummary, isTrue);
       expect(touched?.isColumnSummary, isTrue);
@@ -143,8 +147,9 @@ void main() {
       await tester.pump();
     });
 
-    testWidgets('win rates centre on a half, counts start at zero',
-        (tester) async {
+    testWidgets('win rates centre on a half, counts start at zero', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

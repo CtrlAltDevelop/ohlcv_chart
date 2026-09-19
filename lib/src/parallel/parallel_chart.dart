@@ -126,9 +126,7 @@ List<ParallelScale> parallelScales(
       low -= pad;
       high += pad;
     }
-    scales.add(
-      ParallelScale(min: low, max: high, inverted: axis.inverted),
-    );
+    scales.add(ParallelScale(min: low, max: high, inverted: axis.inverted));
   }
   return scales;
 }
@@ -474,7 +472,7 @@ class ParallelChart extends StatefulWidget {
   /// Builds the card shown over a touched line; null shows its label and its
   /// value on the axis nearest the finger.
   final Widget Function(BuildContext context, ParallelLine line, int axis)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How tall the chart is in a box that sets no height.
   final double defaultHeight;
@@ -551,12 +549,13 @@ class _ParallelChartState extends State<ParallelChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 420.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.defaultHeight;
+              ? constraints.maxHeight
+              : widget.defaultHeight;
           _layout = layOutParallel(
             widget.axes,
             widget.lines,
@@ -670,9 +669,11 @@ class ParallelChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final headerStyle = chart.headerStyle ??
+    final headerStyle =
+        chart.headerStyle ??
         const TextStyle(color: Color(0xFFB4B8C0), fontSize: 11);
-    final endStyle = chart.endStyle ??
+    final endStyle =
+        chart.endStyle ??
         const TextStyle(color: Color(0xFF909196), fontSize: 10);
 
     for (var a = 0; a < layout.axisX.length; a++) {
@@ -692,8 +693,10 @@ class ParallelChartPainter extends CustomPainter {
         painter.paint(
           canvas,
           Offset(
-            (x - painter.width / 2)
-                .clamp(0.0, math.max(0.0, size.width - painter.width)),
+            (x - painter.width / 2).clamp(
+              0.0,
+              math.max(0.0, size.width - painter.width),
+            ),
             math.max(0, layout.plotRect.top - painter.height - 4),
           ),
         );
@@ -706,17 +709,15 @@ class ParallelChartPainter extends CustomPainter {
         final bottom = scale.inverted ? scale.max : scale.min;
         for (final pair in [
           (_number(chart.axes[a], top), layout.plotRect.top + 2),
-          (
-            _number(chart.axes[a], bottom),
-            layout.plotRect.bottom + 2,
-          ),
+          (_number(chart.axes[a], bottom), layout.plotRect.bottom + 2),
         ]) {
           final painter = textCache.get(pair.$1, endStyle);
           // Centred on its axis, except on the first one when the lines are
           // named there: the names own that corner, so the numbers step
           // right of the axis rather than sitting under them.
-          final left =
-              a == 0 && chart.showLegend ? x + 4 : x - painter.width / 2;
+          final left = a == 0 && chart.showLegend
+              ? x + 4
+              : x - painter.width / 2;
           painter.paint(
             canvas,
             Offset(
@@ -736,7 +737,8 @@ class ParallelChartPainter extends CustomPainter {
     ];
     for (final i in order) {
       final laid = layout.lines[i];
-      final base = laid.line.color ??
+      final base =
+          laid.line.color ??
           chart.palette[i % math.max(1, chart.palette.length)];
       final dimmed = touched != null && chart.fadeUntouched && touched != i;
       final color = base.withValues(

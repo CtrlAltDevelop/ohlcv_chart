@@ -99,10 +99,10 @@ class ParallelChannel extends ThreePointDrawing
 
   @override
   Map<String, dynamic> toJson() => {
-        ...baseJson('channel'),
-        ...threeAnchorsJson(),
-        'fillOpacity': fillOpacity,
-        'extend': extend,
-        'alert': alert,
-      };
+    ...baseJson('channel'),
+    ...threeAnchorsJson(),
+    'fillOpacity': fillOpacity,
+    'extend': extend,
+    'alert': alert,
+  };
 }

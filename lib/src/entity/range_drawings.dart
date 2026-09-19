@@ -66,10 +66,10 @@ class PriceRangeDrawing extends TwoPointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...baseJson('priceRange'),
-        ...anchorsJson(),
-        'fillOpacity': fillOpacity,
-      };
+    ...baseJson('priceRange'),
+    ...anchorsJson(),
+    'fillOpacity': fillOpacity,
+  };
 }
 
 /// A bracket under a stretch of time, reading out how long it is.
@@ -121,8 +121,8 @@ class DateRangeDrawing extends TwoPointDrawing implements FilledDrawing {
 
   @override
   Map<String, dynamic> toJson() => {
-        ...baseJson('dateRange'),
-        ...anchorsJson(),
-        'fillOpacity': fillOpacity,
-      };
+    ...baseJson('dateRange'),
+    ...anchorsJson(),
+    'fillOpacity': fillOpacity,
+  };
 }

@@ -282,8 +282,8 @@ class SeriesReferenceLine {
     this.labelStyle,
     this.labelAlignment = Alignment.topRight,
     this.aboveSeries = false,
-  })  : direction = SeriesDirection.vertical,
-        extendsRange = false;
+  }) : direction = SeriesDirection.vertical,
+       extendsRange = false;
 
   /// What the line is measured at.
   final SeriesDirection direction;
@@ -322,11 +322,11 @@ class SeriesReferenceLine {
 class SeriesBand {
   /// A band between the values [from] and [to].
   const SeriesBand.horizontal(this.from, this.to, {this.color, this.gradient})
-      : direction = SeriesDirection.horizontal;
+    : direction = SeriesDirection.horizontal;
 
   /// A band between x = [from] and x = [to].
   const SeriesBand.vertical(this.from, this.to, {this.color, this.gradient})
-      : direction = SeriesDirection.vertical;
+    : direction = SeriesDirection.vertical;
 
   /// What the band is measured at.
   final SeriesDirection direction;

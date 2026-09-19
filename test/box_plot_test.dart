@@ -4,21 +4,18 @@ import 'package:ohlcv_chart/ohlcv_chart.dart';
 
 const _bounds = Rect.fromLTWH(0, 0, 300, 200);
 
-const _stats = BoxPlotStats(
-  lower: 0,
-  q1: 25,
-  median: 50,
-  q3: 75,
-  upper: 100,
-);
+const _stats = BoxPlotStats(lower: 0, q1: 25, median: 50, q3: 75, upper: 100);
 
 void main() {
   group('the summary', () {
     test('quartiles are interpolated off the sorted samples', () {
-      final stats = BoxPlotStats.fromSamples(
-        const [7, 1, 3, 5, 9],
-        whisker: double.infinity,
-      );
+      final stats = BoxPlotStats.fromSamples(const [
+        7,
+        1,
+        3,
+        5,
+        9,
+      ], whisker: double.infinity);
       expect(stats.q1, 3);
       expect(stats.median, 5);
       expect(stats.q3, 7);
@@ -35,10 +32,12 @@ void main() {
     });
 
     test('an infinite whisker keeps everything inside', () {
-      final stats = BoxPlotStats.fromSamples(
-        const [1, 2, 3, 100],
-        whisker: double.infinity,
-      );
+      final stats = BoxPlotStats.fromSamples(const [
+        1,
+        2,
+        3,
+        100,
+      ], whisker: double.infinity);
       expect(stats.outliers, isEmpty);
       expect(stats.upper, 100);
     });
@@ -144,8 +143,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       BoxPlotTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -154,14 +154,20 @@ void main() {
               children: [
                 BoxPlotChart(
                   entries: [
-                    BoxPlotEntry.fromSamples(
-                      const [1, 2, 3, 4, 5],
-                      label: 'Trend',
-                    ),
-                    BoxPlotEntry.fromSamples(
-                      const [2, 4, 6, 8, 40],
-                      label: 'Reversion',
-                    ),
+                    BoxPlotEntry.fromSamples(const [
+                      1,
+                      2,
+                      3,
+                      4,
+                      5,
+                    ], label: 'Trend'),
+                    BoxPlotEntry.fromSamples(const [
+                      2,
+                      4,
+                      6,
+                      8,
+                      40,
+                    ], label: 'Reversion'),
                   ],
                   onTouch: (d) => touched = d,
                   tooltipBuilder: (context, d) => Text('card ${d.entry.label}'),
@@ -207,7 +213,7 @@ void main() {
           home: Scaffold(
             body: BoxPlotChart(
               entries: [
-                BoxPlotEntry.fromSamples(const [1, 2, 3])
+                BoxPlotEntry.fromSamples(const [1, 2, 3]),
               ],
               animationDuration: const Duration(milliseconds: 200),
             ),

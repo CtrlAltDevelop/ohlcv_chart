@@ -5,13 +5,13 @@ import 'package:ohlcv_chart/ohlcv_chart.dart';
 const _bounds = Rect.fromLTWH(0, 0, 400, 106);
 
 List<DeltaBar> _bars(List<double> deltas, {List<double>? prices}) => [
-      for (var i = 0; i < deltas.length; i++)
-        DeltaBar(
-          time: DateTime(2024).add(Duration(minutes: i)),
-          delta: deltas[i],
-          price: prices == null ? null : prices[i],
-        ),
-    ];
+  for (var i = 0; i < deltas.length; i++)
+    DeltaBar(
+      time: DateTime(2024).add(Duration(minutes: i)),
+      delta: deltas[i],
+      price: prices == null ? null : prices[i],
+    ),
+];
 
 void main() {
   group('the maths', () {
@@ -40,10 +40,7 @@ void main() {
   group('divergences', () {
     test('a new high in price that delta did not follow is bearish', () {
       final marks = deltaDivergences(
-        _bars(
-          [10, 10, 10, -30, 1],
-          prices: [1, 2, 3, 2, 4],
-        ),
+        _bars([10, 10, 10, -30, 1], prices: [1, 2, 3, 2, 4]),
         lookback: 4,
       );
       expect(marks.single.index, 4);
@@ -52,10 +49,7 @@ void main() {
 
     test('a new low in price that delta did not follow is bullish', () {
       final marks = deltaDivergences(
-        _bars(
-          [-10, -10, -10, 30, -1],
-          prices: [4, 3, 2, 3, 1],
-        ),
+        _bars([-10, -10, -10, 30, -1], prices: [4, 3, 2, 3, 1]),
         lookback: 4,
       );
       expect(marks.single.kind, DeltaDivergence.bullish);
@@ -131,8 +125,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       CumulativeDeltaTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -168,8 +163,9 @@ void main() {
       expect(touched, isNull);
     });
 
-    testWidgets('draws itself in and survives its data changing',
-        (tester) async {
+    testWidgets('draws itself in and survives its data changing', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

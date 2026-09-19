@@ -58,9 +58,10 @@ void main() {
       expect(layout.columns.first.midY, 150);
       final noMid = layOutBookHeatmap(
         [
-          BookSnapshot(time: DateTime(2024), levels: const [
-            BookLevel(price: 1, size: 1, side: BookSide.bid),
-          ])
+          BookSnapshot(
+            time: DateTime(2024),
+            levels: const [BookLevel(price: 1, size: 1, side: BookSide.bid)],
+          ),
         ],
         _bounds,
         tickSize: 1,
@@ -74,10 +75,7 @@ void main() {
     });
 
     test('nothing to show, no room, or no tick lays out nothing', () {
-      expect(
-        layOutBookHeatmap(const [], _bounds, tickSize: 1).isEmpty,
-        isTrue,
-      );
+      expect(layOutBookHeatmap(const [], _bounds, tickSize: 1).isEmpty, isTrue);
       expect(
         layOutBookHeatmap(_snapshots, Rect.zero, tickSize: 1).isEmpty,
         isTrue,
@@ -94,13 +92,16 @@ void main() {
       expect(cell?.level.price, 101);
       expect(cell?.level.size, 80);
       expect(
-          bookHeatmapCellAt(layout, const Offset(150, 299))?.level.price, 100);
+        bookHeatmapCellAt(layout, const Offset(150, 299))?.level.price,
+        100,
+      );
     });
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       BookHeatmapTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(

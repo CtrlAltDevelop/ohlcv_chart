@@ -309,7 +309,7 @@ class SunburstChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched arc; null shows none.
   final Widget? Function(BuildContext context, SunburstTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the arc.
   final double tooltipMargin;
@@ -463,9 +463,7 @@ class _SunburstChartState extends State<SunburstChart>
                         center: _center,
                         radius: inner / math.sqrt2,
                       ),
-                      child: IgnorePointer(
-                        child: Center(child: widget.center),
-                      ),
+                      child: IgnorePointer(child: Center(child: widget.center)),
                     ),
                   if (tooltip != null && details != null)
                     Positioned.fill(
@@ -497,7 +495,8 @@ class _SunburstChartState extends State<SunburstChart>
   /// A small box at the middle of the arc, for the tooltip to sit beside.
   Rect _anchorOf(SunburstArc arc) {
     final r = (arc.innerRadius + arc.outerRadius) / 2;
-    final at = _center +
+    final at =
+        _center +
         Offset(math.cos(arc.midAngle) * r, math.sin(arc.midAngle) * r);
     return Rect.fromCenter(center: at, width: 8, height: 8);
   }
@@ -594,16 +593,16 @@ class SunburstChartPainter extends CustomPainter {
 
   /// The arc as it looks [t] of the way in: swept out from its start.
   SunburstArc _swept(SunburstArc arc, double t) => SunburstArc(
-        item: arc.item,
-        depth: arc.depth,
-        index: arc.index,
-        startAngle: arc.startAngle,
-        sweepAngle: arc.sweepAngle * t,
-        innerRadius: arc.innerRadius,
-        outerRadius: arc.outerRadius,
-        total: arc.total,
-        parent: arc.parent,
-      );
+    item: arc.item,
+    depth: arc.depth,
+    index: arc.index,
+    startAngle: arc.startAngle,
+    sweepAngle: arc.sweepAngle * t,
+    innerRadius: arc.innerRadius,
+    outerRadius: arc.outerRadius,
+    total: arc.total,
+    parent: arc.parent,
+  );
 
   Color _colorOf(SunburstArc arc) {
     final own = arc.item.color;
@@ -641,7 +640,8 @@ class SunburstChartPainter extends CustomPainter {
     final text = _labelOf(arc);
     if (text == null || text.isEmpty) return;
 
-    final style = chart.labelStyle ??
+    final style =
+        chart.labelStyle ??
         TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,

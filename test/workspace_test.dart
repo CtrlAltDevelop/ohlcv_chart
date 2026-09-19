@@ -93,8 +93,10 @@ void main() {
         'kind': 'MA',
         'values': {'period': 1000000},
       });
-      final period =
-          indicatorCatalog.firstWhere((t) => t.name == 'MA').settings.first;
+      final period = indicatorCatalog
+          .firstWhere((t) => t.name == 'MA')
+          .settings
+          .first;
       expect(back, isNotNull);
       expect(back!.label, 'MA(${period.max.toInt()})');
     });

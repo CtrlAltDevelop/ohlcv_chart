@@ -31,9 +31,9 @@ void main() {
 
     test('two of the same name and contents are the same template', () {
       IndicatorTemplate build() => IndicatorTemplate(
-            name: 'Trend',
-            indicators: [MaIndicator(period: 20)],
-          );
+        name: 'Trend',
+        indicators: [MaIndicator(period: 20)],
+      );
 
       expect(build(), build());
       expect(build().hashCode, build().hashCode);

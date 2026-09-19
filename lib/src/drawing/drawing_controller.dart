@@ -45,11 +45,10 @@ class ChartDrawingController extends ChangeNotifier {
   factory ChartDrawingController.fromJson(
     Map<String, dynamic> json, {
     int historyLimit = 50,
-  }) =>
-      ChartDrawingController(
-        drawings: ChartDrawings.fromJson(json).all,
-        historyLimit: historyLimit,
-      );
+  }) => ChartDrawingController(
+    drawings: ChartDrawings.fromJson(json).all,
+    historyLimit: historyLimit,
+  );
 
   /// How many undo steps are kept; older ones fall off the back.
   final int historyLimit;
@@ -104,9 +103,9 @@ class ChartDrawingController extends ChangeNotifier {
   /// [selected], and an edit made through it is applied to the rest by the
   /// chart.
   List<ChartLine> get selection => List<ChartLine>.unmodifiable([
-        ..._alsoSelected,
-        if (_selected case final v?) v,
-      ]);
+    ..._alsoSelected,
+    if (_selected case final v?) v,
+  ]);
 
   /// How many drawings are selected.
   int get selectionLength => _alsoSelected.length + (_selected == null ? 0 : 1);
@@ -378,8 +377,8 @@ class ChartDrawingController extends ChangeNotifier {
   /// Kept apart from [toJson], which is the drawings themselves: templates
   /// outlive any one chart's layout, so they are usually stored on their own.
   Map<String, dynamic> templatesToJson() => <String, dynamic>{
-        for (final entry in _templates.entries) entry.key: entry.value.toJson(),
-      };
+    for (final entry in _templates.entries) entry.key: entry.value.toJson(),
+  };
 
   /// Replaces the saved templates with those in [json].
   void loadTemplates(Map<String, dynamic> json) {

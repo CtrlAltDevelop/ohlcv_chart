@@ -452,12 +452,13 @@ class _DumbbellChartState extends State<DumbbellChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 360.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 360.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.intrinsicHeight;
+              ? constraints.maxHeight
+              : widget.intrinsicHeight;
           _layout = layOutDumbbell(
             widget.rows,
             size: Size(width, height),
@@ -567,11 +568,14 @@ class DumbbellChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final labelStyle = chart.labelStyle ??
+    final labelStyle =
+        chart.labelStyle ??
         const TextStyle(color: Color(0xFFB4B8C0), fontSize: 11);
-    final axisStyle = chart.axisStyle ??
+    final axisStyle =
+        chart.axisStyle ??
         const TextStyle(color: Color(0xFF909196), fontSize: 10);
-    final valueStyle = chart.valueStyle ??
+    final valueStyle =
+        chart.valueStyle ??
         const TextStyle(color: Color(0xFFE9ECEF), fontSize: 10);
 
     // The gridlines, and the axis under them.
@@ -591,8 +595,10 @@ class DumbbellChartPainter extends CustomPainter {
         painter.paint(
           canvas,
           Offset(
-            (x - painter.width / 2)
-                .clamp(0.0, math.max(0.0, size.width - painter.width)),
+            (x - painter.width / 2).clamp(
+              0.0,
+              math.max(0.0, size.width - painter.width),
+            ),
             layout.plotRect.bottom + 4,
           ),
         );
@@ -615,7 +621,8 @@ class DumbbellChartPainter extends CustomPainter {
         laid.fromCenter,
         laid.toCenter,
         Paint()
-          ..color = row.barColor ??
+          ..color =
+              row.barColor ??
               chart.barColor ??
               Color.lerp(end, const Color(0x00000000), 0.45)!
           ..strokeWidth = chart.barWidth

@@ -31,8 +31,10 @@ void main() {
         expect(stack.bottoms[0][p], 0);
         expect(stack.bottoms[1][p], stack.tops[0][p]);
         expect(stack.bottoms[2][p], stack.tops[1][p]);
-        expect(stack.tops[2][p] - stack.bottoms[0][p],
-            closeTo(_series.fold<double>(0, (a, b) => a + b.valueAt(p)), 1e-9));
+        expect(
+          stack.tops[2][p] - stack.bottoms[0][p],
+          closeTo(_series.fold<double>(0, (a, b) => a + b.valueAt(p)), 1e-9),
+        );
       }
     });
 
@@ -109,8 +111,11 @@ void main() {
 
   group('the layout', () {
     test('periods are spread evenly across the plot', () {
-      final layout =
-          layOutStream(_series, size: const Size(400, 200), periods: 3);
+      final layout = layOutStream(
+        _series,
+        size: const Size(400, 200),
+        periods: 3,
+      );
       expect(layout.columnX.first, closeTo(layout.plotRect.left, 1e-9));
       expect(layout.columnX.last, closeTo(layout.plotRect.right, 1e-9));
     });
@@ -142,8 +147,11 @@ void main() {
         periods: 3,
         progress: 0.5,
       );
-      final full =
-          layOutStream(_series, size: const Size(400, 200), periods: 3);
+      final full = layOutStream(
+        _series,
+        size: const Size(400, 200),
+        periods: 3,
+      );
       expect(
         half.series.first.thicknessAt(0),
         closeTo(full.series.first.thicknessAt(0) / 2, 1e-6),

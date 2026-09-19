@@ -95,14 +95,14 @@ class IndicatorCache {
   IndicatorProfile? profileFor(
     Indicator indicator,
     List<KLineEntity> candles,
-  ) =>
-      _resolve(indicator, candles).profile;
+  ) => _resolve(indicator, candles).profile;
 
   _Entry _resolve(Indicator indicator, List<KLineEntity> candles) {
     final cached = _entries[indicator];
     final last = candles.isEmpty ? null : candles.last;
 
-    final candlesSitStill = cached != null &&
+    final candlesSitStill =
+        cached != null &&
         cached.length == candles.length &&
         cached.lastTime == last?.dateTime &&
         cached.lastBar == _barOf(last);

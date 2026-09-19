@@ -188,8 +188,9 @@ void main() {
     test('finds the entry describing an existing indicator', () {
       expect(indicatorTypeOf(AtrIndicator(period: 8))?.name, 'ATR');
       expect(
-        indicatorTypeOf(AtrIndicator(period: 8))
-            ?.valuesOf(AtrIndicator(period: 8)),
+        indicatorTypeOf(
+          AtrIndicator(period: 8),
+        )?.valuesOf(AtrIndicator(period: 8)),
         {'period': 8},
       );
     });

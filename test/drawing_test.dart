@@ -11,12 +11,12 @@ import 'test_utils.dart';
 const _grabAnything = DrawingStyle(hitTestTolerance: 10000);
 
 Widget _host(Widget child) => MaterialApp(
-      home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
-    );
+  home: Scaffold(body: SizedBox(width: 500, height: 600, child: child)),
+);
 
 /// A chart holding a single [HorizontalLine], with the drawing tools enabled.
 ({Widget widget, HorizontalLine line, List<ChartLine> persisted})
-    _chartWithLine({
+_chartWithLine({
   DrawingStyle style = _grabAnything,
   ChartTranslations translations = const ChartTranslations(),
 }) {
@@ -47,12 +47,12 @@ Widget _host(Widget child) => MaterialApp(
 
 /// Finds a colour swatch by the colour it paints.
 Finder _swatch(Color color) => find.byWidgetPredicate(
-      (widget) =>
-          widget is Container &&
-          widget.decoration is BoxDecoration &&
-          (widget.decoration! as BoxDecoration).color == color &&
-          (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
-    );
+  (widget) =>
+      widget is Container &&
+      widget.decoration is BoxDecoration &&
+      (widget.decoration! as BoxDecoration).color == color &&
+      (widget.decoration! as BoxDecoration).shape == BoxShape.circle,
+);
 
 Future<void> _selectLine(WidgetTester tester) async {
   await tester.tap(find.byType(KChartWidget));
@@ -196,12 +196,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(harness.line.color, teal);
-      expect(
-          harness.persisted,
-          [
-            harness.line,
-          ],
-          reason: 'an edit is reported so the host can persist it');
+      expect(harness.persisted, [
+        harness.line,
+      ], reason: 'an edit is reported so the host can persist it');
     });
 
     testWidgets('the opacity slider dims the line without losing its hue', (
@@ -574,12 +571,12 @@ void main() {
       await tester.pumpAndSettle();
 
       bool isCandleValue(double? price) => data.any(
-            (c) =>
-                c.open == price ||
-                c.high == price ||
-                c.low == price ||
-                c.close == price,
-          );
+        (c) =>
+            c.open == price ||
+            c.high == price ||
+            c.low == price ||
+            c.close == price,
+      );
 
       expect(
         isCandleValue(line.price1) || isCandleValue(line.price2),

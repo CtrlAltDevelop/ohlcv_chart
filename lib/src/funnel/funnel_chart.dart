@@ -10,12 +10,7 @@ import '../treemap/treemap_data.dart' show treemapPalette;
 @immutable
 class FunnelStage {
   /// Creates a stage worth [value].
-  const FunnelStage({
-    required this.value,
-    this.label,
-    this.color,
-    this.data,
-  });
+  const FunnelStage({required this.value, this.label, this.color, this.data});
 
   /// How many reached this stage.
   final double value;
@@ -155,8 +150,8 @@ List<FunnelSegment> layOutFunnel(
         ofPrevious: i == 0
             ? 1
             : clean(stages[i - 1].value) <= 0
-                ? 0
-                : clean(stages[i].value) / clean(stages[i - 1].value),
+            ? 0
+            : clean(stages[i].value) / clean(stages[i - 1].value),
       ),
   ];
 }
@@ -263,7 +258,7 @@ class FunnelChart extends StatefulWidget {
 
   /// Builds a card shown beside the touched stage; null shows none.
   final Widget? Function(BuildContext context, FunnelTouchDetails details)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How far the card sits from the stage.
   final double tooltipMargin;
@@ -574,7 +569,8 @@ class FunnelChartPainter extends CustomPainter {
     final text = _labelOf(segment);
     if (text == null || text.isEmpty) return;
 
-    final inside = chart.labelStyle ??
+    final inside =
+        chart.labelStyle ??
         TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,

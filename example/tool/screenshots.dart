@@ -166,66 +166,64 @@ class ReplayBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: replay,
-        builder: (context, _) {
-          final position = replay.position ?? replay.length;
-          Widget button(IconData icon, {bool on = true}) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: on ? const Color(0xFFDCE3EB) : const Color(0xFF4A5361),
-                ),
-              );
-          return ColoredBox(
-            color: const Color(0xFF161B23),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              child: Row(
-                children: [
-                  button(Icons.replay, on: true),
-                  button(Icons.skip_previous, on: replay.isActive),
-                  button(
-                    replay.isPlaying ? Icons.pause : Icons.play_arrow,
-                    on: true,
-                  ),
-                  button(Icons.skip_next, on: replay.isActive),
-                  button(Icons.stop, on: replay.isActive),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value:
-                            replay.length == 0 ? 0 : position / replay.length,
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFF2A313C),
-                        valueColor:
-                            const AlwaysStoppedAnimation(Color(0xFF26A69A)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 148,
-                    child: Text(
-                      replay.isActive
-                          ? 'Candle $position of ${replay.length}'
-                          : 'Live — all ${replay.length} candles',
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        color: Color(0xFFB6C0CC),
-                        fontSize: 12,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+    animation: replay,
+    builder: (context, _) {
+      final position = replay.position ?? replay.length;
+      Widget button(IconData icon, {bool on = true}) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Icon(
+          icon,
+          size: 20,
+          color: on ? const Color(0xFFDCE3EB) : const Color(0xFF4A5361),
+        ),
       );
+      return ColoredBox(
+        color: const Color(0xFF161B23),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              button(Icons.replay, on: true),
+              button(Icons.skip_previous, on: replay.isActive),
+              button(
+                replay.isPlaying ? Icons.pause : Icons.play_arrow,
+                on: true,
+              ),
+              button(Icons.skip_next, on: replay.isActive),
+              button(Icons.stop, on: replay.isActive),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: replay.length == 0 ? 0 : position / replay.length,
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFF2A313C),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFF26A69A)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 148,
+                child: Text(
+                  replay.isActive
+                      ? 'Candle $position of ${replay.length}'
+                      : 'Live — all ${replay.length} candles',
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Color(0xFFB6C0CC),
+                    fontSize: 12,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 void main() {
@@ -411,9 +409,11 @@ class _ScreenshotAppState extends State<ScreenshotApp> {
     // A frame identical to the one before it is the last scene over again, not
     // this one: ask for another, and give up loudly rather than write it.
     var bytes = await _raster(boundary);
-    for (var attempt = 0;
-        _digest(bytes) == _previous && attempt < 4;
-        attempt++) {
+    for (
+      var attempt = 0;
+      _digest(bytes) == _previous && attempt < 4;
+      attempt++
+    ) {
       await Future<void>.delayed(const Duration(milliseconds: 500));
       bytes = await _raster(boundary);
     }
@@ -548,7 +548,8 @@ List<Scene> buildScenes() {
         showInfoDialog: showInfoDialog,
         showScrollToNowButton: false,
         drawings: drawings,
-        isTrendLine: trendLines.isNotEmpty ||
+        isTrendLine:
+            trendLines.isNotEmpty ||
             horizontalLines.isNotEmpty ||
             rectangles.isNotEmpty ||
             fibRetracements.isNotEmpty ||
@@ -611,39 +612,37 @@ List<Scene> buildScenes() {
     Widget child, {
     bool centred = false,
     double top = 8,
-  }) =>
-      Stack(
-        children: [
-          Positioned.fill(child: child),
-          Positioned(
-            left: centred ? 0 : 10,
-            right: centred ? 0 : null,
-            top: top,
-            // On a chip, because the chart draws its own labels in the same corner.
-            child: Align(
-              alignment: centred ? Alignment.topCenter : Alignment.topLeft,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10141A).withValues(alpha: 0.82),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  child: Text(
-                    text,
-                    style: const TextStyle(
-                      color: Color(0xFFB6C0CC),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+  }) => Stack(
+    children: [
+      Positioned.fill(child: child),
+      Positioned(
+        left: centred ? 0 : 10,
+        right: centred ? 0 : null,
+        top: top,
+        // On a chip, because the chart draws its own labels in the same corner.
+        child: Align(
+          alignment: centred ? Alignment.topCenter : Alignment.topLeft,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: const Color(0xFF10141A).withValues(alpha: 0.82),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: Color(0xFFB6C0CC),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
-        ],
-      );
+        ),
+      ),
+    ],
+  );
 
   /// The chart with the overview strip beneath it.
   Widget overviewScene() {
@@ -714,54 +713,54 @@ List<Scene> buildScenes() {
       size: wide,
       act: null,
       build: () => chart(
-            indicators: [
-              MaIndicator(period: 5),
-              MaIndicator(period: 10),
-              MaIndicator(period: 20),
-              MacdIndicator(),
-            ],
-            signals: [
-              SignalEntity(
-                title: 'TP',
-                price: last * 1.05,
-                color: const Color(0xFF26A69A),
-              ),
-              SignalEntity(
-                title: 'SL',
-                price: last * 0.96,
-                color: const Color(0xFFEF5350),
-                useDash: true,
-              ),
-            ],
+        indicators: [
+          MaIndicator(period: 5),
+          MaIndicator(period: 10),
+          MaIndicator(period: 20),
+          MacdIndicator(),
+        ],
+        signals: [
+          SignalEntity(
+            title: 'TP',
+            price: last * 1.05,
+            color: const Color(0xFF26A69A),
           ),
+          SignalEntity(
+            title: 'SL',
+            price: last * 0.96,
+            color: const Color(0xFFEF5350),
+            useDash: true,
+          ),
+        ],
+      ),
     ),
     (
       name: 'overlays',
       size: wide,
       act: null,
       build: () => chart(
-            volHidden: true,
-            indicators: [
-              IchimokuIndicator(),
-              SupertrendIndicator(),
-              StochRsiIndicator(),
-              AwesomeIndicator(),
-            ],
-          ),
+        volHidden: true,
+        indicators: [
+          IchimokuIndicator(),
+          SupertrendIndicator(),
+          StochRsiIndicator(),
+          AwesomeIndicator(),
+        ],
+      ),
     ),
     (
       name: 'swings',
       size: wide,
       act: null,
       build: () => chart(
-            volHidden: true,
-            indicators: [
-              ZigZagIndicator(),
-              FibonacciIndicator(),
-              ElliottWaveIndicator(),
-              RsiIndicator(),
-            ],
-          ),
+        volHidden: true,
+        indicators: [
+          ZigZagIndicator(),
+          FibonacciIndicator(),
+          ElliottWaveIndicator(),
+          RsiIndicator(),
+        ],
+      ),
     ),
     (
       // A four-hour average over fifteen-minute candles: it steps once a bar
@@ -770,42 +769,42 @@ List<Scene> buildScenes() {
       size: wide,
       act: null,
       build: () => chart(
-            volHidden: true,
-            data: longRun,
-            indicators: [
-              // Both cover about twenty hours, so they sit in the same stretch of
-              // price and the only difference on show is the stepping. A 4h MA20
-              // would reach back eighty hours and drag the whole axis down with it.
-              MaIndicator(period: 80),
-              TimeframeIndicator(
-                timeframe: const Duration(hours: 4),
-                applied: MaIndicator(period: 5),
-                // A colour of its own, so the stepped line and the smooth one are
-                // told apart at a glance rather than by their shape.
-                colors: const [Color(0xFF4DABF7)],
-              ),
-              TimeframeIndicator(
-                timeframe: const Duration(hours: 4),
-                applied: RsiIndicator(period: 14),
-              ),
-            ],
+        volHidden: true,
+        data: longRun,
+        indicators: [
+          // Both cover about twenty hours, so they sit in the same stretch of
+          // price and the only difference on show is the stepping. A 4h MA20
+          // would reach back eighty hours and drag the whole axis down with it.
+          MaIndicator(period: 80),
+          TimeframeIndicator(
+            timeframe: const Duration(hours: 4),
+            applied: MaIndicator(period: 5),
+            // A colour of its own, so the stepped line and the smooth one are
+            // told apart at a glance rather than by their shape.
+            colors: const [Color(0xFF4DABF7)],
           ),
+          TimeframeIndicator(
+            timeframe: const Duration(hours: 4),
+            applied: RsiIndicator(period: 14),
+          ),
+        ],
+      ),
     ),
     (
       name: 'session-vwap',
       size: wide,
       act: null,
       build: () => chart(
-            volHidden: true,
-            data: longRun,
-            sessionDividers: true,
-            indicators: [
-              // One deviation rather than two: the band still says where the
-              // session has been trading without stretching the axis to fit it.
-              SessionVwapIndicator(),
-              AroonIndicator(period: 14),
-            ],
-          ),
+        volHidden: true,
+        data: longRun,
+        sessionDividers: true,
+        indicators: [
+          // One deviation rather than two: the band still says where the
+          // session has been trading without stretching the axis to fit it.
+          SessionVwapIndicator(),
+          AroonIndicator(period: 14),
+        ],
+      ),
     ),
     (
       name: 'overview',
@@ -825,10 +824,9 @@ List<Scene> buildScenes() {
       name: 'linked-charts',
       size: wide,
       act: (area, shoot) => hold(
-            Offset(
-                area.left + area.width * 0.62, area.top + area.height * 0.24),
-            shoot,
-          ),
+        Offset(area.left + area.width * 0.62, area.top + area.height * 0.24),
+        shoot,
+      ),
       build: () => linkedScene(),
     ),
     (
@@ -836,117 +834,117 @@ List<Scene> buildScenes() {
       size: wide,
       act: null,
       build: () => chart(
-            light: true,
-            volHidden: true,
-            indicators: [
-              BollIndicator(),
-              AtrIndicator(period: 8),
-              AtrIndicator(period: 14),
-              AtrIndicator(period: 20),
-            ],
-          ),
+        light: true,
+        volHidden: true,
+        indicators: [
+          BollIndicator(),
+          AtrIndicator(period: 8),
+          AtrIndicator(period: 14),
+          AtrIndicator(period: 20),
+        ],
+      ),
     ),
     (
       name: 'drawing',
       size: wide,
       act: null,
       build: () => chart(
-            volHidden: true,
-            // The drawn lines label themselves on the left, so the price axis
-            // moves over to the right rather than fighting them for the space.
-            axis: VerticalTextAlignment.right,
-            indicators: [EmaIndicator(period: 21)],
-            horizontalLines: [
-              HorizontalLine(
-                price: last * 1.008,
-                title: 'resistance',
-                color: const Color(0xFFEF5350),
-                style: LineStyle.dashed,
-                showLabel: true,
-              ),
-              HorizontalLine(
-                price: last * 0.975,
-                title: 'entry',
-                color: const Color(0xFF4DABF7),
-                showLabel: true,
-              ),
-            ],
-            trendLines: [
-              TrendLine(
-                time1: candles[candles.length - 90].dateTime!,
-                price1: candles[candles.length - 90].low,
-                time2: candles[candles.length - 20].dateTime!,
-                price2: candles[candles.length - 20].high,
-                color: const Color(0xFFF5C26B),
-                label2: 'trend',
-                showLabel: true,
-              ),
-            ],
+        volHidden: true,
+        // The drawn lines label themselves on the left, so the price axis
+        // moves over to the right rather than fighting them for the space.
+        axis: VerticalTextAlignment.right,
+        indicators: [EmaIndicator(period: 21)],
+        horizontalLines: [
+          HorizontalLine(
+            price: last * 1.008,
+            title: 'resistance',
+            color: const Color(0xFFEF5350),
+            style: LineStyle.dashed,
+            showLabel: true,
           ),
+          HorizontalLine(
+            price: last * 0.975,
+            title: 'entry',
+            color: const Color(0xFF4DABF7),
+            showLabel: true,
+          ),
+        ],
+        trendLines: [
+          TrendLine(
+            time1: candles[candles.length - 90].dateTime!,
+            price1: candles[candles.length - 90].low,
+            time2: candles[candles.length - 20].dateTime!,
+            price2: candles[candles.length - 20].high,
+            color: const Color(0xFFF5C26B),
+            label2: 'trend',
+            showLabel: true,
+          ),
+        ],
+      ),
     ),
     (
       name: 'shapes',
       size: wide,
       act: null,
       build: () => chart(
-            volHidden: true,
-            axis: VerticalTextAlignment.right,
-            indicators: [],
-            horizontalLines: [
-              HorizontalLine(
-                price: candles[candles.length - 60].high,
-                startTime: candles[candles.length - 60].dateTime,
-                title: 'broken',
-                color: const Color(0xFFEF5350),
-                style: LineStyle.dashed,
-                showLabel: true,
-              ),
-            ],
-            trendLines: [
-              TrendLine(
-                time1: candles[candles.length - 150].dateTime!,
-                price1: candles[candles.length - 150].low,
-                time2: candles[candles.length - 110].dateTime!,
-                price2: candles[candles.length - 110].high,
-                extend: LineExtension.right,
-                color: const Color(0xFFF5C26B),
-              ),
-              TrendLine(
-                time1: candles[candles.length - 95].dateTime!,
-                price1: candles[candles.length - 95].high,
-                time2: candles[candles.length - 75].dateTime!,
-                price2: candles[candles.length - 75].low,
-                arrow: true,
-                color: const Color(0xFFB197FC),
-              ),
-            ],
-            rectangles: [
-              RectangleDrawing(
-                time1: candles[candles.length - 58].dateTime!,
-                // The box covers the whole range the market held over that span,
-                // which is what a range box is for.
-                price1: candles
-                    .sublist(candles.length - 58, candles.length - 38)
-                    .map((candle) => candle.high)
-                    .reduce(max),
-                time2: candles[candles.length - 38].dateTime!,
-                price2: candles
-                    .sublist(candles.length - 58, candles.length - 38)
-                    .map((candle) => candle.low)
-                    .reduce(min),
-                label: 'range',
-                showLabel: true,
-              ),
-            ],
-            fibRetracements: [
-              FibRetracement(
-                time1: candles[candles.length - 30].dateTime!,
-                price1: candles[candles.length - 30].low,
-                time2: candles[candles.length - 12].dateTime!,
-                price2: candles[candles.length - 12].high,
-              ),
-            ],
+        volHidden: true,
+        axis: VerticalTextAlignment.right,
+        indicators: [],
+        horizontalLines: [
+          HorizontalLine(
+            price: candles[candles.length - 60].high,
+            startTime: candles[candles.length - 60].dateTime,
+            title: 'broken',
+            color: const Color(0xFFEF5350),
+            style: LineStyle.dashed,
+            showLabel: true,
           ),
+        ],
+        trendLines: [
+          TrendLine(
+            time1: candles[candles.length - 150].dateTime!,
+            price1: candles[candles.length - 150].low,
+            time2: candles[candles.length - 110].dateTime!,
+            price2: candles[candles.length - 110].high,
+            extend: LineExtension.right,
+            color: const Color(0xFFF5C26B),
+          ),
+          TrendLine(
+            time1: candles[candles.length - 95].dateTime!,
+            price1: candles[candles.length - 95].high,
+            time2: candles[candles.length - 75].dateTime!,
+            price2: candles[candles.length - 75].low,
+            arrow: true,
+            color: const Color(0xFFB197FC),
+          ),
+        ],
+        rectangles: [
+          RectangleDrawing(
+            time1: candles[candles.length - 58].dateTime!,
+            // The box covers the whole range the market held over that span,
+            // which is what a range box is for.
+            price1: candles
+                .sublist(candles.length - 58, candles.length - 38)
+                .map((candle) => candle.high)
+                .reduce(max),
+            time2: candles[candles.length - 38].dateTime!,
+            price2: candles
+                .sublist(candles.length - 58, candles.length - 38)
+                .map((candle) => candle.low)
+                .reduce(min),
+            label: 'range',
+            showLabel: true,
+          ),
+        ],
+        fibRetracements: [
+          FibRetracement(
+            time1: candles[candles.length - 30].dateTime!,
+            price1: candles[candles.length - 30].low,
+            time2: candles[candles.length - 12].dateTime!,
+            price2: candles[candles.length - 12].high,
+          ),
+        ],
+      ),
     ),
     (
       name: 'readout',
@@ -955,13 +953,13 @@ List<Scene> buildScenes() {
       // while a finger is down.
       act: (area, shoot) => hold(area.center, shoot),
       build: () => chart(
-            indicators: [
-              MaIndicator(period: 5),
-              MaIndicator(period: 10),
-              MaIndicator(period: 20),
-              MacdIndicator(),
-            ],
-          ),
+        indicators: [
+          MaIndicator(period: 5),
+          MaIndicator(period: 10),
+          MaIndicator(period: 20),
+          MacdIndicator(),
+        ],
+      ),
     ),
     (
       name: 'line-editor',
@@ -974,60 +972,60 @@ List<Scene> buildScenes() {
         await shoot();
       },
       build: () => chart(
-            volHidden: true,
-            axis: VerticalTextAlignment.right,
-            indicators: [EmaIndicator(period: 21)],
-            horizontalLines: [
-              HorizontalLine(
-                price: last * 1.008,
-                title: 'resistance',
-                color: const Color(0xFFEF5350),
-                style: LineStyle.dashed,
-                showLabel: true,
-              ),
-            ],
+        volHidden: true,
+        axis: VerticalTextAlignment.right,
+        indicators: [EmaIndicator(period: 21)],
+        horizontalLines: [
+          HorizontalLine(
+            price: last * 1.008,
+            title: 'resistance',
+            color: const Color(0xFFEF5350),
+            style: LineStyle.dashed,
+            showLabel: true,
           ),
+        ],
+      ),
     ),
     (
       name: 'chart-types',
       size: wide,
       act: null,
       build: () => ColoredBox(
-            color: ChartTheme.darkColors().bgColor,
-            child: Column(
-              children: [
-                for (final row in const [
-                  [
-                    (ChartType.bars, 'bars'),
-                    (ChartType.baseline, 'baseline'),
-                    (ChartType.area, 'area'),
-                  ],
-                  [
-                    (ChartType.stepLine, 'step line'),
-                    (ChartType.hlcArea, 'HLC area'),
-                    (ChartType.columns, 'columns'),
-                  ],
-                ])
-                  Expanded(
-                    child: Row(
-                      children: [
-                        for (final (type, name) in row)
-                          Expanded(
-                            child: titled(
-                              name,
-                              chart(
-                                indicators: [],
-                                volHidden: true,
-                                chartType: type,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+        color: ChartTheme.darkColors().bgColor,
+        child: Column(
+          children: [
+            for (final row in const [
+              [
+                (ChartType.bars, 'bars'),
+                (ChartType.baseline, 'baseline'),
+                (ChartType.area, 'area'),
               ],
-            ),
-          ),
+              [
+                (ChartType.stepLine, 'step line'),
+                (ChartType.hlcArea, 'HLC area'),
+                (ChartType.columns, 'columns'),
+              ],
+            ])
+              Expanded(
+                child: Row(
+                  children: [
+                    for (final (type, name) in row)
+                      Expanded(
+                        child: titled(
+                          name,
+                          chart(
+                            indicators: [],
+                            volHidden: true,
+                            chartType: type,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
     ),
     (
       name: 'aggregations',
@@ -1062,172 +1060,172 @@ List<Scene> buildScenes() {
       size: wide,
       act: null,
       build: () => chart(
-            indicators: [EmaIndicator(period: 50)],
-            volHidden: true,
-            priceAxisScale: PriceAxisScale.logarithmic,
-            showOhlcLegend: true,
-            sessionDividers: true,
-          ),
+        indicators: [EmaIndicator(period: 50)],
+        volHidden: true,
+        priceAxisScale: PriceAxisScale.logarithmic,
+        showOhlcLegend: true,
+        sessionDividers: true,
+      ),
     ),
     (
       name: 'planning',
       size: wide,
       act: null,
       build: () => chart(
-            indicators: [],
-            volHidden: true,
-            axis: VerticalTextAlignment.right,
-            showOhlcLegend: true,
-            drawings: [
-              PositionDrawing(
-                time1: candles[candles.length - 60].dateTime!,
-                price1: candles[candles.length - 60].close,
-                time2: candles[candles.length - 8].dateTime!,
-                price2: candles[candles.length - 60].close * 1.06,
-                time3: candles[candles.length - 8].dateTime!,
-                price3: candles[candles.length - 60].close * 0.98,
-                profitColor: const Color(0xFF26A69A),
-                lossColor: const Color(0xFFEF5350),
-              ),
-              ParallelChannel(
-                time1: candles[candles.length - 150].dateTime!,
-                price1: candles[candles.length - 150].low,
-                time2: candles[candles.length - 70].dateTime!,
-                price2: candles[candles.length - 70].low,
-                time3: candles[candles.length - 110].dateTime!,
-                price3: candles[candles.length - 110].high,
-                color: const Color(0xFF4DABF7),
-              ),
-              MeasureDrawing(
-                time1: candles[candles.length - 40].dateTime!,
-                price1: candles[candles.length - 40].low,
-                time2: candles[candles.length - 20].dateTime!,
-                price2: candles[candles.length - 20].high,
-              ),
-              TextAnnotation(
-                time: candles[candles.length - 30].dateTime!,
-                price: candles[candles.length - 30].high * 1.02,
-                text: 'CPI print',
-                color: const Color(0xFFF5C26B),
-              ),
-            ],
+        indicators: [],
+        volHidden: true,
+        axis: VerticalTextAlignment.right,
+        showOhlcLegend: true,
+        drawings: [
+          PositionDrawing(
+            time1: candles[candles.length - 60].dateTime!,
+            price1: candles[candles.length - 60].close,
+            time2: candles[candles.length - 8].dateTime!,
+            price2: candles[candles.length - 60].close * 1.06,
+            time3: candles[candles.length - 8].dateTime!,
+            price3: candles[candles.length - 60].close * 0.98,
+            profitColor: const Color(0xFF26A69A),
+            lossColor: const Color(0xFFEF5350),
           ),
+          ParallelChannel(
+            time1: candles[candles.length - 150].dateTime!,
+            price1: candles[candles.length - 150].low,
+            time2: candles[candles.length - 70].dateTime!,
+            price2: candles[candles.length - 70].low,
+            time3: candles[candles.length - 110].dateTime!,
+            price3: candles[candles.length - 110].high,
+            color: const Color(0xFF4DABF7),
+          ),
+          MeasureDrawing(
+            time1: candles[candles.length - 40].dateTime!,
+            price1: candles[candles.length - 40].low,
+            time2: candles[candles.length - 20].dateTime!,
+            price2: candles[candles.length - 20].high,
+          ),
+          TextAnnotation(
+            time: candles[candles.length - 30].dateTime!,
+            price: candles[candles.length - 30].high * 1.02,
+            text: 'CPI print',
+            color: const Color(0xFFF5C26B),
+          ),
+        ],
+      ),
     ),
     (
       name: 'comparison',
       size: wide,
       act: null,
       build: () => chart(
-            indicators: [],
-            volHidden: true,
-            showOhlcLegend: true,
-            axis: VerticalTextAlignment.right,
-            comparisons: [MarketData.comparison(candles)],
-          ),
+        indicators: [],
+        volHidden: true,
+        showOhlcLegend: true,
+        axis: VerticalTextAlignment.right,
+        comparisons: [MarketData.comparison(candles)],
+      ),
     ),
     (
       name: 'trading',
       size: wide,
       act: null,
       build: () => chart(
-            indicators: [EmaIndicator(period: 21)],
-            volHidden: true,
-            axis: VerticalTextAlignment.right,
-            orders: [
-              ChartOrder(
-                id: 'working',
-                price: last * 0.985,
-                side: TradeSide.buy,
-                quantity: 0.5,
-              ),
-              ChartOrder(
-                id: 'target',
-                price: last * 1.008,
-                side: TradeSide.sell,
-                quantity: 0.5,
-              ),
-            ],
-            positions: [
-              ChartPosition(
-                id: 'open',
-                entryPrice: candles[candles.length - 40].close,
-                side: TradeSide.buy,
-                quantity: 1,
-                unrealisedPnl: last - candles[candles.length - 40].close,
-              ),
-            ],
+        indicators: [EmaIndicator(period: 21)],
+        volHidden: true,
+        axis: VerticalTextAlignment.right,
+        orders: [
+          ChartOrder(
+            id: 'working',
+            price: last * 0.985,
+            side: TradeSide.buy,
+            quantity: 0.5,
           ),
+          ChartOrder(
+            id: 'target',
+            price: last * 1.008,
+            side: TradeSide.sell,
+            quantity: 0.5,
+          ),
+        ],
+        positions: [
+          ChartPosition(
+            id: 'open',
+            entryPrice: candles[candles.length - 40].close,
+            side: TradeSide.buy,
+            quantity: 1,
+            unrealisedPnl: last - candles[candles.length - 40].close,
+          ),
+        ],
+      ),
     ),
     (
       name: 'events',
       size: wide,
       act: null,
       build: () => chart(
-            indicators: [MaIndicator(period: 20)],
-            showOhlcLegend: true,
-            // The demo's own events are spread over the whole history, and the
-            // window only holds the last half of it: these sit where they can be
-            // seen, one of each kind.
-            events: [
-              for (final (back, kind, detail) in [
-                (78, ChartEventKind.earnings, 'Q3 earnings, after the close'),
-                (56, ChartEventKind.dividend, r'$0.24 goes ex'),
-                (34, ChartEventKind.split, '2-for-1'),
-                (12, ChartEventKind.news, 'Added to the index'),
-              ])
-                ChartEvent(
-                  time: candles[candles.length - back].dateTime!,
-                  kind: kind,
-                  detail: detail,
-                ),
-            ],
-          ),
+        indicators: [MaIndicator(period: 20)],
+        showOhlcLegend: true,
+        // The demo's own events are spread over the whole history, and the
+        // window only holds the last half of it: these sit where they can be
+        // seen, one of each kind.
+        events: [
+          for (final (back, kind, detail) in [
+            (78, ChartEventKind.earnings, 'Q3 earnings, after the close'),
+            (56, ChartEventKind.dividend, r'$0.24 goes ex'),
+            (34, ChartEventKind.split, '2-for-1'),
+            (12, ChartEventKind.news, 'Added to the index'),
+          ])
+            ChartEvent(
+              time: candles[candles.length - back].dateTime!,
+              kind: kind,
+              detail: detail,
+            ),
+        ],
+      ),
     ),
     (
       name: 'sessions',
       size: wide,
       act: null,
       build: () => chart(
-            indicators: [],
-            showOhlcLegend: true,
-            // Kept every day, weekend included: the demo's market never closes,
-            // and a weekday-only set washes the whole picture when the data runs
-            // over a Saturday.
-            session: const TradingSession(
-              open: Duration(hours: 9, minutes: 30),
-              close: Duration(hours: 16),
-              weekdays: {
-                DateTime.monday,
-                DateTime.tuesday,
-                DateTime.wednesday,
-                DateTime.thursday,
-                DateTime.friday,
-                DateTime.saturday,
-                DateTime.sunday,
-              },
-            ),
-            extendedHoursColor: const Color(0x2494A9C0),
-            // The kind of thing a per-bar colour is for: pick out the handful of
-            // bars that travelled much further than the ones around them.
-            candleColor: (candle, index) =>
-                candle.high - candle.low > candle.close * 0.015
-                    ? const Color(0xFFFFD54F)
-                    : null,
-          ),
+        indicators: [],
+        showOhlcLegend: true,
+        // Kept every day, weekend included: the demo's market never closes,
+        // and a weekday-only set washes the whole picture when the data runs
+        // over a Saturday.
+        session: const TradingSession(
+          open: Duration(hours: 9, minutes: 30),
+          close: Duration(hours: 16),
+          weekdays: {
+            DateTime.monday,
+            DateTime.tuesday,
+            DateTime.wednesday,
+            DateTime.thursday,
+            DateTime.friday,
+            DateTime.saturday,
+            DateTime.sunday,
+          },
+        ),
+        extendedHoursColor: const Color(0x2494A9C0),
+        // The kind of thing a per-bar colour is for: pick out the handful of
+        // bars that travelled much further than the ones around them.
+        candleColor: (candle, index) =>
+            candle.high - candle.low > candle.close * 0.015
+            ? const Color(0xFFFFD54F)
+            : null,
+      ),
     ),
     (
       name: 'profile',
       size: wide,
       act: null,
       build: () => chart(
-            volHidden: true,
-            showOhlcLegend: true,
-            axis: VerticalTextAlignment.right,
-            indicators: [
-              VolumeProfileIndicator(bins: 28),
-              AnchoredVwapIndicator(anchor: candles.length - 90),
-            ],
-          ),
+        volHidden: true,
+        showOhlcLegend: true,
+        axis: VerticalTextAlignment.right,
+        indicators: [
+          VolumeProfileIndicator(bins: 28),
+          AnchoredVwapIndicator(anchor: candles.length - 90),
+        ],
+      ),
     ),
     (
       name: 'bar-types',
@@ -1276,39 +1274,39 @@ List<Scene> buildScenes() {
       size: wide,
       act: null,
       build: () => ColoredBox(
-            color: ChartTheme.darkColors().bgColor,
-            child: Row(
-              children: [
-                Expanded(
-                  child: titled(
-                    'indexed to 100',
-                    centred: true,
-                    chart(
-                      indicators: [],
-                      volHidden: true,
-                      axis: VerticalTextAlignment.right,
-                      priceAxisScale: PriceAxisScale.indexedTo100,
-                      comparisons: [MarketData.comparison(candles)],
-                    ),
-                  ),
+        color: ChartTheme.darkColors().bgColor,
+        child: Row(
+          children: [
+            Expanded(
+              child: titled(
+                'indexed to 100',
+                centred: true,
+                chart(
+                  indicators: [],
+                  volHidden: true,
+                  axis: VerticalTextAlignment.right,
+                  priceAxisScale: PriceAxisScale.indexedTo100,
+                  comparisons: [MarketData.comparison(candles)],
                 ),
-                Expanded(
-                  child: titled(
-                    'inverted',
-                    centred: true,
-                    chart(
-                      indicators: [],
-                      volHidden: true,
-                      axis: VerticalTextAlignment.right,
-                      invertPriceAxis: true,
-                      showAverageClose: true,
-                      showHighLowOnAxis: true,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+            Expanded(
+              child: titled(
+                'inverted',
+                centred: true,
+                chart(
+                  indicators: [],
+                  volHidden: true,
+                  axis: VerticalTextAlignment.right,
+                  invertPriceAxis: true,
+                  showAverageClose: true,
+                  showHighLowOnAxis: true,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     ),
     (
       name: 'depth-modes',
@@ -1454,17 +1452,17 @@ List<Scene> buildScenes() {
         await shoot();
       },
       build: () => Column(
-            children: [
-              Expanded(
-                child: chart(
-                  data: longRun,
-                  replay: replay,
-                  indicators: [MaIndicator(period: 20), RsiIndicator()],
-                ),
-              ),
-              ReplayBar(replay: replay),
-            ],
+        children: [
+          Expanded(
+            child: chart(
+              data: longRun,
+              replay: replay,
+              indicators: [MaIndicator(period: 20), RsiIndicator()],
+            ),
           ),
+          ReplayBar(replay: replay),
+        ],
+      ),
     ),
     (
       // Hovered rather than held: the crosshair follows a mouse without a
@@ -1478,9 +1476,9 @@ List<Scene> buildScenes() {
         await shoot();
       },
       build: () => chart(
-            showOhlcLegend: true,
-            indicators: [MaIndicator(period: 20), MacdIndicator()],
-          ),
+        showOhlcLegend: true,
+        indicators: [MaIndicator(period: 20), MacdIndicator()],
+      ),
     ),
     (
       // The axis it picks for itself beside one taken over wholesale, on the
@@ -1489,36 +1487,35 @@ List<Scene> buildScenes() {
       size: wide,
       act: null,
       build: () => Column(
-            children: [
-              Expanded(
-                child: titled(
-                  'the format it picks: clock times, the date where the day turns',
-                  chart(
-                      volHidden: true, indicators: [EmaIndicator(period: 21)]),
-                  top: 30,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: titled(
-                  'dateFormatter taking it over, xFrontPadding: 120',
-                  chart(
-                    volHidden: true,
-                    indicators: [EmaIndicator(period: 21)],
-                    xFrontPadding: 120,
-                    dateFormatter: (candle, longForm) {
-                      final at = candle.dateTime!;
-                      final hour = at.hour.toString().padLeft(2, '0');
-                      return longForm
-                          ? 'Sep ${at.day}, ${hour}h${at.minute}'
-                          : '${at.day} Sep · ${hour}h';
-                    },
-                  ),
-                  top: 30,
-                ),
-              ),
-            ],
+        children: [
+          Expanded(
+            child: titled(
+              'the format it picks: clock times, the date where the day turns',
+              chart(volHidden: true, indicators: [EmaIndicator(period: 21)]),
+              top: 30,
+            ),
           ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: titled(
+              'dateFormatter taking it over, xFrontPadding: 120',
+              chart(
+                volHidden: true,
+                indicators: [EmaIndicator(period: 21)],
+                xFrontPadding: 120,
+                dateFormatter: (candle, longForm) {
+                  final at = candle.dateTime!;
+                  final hour = at.hour.toString().padLeft(2, '0');
+                  return longForm
+                      ? 'Sep ${at.day}, ${hour}h${at.minute}'
+                      : '${at.day} Sep · ${hour}h';
+                },
+              ),
+              top: 30,
+            ),
+          ),
+        ],
+      ),
     ),
     (
       // The same chart under both palettes: ChartColors is the whole
@@ -1527,27 +1524,27 @@ List<Scene> buildScenes() {
       size: wide,
       act: null,
       build: () => Row(
-            children: [
-              Expanded(
-                child: titled(
-                  'ChartTheme.darkColors()',
-                  chart(indicators: [BollIndicator(), MacdIndicator()]),
-                  top: 30,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: titled(
-                  'ChartTheme.lightColors()',
-                  chart(
-                    light: true,
-                    indicators: [BollIndicator(), MacdIndicator()],
-                  ),
-                  top: 30,
-                ),
-              ),
-            ],
+        children: [
+          Expanded(
+            child: titled(
+              'ChartTheme.darkColors()',
+              chart(indicators: [BollIndicator(), MacdIndicator()]),
+              top: 30,
+            ),
           ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: titled(
+              'ChartTheme.lightColors()',
+              chart(
+                light: true,
+                indicators: [BollIndicator(), MacdIndicator()],
+              ),
+              top: 30,
+            ),
+          ),
+        ],
+      ),
     ),
     (
       // Left to itself the candle area takes what the panes do not want;
@@ -1556,39 +1553,39 @@ List<Scene> buildScenes() {
       size: wide,
       act: null,
       build: () => Row(
-            children: [
-              Expanded(
-                child: titled(
-                  'mBaseHeight unset — fills the box',
-                  chart(indicators: [MacdIndicator()]),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: titled(
-                  'mBaseHeight: 220',
-                  chart(mBaseHeight: 220, indicators: [MacdIndicator()]),
-                ),
-              ),
-            ],
+        children: [
+          Expanded(
+            child: titled(
+              'mBaseHeight unset — fills the box',
+              chart(indicators: [MacdIndicator()]),
+            ),
           ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: titled(
+              'mBaseHeight: 220',
+              chart(mBaseHeight: 220, indicators: [MacdIndicator()]),
+            ),
+          ),
+        ],
+      ),
     ),
     (
       name: 'indicator-settings',
       size: portrait,
       act: null,
       build: () => Theme(
-            data: ThemeData.dark(useMaterial3: true),
-            child: Scaffold(
-              backgroundColor: const Color(0xFF10141A),
-              body: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: IndicatorSheet(theme: ChartTheme.darkColors()),
-                ),
-              ),
+        data: ThemeData.dark(useMaterial3: true),
+        child: Scaffold(
+          backgroundColor: const Color(0xFF10141A),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: IndicatorSheet(theme: ChartTheme.darkColors()),
             ),
           ),
+        ),
+      ),
     ),
     (
       // Four business charts at once, one of them reading out a day, so the
@@ -1768,14 +1765,13 @@ List<double> seriesWave(
   double swing = 1,
   double drift = 0,
   double phase = 0,
-}) =>
-    [
-      for (var i = 0; i < count; i++)
-        base +
-            sin(i / 5 + phase) * swing +
-            cos(i / 2.3 + phase) * swing * 0.35 +
-            i * drift,
-    ];
+}) => [
+  for (var i = 0; i < count; i++)
+    base +
+        sin(i / 5 + phase) * swing +
+        cos(i / 2.3 + phase) * swing * 0.35 +
+        i * drift,
+];
 
 /// Day [index] of 2026, written the way a dashboard axis would.
 String seriesDate(int index) {
@@ -1799,45 +1795,44 @@ Widget seriesPanel(
   Widget child, {
   String? figure,
   Color figureColor = Colors.white,
-}) =>
-    Container(
-      margin: const EdgeInsets.all(6),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-      decoration: BoxDecoration(
-        color: _seriesPaper,
-        border: Border.all(color: _seriesGrid),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+}) => Container(
+  margin: const EdgeInsets.all(6),
+  padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+  decoration: BoxDecoration(
+    color: _seriesPaper,
+    border: Border.all(color: _seriesGrid),
+    borderRadius: BorderRadius.circular(10),
+  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Row(
         children: [
-          Row(
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Color(0xFFB6C0CC),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              if (figure != null)
-                Text(
-                  figure,
-                  style: TextStyle(
-                    color: figureColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-            ],
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFFB6C0CC),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          const SizedBox(height: 8),
-          Expanded(child: child),
+          const Spacer(),
+          if (figure != null)
+            Text(
+              figure,
+              style: TextStyle(
+                color: figureColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
         ],
       ),
-    );
+      const SizedBox(height: 8),
+      Expanded(child: child),
+    ],
+  ),
+);
 
 /// The tooltip the series scenes draw: a date, then a coloured row per value.
 Widget seriesCard(String title, List<(String, String, Color)> rows) =>
@@ -1892,9 +1887,9 @@ SeriesTooltip _seriesTooltip({String Function(int index)? title}) =>
     SeriesTooltip(
       builder: (context, details) =>
           seriesCard((title ?? seriesDate)(details.index), [
-        for (final value in details.values)
-          (value.series.label ?? '', seriesUsd(value.value), value.color),
-      ]),
+            for (final value in details.values)
+              (value.series.label ?? '', seriesUsd(value.value), value.color),
+          ]),
     );
 
 /// Four business charts in a grid.
@@ -2131,19 +2126,19 @@ Widget seriesWindowScene() {
   final rebates = seriesWave(days, base: 420, swing: 140, drift: 1, phase: 4);
 
   List<PlotSeries> lines({required bool small}) => [
-        for (final (label, values, color) in [
-          ('Deposits', deposits, _seriesBlue),
-          ('Withdrawals', withdrawals, _seriesAmber),
-          ('Rebates', rebates, _seriesGreen),
-        ])
-          LineSeries.values(
-            values,
-            label: label,
-            color: color,
-            width: small ? 1 : 2,
-            fill: SeriesFill.fade(color, opacity: small ? 0.18 : 0.24),
-          ),
-      ];
+    for (final (label, values, color) in [
+      ('Deposits', deposits, _seriesBlue),
+      ('Withdrawals', withdrawals, _seriesAmber),
+      ('Rebates', rebates, _seriesGreen),
+    ])
+      LineSeries.values(
+        values,
+        label: label,
+        color: color,
+        width: small ? 1 : 2,
+        fill: SeriesFill.fade(color, opacity: small ? 0.18 : 0.24),
+      ),
+  ];
 
   return ColoredBox(
     color: _seriesBackground,
@@ -2151,7 +2146,8 @@ Widget seriesWindowScene() {
       padding: const EdgeInsets.all(6),
       child: seriesPanel(
         'Activity trend',
-        figure: '${seriesDate(window.start.round())} – '
+        figure:
+            '${seriesDate(window.start.round())} – '
             '${seriesDate(window.end.round())}',
         figureColor: const Color(0xFF8B95A1),
         Column(
@@ -2228,19 +2224,19 @@ Widget seriesPanelsScene() {
   ];
 
   Widget key(String label, Color color, {bool dashed = false}) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < (dashed ? 3 : 1); i++)
-            Container(
-              width: dashed ? 5 : 20,
-              height: 3,
-              margin: EdgeInsets.only(right: dashed ? 2.5 : 0),
-              color: color,
-            ),
-          const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: color, fontSize: 12)),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      for (var i = 0; i < (dashed ? 3 : 1); i++)
+        Container(
+          width: dashed ? 5 : 20,
+          height: 3,
+          margin: EdgeInsets.only(right: dashed ? 2.5 : 0),
+          color: color,
+        ),
+      const SizedBox(width: 8),
+      Text(label, style: TextStyle(color: color, fontSize: 12)),
+    ],
+  );
 
   return ColoredBox(
     color: _seriesBackground,
@@ -2372,7 +2368,7 @@ Widget heatmapScene() {
           weekday >= 5 && week % 3 == 0
               ? null
               : (sin(week / 3.3) + 1.2) * (cos(weekday / 1.9) + 1.3) * 3 +
-                  (week * weekday % 4),
+                    (week * weekday % 4),
       ],
   ];
   final byHourAndDay = [
@@ -2568,23 +2564,19 @@ Widget pieRadarScene() {
 
 /// A small rounded label, for a badge pinned to a pie section.
 Widget seriesChip(String text, Color color) => DecoratedBox(
-      decoration: BoxDecoration(
-        color: _seriesPaper,
-        border: Border.all(color: color),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: color,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
+  decoration: BoxDecoration(
+    color: _seriesPaper,
+    border: Border.all(color: color),
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    child: Text(
+      text,
+      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
+    ),
+  ),
+);
 
 /// Every trade as a dot: how big it was against what it returned.
 Widget seriesScatterScene() {
@@ -2776,10 +2768,10 @@ Widget seriesRangesScene() {
                     maxWidth: 34,
                     colorBuilder: (index, point) =>
                         index == 0 || index == steps.length - 1
-                            ? _seriesBlue
-                            : point.y! >= (point.low ?? 0)
-                                ? _seriesGreen
-                                : _seriesRed,
+                        ? _seriesBlue
+                        : point.y! >= (point.low ?? 0)
+                        ? _seriesGreen
+                        : _seriesRed,
                     labelBuilder: (index, point) => point.y!.toStringAsFixed(1),
                     labelStyle: _seriesAxis,
                   ),

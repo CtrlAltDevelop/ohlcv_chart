@@ -207,7 +207,7 @@ void _paintPoints(
 
     paint.color =
         resolved.indicator.colorForPoint(line, i, candles[i], value, colors) ??
-            color;
+        color;
     canvas.drawCircle(Offset(xOf(i), yOf(value)), radius, paint);
   }
 }
@@ -235,7 +235,7 @@ void _paintHistogram(
 
     paint.color =
         resolved.indicator.colorForPoint(line, i, candles[i], value, colors) ??
-            color;
+        color;
 
     final x = xOf(i);
     final y = yOf(value);

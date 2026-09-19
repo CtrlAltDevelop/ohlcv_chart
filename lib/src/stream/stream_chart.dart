@@ -77,8 +77,13 @@ class StreamStack {
   });
 
   /// Nothing at all.
-  static const empty =
-      StreamStack(order: [], bottoms: [], tops: [], min: 0, max: 0);
+  static const empty = StreamStack(
+    order: [],
+    bottoms: [],
+    tops: [],
+    min: 0,
+    max: 0,
+  );
 
   /// The series bottom to top, as indexes into the chart's series.
   final List<int> order;
@@ -113,8 +118,9 @@ StreamStack stackStream(
 
   final totals = [
     for (final one in series)
-      [for (var p = 0; p < periods; p++) one.valueAt(p)]
-          .fold<double>(0, (a, b) => a + b),
+      [
+        for (var p = 0; p < periods; p++) one.valueAt(p),
+      ].fold<double>(0, (a, b) => a + b),
   ];
 
   List<int> stackOrder;
@@ -545,7 +551,7 @@ class StreamChart extends StatefulWidget {
   /// Builds the card shown over a touched band; null shows its label and its
   /// value at that period.
   final Widget Function(BuildContext context, StreamSeries series, int period)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How tall the chart is in a box that sets no height.
   final double defaultHeight;
@@ -636,12 +642,13 @@ class _StreamChartState extends State<StreamChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 420.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.defaultHeight;
+              ? constraints.maxHeight
+              : widget.defaultHeight;
           _layout = layOutStream(
             widget.series,
             size: Size(width, height),
@@ -691,8 +698,9 @@ class _StreamChartState extends State<StreamChart>
 
   Widget _tooltip(BuildContext context, int index) {
     final laid = _layout.series[index];
-    final period =
-        (_period ?? 0).clamp(0, math.max(0, laid.topPoints.length - 1)).toInt();
+    final period = (_period ?? 0)
+        .clamp(0, math.max(0, laid.topPoints.length - 1))
+        .toInt();
     final at = laid.topPoints[period];
     final build = widget.tooltipBuilder;
     final child = build != null
@@ -755,14 +763,17 @@ class StreamChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final labelStyle = chart.labelStyle ??
+    final labelStyle =
+        chart.labelStyle ??
         const TextStyle(color: Color(0xFF15171C), fontSize: 11);
-    final axisStyle = chart.axisStyle ??
+    final axisStyle =
+        chart.axisStyle ??
         const TextStyle(color: Color(0xFF909196), fontSize: 10);
 
     for (final index in layout.stack.order) {
       final laid = layout.series[index];
-      final base = laid.series.color ??
+      final base =
+          laid.series.color ??
           chart.palette[index % math.max(1, chart.palette.length)];
       final dimmed = touched != null && chart.fadeUntouched && touched != index;
       final alpha = (chart.fillOpacity * (dimmed ? 0.35 : 1)).clamp(0.0, 1.0);
@@ -817,8 +828,10 @@ class StreamChartPainter extends CustomPainter {
         painter.paint(
           canvas,
           Offset(
-            (layout.columnX[p] - painter.width / 2)
-                .clamp(0.0, math.max(0.0, size.width - painter.width)),
+            (layout.columnX[p] - painter.width / 2).clamp(
+              0.0,
+              math.max(0.0, size.width - painter.width),
+            ),
             layout.plotRect.bottom + 4,
           ),
         );

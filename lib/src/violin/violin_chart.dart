@@ -76,7 +76,8 @@ DensityCurve kernelDensity(
     deviation == 0 ? double.infinity : deviation,
     (q3 - q1) == 0 ? double.infinity : (q3 - q1) / 1.349,
   );
-  var width = bandwidth ??
+  var width =
+      bandwidth ??
       (spread.isFinite && spread > 0
           ? 0.9 * spread * math.pow(n, -1 / 5).toDouble()
           : 0.0);
@@ -619,7 +620,8 @@ class ViolinChart extends StatefulWidget {
     BuildContext context,
     ViolinSeries series,
     BoxPlotStats stats,
-  )? tooltipBuilder;
+  )?
+  tooltipBuilder;
 
   /// How tall the chart is in a box that sets no height.
   final double defaultHeight;
@@ -690,12 +692,13 @@ class _ViolinChartState extends State<ViolinChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 420.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 420.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.defaultHeight;
+              ? constraints.maxHeight
+              : widget.defaultHeight;
           _layout = layOutViolin(
             widget.series,
             size: Size(width, height),
@@ -815,9 +818,11 @@ class ViolinChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final labelStyle = chart.labelStyle ??
+    final labelStyle =
+        chart.labelStyle ??
         const TextStyle(color: Color(0xFFB4B8C0), fontSize: 11);
-    final axisStyle = chart.axisStyle ??
+    final axisStyle =
+        chart.axisStyle ??
         const TextStyle(color: Color(0xFF909196), fontSize: 10);
     final ridge = layout.shape == ViolinShape.ridgeline;
 
@@ -850,8 +855,10 @@ class ViolinChartPainter extends CustomPainter {
             canvas,
             ridge
                 ? Offset(
-                    (at - painter.width / 2)
-                        .clamp(0.0, math.max(0.0, size.width - painter.width)),
+                    (at - painter.width / 2).clamp(
+                      0.0,
+                      math.max(0.0, size.width - painter.width),
+                    ),
                     layout.plotRect.bottom + 4,
                   )
                 : Offset(
@@ -865,7 +872,8 @@ class ViolinChartPainter extends CustomPainter {
 
     // Back to front, so an overlapping ridgeline stacks the way it reads.
     for (final laid in layout.series.reversed) {
-      final base = laid.series.color ??
+      final base =
+          laid.series.color ??
           chart.palette[laid.index % math.max(1, chart.palette.length)];
       final lifted = touched == laid.index;
       canvas.drawPath(

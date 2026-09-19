@@ -69,7 +69,9 @@ void main() {
       final layout = layOutCalendar(_days, _bounds, monthsPerRow: 2);
       expect(layout.months[1].rect.top, layout.months[0].rect.top);
       expect(
-          layout.months[1].rect.left, greaterThan(layout.months[0].rect.left));
+        layout.months[1].rect.left,
+        greaterThan(layout.months[0].rect.left),
+      );
     });
 
     test('squares shrink so the calendar fits the box it is given', () {
@@ -102,8 +104,9 @@ void main() {
   });
 
   group('the widget', () {
-    testWidgets('draws, reports touches and takes its default height',
-        (tester) async {
+    testWidgets('draws, reports touches and takes its default height', (
+      tester,
+    ) async {
       CalendarTouchDetails? touched;
       await tester.pumpWidget(
         MaterialApp(
@@ -132,13 +135,18 @@ void main() {
       final layout = layOutCalendar(
         _days,
         Rect.fromLTWH(
-            0, 0, tester.getSize(find.byType(CalendarChart)).width, 320),
+          0,
+          0,
+          tester.getSize(find.byType(CalendarChart)).width,
+          320,
+        ),
         monthsPerRow: 1,
         // The widget grows the header by a weekday row when it writes one.
         headerHeight: 16 + calendarWeekdayRowHeight,
       );
-      final gesture =
-          await tester.startGesture(topLeft + layout.cells.first.rect.center);
+      final gesture = await tester.startGesture(
+        topLeft + layout.cells.first.rect.center,
+      );
       await tester.pump();
       expect(touched?.date, DateTime(2024));
       expect(touched?.day?.value, 100);

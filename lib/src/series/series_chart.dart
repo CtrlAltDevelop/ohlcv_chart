@@ -190,13 +190,14 @@ class _SeriesChartState extends State<SeriesChart>
   @override
   void initState() {
     super.initState();
-    _animation = AnimationController(
-      vsync: this,
-      duration: widget.animationDuration,
-      value: 1,
-    )
-      ..addListener(_onTick)
-      ..addStatusListener(_onStatus);
+    _animation =
+        AnimationController(
+            vsync: this,
+            duration: widget.animationDuration,
+            value: 1,
+          )
+          ..addListener(_onTick)
+          ..addStatusListener(_onStatus);
     widget.controller?.addListener(_onController);
     if (widget.animateOnMount && widget.animationDuration > Duration.zero) {
       _growIn();
@@ -265,9 +266,8 @@ class _SeriesChartState extends State<SeriesChart>
   }
 
   static List<List<double?>> _targetValues(List<PlotSeries> series) => [
-        for (final s in series)
-          [for (final p in s.points) p.isGap ? null : p.y],
-      ];
+    for (final s in series) [for (final p in s.points) p.isGap ? null : p.y],
+  ];
 
   static bool _sameValues(List<PlotSeries> a, List<PlotSeries> b) {
     if (identical(a, b)) return true;
@@ -293,20 +293,20 @@ class _SeriesChartState extends State<SeriesChart>
   }
 
   SeriesViewport _fit(List<List<double?>> values) => fitSeriesViewport(
-        series: widget.series,
-        values: values,
-        xAxis: widget.xAxis,
-        yAxis: widget.yAxis,
-        referenceLines: widget.referenceLines,
-        minX: widget.minX,
-        maxX: widget.maxX,
-        xPadding: widget.xPadding,
-        minY: widget.minY,
-        maxY: widget.maxY,
-        includeZero: widget.includeZero,
-        yPadding: widget.yPadding,
-        niceYRange: widget.niceYRange,
-      );
+    series: widget.series,
+    values: values,
+    xAxis: widget.xAxis,
+    yAxis: widget.yAxis,
+    referenceLines: widget.referenceLines,
+    minX: widget.minX,
+    maxX: widget.maxX,
+    xPadding: widget.xPadding,
+    minY: widget.minY,
+    maxY: widget.maxY,
+    includeZero: widget.includeZero,
+    yPadding: widget.yPadding,
+    niceYRange: widget.niceYRange,
+  );
 
   // ── Touch ───────────────────────────────────────────────────────────────
 
@@ -538,8 +538,9 @@ class _SeriesChartState extends State<SeriesChart>
   Widget build(BuildContext context) {
     final target = _targetValues(widget.series);
     final from = _fromValues;
-    final t =
-        from == null ? 1.0 : widget.animationCurve.transform(_animation.value);
+    final t = from == null
+        ? 1.0
+        : widget.animationCurve.transform(_animation.value);
     final values = from == null || !_sameShape(from, widget.series)
         ? target
         : [
@@ -593,8 +594,8 @@ class _SeriesChartState extends State<SeriesChart>
         final tooltipChild = details == null || tooltip == null
             ? null
             : (tooltip.builder != null
-                ? tooltip.builder!(context, details)
-                : _defaultTooltip(tooltip, details, viewport));
+                  ? tooltip.builder!(context, details)
+                  : _defaultTooltip(tooltip, details, viewport));
 
         return SizedBox(
           width: width,
@@ -669,41 +670,41 @@ class _SeriesChartState extends State<SeriesChart>
 
     Widget result = switch (touch.trigger) {
       SeriesTouchTrigger.press => GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: (d) => _showAt(d.localPosition),
-          onTapUp: (_) => _release(),
-          onTapCancel: _release,
-          onHorizontalDragStart: (d) => _showAt(d.localPosition),
-          onHorizontalDragUpdate: (d) => _showAt(d.localPosition),
-          onHorizontalDragEnd: (_) => _release(),
-          onHorizontalDragCancel: _release,
-          onVerticalDragStart:
-              dragsDown ? (d) => _showAt(d.localPosition) : null,
-          onVerticalDragUpdate:
-              dragsDown ? (d) => _showAt(d.localPosition) : null,
-          onVerticalDragEnd: dragsDown ? (_) => _release() : null,
-          onVerticalDragCancel: dragsDown ? _release : null,
-          child: child,
-        ),
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (d) => _showAt(d.localPosition),
+        onTapUp: (_) => _release(),
+        onTapCancel: _release,
+        onHorizontalDragStart: (d) => _showAt(d.localPosition),
+        onHorizontalDragUpdate: (d) => _showAt(d.localPosition),
+        onHorizontalDragEnd: (_) => _release(),
+        onHorizontalDragCancel: _release,
+        onVerticalDragStart: dragsDown ? (d) => _showAt(d.localPosition) : null,
+        onVerticalDragUpdate: dragsDown
+            ? (d) => _showAt(d.localPosition)
+            : null,
+        onVerticalDragEnd: dragsDown ? (_) => _release() : null,
+        onVerticalDragCancel: dragsDown ? _release : null,
+        child: child,
+      ),
       SeriesTouchTrigger.longPress => GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onLongPressStart: (d) => _showAt(d.localPosition),
-          onLongPressMoveUpdate: (d) => _showAt(d.localPosition),
-          onLongPressEnd: (_) => _release(),
-          onLongPressCancel: _release,
-          child: child,
-        ),
+        behavior: HitTestBehavior.opaque,
+        onLongPressStart: (d) => _showAt(d.localPosition),
+        onLongPressMoveUpdate: (d) => _showAt(d.localPosition),
+        onLongPressEnd: (_) => _release(),
+        onLongPressCancel: _release,
+        child: child,
+      ),
       SeriesTouchTrigger.tap => GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapUp: (d) => _toggleAt(d.localPosition),
-          onHorizontalDragStart: (d) => _showAt(d.localPosition),
-          onHorizontalDragUpdate: (d) => _showAt(d.localPosition),
-          onVerticalDragStart:
-              dragsDown ? (d) => _showAt(d.localPosition) : null,
-          onVerticalDragUpdate:
-              dragsDown ? (d) => _showAt(d.localPosition) : null,
-          child: child,
-        ),
+        behavior: HitTestBehavior.opaque,
+        onTapUp: (d) => _toggleAt(d.localPosition),
+        onHorizontalDragStart: (d) => _showAt(d.localPosition),
+        onHorizontalDragUpdate: (d) => _showAt(d.localPosition),
+        onVerticalDragStart: dragsDown ? (d) => _showAt(d.localPosition) : null,
+        onVerticalDragUpdate: dragsDown
+            ? (d) => _showAt(d.localPosition)
+            : null,
+        child: child,
+      ),
       SeriesTouchTrigger.none => child,
     };
 
@@ -789,8 +790,8 @@ class _SeriesChartState extends State<SeriesChart>
     final text = formatter != null
         ? formatter(value)
         : axisFormatter != null
-            ? axisFormatter(value.value)
-            : _plainNumber(value.value);
+        ? axisFormatter(value.value)
+        : _plainNumber(value.value);
     final label = value.series.label;
     return tooltip.showSeriesLabels && label != null && label.isNotEmpty
         ? '$label: $text'

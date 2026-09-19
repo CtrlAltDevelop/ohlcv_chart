@@ -33,9 +33,9 @@ class DeltaBar {
 
 /// Turns [bars] into delta bars, taking each bar's delta and close.
 List<DeltaBar> deltaBarsFromFootprint(List<FootprintBar> bars) => [
-      for (final bar in bars)
-        DeltaBar(time: bar.time, delta: bar.delta, price: bar.close),
-    ];
+  for (final bar in bars)
+    DeltaBar(time: bar.time, delta: bar.delta, price: bar.close),
+];
 
 /// The running total of [bars]' deltas.
 List<double> cumulativeDelta(List<DeltaBar> bars) {
@@ -107,13 +107,9 @@ List<DeltaDivergenceMark> deltaDivergences(
     }
 
     if (highestPrice && !highestDelta) {
-      marks.add(
-        DeltaDivergenceMark(index: i, kind: DeltaDivergence.bearish),
-      );
+      marks.add(DeltaDivergenceMark(index: i, kind: DeltaDivergence.bearish));
     } else if (lowestPrice && !lowestDelta) {
-      marks.add(
-        DeltaDivergenceMark(index: i, kind: DeltaDivergence.bullish),
-      );
+      marks.add(DeltaDivergenceMark(index: i, kind: DeltaDivergence.bullish));
     }
   }
   return marks;
@@ -442,7 +438,8 @@ class CumulativeDeltaChart extends StatefulWidget {
   final Widget? Function(
     BuildContext context,
     CumulativeDeltaTouchDetails details,
-  )? tooltipBuilder;
+  )?
+  tooltipBuilder;
 
   /// How far the card sits from the bar.
   final double tooltipMargin;
@@ -711,8 +708,9 @@ class CumulativeDeltaChartPainter extends CustomPainter {
     for (var i = 0; i < shown && i < layout.bars.length; i++) {
       final rect = layout.bars[i];
       if (rect.width <= 0) continue;
-      fill.color =
-          rect.bottom <= layout.zeroY ? chart.buyColor : chart.sellColor;
+      fill.color = rect.bottom <= layout.zeroY
+          ? chart.buyColor
+          : chart.sellColor;
       canvas.drawRect(rect, fill);
     }
     canvas.drawLine(
@@ -739,8 +737,9 @@ class CumulativeDeltaChartPainter extends CustomPainter {
       canvas.drawPath(
         fill,
         Paint()
-          ..color =
-              chart.lineColor.withValues(alpha: chart.fillOpacity.clamp(0, 1))
+          ..color = chart.lineColor.withValues(
+            alpha: chart.fillOpacity.clamp(0, 1),
+          )
           ..isAntiAlias = true,
       );
     }
@@ -761,8 +760,9 @@ class CumulativeDeltaChartPainter extends CustomPainter {
       if (mark.index >= layout.line.length) continue;
       final at = layout.line[mark.index];
       final bearish = mark.kind == DeltaDivergence.bearish;
-      final color =
-          bearish ? chart.bearishDivergenceColor : chart.bullishDivergenceColor;
+      final color = bearish
+          ? chart.bearishDivergenceColor
+          : chart.bullishDivergenceColor;
       // A small triangle, pointing the way the divergence warns.
       final tip = bearish ? at - const Offset(0, 9) : at + const Offset(0, 9);
       final base = bearish ? at - const Offset(0, 3) : at + const Offset(0, 3);
@@ -807,8 +807,8 @@ class CumulativeDeltaChartPainter extends CustomPainter {
     final line = grid == null
         ? null
         : (Paint()
-          ..color = grid
-          ..strokeWidth = 1);
+            ..color = grid
+            ..strokeWidth = 1);
 
     final span = layout.maxTotal - layout.minTotal;
     for (final tick in niceTicks(
@@ -816,7 +816,8 @@ class CumulativeDeltaChartPainter extends CustomPainter {
       layout.maxTotal,
       target: chart.tickCount,
     )) {
-      final y = layout.lineRect.bottom -
+      final y =
+          layout.lineRect.bottom -
           (tick - layout.minTotal) / span * layout.lineRect.height;
       if (line != null) {
         canvas.drawLine(

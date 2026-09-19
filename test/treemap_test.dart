@@ -28,9 +28,7 @@ void main() {
     });
 
     test('the tiles fill the bounds without overlapping', () {
-      final items = [
-        for (var i = 1; i <= 12; i++) TreemapItem(value: i * 1.5),
-      ];
+      final items = [for (var i = 1; i <= 12; i++) TreemapItem(value: i * 1.5)];
       final tiles = layOutTreemap(items, _bounds);
 
       var covered = 0.0;
@@ -54,10 +52,9 @@ void main() {
     });
 
     test('squarified tiles stay close to square', () {
-      final tiles = layOutTreemap(
-        [for (var i = 0; i < 20; i++) const TreemapItem(value: 1)],
-        const Rect.fromLTWH(0, 0, 500, 400),
-      );
+      final tiles = layOutTreemap([
+        for (var i = 0; i < 20; i++) const TreemapItem(value: 1),
+      ], const Rect.fromLTWH(0, 0, 500, 400));
       for (final tile in tiles) {
         final ratio = tile.rect.longestSide / tile.rect.shortestSide;
         expect(ratio, lessThan(3), reason: '${tile.rect}');
@@ -78,10 +75,7 @@ void main() {
     test('nothing worth anything, or no room, lays out nothing', () {
       expect(layOutTreemap(const [], _bounds), isEmpty);
       expect(layOutTreemap(const [TreemapItem(value: 0)], _bounds), isEmpty);
-      expect(
-        layOutTreemap(const [TreemapItem(value: 4)], Rect.zero),
-        isEmpty,
-      );
+      expect(layOutTreemap(const [TreemapItem(value: 4)], Rect.zero), isEmpty);
     });
 
     test('the order given is kept when sorting is off', () {
@@ -141,7 +135,9 @@ void main() {
         expect(child.root, same(group));
         expect(child.rect.top, greaterThanOrEqualTo(group.headerRect!.bottom));
         expect(
-            group.rect.inflate(1e-6).contains(child.rect.bottomRight), isTrue);
+          group.rect.inflate(1e-6).contains(child.rect.bottomRight),
+          isTrue,
+        );
       }
     });
 
@@ -168,11 +164,10 @@ void main() {
 
   group('the widget', () {
     Widget host(Widget chart) => MaterialApp(
-          home: Scaffold(
-            body:
-                Center(child: SizedBox(width: 400, height: 300, child: chart)),
-          ),
-        );
+      home: Scaffold(
+        body: Center(child: SizedBox(width: 400, height: 300, child: chart)),
+      ),
+    );
 
     testWidgets('draws, and draws nothing without a fuss', (tester) async {
       for (final items in [
@@ -205,9 +200,7 @@ void main() {
       await tester.pumpWidget(
         host(
           TreemapChart(
-            items: const [
-              TreemapItem(value: 1, label: 'only', data: 42),
-            ],
+            items: const [TreemapItem(value: 1, label: 'only', data: 42)],
             onTouch: (d) => reported = d,
             tooltipBuilder: (context, d) => Text('card ${d.item.label}'),
           ),

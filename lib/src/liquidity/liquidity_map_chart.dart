@@ -339,7 +339,7 @@ LiquidityMapLayout layOutLiquidityMap(
   final priceY = currentPrice == null || !currentPrice.isFinite
       ? null
       : plot.bottom -
-          ((currentPrice - min) / span).clamp(0.0, 1.0) * plot.height;
+            ((currentPrice - min) / span).clamp(0.0, 1.0) * plot.height;
 
   return LiquidityMapLayout(
     size: size,
@@ -348,8 +348,9 @@ LiquidityMapLayout layOutLiquidityMap(
     min: min,
     max: max,
     largest: peak,
-    currentPrice:
-        currentPrice != null && currentPrice.isFinite ? currentPrice : null,
+    currentPrice: currentPrice != null && currentPrice.isFinite
+        ? currentPrice
+        : null,
     priceY: priceY,
   );
 }
@@ -467,7 +468,7 @@ class LiquidityMapChart extends StatefulWidget {
   /// Builds the card shown over a touched bucket; null shows its price, both
   /// sides' sizes and what a move there would set off.
   final Widget Function(BuildContext context, LiquidityBin bin, double toThere)?
-      tooltipBuilder;
+  tooltipBuilder;
 
   /// How tall the chart is in a box that sets no height.
   final double defaultHeight;
@@ -538,12 +539,13 @@ class _LiquidityMapChartState extends State<LiquidityMapChart>
       label: widget.semanticLabel,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final width =
-              constraints.hasBoundedWidth ? constraints.maxWidth : 360.0;
+          final width = constraints.hasBoundedWidth
+              ? constraints.maxWidth
+              : 360.0;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.defaultHeight;
+              ? constraints.maxHeight
+              : widget.defaultHeight;
           _layout = layOutLiquidityMap(
             widget.bins,
             size: Size(width, height),
@@ -660,7 +662,8 @@ class LiquidityMapChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final axisStyle = chart.axisStyle ??
+    final axisStyle =
+        chart.axisStyle ??
         const TextStyle(color: Color(0xFF909196), fontSize: 10);
 
     if (chart.axisSteps > 0) {
@@ -682,8 +685,10 @@ class LiquidityMapChartPainter extends CustomPainter {
             canvas,
             Offset(
               layout.plotRect.right + 6,
-              (y - painter.height / 2)
-                  .clamp(0.0, math.max(0.0, size.height - painter.height)),
+              (y - painter.height / 2).clamp(
+                0.0,
+                math.max(0.0, size.height - painter.height),
+              ),
             ),
           );
         }
@@ -697,17 +702,15 @@ class LiquidityMapChartPainter extends CustomPainter {
       }
       final lit = touched == laid.index;
       if (lit) {
-        canvas.drawRect(
-          laid.rowRect,
-          Paint()..color = const Color(0x14FFFFFF),
-        );
+        canvas.drawRect(laid.rowRect, Paint()..color = const Color(0x14FFFFFF));
       }
       if (laid.longRect.width > 0) {
         canvas.drawRect(
           laid.longRect,
           Paint()
-            ..color =
-                lit ? chart.longColor : chart.longColor.withValues(alpha: 0.75),
+            ..color = lit
+                ? chart.longColor
+                : chart.longColor.withValues(alpha: 0.75),
         );
       }
       if (laid.shortRect.width > 0) {

@@ -577,8 +577,8 @@ class _ChordChartState extends State<ChordChart>
               : widget.defaultSize;
           final height =
               constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : widget.defaultSize;
+              ? constraints.maxHeight
+              : widget.defaultSize;
           _layout = layOutChord(
             widget.nodes,
             widget.flows,
@@ -689,13 +689,15 @@ class ChordChartPainter extends CustomPainter {
         chart.nodes[index].color ??
         chart.palette[index % math.max(1, chart.palette.length)];
 
-    final labelStyle = chart.labelStyle ??
+    final labelStyle =
+        chart.labelStyle ??
         const TextStyle(color: Color(0xFFB4B8C0), fontSize: 11);
 
     for (final ribbon in layout.ribbons) {
       // The larger end's colour, so a ribbon reads as belonging to the node
       // it mostly comes from.
-      final owner = layout.totals.totalAt(ribbon.fromIndex) >=
+      final owner =
+          layout.totals.totalAt(ribbon.fromIndex) >=
               layout.totals.totalAt(ribbon.toIndex)
           ? ribbon.fromIndex
           : ribbon.toIndex;
@@ -708,8 +710,10 @@ class ChordChartPainter extends CustomPainter {
         ribbon.shape,
         Paint()
           ..color = base.withValues(
-            alpha:
-                (chart.ribbonOpacity * (dimmed ? 0.25 : 1.4)).clamp(0.0, 1.0),
+            alpha: (chart.ribbonOpacity * (dimmed ? 0.25 : 1.4)).clamp(
+              0.0,
+              1.0,
+            ),
           ),
       );
       if (chart.ribbonStroke > 0 && !dimmed) {
@@ -744,11 +748,9 @@ class ChordChartPainter extends CustomPainter {
 
       if (chart.showLabels && chart.labelWidth > 0) {
         final painter = textCache.get(arc.node.label, labelStyle);
-        final at = layout.center +
-            Offset(
-                  math.cos(arc.midAngle),
-                  math.sin(arc.midAngle),
-                ) *
+        final at =
+            layout.center +
+            Offset(math.cos(arc.midAngle), math.sin(arc.midAngle)) *
                 (layout.radius + 6);
         // Pushed outwards from the ring: left of it on the left half, right
         // of it on the right, so a label never sits on the ring.
@@ -757,8 +759,10 @@ class ChordChartPainter extends CustomPainter {
           canvas,
           Offset(
             left.clamp(0.0, math.max(0.0, size.width - painter.width)),
-            (at.dy - painter.height / 2)
-                .clamp(0.0, math.max(0.0, size.height - painter.height)),
+            (at.dy - painter.height / 2).clamp(
+              0.0,
+              math.max(0.0, size.height - painter.height),
+            ),
           ),
         );
       }
