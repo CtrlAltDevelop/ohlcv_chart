@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../corner_radius.dart';
 import '../renderer/text_painter_cache.dart';
 import '../series/series_axis.dart';
 import '../trading.dart';
@@ -464,7 +465,7 @@ class TradeTimelineChart extends StatefulWidget {
     this.rowGap = 2,
     this.maxRowHeight = 22,
     this.minBarWidth = 2,
-    this.barRadius = 3,
+    this.barRadius = const BorderRadius.all(Radius.circular(3)),
     this.profitColor = const Color(0xFF2F9E44),
     this.lossColor = const Color(0xFFE03131),
     this.flatColor = const Color(0xFF868E96),
@@ -524,8 +525,10 @@ class TradeTimelineChart extends StatefulWidget {
   /// The narrowest a bar is drawn, so a quick trade still shows.
   final double minBarWidth;
 
-  /// The corner radius of a bar.
-  final double barRadius;
+  /// The rounding of each bar's corners, as drawn on the screen. A bar runs
+  /// left to right, and an open trade has not ended, so its right-hand
+  /// corners are left square whatever this says.
+  final BorderRadius barRadius;
 
   /// The colour of a trade that made money.
   final Color profitColor;
@@ -997,26 +1000,20 @@ class TradeTimelineChartPainter extends CustomPainter {
         ),
         bar.rect.height,
       );
-      final radius = Radius.circular(
-        math.min(chart.barRadius, math.min(rect.width, rect.height) / 2),
-      );
       final open = bar.trade.isOpen;
+      // An open trade has not ended, so its right edge is left square.
+      final corners = open
+          ? chart.barRadius.copyWith(
+              topRight: Radius.zero,
+              bottomRight: Radius.zero,
+            )
+          : chart.barRadius;
       fill.color = _colorOf(bar.trade, largest);
-      canvas.drawRRect(
-        RRect.fromRectAndCorners(
-          rect,
-          topLeft: radius,
-          bottomLeft: radius,
-          // An open trade has not ended, so its right edge is left square.
-          topRight: open ? Radius.zero : radius,
-          bottomRight: open ? Radius.zero : radius,
-        ),
-        fill,
-      );
+      canvas.drawRRect(roundedBox(rect, corners), fill);
 
       if (bar.index == touched) {
         canvas.drawRRect(
-          RRect.fromRectAndRadius(rect.inflate(1), radius),
+          roundedBox(rect.inflate(1), corners),
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.5

@@ -81,7 +81,7 @@ Trades wholly outside `start`–`end` are left out; the rest are cut to it.
 | --- | --- |
 | `profitColor`, `lossColor`, `flatColor` | Bar colours by result |
 | `shadeByPnl` | Draws bigger wins and losses stronger |
-| `barRadius` | Corner radius |
+| `barRadius` | Corner rounding, as a `BorderRadius`; an open trade keeps a square right edge |
 | `showSideMarkers`, `markerColor` | The long or short arrow |
 | `showPnl`, `pnlFormatter`, `pnlStyle` | The result, written in bars wide enough |
 | `laneBandColor` | The band behind every other lane |

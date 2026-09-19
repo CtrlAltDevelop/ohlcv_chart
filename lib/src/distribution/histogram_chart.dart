@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../corner_radius.dart';
 import '../renderer/text_painter_cache.dart';
 import '../series/series_axis.dart';
 import '../utils/axis_ticks.dart';
@@ -215,7 +216,7 @@ class HistogramChart extends StatefulWidget {
     this.barColor = const Color(0xFF4C86CD),
     this.negativeColor,
     this.barSpacing = 1,
-    this.barRadius = 1,
+    this.barRadius = const BorderRadius.vertical(top: Radius.circular(1)),
     this.showValueAxis = true,
     this.showCountAxis = true,
     this.countAxisWidth = 40,
@@ -256,8 +257,9 @@ class HistogramChart extends StatefulWidget {
   /// How many pixels are taken off each side of a bar.
   final double barSpacing;
 
-  /// How rounded the top corners of a bar are.
-  final double barRadius;
+  /// The rounding of each bar's corners, as drawn on the screen. Bars grow
+  /// up from the bottom, so `top` is the end away from the axis.
+  final BorderRadius barRadius;
 
   /// Whether the value axis is written along the bottom.
   final bool showValueAxis;
@@ -553,7 +555,6 @@ class HistogramChartPainter extends CustomPainter {
 
     final t = animation.clamp(0.0, 1.0);
     final fill = Paint()..isAntiAlias = true;
-    final radius = Radius.circular(math.max(0, chart.barRadius));
     for (final bar in bars) {
       if (bar.rect.width <= 0) continue;
       fill.color = _colorOf(bar);
@@ -563,10 +564,7 @@ class HistogramChartPainter extends CustomPainter {
         bar.rect.right,
         bar.rect.bottom,
       );
-      canvas.drawRRect(
-        RRect.fromRectAndCorners(rect, topLeft: radius, topRight: radius),
-        fill,
-      );
+      canvas.drawRRect(roundedBox(rect, chart.barRadius), fill);
     }
 
     _paintReferenceLines(canvas);

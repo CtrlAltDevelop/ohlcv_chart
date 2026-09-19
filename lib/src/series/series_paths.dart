@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/painting.dart';
 
+import '../corner_radius.dart';
 import 'series_data.dart';
 
 /// Appends one unbroken run of [points], in pixels and left to right, to
@@ -229,8 +230,5 @@ Path seriesRunPath(
 /// Returns null for a bar with no width or no length.
 RRect? seriesBarBox({required Rect rect, required BorderRadius radius}) {
   if (rect.width <= 0 || rect.height <= 0) return null;
-  if (radius == BorderRadius.zero) {
-    return RRect.fromRectAndRadius(rect, Radius.zero);
-  }
-  return radius.toRRect(rect).scaleRadii();
+  return roundedBox(rect, radius);
 }

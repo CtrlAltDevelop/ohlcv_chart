@@ -44,7 +44,7 @@ width are drawn at unequal widths, since bars are placed by their range.
 | `barColor` | Colour of a bar without one of its own |
 | `negativeColor` | Colour of a bar whose range lies below zero |
 | `barSpacing` | Pixels taken off each side of a bar |
-| `barRadius` | Rounding of the top corners |
+| `barRadius` | Corner rounding, as a `BorderRadius` |
 | `referenceLines` | Values marked with a vertical line — zero, the mean, a target |
 | `referenceColor` | The colour of those lines |
 | `gridColor` | Line ruled across the chart at each count tick |

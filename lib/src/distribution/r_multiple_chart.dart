@@ -228,7 +228,7 @@ class RMultipleChart extends StatelessWidget {
     this.showExpectancyLine = true,
     this.referenceColor = const Color(0x99FFFFFF),
     this.barSpacing = 1,
-    this.barRadius = 1,
+    this.barRadius = const BorderRadius.vertical(top: Radius.circular(1)),
     this.tickCount = 5,
     this.valueFormatter,
     this.axisLabelStyle,
@@ -287,8 +287,9 @@ class RMultipleChart extends StatelessWidget {
   /// How many pixels are taken off each side of a bar.
   final double barSpacing;
 
-  /// The corner radius of a bar.
-  final double barRadius;
+  /// The rounding of each bar's corners, as drawn on the screen, passed
+  /// through to the histogram underneath.
+  final BorderRadius barRadius;
 
   /// About how many ticks to write on each axis.
   final int tickCount;

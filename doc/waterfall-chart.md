@@ -46,7 +46,7 @@ range the chart would pick: every total and zero, with a little room.
 | `min`, `max` | Ends of the value axis; `null` uses `waterfallRange` |
 | `barWidthFraction` | How much of its column a bar takes (default `0.6`) |
 | `maxBarWidth` | Upper limit on a bar's width |
-| `barRadius` | Corner radius |
+| `barRadius` | Corner rounding, as a `BorderRadius` |
 | `labelHeight`, `showLabels` | The label row under the bars |
 | `axisWidth`, `tickCount`, `showValueAxis` | The value axis |
 | `padding` | Space around the chart |

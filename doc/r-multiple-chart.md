@@ -70,7 +70,7 @@ RMultipleChart(
 | `binWidth` | How many R each bin spans (default `0.5`) |
 | `profitColor`, `lossColor` | Bins above and below zero |
 | `showZeroLine`, `showExpectancyLine`, `referenceColor` | The reference lines |
-| `barSpacing`, `barRadius` | Bar shape |
+| `barSpacing`, `barRadius` | Bar shape; `barRadius` is a `BorderRadius` |
 | `tickCount`, `valueFormatter`, `axisLabelStyle`, `gridColor` | Axes; values default to `1.5R` |
 | `padding`, `backgroundColor` | Around and behind the chart |
 

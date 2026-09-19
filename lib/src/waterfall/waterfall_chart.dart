@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../corner_radius.dart';
 import '../renderer/text_painter_cache.dart';
 import '../series/series_axis.dart';
 import '../utils/axis_ticks.dart';
@@ -250,7 +251,7 @@ class WaterfallChart extends StatefulWidget {
     this.riseColor = const Color(0xFF2F9E44),
     this.fallColor = const Color(0xFFE03131),
     this.totalColor = const Color(0xFF4C86CD),
-    this.barRadius = 2,
+    this.barRadius = const BorderRadius.all(Radius.circular(2)),
     this.showConnectors = true,
     this.connectorColor = const Color(0x55FFFFFF),
     this.showValues = true,
@@ -302,8 +303,9 @@ class WaterfallChart extends StatefulWidget {
   /// The colour of a total or subtotal.
   final Color totalColor;
 
-  /// How rounded a bar is.
-  final double barRadius;
+  /// The rounding of each bar's corners, as drawn on the screen. A bar
+  /// floats between two totals, so all four corners are rounded by default.
+  final BorderRadius barRadius;
 
   /// Whether a line joins each bar to the next.
   final bool showConnectors;
@@ -611,7 +613,6 @@ class WaterfallChartPainter extends CustomPainter {
     }
 
     final t = animation.clamp(0.0, 1.0);
-    final radius = Radius.circular(math.max(0, chart.barRadius));
     final fill = Paint()..isAntiAlias = true;
 
     for (final bar in bars) {
@@ -624,7 +625,7 @@ class WaterfallChartPainter extends CustomPainter {
         anchor + (bar.rect.bottom - anchor) * t,
       );
       fill.color = _colorOf(bar);
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, radius), fill);
+      canvas.drawRRect(roundedBox(rect, chart.barRadius), fill);
       if (t >= 1) _paintValue(canvas, bar);
       if (chart.showLabels) _paintLabel(canvas, bar);
     }
