@@ -64,7 +64,7 @@ CalendarChart(
 | `firstWeekday` | The day a week begins on (default `DateTime.monday`) |
 | `monthsPerRow` | Month panels per row; `null` fits as many as it can |
 | `minPanelWidth` | The narrowest a panel may be when fitting a row |
-| `cellSpacing`, `cellRadius` | Gap between and rounding of day squares |
+| `cellSpacing`, `cellRadius` | Gap between day squares, and their rounding as a `BorderRadius` |
 | `headerHeight`, `monthSpacing` | Room for a month's name, and between panels |
 | `padding` | Space around the chart |
 

@@ -57,7 +57,7 @@ proportions allow so small items remain readable.
 | --- | --- |
 | `sort` | Place the largest items first for the squarest layout (default); `false` keeps the given order |
 | `spacing` | Gap between tiles |
-| `radius` | Tile corner radius |
+| `radius` | Tile corner rounding, as a `BorderRadius` |
 | `groupHeaderHeight` | Height reserved at the top of a group for its label; omitted for groups too short to fit it. `0` disables headers |
 | `groupColor`, `groupLabelStyle` | Group background and label style |
 | `padding` | Space around the chart |

@@ -463,7 +463,7 @@ class _SeriesPageState extends State<SeriesPage> {
                           '${(index + 9).toString().padLeft(2, '0')}:00',
                     ),
                     spacing: 3,
-                    radius: 3,
+                    radius: const BorderRadius.all(Radius.circular(3)),
                     onTouch: (d) => setState(() => _square = d),
                     animationDuration: const Duration(milliseconds: 500),
                   ),

@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../corner_radius.dart';
+
 /// One part of a [WaffleChart] — a share of the whole.
 @immutable
 class WaffleSlice {
@@ -255,7 +257,7 @@ class WaffleChart extends StatefulWidget {
     this.rows,
     this.total,
     this.cellGap = 3,
-    this.cellRadius = 2,
+    this.cellRadius = const BorderRadius.all(Radius.circular(2)),
     this.fill = WaffleFill.bottomRowsUp,
     this.emptyColor = const Color(0x22909196),
     this.padding = EdgeInsets.zero,
@@ -289,7 +291,7 @@ class WaffleChart extends StatefulWidget {
   final double cellGap;
 
   /// How round the corners of a cell are.
-  final double cellRadius;
+  final BorderRadius cellRadius;
 
   /// Which corner the cells are filled from.
   final WaffleFill fill;
@@ -504,7 +506,6 @@ class WaffleChartPainter extends CustomPainter {
     }
     if (layout.isEmpty) return;
 
-    final radius = Radius.circular(chart.cellRadius);
     for (var i = 0; i < layout.cells.length; i++) {
       final owner = layout.owners[i];
       var color = owner < 0 || owner >= chart.slices.length
@@ -516,7 +517,7 @@ class WaffleChartPainter extends CustomPainter {
         color = Color.lerp(color, const Color(0x00000000), 0.55) ?? color;
       }
       canvas.drawRRect(
-        RRect.fromRectAndRadius(layout.cells[i], radius),
+        roundedBox(layout.cells[i], chart.cellRadius),
         Paint()..color = color,
       );
     }

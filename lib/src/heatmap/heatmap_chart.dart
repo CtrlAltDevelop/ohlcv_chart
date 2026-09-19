@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../corner_radius.dart';
 import '../renderer/text_painter_cache.dart';
 import '../series/series_axis.dart';
 import 'heatmap_data.dart';
@@ -163,7 +164,7 @@ class HeatmapTouchDetails {
 ///   xAxis: const HeatmapAxis(labels: dayNames),
 ///   yAxis: const HeatmapAxis(labels: hourNames, size: 34),
 ///   spacing: 3,
-///   radius: 3,
+///   radius: const BorderRadius.all(Radius.circular(3)),
 /// );
 /// ```
 ///
@@ -184,7 +185,7 @@ class HeatmapChart extends StatefulWidget {
     this.xAxis = const HeatmapAxis(),
     this.yAxis = const HeatmapAxis(size: 30),
     this.spacing = 2,
-    this.radius = 2,
+    this.radius = const BorderRadius.all(Radius.circular(2)),
     this.squareCells = false,
     this.border,
     this.labelBuilder,
@@ -216,7 +217,7 @@ class HeatmapChart extends StatefulWidget {
     this.xAxis = const HeatmapAxis(),
     this.yAxis = const HeatmapAxis(size: 30),
     this.spacing = 2,
-    this.radius = 2,
+    this.radius = const BorderRadius.all(Radius.circular(2)),
     this.squareCells = false,
     this.border,
     this.labelBuilder,
@@ -261,8 +262,8 @@ class HeatmapChart extends StatefulWidget {
   /// The gap left between two squares.
   final double spacing;
 
-  /// The corner radius of a square.
-  final double radius;
+  /// The rounding of each square's corners, as drawn on the screen.
+  final BorderRadius radius;
 
   /// Whether the squares are kept square, which leaves the grid smaller than
   /// the box when the two do not have the same shape.
@@ -594,7 +595,6 @@ class HeatmapChartPainter extends CustomPainter {
   }
 
   void _paintCells(Canvas canvas) {
-    final radius = Radius.circular(chart.radius);
     final side = chart.border;
     final outline =
         side != null && side.style != BorderStyle.none && side.width > 0
@@ -612,7 +612,7 @@ class HeatmapChartPainter extends CustomPainter {
       for (var x = 0; x < layout.columns; x++) {
         final rect = layout.cellRect(x, y);
         if (rect.width <= 0 || rect.height <= 0) continue;
-        final shape = RRect.fromRectAndRadius(rect, radius);
+        final shape = roundedBox(rect, chart.radius);
         final color = _colorOf(cells[(x, y)]);
         byColor.putIfAbsent(color, Path.new).addRRect(shape);
         if (outline != null) canvas.drawRRect(shape, outline);
@@ -634,9 +634,9 @@ class HeatmapChartPainter extends CustomPainter {
         hover.style != BorderStyle.none &&
         hover.width > 0) {
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
+        roundedBox(
           layout.cellRect(at.$1, at.$2).deflate(hover.width / 2),
-          radius,
+          chart.radius,
         ),
         Paint()
           ..style = PaintingStyle.stroke

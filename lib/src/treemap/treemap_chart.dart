@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../corner_radius.dart';
 import '../heatmap/heatmap_data.dart';
 import '../renderer/text_painter_cache.dart';
 import 'treemap_data.dart';
@@ -56,7 +57,7 @@ class TreemapChart extends StatefulWidget {
     this.maxColorValue,
     this.palette = treemapPalette,
     this.spacing = 2,
-    this.radius = 2,
+    this.radius = const BorderRadius.all(Radius.circular(2)),
     this.sort = true,
     this.groupHeaderHeight = 18,
     this.groupColor,
@@ -98,8 +99,8 @@ class TreemapChart extends StatefulWidget {
   /// The gap left between two tiles.
   final double spacing;
 
-  /// The corner radius of a tile.
-  final double radius;
+  /// The rounding of each tile's corners, as drawn on the screen.
+  final BorderRadius radius;
 
   /// Whether the largest items are placed first, which gives the squarest
   /// tiles; off keeps the order given.
@@ -403,13 +404,12 @@ class TreemapChartPainter extends CustomPainter {
     if (tiles.isEmpty) return;
 
     final t = animation.clamp(0.0, 1.0);
-    final radius = Radius.circular(chart.radius);
     final fill = Paint()..isAntiAlias = true;
 
     for (final tile in tiles) {
       final rect = _grown(tile.rect, t);
       if (rect.width <= 0 || rect.height <= 0) continue;
-      final shape = RRect.fromRectAndRadius(rect, radius);
+      final shape = roundedBox(rect, chart.radius);
 
       if (tile.item.isGroup) {
         fill.color =
@@ -431,7 +431,7 @@ class TreemapChartPainter extends CustomPainter {
         hover.style != BorderStyle.none &&
         hover.width > 0) {
       canvas.drawRRect(
-        RRect.fromRectAndRadius(at.rect.deflate(hover.width / 2), radius),
+        roundedBox(at.rect.deflate(hover.width / 2), chart.radius),
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = hover.width

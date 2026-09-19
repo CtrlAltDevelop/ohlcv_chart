@@ -13,7 +13,7 @@ HeatmapChart.matrix(
   xAxis: const HeatmapAxis(labels: dayNames),
   yAxis: const HeatmapAxis(labels: hourNames, size: 34),
   spacing: 3,
-  radius: 3,
+  radius: const BorderRadius.all(Radius.circular(3)),
 );
 ```
 

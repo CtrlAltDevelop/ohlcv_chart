@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../corner_radius.dart';
 import '../heatmap/heatmap_data.dart';
 import '../renderer/text_painter_cache.dart';
 import '../series/series_axis.dart';
@@ -377,7 +378,7 @@ class CalendarChart extends StatefulWidget {
     this.firstWeekday = DateTime.monday,
     this.monthsPerRow,
     this.cellSpacing = 2,
-    this.cellRadius = 2,
+    this.cellRadius = const BorderRadius.all(Radius.circular(2)),
     this.headerHeight = 16,
     this.monthSpacing = 12,
     this.minPanelWidth = 130,
@@ -435,7 +436,7 @@ class CalendarChart extends StatefulWidget {
   final double cellSpacing;
 
   /// How rounded a day square is.
-  final double cellRadius;
+  final BorderRadius cellRadius;
 
   /// How much room a month's name takes above its panel.
   final double headerHeight;
@@ -733,7 +734,6 @@ class CalendarChartPainter extends CustomPainter {
     if (layout.isEmpty) return;
 
     final t = animation.clamp(0.0, 1.0);
-    final radius = Radius.circular(math.max(0, chart.cellRadius));
     final fill = Paint()..isAntiAlias = true;
 
     for (final cell in layout.cells) {
@@ -744,7 +744,7 @@ class CalendarChartPainter extends CustomPainter {
               ? chart.scale.emptyColor
               : chart.scale.colorAt(value, min, max));
       fill.color = t >= 1 ? color : color.withValues(alpha: color.a * t);
-      canvas.drawRRect(RRect.fromRectAndRadius(cell.rect, radius), fill);
+      canvas.drawRRect(roundedBox(cell.rect, chart.cellRadius), fill);
       if (chart.showDayNumbers) _paintDayNumber(canvas, cell, color);
     }
 
@@ -761,7 +761,7 @@ class CalendarChartPainter extends CustomPainter {
       for (final cell in layout.cells) {
         if (cell.date != at) continue;
         canvas.drawRRect(
-          RRect.fromRectAndRadius(cell.rect.inflate(hover.width / 2), radius),
+          roundedBox(cell.rect.inflate(hover.width / 2), chart.cellRadius),
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = hover.width

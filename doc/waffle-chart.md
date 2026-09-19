@@ -68,7 +68,7 @@ many cells it holds; `tooltipBuilder` replaces the card and
 
 | Field | Default |
 | --- | --- |
-| `cellGap`, `cellRadius` | 3 and 2 |
+| `cellGap`, `cellRadius` | 3, and a `BorderRadius` of 2 |
 | `emptyColor` | A faint grey for cells no slice reached |
 | `padding`, `backgroundColor` | None |
 | `animationDuration`, `animationCurve`, `animateOnMount` | The fill-in |

@@ -314,7 +314,7 @@ class SeasonalityChart extends StatelessWidget {
     this.rowAxisWidth = 40,
     this.columnAxisHeight = 20,
     this.spacing = 2,
-    this.radius = 2,
+    this.radius = const BorderRadius.all(Radius.circular(2)),
     this.onTouch,
     this.tooltipBuilder,
     this.animationDuration = Duration.zero,
@@ -389,8 +389,9 @@ class SeasonalityChart extends StatelessWidget {
   /// The gap between squares.
   final double spacing;
 
-  /// The corner radius of a square.
-  final double radius;
+  /// The rounding of each square's corners, as drawn on the screen, passed
+  /// through to the heatmap underneath.
+  final BorderRadius radius;
 
   /// Called as a touch moves over the squares, and with null when it leaves.
   final ValueChanged<SeasonalityTouchDetails?>? onTouch;

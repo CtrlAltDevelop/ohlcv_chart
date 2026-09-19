@@ -71,7 +71,7 @@ and `columnSummary` — for use in a table of your own.
 | `limit` | The value painted at full strength either way; `null` takes the largest square |
 | `showValues`, `valueFormatter`, `labelStyle` | Values in the squares; returns default to `+1.2%` |
 | `axisLabelStyle`, `rowAxisWidth`, `columnAxisHeight` | Row and column names |
-| `spacing`, `radius` | Square gaps and corners |
+| `spacing`, `radius` | Square gaps, and their corner rounding as a `BorderRadius` |
 | `padding`, `backgroundColor` | Around and behind the chart |
 
 Setting `limit` keeps one extreme month from washing out the rest.

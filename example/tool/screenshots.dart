@@ -2419,7 +2419,7 @@ Widget heatmapScene() {
                         labels: ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'],
                       ),
                       spacing: 3,
-                      radius: 2,
+                      radius: const BorderRadius.all(Radius.circular(2)),
                       // A contribution graph wants squares, not columns.
                       squareCells: true,
                     ),
@@ -2461,7 +2461,7 @@ Widget heatmapScene() {
                       '${(index + 9).toString().padLeft(2, '0')}:00',
                 ),
                 spacing: 3,
-                radius: 3,
+                radius: const BorderRadius.all(Radius.circular(3)),
                 labelBuilder: (cell) => cell.value!.round().toString(),
               ),
             ),
