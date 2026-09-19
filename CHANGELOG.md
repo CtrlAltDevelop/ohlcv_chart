@@ -24,15 +24,30 @@
 
 ### Fixed
 
-- **`BarSeries.radius` is a `BorderRadius`** rather than a `double`, so each
-  corner of a bar can be rounded on its own. The radii are read as they are
-  drawn on the screen and scaled down together when they do not fit, so the old
-  "round the end away from the baseline" shape is now written out:
-  `radius: BorderRadius.vertical(top: Radius.circular(3))` for bars above the
-  baseline, `BorderRadius.horizontal(right: …)` on a horizontal chart. A bar
-  below the baseline no longer flips its rounding by itself.
-- `seriesBarBox` takes that `BorderRadius` and no longer takes `horizontal` or
-  `positive`.
+- **Every corner radius in the package is a `BorderRadius`** rather than a
+  `double`, so a caller picks the corners instead of getting whichever ones the
+  painter decided to round. The radii are read as they are drawn on the screen
+  — `topLeft` is the top-left corner however the shape was grown — and scaled
+  down together when they do not fit.
+  - Bars: `BarSeries.radius`, `HistogramChart.barRadius`,
+    `RMultipleChart.barRadius`, `WaterfallChart.barRadius` and
+    `TradeTimelineChart.barRadius`. The old "round the end away from the
+    baseline" shape is now written out —
+    `radius: BorderRadius.vertical(top: Radius.circular(3))` above the
+    baseline, `BorderRadius.horizontal(right: …)` on a horizontal chart — and
+    a bar below the baseline no longer flips its rounding by itself. A trade
+    that is still open keeps its square right edge whatever the radius says.
+  - Cells and tiles: `CalendarChart.cellRadius`, `WaffleChart.cellRadius`,
+    `TreemapChart.radius`, `HeatmapChart.radius` and
+    `SeasonalityChart.radius`.
+  - Cards, labels and chrome: `SeriesTooltip.borderRadius`,
+    `ChartStyle.labelCornerRadius`, `DrawingStyle.labelCornerRadius`,
+    `DrawingStyle.toolbarBorderRadius` and `DrawingStyle.popoverBorderRadius`.
+
+  Each default draws the shape it drew before, so only code that passed a
+  radius needs changing. Radii that describe a circle — dots, pie and gauge
+  arcs, drawing handles, event marks, the rounded ends of the depth ratio bar
+  — stay `double`.
 
 ## 2.6.0 - 2026-09-16
 
