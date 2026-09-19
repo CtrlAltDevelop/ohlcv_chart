@@ -616,6 +616,7 @@ class _MonteCarloChartState extends State<MonteCarloChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

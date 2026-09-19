@@ -666,6 +666,7 @@ class _ViolinChartState extends State<ViolinChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

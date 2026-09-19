@@ -271,6 +271,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
               row * (tp.height + chartStyle.legendSpacing),
         ),
       );
+      tp.dispose();
       row++;
     }
   }
@@ -412,6 +413,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
             row * (tp.height + chartStyle.legendSpacing),
       ),
     );
+    tp.dispose();
   }
 
   /// Draws every overlay's lines and dots across the visible candles.
@@ -1073,7 +1075,10 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
       // With a pane stacked underneath, a label near the bottom edge would
       // print over that pane's legend.
-      if (hasPanesBelow && chartRect.bottom - y < tp.height) continue;
+      if (hasPanesBelow && chartRect.bottom - y < tp.height) {
+        tp.dispose();
+        continue;
+      }
 
       final offsetX = xOf(tp.width, padding);
 
@@ -1092,6 +1097,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
         );
       }
       tp.paint(canvas, Offset(offsetX, offsetY));
+      tp.dispose();
     }
   }
 

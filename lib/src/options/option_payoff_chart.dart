@@ -558,6 +558,7 @@ class _OptionPayoffChartState extends State<OptionPayoffChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

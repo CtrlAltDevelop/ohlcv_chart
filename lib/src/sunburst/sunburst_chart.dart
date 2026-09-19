@@ -375,6 +375,7 @@ class _SunburstChartState extends State<SunburstChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

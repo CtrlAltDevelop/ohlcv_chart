@@ -183,6 +183,7 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       textDirection: TextDirection.ltr,
     )..layout();
     paintLegend(canvas, tp, Offset(x, chartRect.top - topPadding));
+    tp.dispose();
   }
 
   List<double>? _valueTicks;
@@ -227,6 +228,7 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       );
 
       tp.paint(canvas, Offset(axisLabelX(tp.width, padding), offsetY));
+      tp.dispose();
     }
   }
 

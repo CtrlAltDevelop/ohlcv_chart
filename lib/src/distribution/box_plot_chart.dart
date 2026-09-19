@@ -490,6 +490,7 @@ class _BoxPlotChartState extends State<BoxPlotChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

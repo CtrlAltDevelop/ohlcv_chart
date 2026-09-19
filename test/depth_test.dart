@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 import 'package:ohlcv_chart/src/renderer/depth_painter.dart';
+import 'package:ohlcv_chart/src/renderer/text_painter_cache.dart';
 
 /// Raw rungs: 3 sizes a side, a mid of 100.
 List<DepthEntity> rawBids() => [
@@ -53,6 +54,7 @@ Recorder paintDepth({
     const DepthChartStyle(),
     const Offset(8, 0),
     const DepthChartTranslations(),
+    textCache: TextPainterCache(capacity: 64),
     mode: mode,
     scale: scale,
     zoom: zoom,

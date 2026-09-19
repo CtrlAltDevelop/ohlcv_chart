@@ -397,6 +397,7 @@ class _BubbleChartState extends State<BubbleChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

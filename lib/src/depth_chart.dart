@@ -6,6 +6,7 @@ import 'depth_ratio_bar.dart';
 import 'depth_style.dart';
 import 'depth_translations.dart';
 import 'entity/depth_entity.dart';
+import 'renderer/text_painter_cache.dart';
 import 'renderer/depth_painter.dart';
 
 /// A market-depth chart for one order book.
@@ -102,8 +103,15 @@ class DepthChart extends StatefulWidget {
 }
 
 class _DepthChartState extends State<DepthChart> {
+  final TextPainterCache _text = TextPainterCache(capacity: 64);
   Offset? pressOffset;
   bool isLongPress = false;
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,6 +159,7 @@ class _DepthChartState extends State<DepthChart> {
           widget.chartStyle,
           widget.offset,
           widget.chartTranslations,
+          textCache: _text,
           mode: widget.mode,
           scale: widget.scale,
           zoom: widget.zoom,

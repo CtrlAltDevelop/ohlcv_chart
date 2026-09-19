@@ -513,6 +513,7 @@ class _LiquidityMapChartState extends State<LiquidityMapChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

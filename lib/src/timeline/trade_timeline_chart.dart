@@ -673,6 +673,7 @@ class _TradeTimelineChartState extends State<TradeTimelineChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

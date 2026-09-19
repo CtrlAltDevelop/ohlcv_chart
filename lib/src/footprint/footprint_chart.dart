@@ -560,6 +560,13 @@ class FootprintChart extends StatefulWidget {
 
 class _FootprintChartState extends State<FootprintChart> {
   final TextPainterCache _text = TextPainterCache(capacity: 256);
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
   FootprintLayout _layout = FootprintLayout.empty;
   (int, double)? _touched;
 

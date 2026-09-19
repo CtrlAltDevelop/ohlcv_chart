@@ -368,5 +368,6 @@ void _paintMarkers(
       canvas,
       Offset(point.dx - tp.width / 2, point.dy - tp.height - radius - 2),
     );
+    tp.dispose();
   }
 }

@@ -257,6 +257,7 @@ class _RadarChartState extends State<RadarChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

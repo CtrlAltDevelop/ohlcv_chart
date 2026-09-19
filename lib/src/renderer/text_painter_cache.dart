@@ -14,8 +14,10 @@ import 'package:material_ui/material_ui.dart';
 /// its size — so a recolour or a resize lays out afresh and anything else is
 /// reused.
 ///
-/// Give a chart one and keep it for the chart's life; `KChartWidget` owns one
-/// already.
+/// Give a chart one and keep it for the chart's life, and call [dispose] when
+/// that life ends; `KChartWidget` owns one already and disposes it. A laid-out
+/// [TextPainter] holds a native paragraph, so a cache of a few hundred that is
+/// simply dropped leaks every one of them.
 ///
 /// The painters it hands back are shared. Paint them where you like — the
 /// offset is the caller's — but never mutate one, or every other holder of it
@@ -43,10 +45,30 @@ class TextPainterCache {
   int _layouts = 0;
 
   /// Forgets everything, as though the cache were new.
-  void clear() => _entries.clear();
+  ///
+  /// The painters it was holding are disposed, so nothing that was handed out
+  /// before this call may be painted again.
+  void clear() {
+    for (final painter in _entries.values) {
+      painter.dispose();
+    }
+    _entries.clear();
+  }
+
+  /// Disposes every painter it holds and leaves the cache unusable.
+  ///
+  /// Call it from the `dispose` of whatever owns the cache.
+  void dispose() {
+    assert(!_disposed, 'TextPainterCache disposed twice');
+    clear();
+    _disposed = true;
+  }
+
+  bool _disposed = false;
 
   /// A painter for [text] in [style], laid out and ready to paint.
   TextPainter get(String text, TextStyle style) {
+    assert(!_disposed, 'TextPainterCache used after dispose');
     final key = _Key(text, style.color, style.fontSize, style.fontWeight);
     final found = _entries.remove(key);
     if (found != null) {
@@ -64,7 +86,10 @@ class TextPainterCache {
     )..layout();
 
     if (_entries.length >= capacity) {
-      _entries.remove(_entries.keys.first);
+      // The least recently used goes, and its native paragraph with it. It was
+      // last handed out at least a capacity's worth of labels ago, which is
+      // more than any one frame lays out.
+      _entries.remove(_entries.keys.first)?.dispose();
     }
     _entries[key] = painter;
     return painter;

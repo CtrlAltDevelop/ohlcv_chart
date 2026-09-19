@@ -205,6 +205,7 @@ class _TreemapChartState extends State<TreemapChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

@@ -231,6 +231,7 @@ class _SeriesChartState extends State<SeriesChart>
 
   @override
   void dispose() {
+    _text.dispose();
     widget.controller?.removeListener(_onController);
     _animation.dispose();
     super.dispose();

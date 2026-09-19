@@ -505,6 +505,7 @@ class _EquityCurveChartState extends State<EquityCurveChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

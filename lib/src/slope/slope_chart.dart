@@ -509,6 +509,7 @@ class _SlopeChartState extends State<SlopeChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

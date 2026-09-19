@@ -518,6 +518,7 @@ class _ParallelChartState extends State<ParallelChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

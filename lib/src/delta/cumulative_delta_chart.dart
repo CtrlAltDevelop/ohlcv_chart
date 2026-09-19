@@ -503,6 +503,7 @@ class _CumulativeDeltaChartState extends State<CumulativeDeltaChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

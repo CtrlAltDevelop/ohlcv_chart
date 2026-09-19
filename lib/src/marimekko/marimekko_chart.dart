@@ -468,6 +468,7 @@ class _MarimekkoChartState extends State<MarimekkoChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

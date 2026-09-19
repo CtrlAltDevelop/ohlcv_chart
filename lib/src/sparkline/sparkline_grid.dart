@@ -496,6 +496,7 @@ class _SparklineGridState extends State<SparklineGrid>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

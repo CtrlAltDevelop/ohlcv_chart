@@ -541,6 +541,7 @@ class _OpenInterestChartState extends State<OpenInterestChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

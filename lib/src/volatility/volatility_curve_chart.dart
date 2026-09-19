@@ -474,6 +474,7 @@ class _VolatilityCurveChartState extends State<VolatilityCurveChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

@@ -423,6 +423,7 @@ class _WaterfallChartState extends State<WaterfallChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

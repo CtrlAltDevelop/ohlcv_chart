@@ -455,6 +455,13 @@ class BookHeatmapChart extends StatefulWidget {
 
 class _BookHeatmapChartState extends State<BookHeatmapChart> {
   final TextPainterCache _text = TextPainterCache(capacity: 64);
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
   BookHeatmapLayout _layout = BookHeatmapLayout.empty;
   Offset? _pointer;
 

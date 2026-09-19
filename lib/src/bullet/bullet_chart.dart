@@ -405,6 +405,7 @@ class _BulletChartState extends State<BulletChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

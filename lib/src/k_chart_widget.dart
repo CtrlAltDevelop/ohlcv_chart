@@ -1674,6 +1674,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   @override
   void dispose() {
+    _textCache.dispose();
     HardwareKeyboard.instance.removeHandler(_handleKey);
     widget.drawingController?.removeListener(_onDrawingsChanged);
     widget.replay?.removeListener(_onReplayChanged);
@@ -1681,6 +1682,7 @@ class _KChartWidgetState extends State<KChartWidget>
     _countdownTimer?.cancel();
     mInfoWindowStream.close();
     _controller?.dispose();
+    _curve?.dispose();
     _crosshairRepaint.dispose();
     _marksRepaint.dispose();
     super.dispose();
@@ -3875,21 +3877,29 @@ class _KChartWidgetState extends State<KChartWidget>
   /// old ones — each holding a ticker — would pile up for the life of the chart.
   AnimationController _replaceScrollController() {
     _controller?.dispose();
+    // The curve holds a listener on the controller it wraps, so it goes with
+    // the controller rather than being left behind for the chart's life.
+    _curve?.dispose();
+    _curve = null;
     return _controller = AnimationController(
       duration: Duration(milliseconds: widget.flingTime),
       vsync: this,
     );
   }
 
+  /// The curve wrapping [_controller], kept so it can be disposed with it.
+  CurvedAnimation? _curve;
+
+  /// A curve over [controller], replacing whatever the last one wrapped.
+  CurvedAnimation _scrollCurve(AnimationController controller) => _curve =
+      CurvedAnimation(parent: controller.view, curve: widget.flingCurve);
+
   void _onFling(double velocity) {
     _controller = _replaceScrollController();
-    aniX =
-        Tween<double>(
-          begin: mScrollX,
-          end: velocity * widget.flingRatio + mScrollX,
-        ).animate(
-          CurvedAnimation(parent: _controller!.view, curve: widget.flingCurve),
-        );
+    aniX = Tween<double>(
+      begin: mScrollX,
+      end: velocity * widget.flingRatio + mScrollX,
+    ).animate(_scrollCurve(_controller!));
 
     aniX!.addListener(() {
       mScrollX = aniX!.value.clamp(0.0, BaseChartPainter.maxScrollX);
@@ -3980,9 +3990,10 @@ class _KChartWidgetState extends State<KChartWidget>
     }
 
     final controller = _replaceScrollController();
-    final animation = Tween<double>(begin: mScrollX, end: 0).animate(
-      CurvedAnimation(parent: controller.view, curve: widget.flingCurve),
-    );
+    final animation = Tween<double>(
+      begin: mScrollX,
+      end: 0,
+    ).animate(_scrollCurve(controller));
     aniX = animation;
     animation.addListener(() {
       mScrollX = animation.value.clamp(0.0, BaseChartPainter.maxScrollX);
@@ -4165,9 +4176,10 @@ class _KChartWidgetState extends State<KChartWidget>
   /// Slides the window to [scroll] over the fling duration.
   void _animateScrollTo(double scroll) {
     final controller = _replaceScrollController();
-    final animation = Tween<double>(begin: mScrollX, end: scroll).animate(
-      CurvedAnimation(parent: controller.view, curve: widget.flingCurve),
-    );
+    final animation = Tween<double>(
+      begin: mScrollX,
+      end: scroll,
+    ).animate(_scrollCurve(controller));
     aniX = animation;
     animation.addListener(() {
       mScrollX = animation.value.clamp(0.0, BaseChartPainter.maxScrollX);

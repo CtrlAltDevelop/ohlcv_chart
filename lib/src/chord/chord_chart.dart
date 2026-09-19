@@ -537,6 +537,7 @@ class _ChordChartState extends State<ChordChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

@@ -149,6 +149,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     );
     tp.layout();
     paintLegend(canvas, tp, Offset(x, chartRect.top - topPadding));
+    tp.dispose();
   }
 
   /// The volumes this pane rules and labels itself by.
@@ -182,6 +183,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
       final offsetY = (y - tp.height).clamp(top, chartRect.bottom - tp.height);
 
       tp.paint(canvas, Offset(axisLabelX(tp.width, padding), offsetY));
+      tp.dispose();
     }
   }
 

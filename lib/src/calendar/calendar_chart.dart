@@ -545,6 +545,7 @@ class _CalendarChartState extends State<CalendarChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

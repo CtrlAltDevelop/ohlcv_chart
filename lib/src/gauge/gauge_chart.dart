@@ -439,6 +439,7 @@ class _GaugeChartState extends State<GaugeChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

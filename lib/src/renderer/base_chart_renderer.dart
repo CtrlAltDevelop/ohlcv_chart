@@ -266,6 +266,7 @@ abstract class BaseChartRenderer<T> {
       final labelX = endX - tp.width - 4;
       final labelY = y - tp.height / 2;
       tp.paint(canvas, Offset(labelX, labelY));
+      tp.dispose();
     }
   }
 }

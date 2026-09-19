@@ -608,6 +608,7 @@ class _StreamChartState extends State<StreamChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

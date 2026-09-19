@@ -852,6 +852,7 @@ class ChartPainter extends BaseChartPainter {
           textDirection: TextDirection.ltr,
         )..layout();
         tp.paint(canvas, Offset(x - tp.width / 2, y - tp.height / 2));
+        tp.dispose();
         continue;
       }
 
@@ -2931,6 +2932,7 @@ class ChartPainter extends BaseChartPainter {
       tp,
       Offset(x, mMainRect.top - mTopPadding),
     );
+    tp.dispose();
   }
 
   @override

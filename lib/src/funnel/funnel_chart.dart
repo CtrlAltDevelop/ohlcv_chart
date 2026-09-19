@@ -324,6 +324,7 @@ class _FunnelChartState extends State<FunnelChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

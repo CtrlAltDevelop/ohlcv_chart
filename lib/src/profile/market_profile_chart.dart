@@ -451,6 +451,7 @@ class _MarketProfileChartState extends State<MarketProfileChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

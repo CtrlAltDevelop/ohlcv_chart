@@ -426,6 +426,7 @@ class _DumbbellChartState extends State<DumbbellChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

@@ -504,6 +504,7 @@ class _SankeyChartState extends State<SankeyChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }

@@ -628,6 +628,7 @@ class _PairSpreadChartState extends State<PairSpreadChart>
 
   @override
   void dispose() {
+    _text.dispose();
     _animation.dispose();
     super.dispose();
   }
