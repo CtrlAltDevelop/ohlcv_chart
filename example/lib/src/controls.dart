@@ -459,6 +459,12 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.fitContent = v),
             ),
             _Toggle(
+              label: 'Even grid columns',
+              subtitle: 'Grid lines spread over the chart width, not candles',
+              value: state.evenGridColumns,
+              onChanged: (v) => state.update(() => state.evenGridColumns = v),
+            ),
+            _Toggle(
               label: 'Prices as currency',
               subtitle: r'priceFormatter writes them as $1234.50',
               value: state.currencyPrices,

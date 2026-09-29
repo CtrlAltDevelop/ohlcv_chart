@@ -16,6 +16,21 @@ Like the price axis, the date axis selects round values before placing labels.
 `ChartStyle.gridColumns` controls label density, in the same way as `gridRows`
 on the price axis.
 
+By default the grid's vertical lines rule wherever a candle crosses a time
+bucket (`GridColumnMode.dateTicks`), so each line lines up with a round time.
+With only a handful of candles in view — a sparse intraday window, say —
+there may be only one or two such crossings, leaving most of the chart
+without a line. Set `ChartStyle.gridColumnMode` to
+`GridColumnMode.evenlySpaced` to divide the chart width into `gridColumns`
+equal bands instead, so the grid always spans the chart regardless of candle
+count — at the cost of the lines no longer landing on round times:
+
+```dart
+ChartStyle(
+  gridColumnMode: GridColumnMode.evenlySpaced,
+);
+```
+
 To control formatting, use `ChartStyle.dateTimeFormat` for a fixed pattern, or
 `dateFormatter` for full control. `dateFormatter` receives each candle and a
 flag indicating whether the long form (used by the crosshair) is required:

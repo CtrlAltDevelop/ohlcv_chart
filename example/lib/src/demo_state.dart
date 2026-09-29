@@ -272,6 +272,10 @@ class DemoState extends ChangeNotifier {
   /// the left at the fixed spacing.
   bool fitContent = false;
 
+  /// Spreads the grid's vertical lines evenly across the chart width rather
+  /// than ruling them at candle timestamps.
+  bool evenGridColumns = false;
+
   /// Writes the prices as currency rather than as plain decimals.
   bool currencyPrices = false;
 
@@ -323,6 +327,9 @@ class DemoState extends ChangeNotifier {
       showSessionDividers: sessionDividers,
       priceAxisWidth: fixedPriceAxis ? 56.0 : 0.0,
       fitContent: fitContent,
+      gridColumnMode: evenGridColumns
+          ? GridColumnMode.evenlySpaced
+          : GridColumnMode.dateTicks,
     );
   }
 
