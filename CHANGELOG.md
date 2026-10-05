@@ -19,14 +19,17 @@
   `KChartWidget.volumeHeight` the volume pane. Heights are used as given — past
   `ChartStyle.maxPaneHeight` if asked — and cut back only when a pane would
   squeeze the candles out of the box. Null leaves the heights to the chart, as
-  before. `onPaneHeightsChanged` reports drags and controller changes.
-- **`KChartController.maximizePane`, `restorePanes`, `toggleMaximizePane`,
+  before. While a list is given the host owns the heights: a drag or a controller
+  call is reported through `onPaneHeightsChanged` and the pane moves when the
+  list is passed back.
+- **`KChartController.maximizePane`, `maximizeVolume`, `restorePanes`,
+  `toggleMaximizePane`,
   `setPaneHeight`, `resetPaneHeights`, `paneHeights` and `maximizedPane`** drive
   the same from code, for a "maximize this indicator" button. A maximized pane
   follows the chart's size and its own indicator through a reorder.
 - Dragged pane heights now move with their pane when `onReorderPane` reorders
   the indicators, instead of staying at their position.
-- `KChartHost` has five new members for the above; only an app that implements
+- `KChartHost` has seven new members for the above; only an app that implements
   it itself (a test double) needs to add them.
 
 ## 3.0.0 - 2026-09-19

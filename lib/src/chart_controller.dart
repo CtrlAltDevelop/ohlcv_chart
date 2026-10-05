@@ -79,6 +79,12 @@ abstract interface class KChartHost {
 
   /// Stretches pane [index] over the chart, or lets go of the stretch for null.
   bool maximizeChartPane(int? index);
+
+  /// Whether the volume pane is stretched over the chart.
+  bool get chartVolumeMaximized;
+
+  /// Stretches the volume pane over the chart; false when it is hidden.
+  bool maximizeChartVolume();
 }
 
 /// Drives a chart from outside it: where it is scrolled, how far it is zoomed,
@@ -266,6 +272,10 @@ class KChartController extends ChangeNotifier {
 
   /// Sizes the indicator pane at [index] to [height].
   ///
+  /// With `KChartWidget.paneHeights` given the host owns the heights, so this
+  /// is reported through `onPaneHeightsChanged` for the host to pass back
+  /// rather than moving the pane itself.
+  ///
   /// Unlike a drag, this is not held between `ChartStyle.minPaneHeight` and
   /// `ChartStyle.maxPaneHeight`: any positive height is used as given, so a host
   /// can grow a pane past what the user could drag it to. Panes are told apart
@@ -293,7 +303,16 @@ class KChartController extends ChangeNotifier {
   /// given a fixed `mBaseHeight`.
   bool maximizePane(int index) => _host?.maximizeChartPane(index) ?? false;
 
-  /// Lets go of [maximizePane], putting the panes back as they were.
+  /// Whether the volume pane is stretched over the chart.
+  bool get isVolumeMaximized => _host?.chartVolumeMaximized ?? false;
+
+  /// Makes the volume pane take all the height it can, in the way
+  /// [maximizePane] does for an indicator pane. Reports false when the volume
+  /// pane is hidden. Only one pane, or the volume, is maximized at a time.
+  bool maximizeVolume() => _host?.maximizeChartVolume() ?? false;
+
+  /// Lets go of [maximizePane] or [maximizeVolume], putting the panes back as
+  /// they were.
   void restorePanes() => _host?.maximizeChartPane(null);
 
   /// Maximizes the pane at [index], or restores the panes if it already is.

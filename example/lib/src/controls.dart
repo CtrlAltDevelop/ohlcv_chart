@@ -979,6 +979,14 @@ class _PaneMaximizer extends StatelessWidget {
         return Wrap(
           spacing: 8,
           children: [
+            if (!state.volHidden)
+              FilterChip(
+                label: const Text('Maximize volume'),
+                selected: state.chart.isVolumeMaximized,
+                onSelected: (on) => on
+                    ? state.chart.maximizeVolume()
+                    : state.chart.restorePanes(),
+              ),
             for (var i = 0; i < panes.length; i++)
               FilterChip(
                 label: Text('Maximize ${panes[i].label}'),

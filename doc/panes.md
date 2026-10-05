@@ -48,6 +48,7 @@ the usual reason.
 chart.maximizePane(1);          // pane 1 fills the chart, candles shrink to a strip
 chart.restorePanes();           // …and back
 chart.toggleMaximizePane(1);    // one button for both
+chart.maximizeVolume();         // the volume pane instead
 chart.setPaneHeight(0, 220);    // any single pane, any positive height
 chart.resetPaneHeights();       // every pane back to the standard height
 chart.paneHeights;              // what is drawn now
@@ -57,7 +58,7 @@ chart.paneHeights;              // what is drawn now
 ![The RSI pane maximized](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-maximized-rsi.jpg)
 ![The OBV pane maximized](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-maximized-obv.jpg)
 
-A maximized pane follows the chart's size and moves with its indicator when you
+Only one pane — or the volume pane — is maximized at a time. A maximized pane follows the chart's size and moves with its indicator when you
 reorder; dragging any pane lets go of it. It needs the chart to size its own
 candle area, so it has no effect when `mBaseHeight` is set.
 
@@ -79,10 +80,12 @@ KChartWidget(
   too big for the box is cut back so the candles keep a strip above it.
 - A pane missing from a shorter list, or given a height that is not a positive
   number, gets the standard height.
-- The list is a starting point, not a lock: with `resizablePanes` on the user
-  can still drag, and `onPaneHeightsChanged` reports it (and controller
-  changes) so you can keep your copy in step. It is not called for changes you
-  made through `paneHeights`.
+- While a list is given you own the heights, like a controlled text field. A
+  drag (with `resizablePanes` on) or `setPaneHeight` does not move a pane by
+  itself: it is reported through `onPaneHeightsChanged`, and the pane moves when
+  you pass the new list back. Pass `null` to give the heights back to the chart.
+  Maximizing through the controller still works over a list, and lets go of
+  whenever a height changes.
 - Panes in `paneHeights` are matched by position. When `onReorderPane` moves
   one, move its height with it.
 

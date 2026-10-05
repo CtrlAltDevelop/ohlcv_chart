@@ -709,11 +709,12 @@ class KChartWidget extends StatefulWidget {
   /// chart sizes its own candle area, a height too big for the box is cut back
   /// so the candles keep a strip above it.
   ///
-  /// The list is a starting point rather than a lock: with [resizablePanes] on
-  /// the user can still drag from there, and [onPaneHeightsChanged] reports it
-  /// so the host can keep its own copy in step. The chart takes the list up
-  /// again whenever it changes. Panes are told apart by position, so when
-  /// [onReorderPane] moves one, move its height with it:
+  /// While a list is given the host owns the heights, like a controlled text
+  /// field: a drag (with [resizablePanes] on), or a call to
+  /// `KChartController.setPaneHeight`, does not move a pane by itself. It is
+  /// reported through [onPaneHeightsChanged] instead, and the pane moves when
+  /// the host passes the new list back. Panes are told apart by position, so
+  /// when [onReorderPane] moves one, move its height with it:
   ///
   /// ```dart
   /// onReorderPane: (from, to) => setState(() {
@@ -732,11 +733,12 @@ class KChartWidget extends StatefulWidget {
   /// anything not a positive number is ignored.
   final double? volumeHeight;
 
-  /// Called with every pane's height after the user drags one, or after the
-  /// heights are changed through `KChartController`.
+  /// Called with every pane's height when the user drags one, or the heights
+  /// are changed through `KChartController`.
   ///
-  /// Not called for a change made through [paneHeights], which the host
-  /// already knows about.
+  /// With [paneHeights] given this is how the host hears what was asked for, to
+  /// pass back; without it the chart has already moved the pane. Not called for
+  /// a change made through [paneHeights] itself.
   final ValueChanged<List<double>>? onPaneHeightsChanged;
 
   /// Shifted onto every candle's time before it is shown.
@@ -1163,6 +1165,9 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// The indicator whose pane is stretched over the chart, if any.
   Indicator? _maximizedOwner;
+
+  /// Whether the volume pane is stretched over the chart.
+  bool _volumeMaximized = false;
 
   /// Set when `KChartWidget.paneHeights` changed and is yet to be taken up,
   /// which waits for the build because the panes it applies to may change too.
@@ -1862,6 +1867,21 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// The volume pane's height when the host gave a usable one.
   double? get _volumeHeightOverride {
+    if (_volumeMaximized &&
+        !widget.volHidden &&
+        widget.mBaseHeight == null &&
+        mHeight.isFinite &&
+        mHeight > 0) {
+      // Everything else at its smallest, the volume pane gets what is left.
+      final small = widget.chartStyle.minPaneHeight;
+      return math.max(
+        small,
+        mHeight -
+            BaseChartPainter.minMainHeight -
+            BaseDimension.legendRowHeight * _legendRowCount -
+            small * _paneOwners.length,
+      );
+    }
     final height = widget.volumeHeight;
     return height != null && height.isFinite && height > 0 ? height : null;
   }
@@ -1882,7 +1902,7 @@ class _KChartWidgetState extends State<KChartWidget>
         BaseDimension.secondaryPaneHeight,
       );
       _hostSizedPanes = false;
-      _maximizedOwner = null;
+      _clearMaximized();
     } else if (!listEquals(_paneOwners, owners)) {
       // The same number of panes in another order: each height goes with its
       // pane, and a pane never seen before starts at the standard height.
@@ -1896,32 +1916,44 @@ class _KChartWidgetState extends State<KChartWidget>
     }
     _paneOwners = owners;
 
-    if (restructured || _hostPaneHeightsStale) {
-      final given = widget.paneHeights;
-      if (given != null) {
-        _paneHeights = [
-          for (var i = 0; i < owners.length; i++)
-            i < given.length && _usableHeight(given[i])
-                ? given[i]
-                : BaseDimension.secondaryPaneHeight,
-        ];
-        _hostSizedPanes = true;
-        _maximizedOwner = null;
-      } else if (_hostPaneHeightsStale) {
-        // The host let go: back to the chart's own layout.
-        _paneHeights = List<double>.filled(
-          owners.length,
-          BaseDimension.secondaryPaneHeight,
-        );
-        _hostSizedPanes = false;
-        _maximizedOwner = null;
-      }
-      _hostPaneHeightsStale = false;
+    final given = widget.paneHeights;
+    if (given != null) {
+      // The host owns the heights: whatever it passes is what is drawn.
+      _paneHeights = [
+        for (var i = 0; i < owners.length; i++)
+          i < given.length && _usableHeight(given[i])
+              ? given[i]
+              : BaseDimension.secondaryPaneHeight,
+      ];
+      _hostSizedPanes = true;
+      if (restructured || _hostPaneHeightsStale) _clearMaximized();
+    } else if (_hostPaneHeightsStale) {
+      // The host let go: back to the chart's own layout.
+      _paneHeights = List<double>.filled(
+        owners.length,
+        BaseDimension.secondaryPaneHeight,
+      );
+      _hostSizedPanes = false;
+      _clearMaximized();
     }
+    _hostPaneHeightsStale = false;
 
+    if (_volumeMaximized && !widget.volHidden) {
+      final small = widget.chartStyle.minPaneHeight;
+      return List<double>.filled(owners.length, small);
+    }
     final maximized = _maximizedPaneIndex;
     if (maximized != null) return _heightsWithMaximized(maximized);
     return _hostSizedPanes ? _cutBackToFit(_paneHeights) : _paneHeights;
+  }
+
+  /// Whether the host owns the pane heights, by having passed a list.
+  bool get _heightsLocked => widget.paneHeights != null;
+
+  /// Lets go of any pane, or the volume pane, stretched over the chart.
+  void _clearMaximized() {
+    _maximizedOwner = null;
+    _volumeMaximized = false;
   }
 
   /// Where the maximized pane sits now, or null when none is.
@@ -2766,8 +2798,9 @@ class _KChartWidgetState extends State<KChartWidget>
       widget.chartStyle.minPaneHeight,
       math.max(widget.chartStyle.maxPaneHeight, heights[index]),
     );
-    _paneHeights = heights;
-    _maximizedOwner = null;
+    // A host that owns the heights hears about the drag and passes it back.
+    if (!_heightsLocked) _paneHeights = heights;
+    _clearMaximized();
     notifyChanged();
     widget.controller?.hostChanged();
     widget.onPaneHeightsChanged?.call(List<double>.unmodifiable(heights));
@@ -4313,9 +4346,12 @@ class _KChartWidgetState extends State<KChartWidget>
     }
     heights[index] = height;
     setState(() {
-      _paneHeights = heights;
-      _hostSizedPanes = true;
-      _maximizedOwner = null;
+      // A host that owns the heights hears about it and passes it back.
+      if (!_heightsLocked) {
+        _paneHeights = heights;
+        _hostSizedPanes = true;
+      }
+      _clearMaximized();
     });
     widget.controller?.hostChanged();
     widget.onPaneHeightsChanged?.call(List<double>.unmodifiable(heights));
@@ -4325,42 +4361,65 @@ class _KChartWidgetState extends State<KChartWidget>
   @override
   void resetChartPaneHeights() {
     _effectivePaneHeights;
+    final standard = List<double>.filled(
+      _paneOwners.length,
+      BaseDimension.secondaryPaneHeight,
+    );
     final untouched =
         _maximizedOwner == null &&
-        !_hostSizedPanes &&
-        _paneHeights.every((h) => h == BaseDimension.secondaryPaneHeight);
+        !_volumeMaximized &&
+        listEquals(_paneHeights, standard) &&
+        !_heightsLocked;
     if (untouched) return;
     setState(() {
-      _paneHeights = List<double>.filled(
-        _paneOwners.length,
-        BaseDimension.secondaryPaneHeight,
-      );
-      _hostSizedPanes = false;
-      _maximizedOwner = null;
+      if (!_heightsLocked) {
+        _paneHeights = standard;
+        _hostSizedPanes = false;
+      }
+      _clearMaximized();
     });
     widget.controller?.hostChanged();
-    widget.onPaneHeightsChanged?.call(List<double>.unmodifiable(_paneHeights));
+    widget.onPaneHeightsChanged?.call(List<double>.unmodifiable(standard));
   }
 
   @override
   int? get chartMaximizedPane {
     _effectivePaneHeights;
-    return _maximizedPaneIndex;
+    return _volumeMaximized ? null : _maximizedPaneIndex;
   }
 
   @override
   bool maximizeChartPane(int? index) {
     _effectivePaneHeights;
     if (index == null) {
-      if (_maximizedOwner == null) return true;
-      setState(() => _maximizedOwner = null);
+      if (_maximizedOwner == null && !_volumeMaximized) return true;
+      setState(_clearMaximized);
       widget.controller?.hostChanged();
       return true;
     }
     if (index < 0 || index >= _paneOwners.length) return false;
     final owner = _paneOwners[index];
-    if (_maximizedOwner != owner) {
-      setState(() => _maximizedOwner = owner);
+    if (_maximizedOwner != owner || _volumeMaximized) {
+      setState(() {
+        _volumeMaximized = false;
+        _maximizedOwner = owner;
+      });
+      widget.controller?.hostChanged();
+    }
+    return true;
+  }
+
+  @override
+  bool get chartVolumeMaximized => _volumeMaximized && !widget.volHidden;
+
+  @override
+  bool maximizeChartVolume() {
+    if (widget.volHidden) return false;
+    if (!_volumeMaximized) {
+      setState(() {
+        _maximizedOwner = null;
+        _volumeMaximized = true;
+      });
       widget.controller?.hostChanged();
     }
     return true;

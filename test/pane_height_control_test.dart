@@ -308,4 +308,142 @@ void main() {
     expect(reported, isNotEmpty);
     expect(reported.last[0], greaterThan(400));
   });
+
+  testWidgets('a host that passes paneHeights owns them: a drag only reports', (
+    tester,
+  ) async {
+    _tallView(tester);
+    final reported = <List<double>>[];
+    await tester.pumpWidget(
+      _chart(
+        resizable: true,
+        paneHeights: [100, 100],
+        onChanged: reported.add,
+        boxHeight: _tallBox,
+      ),
+    );
+    final before = _paneHeightsOf(tester);
+    final edge = _painterOf(tester).mSecondaryRectList.first.mRect.bottom;
+    final box = tester.getTopLeft(find.byType(KChartWidget));
+
+    final gesture = await tester.startGesture(box + Offset(200, edge));
+    await gesture.moveBy(const Offset(0, 20));
+    await gesture.moveBy(const Offset(0, 20));
+    await gesture.up();
+    await tester.pump();
+
+    expect(reported, isNotEmpty);
+    expect(reported.last[0], greaterThan(100));
+    expect(_paneHeightsOf(tester), before);
+
+    // Passing the reported heights back is what moves the pane.
+    await tester.pumpWidget(
+      _chart(
+        resizable: true,
+        paneHeights: reported.last,
+        onChanged: reported.add,
+        boxHeight: _tallBox,
+      ),
+    );
+    expect(_paneHeightsOf(tester)[0], greaterThan(before[0]));
+  });
+
+  testWidgets('setPaneHeight on a host-owned chart reports without moving', (
+    tester,
+  ) async {
+    final controller = KChartController();
+    final reported = <List<double>>[];
+    await tester.pumpWidget(
+      _chart(
+        controller: controller,
+        paneHeights: [100, 100],
+        onChanged: reported.add,
+      ),
+    );
+    final before = _paneHeightsOf(tester);
+
+    expect(controller.setPaneHeight(0, 250), isTrue);
+    await tester.pump();
+    expect(reported.last, [250, 100]);
+    expect(_paneHeightsOf(tester), before);
+  });
+
+  testWidgets('maximizePane still works over host-owned heights', (
+    tester,
+  ) async {
+    final controller = KChartController();
+    await tester.pumpWidget(
+      _chart(controller: controller, paneHeights: [100, 100]),
+    );
+    final before = _paneHeightsOf(tester);
+
+    controller.maximizePane(0);
+    await tester.pump();
+    expect(_paneHeightsOf(tester)[0], greaterThan(before[0] * 2));
+
+    controller.restorePanes();
+    await tester.pump();
+    expect(_paneHeightsOf(tester), before);
+  });
+
+  testWidgets('maximizeVolume fills the box and restorePanes undoes it', (
+    tester,
+  ) async {
+    final controller = KChartController();
+    await tester.pumpWidget(_chart(controller: controller));
+    final standard = _painterOf(tester).mVolRect!.height;
+    final panes = _paneHeightsOf(tester);
+
+    expect(controller.maximizeVolume(), isTrue);
+    await tester.pump();
+    expect(controller.isVolumeMaximized, isTrue);
+    expect(controller.maximizedPane, isNull);
+
+    final painter = _painterOf(tester);
+    expect(painter.mVolRect!.height, greaterThan(standard * 3));
+    expect(painter.mMainRect.height, greaterThanOrEqualTo(60));
+    expect(
+      painter.mSecondaryRectList.last.mRect.bottom,
+      lessThanOrEqualTo(_boxHeight),
+    );
+
+    // Maximizing a pane takes the volume pane back down.
+    controller.maximizePane(0);
+    await tester.pump();
+    expect(controller.isVolumeMaximized, isFalse);
+    expect(controller.maximizedPane, 0);
+
+    controller.maximizeVolume();
+    controller.restorePanes();
+    await tester.pump();
+    expect(controller.isVolumeMaximized, isFalse);
+    expect(_painterOf(tester).mVolRect!.height, standard);
+    expect(_paneHeightsOf(tester), panes);
+  });
+
+  testWidgets('the volume pane cannot be maximized while it is hidden', (
+    tester,
+  ) async {
+    final controller = KChartController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 500,
+            height: _boxHeight,
+            child: KChartWidget(
+              _candles(),
+              ChartColors(),
+              isTrendLine: false,
+              timeFrame: const Duration(minutes: 1),
+              volHidden: true,
+              controller: controller,
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(controller.maximizeVolume(), isFalse);
+    expect(controller.isVolumeMaximized, isFalse);
+  });
 }

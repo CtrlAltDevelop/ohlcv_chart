@@ -135,6 +135,10 @@ class _FakeHost implements KChartHost {
   int? get chartMaximizedPane => null;
   @override
   bool maximizeChartPane(int? index) => false;
+  @override
+  bool get chartVolumeMaximized => false;
+  @override
+  bool maximizeChartVolume() => false;
 }
 
 ({KChartController controller, _FakeHost host}) chart({
