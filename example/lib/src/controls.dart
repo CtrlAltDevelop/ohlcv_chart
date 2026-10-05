@@ -412,6 +412,7 @@ class Controls extends StatelessWidget {
               value: state.reorderablePanes,
               onChanged: (v) => state.update(() => state.reorderablePanes = v),
             ),
+            _PaneMaximizer(state: state),
           ],
         ),
         _Section(
@@ -954,6 +955,46 @@ class _Choice<T> extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One button per indicator pane that stretches it over the chart, through
+/// `KChartController.toggleMaximizePane`, and one that puts the panes back.
+class _PaneMaximizer extends StatelessWidget {
+  const _PaneMaximizer({required this.state});
+
+  final DemoState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final panes = [
+      for (final indicator in state.indicators)
+        if (indicator.placement != IndicatorPlacement.overlay) indicator,
+    ];
+    return ListenableBuilder(
+      listenable: state.chart,
+      builder: (context, _) {
+        final maximized = state.chart.maximizedPane;
+        return Wrap(
+          spacing: 8,
+          children: [
+            for (var i = 0; i < panes.length; i++)
+              FilterChip(
+                label: Text('Maximize ${panes[i].label}'),
+                selected: maximized == i,
+                onSelected: (_) => state.chart.toggleMaximizePane(i),
+              ),
+            ActionChip(
+              label: const Text('Reset heights'),
+              onPressed: () {
+                state.chart.restorePanes();
+                state.chart.resetPaneHeights();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -14,7 +14,7 @@
 - **`ChartStyle.gridDashPattern`** dashes the grid lines with a list of on/off
   lengths, e.g. `[4, 3]`. Null is solid; an empty list or a non-positive length
   is read as solid.
-- The example app has switches for all three.
+- The example app has switches for all three, and a chip per pane that maximizes it.
 - **`KChartWidget.paneHeights`** sizes the indicator panes from the host, and
   `KChartWidget.volumeHeight` the volume pane. Heights are used as given — past
   `ChartStyle.maxPaneHeight` if asked — and cut back only when a pane would

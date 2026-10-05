@@ -53,6 +53,10 @@ chart.resetPaneHeights();       // every pane back to the standard height
 chart.paneHeights;              // what is drawn now
 ```
 
+![Three panes at the standard height](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-default.jpg)
+![The RSI pane maximized](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-maximized-rsi.jpg)
+![The OBV pane maximized](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-maximized-obv.jpg)
+
 A maximized pane follows the chart's size and moves with its indicator when you
 reorder; dragging any pane lets go of it. It needs the chart to size its own
 candle area, so it has no effect when `mBaseHeight` is set.
