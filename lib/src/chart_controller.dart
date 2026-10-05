@@ -85,6 +85,13 @@ abstract interface class KChartHost {
 
   /// Stretches the volume pane over the chart; false when it is hidden.
   bool maximizeChartVolume();
+
+  /// Whether the lines between the parts are showing, to be dragged.
+  bool get chartEditingPanes;
+
+  /// Shows or hides those lines; false unless the chart is in
+  /// `PaneSizeMode.custom`.
+  bool setChartEditingPanes(bool editing);
 }
 
 /// Drives a chart from outside it: where it is scrolled, how far it is zoomed,
@@ -314,6 +321,30 @@ class KChartController extends ChangeNotifier {
   /// Lets go of [maximizePane] or [maximizeVolume], putting the panes back as
   /// they were.
   void restorePanes() => _host?.maximizeChartPane(null);
+
+  /// Whether the lines between the parts are showing, to be dragged.
+  bool get isEditingPanes => _host?.chartEditingPanes ?? false;
+
+  /// Shows a line between each two parts of the chart — the candles, the volume
+  /// and each pane — for the user to drag up or down, between the smallest and
+  /// largest height each may take.
+  ///
+  /// Only has an effect in `PaneSizeMode.custom`, and reports whether it did.
+  /// The lines are not shown while a pane is maximized.
+  bool editPanes() => _host?.setChartEditingPanes(true) ?? false;
+
+  /// Hides the lines, keeping the layout they were dragged to.
+  void finishEditingPanes() => _host?.setChartEditingPanes(false);
+
+  /// Shows the lines, or hides them if they are showing: the shape an "edit
+  /// layout" button wants.
+  bool toggleEditPanes() {
+    if (isEditingPanes) {
+      finishEditingPanes();
+      return true;
+    }
+    return editPanes();
+  }
 
   /// Maximizes the pane at [index], or restores the panes if it already is.
   ///

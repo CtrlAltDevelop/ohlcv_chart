@@ -25,6 +25,7 @@ Widget _chart({
   List<double>? ratios,
   ValueChanged<List<double>>? onRatios,
   bool volHidden = false,
+  PaneSizeMode? mode,
 }) => MaterialApp(
   home: Scaffold(
     body: SizedBox(
@@ -42,6 +43,9 @@ Widget _chart({
         controller: controller,
         onPaneHeightsChanged: onChanged,
         resizablePanes: resizable,
+        paneSizeMode:
+            mode ??
+            (ratios != null ? PaneSizeMode.ratios : PaneSizeMode.heights),
         paneRatios: ratios,
         onPaneRatiosChanged: onRatios,
         volHidden: volHidden,
@@ -630,6 +634,7 @@ void main() {
                 timeFrame: const Duration(minutes: 1),
                 mBaseHeight: 300,
                 indicators: [RsiIndicator()],
+                paneSizeMode: PaneSizeMode.ratios,
                 paneRatios: const [1, 1, 5],
                 controller: controller,
               ),
@@ -638,6 +643,231 @@ void main() {
         ),
       );
       expect(controller.paneHeights, [100]);
+    });
+  });
+  group('PaneSizeMode.custom', () {
+    Finder dividers() => find.byWidgetPredicate(
+      (w) => w is MouseRegion && w.cursor == SystemMouseCursors.resizeUpDown,
+    );
+
+    Widget custom({
+      KChartController? controller,
+      ValueChanged<List<double>>? onRatios,
+      List<double>? ratios,
+      double boxHeight = _boxHeight,
+    }) => _chart(
+      controller: controller,
+      indicators: [RsiIndicator(), MacdIndicator()],
+      mode: PaneSizeMode.custom,
+      ratios: ratios,
+      onRatios: onRatios,
+      boxHeight: boxHeight,
+    );
+
+    double total(List<double> list) => list.fold(0, (a, b) => a + b);
+
+    testWidgets('starts from the standard layout', (tester) async {
+      final controller = KChartController();
+      await tester.pumpWidget(_chart(controller: controller));
+      final standard = controller.paneHeights;
+      final volume = _painterOf(tester).mVolRect!.height;
+
+      await tester.pumpWidget(custom(controller: controller));
+      expect(controller.paneHeights, standard);
+      expect(_painterOf(tester).mVolRect!.height, closeTo(volume, 0.01));
+    });
+
+    testWidgets('editing shows a line between each two parts', (tester) async {
+      final controller = KChartController();
+      await tester.pumpWidget(custom(controller: controller));
+      expect(dividers(), findsNothing);
+      expect(controller.isEditingPanes, isFalse);
+
+      expect(controller.editPanes(), isTrue);
+      await tester.pump();
+      expect(controller.isEditingPanes, isTrue);
+      // Candles | volume | pane | pane.
+      expect(dividers(), findsNWidgets(3));
+
+      controller.finishEditingPanes();
+      await tester.pump();
+      expect(dividers(), findsNothing);
+    });
+
+    testWidgets('editing needs the custom mode', (tester) async {
+      final controller = KChartController();
+      await tester.pumpWidget(_chart(controller: controller));
+      expect(controller.editPanes(), isFalse);
+      expect(controller.isEditingPanes, isFalse);
+      expect(dividers(), findsNothing);
+    });
+
+    testWidgets('dragging a line moves room between its two parts', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      final reported = <List<double>>[];
+      await tester.pumpWidget(
+        custom(controller: controller, onRatios: reported.add),
+      );
+      controller.editPanes();
+      await tester.pump();
+      final before = controller.paneHeights;
+
+      // The line between the two panes, dragged up.
+      await tester.drag(dividers().at(2), const Offset(0, -30));
+      await tester.pump();
+
+      final after = controller.paneHeights;
+      expect(after[0], closeTo(before[0] - 30, 0.5));
+      expect(after[1], closeTo(before[1] + 30, 0.5));
+      expect(reported, isNotEmpty);
+      expect(total(reported.last), closeTo(total(reported.first), 0.001));
+
+      // The layout stays once the lines are put away.
+      controller.finishEditingPanes();
+      await tester.pump();
+      expect(controller.paneHeights, after);
+    });
+
+    testWidgets(
+      'a pane stops at the smallest height, and so does its neighbour',
+      (tester) async {
+        _tallView(tester);
+        final controller = KChartController();
+        await tester.pumpWidget(
+          custom(controller: controller, boxHeight: _tallBox),
+        );
+        controller.editPanes();
+        await tester.pump();
+
+        // Pulled up past its floor, the first pane stops at the smallest height.
+        await tester.drag(dividers().at(2), const Offset(0, -300));
+        await tester.pump();
+        expect(controller.paneHeights[0], closeTo(40, 0.5));
+
+        // Pushed the other way, it stops where the pane below reaches its own
+        // floor: the two share 200 and the lower one keeps 40.
+        await tester.drag(dividers().at(2), const Offset(0, 500));
+        await tester.pump();
+        expect(controller.paneHeights[0], closeTo(160, 0.5));
+        expect(controller.paneHeights[1], closeTo(40, 0.5));
+      },
+    );
+
+    testWidgets('a pane stops at the largest height', (tester) async {
+      _tallView(tester);
+      final controller = KChartController();
+      await tester.pumpWidget(
+        custom(
+          controller: controller,
+          ratios: [2, 1, 3, 3],
+          boxHeight: _tallBox,
+        ),
+      );
+      expect(controller.paneHeights[0], lessThan(400));
+      controller.editPanes();
+      await tester.pump();
+
+      await tester.drag(dividers().at(2), const Offset(0, 150));
+      await tester.pump();
+      expect(controller.paneHeights[0], closeTo(400, 0.5));
+    });
+
+    testWidgets('the candles keep a strip however far a line is pulled', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      await tester.pumpWidget(custom(controller: controller));
+      controller.editPanes();
+      await tester.pump();
+
+      await tester.drag(dividers().at(0), const Offset(0, -500));
+      await tester.pump();
+      expect(_painterOf(tester).mMainRect.height, greaterThanOrEqualTo(59));
+    });
+
+    testWidgets('the layout holds as proportions when the box is resized', (
+      tester,
+    ) async {
+      _tallView(tester);
+      final controller = KChartController();
+      await tester.pumpWidget(custom(controller: controller, boxHeight: 700));
+      controller.editPanes();
+      await tester.pump();
+      await tester.drag(dividers().at(2), const Offset(0, -30));
+      await tester.pump();
+      final small = controller.paneHeights;
+
+      await tester.pumpWidget(custom(controller: controller, boxHeight: 1000));
+      final large = controller.paneHeights;
+      expect(large[0] / large[1], closeTo(small[0] / small[1], 0.001));
+      expect(large[0], greaterThan(small[0]));
+    });
+
+    testWidgets('resetPaneHeights puts the standard layout back', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      await tester.pumpWidget(custom(controller: controller));
+      final standard = controller.paneHeights;
+      controller.editPanes();
+      await tester.pump();
+      await tester.drag(dividers().at(2), const Offset(0, -30));
+      await tester.pump();
+      expect(controller.paneHeights, isNot(standard));
+
+      controller.resetPaneHeights();
+      await tester.pump();
+      expect(controller.paneHeights, standard);
+    });
+
+    testWidgets('paneRatios is the layout to start from, and a new list '
+        'starts it over', (tester) async {
+      final controller = KChartController();
+      await tester.pumpWidget(
+        custom(controller: controller, ratios: [3, 1, 2, 4]),
+      );
+      final heights = controller.paneHeights;
+      expect(heights[1] / heights[0], closeTo(2, 0.001));
+
+      controller.editPanes();
+      await tester.pump();
+      await tester.drag(dividers().at(2), const Offset(0, -20));
+      await tester.pump();
+      final dragged = controller.paneHeights;
+      expect(dragged[1] / dragged[0], isNot(closeTo(2, 0.01)));
+
+      await tester.pumpWidget(
+        custom(controller: controller, ratios: [3, 1, 4, 2]),
+      );
+      final restarted = controller.paneHeights;
+      expect(restarted[1] / restarted[0], closeTo(0.5, 0.001));
+    });
+
+    testWidgets('no lines show while a pane is maximized', (tester) async {
+      final controller = KChartController();
+      await tester.pumpWidget(custom(controller: controller));
+      controller.editPanes();
+      controller.maximizePane(0);
+      await tester.pump();
+      expect(dividers(), findsNothing);
+
+      controller.restorePanes();
+      await tester.pump();
+      expect(dividers(), findsNWidgets(3));
+    });
+
+    testWidgets('leaving the custom mode puts the lines away', (tester) async {
+      final controller = KChartController();
+      await tester.pumpWidget(custom(controller: controller));
+      controller.editPanes();
+      await tester.pump();
+      expect(dividers(), findsNWidgets(3));
+
+      await tester.pumpWidget(_chart(controller: controller));
+      expect(dividers(), findsNothing);
+      expect(controller.isEditingPanes, isFalse);
     });
   });
 }

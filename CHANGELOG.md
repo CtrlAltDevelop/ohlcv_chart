@@ -27,16 +27,20 @@
   `setPaneHeight`, `resetPaneHeights`, `paneHeights` and `maximizedPane`** drive
   the same from code, for a "maximize this indicator" button. A maximized pane
   follows the chart's size and its own indicator through a reorder.
-- **`KChartWidget.paneRatios`** splits the chart's height by proportion — the
-  candles, the volume pane, then each indicator pane — so `[3, 1, 2]` is half
-  the height for the candles, a sixth for the volume and a third for one pane,
-  and the split holds as the chart is resized. It wins over `paneHeights` and
-  `volumeHeight`, needs a bounded height and no `mBaseHeight`, and is owned by
-  the host: a drag reports the moved proportions through `onPaneRatiosChanged`.
-  The example app has a switch for it.
+- **`KChartWidget.paneSizeMode`** chooses how the chart's parts are sized.
+  `PaneSizeMode.heights` is the default and the behaviour so far. `ratios` splits
+  the height by `paneRatios` — the candles, the volume pane, then each indicator
+  pane, so `[3, 1, 2]` is half, a sixth and a third — and holds the split as the
+  chart is resized. `custom` lets the user lay the chart out: `KChartController.
+  editPanes` shows a line between each two parts to drag between the smallest and
+  largest height each may take, the layout is kept as proportions, and
+  `onPaneRatiosChanged` reports it for saving. Both need a bounded height and no
+  `mBaseHeight`; the example app has a switch for them.
+- `KChartController.editPanes`, `finishEditingPanes`, `toggleEditPanes` and
+  `isEditingPanes` drive the editing; `KChartHost` has two more members for it.
 - Dragged pane heights now move with their pane when `onReorderPane` reorders
   the indicators, instead of staying at their position.
-- `KChartHost` has seven new members for the above; only an app that implements
+- `KChartHost` has nine new members for the above; only an app that implements
   it itself (a test double) needs to add them.
 
 ## 3.0.0 - 2026-09-19

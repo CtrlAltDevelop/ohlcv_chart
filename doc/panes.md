@@ -92,31 +92,41 @@ KChartWidget(
 `ChartStyle.paneResizeTolerance` and `paneGrabHeight` set the size of the
 resize and reorder hit areas.
 
-## Sizing by proportion
+## Sizing modes
 
-Pixel heights do not survive a resize. `paneRatios` divides the chart's height
-by proportion instead, top to bottom: the candles, the volume pane, then each
-indicator pane.
+`paneSizeMode` chooses how the heights of the candles, the volume pane and the
+indicator panes are worked out:
+
+| Mode | Heights come from | Who changes them |
+|---|---|---|
+| `PaneSizeMode.heights` (default) | pixels: 100 per pane, 60 for volume, or `paneHeights` / `volumeHeight` | you, or the user dragging a pane's lower edge with `resizablePanes` |
+| `PaneSizeMode.ratios` | proportions in `paneRatios` | you |
+| `PaneSizeMode.custom` | the user's own layout | the user, dragging lines in edit mode |
+
+`ratios` and `custom` need the box to bound the chart's height and `mBaseHeight`
+to be left off; otherwise the pixel heights are used.
+
+### Proportions
 
 ```dart
 KChartWidget(
   candles,
   ChartColors(),
   indicators: [RsiIndicator()],
+  paneSizeMode: PaneSizeMode.ratios,
   paneRatios: [3, 1, 2],   // 6 units: candles 3, volume 1, RSI 2
 );
 ```
 
 ![Candles 3, volume 1, MACD 2 and RSI 2](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-ratios.jpg)
 
-- The height left after the legend rows above the candles is split by those
-  units, and the split holds as the box is resized.
+- The list runs top to bottom: the candles, the volume pane, then each indicator
+  pane. The height left after the legend rows above the candles is split by
+  those units, and the split holds as the box is resized.
 - With `volHidden` the volume's number is left out, so the list is one shorter.
 - A part missing from a shorter list, or given a number that is not above zero,
-  counts as 1.
-- It needs the box to bound the chart's height and `mBaseHeight` to be left
-  off; otherwise it is ignored. It wins over `paneHeights` and `volumeHeight`,
-  and a maximized pane wins over it.
+  counts as 1. Without `paneRatios` the mode has nothing to split by, and the
+  pixel heights are used.
 - You own the proportions, as with `paneHeights`. With `resizablePanes` on, a
   drag moves room between the two parts either side of the edge — the last pane
   takes from the part above — and `onPaneRatiosChanged` reports the new list,
@@ -127,6 +137,45 @@ paneRatios: ratios,
 resizablePanes: true,
 onPaneRatiosChanged: (next) => setState(() => ratios = next),
 ```
+
+### Custom layout
+
+The user lays the chart out themselves. Put it in `custom` mode and turn editing
+on from the controller; a line appears between each two parts, the candles and
+volume included, to drag up or down:
+
+```dart
+final chart = KChartController();
+
+KChartWidget(
+  candles,
+  ChartColors(),
+  controller: chart,
+  indicators: [RsiIndicator()],
+  paneSizeMode: PaneSizeMode.custom,
+  onPaneRatiosChanged: (ratios) => saved = ratios,   // optional
+);
+
+chart.editPanes();            // show the lines
+chart.finishEditingPanes();   // put them away, keeping the layout
+chart.toggleEditPanes();      // one button for both
+chart.resetPaneHeights();     // back to the standard layout
+```
+
+![Edit mode: a line between each two parts](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-custom-edit.jpg)
+![The line between MACD and RSI dragged up](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-custom-dragged.jpg)
+
+- A line moves room between the two parts either side of it, and stops where
+  either reaches its limit: `ChartStyle.minPaneHeight` and `maxPaneHeight` for
+  the volume and the panes, a 60 px floor for the candles, which have no
+  ceiling because they are what is left.
+- The chart owns the layout and keeps it as proportions, so it holds through a
+  resize. It starts from `paneRatios` when you give some, or from the standard
+  heights, and passing a different `paneRatios` later starts it over from that.
+- `onPaneRatiosChanged` reports every change in `paneRatios` order, which is
+  what to save and pass back as `paneRatios` next time.
+- The lines are not shown while a pane is maximized, and `resizablePanes` has no
+  effect in this mode; the lines replace it.
 
 ---
 

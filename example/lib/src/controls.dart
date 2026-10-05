@@ -412,11 +412,15 @@ class Controls extends StatelessWidget {
               value: state.reorderablePanes,
               onChanged: (v) => state.update(() => state.reorderablePanes = v),
             ),
-            _Toggle(
-              label: 'Fixed proportions',
-              subtitle: 'paneRatios: candles 3, volume 1, each pane 2',
-              value: state.paneRatios != null,
-              onChanged: state.setProportionalPanes,
+            _Choice<PaneSizeMode>(
+              label: 'Sizing',
+              value: state.paneMode,
+              options: const {
+                PaneSizeMode.heights: 'pixels',
+                PaneSizeMode.ratios: '3 : 1 : 2',
+                PaneSizeMode.custom: 'custom',
+              },
+              onChanged: state.setPaneMode,
             ),
             _PaneMaximizer(state: state),
           ],
@@ -985,6 +989,12 @@ class _PaneMaximizer extends StatelessWidget {
         return Wrap(
           spacing: 8,
           children: [
+            if (state.paneMode == PaneSizeMode.custom)
+              FilterChip(
+                label: const Text('Edit layout'),
+                selected: state.chart.isEditingPanes,
+                onSelected: (_) => state.chart.toggleEditPanes(),
+              ),
             if (!state.volHidden)
               FilterChip(
                 label: const Text('Maximize volume'),

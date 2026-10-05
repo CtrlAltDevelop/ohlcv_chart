@@ -78,6 +78,10 @@ class _FakeHost implements KChartHost {
   bool get chartVolumeMaximized => false;
   @override
   bool maximizeChartVolume() => false;
+  @override
+  bool get chartEditingPanes => false;
+  @override
+  bool setChartEditingPanes(bool editing) => false;
 }
 
 List<KLineEntity> series(int count) => [
