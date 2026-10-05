@@ -39,6 +39,9 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
          separatorColor: chartColors.effectiveSeparatorColor,
          gridColumnColor: chartColors.effectiveGridColumnColor,
          gridStrokeWidth: chartStyle.gridStrokeWidth,
+         showGridRows: chartStyle.showGridRows,
+         showGridColumns: chartStyle.showGridColumns,
+         gridDashPattern: chartStyle.gridDashPattern,
          separatorWidth: chartStyle.separatorWidth,
          labelCornerRadius: chartStyle.labelCornerRadius,
          legendPadding: chartStyle.legendPadding,
@@ -250,16 +253,22 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       gridPaint,
     );
 
-    if (indicator.fixedRange == null) {
+    if (showGridRows && indicator.fixedRange == null) {
       for (final value in valueTicks) {
         final y = getY(value);
         if (!y.isFinite || y <= chartRect.top || y >= chartRect.bottom) {
           continue;
         }
-        canvas.drawLine(Offset(0, y), Offset(chartRect.width, y), gridPaint);
+        drawGridLine(
+          canvas,
+          Offset(0, y),
+          Offset(chartRect.width, y),
+          gridPaint,
+        );
       }
     }
 
+    if (!showGridColumns) return;
     final columns =
         columnXs ??
         [
@@ -267,7 +276,8 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
             chartRect.width / gridColumns * i,
         ];
     for (final x in columns) {
-      canvas.drawLine(
+      drawGridLine(
+        canvas,
         Offset(x, chartRect.top - topPadding),
         Offset(x, chartRect.bottom),
         columnGridPaint,

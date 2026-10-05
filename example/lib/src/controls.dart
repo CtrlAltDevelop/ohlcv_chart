@@ -465,6 +465,24 @@ class Controls extends StatelessWidget {
               onChanged: (v) => state.update(() => state.evenGridColumns = v),
             ),
             _Toggle(
+              label: 'Grid rows',
+              subtitle: 'The horizontal price lines',
+              value: state.showGridRows,
+              onChanged: (v) => state.update(() => state.showGridRows = v),
+            ),
+            _Toggle(
+              label: 'Grid columns',
+              subtitle: 'The vertical time lines',
+              value: state.showGridColumns,
+              onChanged: (v) => state.update(() => state.showGridColumns = v),
+            ),
+            _Toggle(
+              label: 'Dashed grid',
+              subtitle: 'gridDashPattern of 4 on, 3 off',
+              value: state.dashedGrid,
+              onChanged: (v) => state.update(() => state.dashedGrid = v),
+            ),
+            _Toggle(
               label: 'Prices as currency',
               subtitle: r'priceFormatter writes them as $1234.50',
               value: state.currencyPrices,

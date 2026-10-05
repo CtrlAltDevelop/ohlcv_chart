@@ -479,6 +479,9 @@ class ChartStyle {
     this.gridRows = 8,
     this.gridColumns = 4,
     this.gridColumnMode = GridColumnMode.dateTicks,
+    this.showGridRows = true,
+    this.showGridColumns = true,
+    this.gridDashPattern,
     this.gridStrokeWidth = 0.5,
     this.separatorWidth = 1.0,
     this.hollowUpCandles = false,
@@ -575,6 +578,23 @@ class ChartStyle {
   /// spread evenly across the chart width. Defaults to
   /// [GridColumnMode.dateTicks], matching the chart's previous behavior.
   final GridColumnMode gridColumnMode;
+
+  /// Whether the grid's horizontal (price) lines are drawn.
+  ///
+  /// Independent of [showGridColumns]; `hideGrid` on the widget still hides
+  /// the whole grid. The pane borders and separators are not part of the grid
+  /// and stay.
+  final bool showGridRows;
+
+  /// Whether the grid's vertical (time) lines are drawn. See [gridColumnMode]
+  /// for where they go.
+  final bool showGridColumns;
+
+  /// On/off lengths, in logical pixels, that dash the grid's lines — `[4, 3]`
+  /// is a 4px dash followed by a 3px gap. Null (the default) draws solid
+  /// lines. An empty list, or one with a non-positive or non-finite length,
+  /// is treated as solid.
+  final List<double>? gridDashPattern;
 
   /// Stroke width of the grid's hairlines.
   final double gridStrokeWidth;
@@ -708,6 +728,9 @@ class ChartStyle {
     int? gridRows,
     int? gridColumns,
     GridColumnMode? gridColumnMode,
+    bool? showGridRows,
+    bool? showGridColumns,
+    List<double>? gridDashPattern,
     double? gridStrokeWidth,
     double? separatorWidth,
     bool? hollowUpCandles,
@@ -755,6 +778,9 @@ class ChartStyle {
       gridRows: gridRows ?? this.gridRows,
       gridColumns: gridColumns ?? this.gridColumns,
       gridColumnMode: gridColumnMode ?? this.gridColumnMode,
+      showGridRows: showGridRows ?? this.showGridRows,
+      showGridColumns: showGridColumns ?? this.showGridColumns,
+      gridDashPattern: gridDashPattern ?? this.gridDashPattern,
       gridStrokeWidth: gridStrokeWidth ?? this.gridStrokeWidth,
       separatorWidth: separatorWidth ?? this.separatorWidth,
       hollowUpCandles: hollowUpCandles ?? this.hollowUpCandles,

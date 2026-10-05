@@ -31,6 +31,20 @@ ChartStyle(
 );
 ```
 
+The grid can also be trimmed or dashed, each part on its own:
+
+```dart
+ChartStyle(
+  showGridRows: false,           // vertical lines only
+  showGridColumns: true,
+  gridDashPattern: [4, 3],       // 4px dash, 3px gap; null is solid
+);
+```
+
+`hideGrid` on the widget still hides the whole grid. The date labels keep
+their round times in either column mode, so with `evenlySpaced` a line and a
+label need not meet.
+
 To control formatting, use `ChartStyle.dateTimeFormat` for a fixed pattern, or
 `dateFormatter` for full control. `dateFormatter` receives each candle and a
 flag indicating whether the long form (used by the crosshair) is required:

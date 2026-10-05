@@ -1,3 +1,21 @@
+## 3.1.0 - 2026-10-06
+
+### Added
+
+- **`ChartStyle.gridColumnMode`** chooses where the grid's vertical lines go.
+  `GridColumnMode.dateTicks` (the default, and the behaviour so far) rules a line
+  wherever a candle crosses a time bucket; with only a few candles in view that
+  can leave the lines bunched together. `GridColumnMode.evenlySpaced` divides the
+  chart width into `gridColumns` equal bands instead, so the grid spans the whole
+  chart however sparse the data. The date labels keep their round times.
+- **`ChartStyle.showGridRows` and `showGridColumns`** switch the horizontal and
+  vertical grid lines on and off independently. `hideGrid` still hides both, and
+  the pane borders stay either way.
+- **`ChartStyle.gridDashPattern`** dashes the grid lines with a list of on/off
+  lengths, e.g. `[4, 3]`. Null is solid; an empty list or a non-positive length
+  is read as solid.
+- The example app has switches for all three.
+
 ## 3.0.0 - 2026-09-19
 
 ### Breaking

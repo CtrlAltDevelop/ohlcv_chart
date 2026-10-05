@@ -276,6 +276,13 @@ class DemoState extends ChangeNotifier {
   /// than ruling them at candle timestamps.
   bool evenGridColumns = false;
 
+  /// Whether the grid's horizontal and vertical lines are drawn.
+  bool showGridRows = true;
+  bool showGridColumns = true;
+
+  /// Dashes the grid lines rather than drawing them solid.
+  bool dashedGrid = false;
+
   /// Writes the prices as currency rather than as plain decimals.
   bool currencyPrices = false;
 
@@ -330,6 +337,9 @@ class DemoState extends ChangeNotifier {
       gridColumnMode: evenGridColumns
           ? GridColumnMode.evenlySpaced
           : GridColumnMode.dateTicks,
+      showGridRows: showGridRows,
+      showGridColumns: showGridColumns,
+      gridDashPattern: dashedGrid ? const [4, 3] : null,
     );
   }
 
