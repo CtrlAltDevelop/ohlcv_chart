@@ -92,6 +92,42 @@ KChartWidget(
 `ChartStyle.paneResizeTolerance` and `paneGrabHeight` set the size of the
 resize and reorder hit areas.
 
+## Sizing by proportion
+
+Pixel heights do not survive a resize. `paneRatios` divides the chart's height
+by proportion instead, top to bottom: the candles, the volume pane, then each
+indicator pane.
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  indicators: [RsiIndicator()],
+  paneRatios: [3, 1, 2],   // 6 units: candles 3, volume 1, RSI 2
+);
+```
+
+![Candles 3, volume 1, MACD 2 and RSI 2](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/panes-ratios.jpg)
+
+- The height left after the legend rows above the candles is split by those
+  units, and the split holds as the box is resized.
+- With `volHidden` the volume's number is left out, so the list is one shorter.
+- A part missing from a shorter list, or given a number that is not above zero,
+  counts as 1.
+- It needs the box to bound the chart's height and `mBaseHeight` to be left
+  off; otherwise it is ignored. It wins over `paneHeights` and `volumeHeight`,
+  and a maximized pane wins over it.
+- You own the proportions, as with `paneHeights`. With `resizablePanes` on, a
+  drag moves room between the two parts either side of the edge — the last pane
+  takes from the part above — and `onPaneRatiosChanged` reports the new list,
+  keeping its total. Pass it back for the drag to take effect:
+
+```dart
+paneRatios: ratios,
+resizablePanes: true,
+onPaneRatiosChanged: (next) => setState(() => ratios = next),
+```
+
 ---
 
 [← All docs](README.md) · [Package README](../README.md)

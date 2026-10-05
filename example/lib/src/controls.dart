@@ -412,6 +412,12 @@ class Controls extends StatelessWidget {
               value: state.reorderablePanes,
               onChanged: (v) => state.update(() => state.reorderablePanes = v),
             ),
+            _Toggle(
+              label: 'Fixed proportions',
+              subtitle: 'paneRatios: candles 3, volume 1, each pane 2',
+              value: state.paneRatios != null,
+              onChanged: state.setProportionalPanes,
+            ),
             _PaneMaximizer(state: state),
           ],
         ),

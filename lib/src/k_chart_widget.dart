@@ -288,6 +288,8 @@ class KChartWidget extends StatefulWidget {
     this.paneHeights,
     this.volumeHeight,
     this.onPaneHeightsChanged,
+    this.paneRatios,
+    this.onPaneRatiosChanged,
     this.onAddTrendLine,
     this.onAddHorizontalLine,
     this.onAddVerticalLine,
@@ -740,6 +742,40 @@ class KChartWidget extends StatefulWidget {
   /// pass back; without it the chart has already moved the pane. Not called for
   /// a change made through [paneHeights] itself.
   final ValueChanged<List<double>>? onPaneHeightsChanged;
+
+  /// Splits the chart's height between its parts by proportion, top to bottom:
+  /// the candles, then the volume pane (left out of the list when [volHidden]),
+  /// then each indicator pane.
+  ///
+  /// `[3, 1, 2]` over candles, volume and one indicator pane makes six units:
+  /// half the height for the candles, a sixth for the volume and a third for
+  /// the indicator. The proportions hold as the chart is resized, which is
+  /// what pixel heights cannot do. The room is what is left once the legend
+  /// rows above the candles have taken theirs.
+  ///
+  /// A part missing from a shorter list, or given a number that is not above
+  /// zero, counts as 1. Null — the default — leaves the heights to the chart,
+  /// or to [paneHeights] and [volumeHeight].
+  ///
+  /// It needs the box to bound the chart's height and `mBaseHeight` to be left
+  /// off; otherwise there is nothing to divide and it is ignored. Where it
+  /// applies it wins over [paneHeights] and [volumeHeight], and a maximized
+  /// pane (see `KChartController.maximizePane`) wins over it.
+  ///
+  /// Like [paneHeights], the host owns the proportions while they are given: a
+  /// drag with [resizablePanes] on moves the edge between two neighbours, and
+  /// is reported through [onPaneRatiosChanged] for the host to pass back.
+  final List<double>? paneRatios;
+
+  /// Called with the new proportions when the user drags a pane's edge, in the
+  /// order [paneRatios] uses and keeping their total, so a drag only moves
+  /// room between the two parts either side of the edge.
+  ///
+  /// ```dart
+  /// paneRatios: ratios,
+  /// onPaneRatiosChanged: (next) => setState(() => ratios = next),
+  /// ```
+  final ValueChanged<List<double>>? onPaneRatiosChanged;
 
   /// Shifted onto every candle's time before it is shown.
   ///
@@ -1865,6 +1901,27 @@ class _KChartWidgetState extends State<KChartWidget>
   ChartType get _chartType =>
       widget.chartType ?? (widget.isLine ? ChartType.area : ChartType.candles);
 
+  /// The parts of the chart sized by [KChartWidget.paneRatios], or null where
+  /// they do not apply: no ratios given, a fixed candle height, or a box that
+  /// does not bound the height.
+  ({List<double> ratios, double unit})? get _ratioSplit {
+    final given = widget.paneRatios;
+    if (given == null ||
+        widget.mBaseHeight != null ||
+        !mHeight.isFinite ||
+        mHeight <= 0) {
+      return null;
+    }
+    final parts = 1 + (widget.volHidden ? 0 : 1) + _resolved.panes.length;
+    final ratios = [
+      for (var i = 0; i < parts; i++)
+        i < given.length && _usableHeight(given[i]) ? given[i] : 1.0,
+    ];
+    final room = mHeight - BaseDimension.legendRowHeight * _legendRowCount;
+    if (room <= 0) return null;
+    return (ratios: ratios, unit: room / ratios.fold(0.0, (a, b) => a + b));
+  }
+
   /// The volume pane's height when the host gave a usable one.
   double? get _volumeHeightOverride {
     if (_volumeMaximized &&
@@ -1881,6 +1938,10 @@ class _KChartWidgetState extends State<KChartWidget>
             BaseDimension.legendRowHeight * _legendRowCount -
             small * _paneOwners.length,
       );
+    }
+    final split = _ratioSplit;
+    if (split != null && !widget.volHidden) {
+      return split.ratios[1] * split.unit;
     }
     final height = widget.volumeHeight;
     return height != null && height.isFinite && height > 0 ? height : null;
@@ -1944,6 +2005,14 @@ class _KChartWidgetState extends State<KChartWidget>
     }
     final maximized = _maximizedPaneIndex;
     if (maximized != null) return _heightsWithMaximized(maximized);
+    final split = _ratioSplit;
+    if (split != null) {
+      final first = widget.volHidden ? 1 : 2;
+      return [
+        for (var i = 0; i < owners.length; i++)
+          split.ratios[first + i] * split.unit,
+      ];
+    }
     return _hostSizedPanes ? _cutBackToFit(_paneHeights) : _paneHeights;
   }
 
@@ -2792,6 +2861,12 @@ class _KChartWidgetState extends State<KChartWidget>
     final heights = [..._effectivePaneHeights];
     if (index < 0 || index >= heights.length) return;
 
+    final split = _ratioSplit;
+    if (split != null && _maximizedPaneIndex == null && !_volumeMaximized) {
+      _resizeByRatio(split, index, delta);
+      return;
+    }
+
     // A pane the host made taller than the usual ceiling keeps its height
     // under the finger rather than snapping down to it.
     heights[index] = (heights[index] + delta).clamp(
@@ -2804,6 +2879,39 @@ class _KChartWidgetState extends State<KChartWidget>
     notifyChanged();
     widget.controller?.hostChanged();
     widget.onPaneHeightsChanged?.call(List<double>.unmodifiable(heights));
+  }
+
+  /// Moves room between pane [index] and its neighbour by [delta] pixels.
+  ///
+  /// The edge dragged is the pane's lower one, so the room comes from the pane
+  /// below. The last pane has nothing below it and takes from the part above.
+  /// The total is kept, and no part is squeezed under its smallest. The host
+  /// owns the proportions, so this only reports where they would go.
+  void _resizeByRatio(
+    ({List<double> ratios, double unit}) split,
+    int index,
+    double delta,
+  ) {
+    final ratios = [...split.ratios];
+    final slot = (widget.volHidden ? 1 : 2) + index;
+    final other = slot + 1 < ratios.length ? slot + 1 : slot - 1;
+
+    double floorOf(int part) =>
+        (part == 0
+            ? BaseChartPainter.minMainHeight
+            : widget.chartStyle.minPaneHeight) /
+        split.unit;
+
+    // Pixels moved, in proportion units, held so neither side drops below its
+    // floor: what the pane can gain is what the other can spare, and back.
+    final lowest = floorOf(slot) - ratios[slot];
+    final highest = ratios[other] - floorOf(other);
+    if (lowest > highest) return;
+    final move = (delta / split.unit).clamp(lowest, highest);
+    ratios[slot] += move;
+    ratios[other] -= move;
+    notifyChanged();
+    widget.onPaneRatiosChanged?.call(List<double>.unmodifiable(ratios));
   }
 
   /// Works out where the pane being dragged was dropped, and reports the move.

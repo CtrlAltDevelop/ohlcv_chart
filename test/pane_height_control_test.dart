@@ -22,6 +22,9 @@ Widget _chart({
   ValueChanged<List<double>>? onChanged,
   bool resizable = false,
   double boxHeight = _boxHeight,
+  List<double>? ratios,
+  ValueChanged<List<double>>? onRatios,
+  bool volHidden = false,
 }) => MaterialApp(
   home: Scaffold(
     body: SizedBox(
@@ -39,6 +42,9 @@ Widget _chart({
         controller: controller,
         onPaneHeightsChanged: onChanged,
         resizablePanes: resizable,
+        paneRatios: ratios,
+        onPaneRatiosChanged: onRatios,
+        volHidden: volHidden,
       ),
     ),
   ),
@@ -445,5 +451,193 @@ void main() {
     );
     expect(controller.maximizeVolume(), isFalse);
     expect(controller.isVolumeMaximized, isFalse);
+  });
+
+  group('paneRatios', () {
+    testWidgets('divides the height between candles, volume and panes', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      await tester.pumpWidget(
+        _chart(
+          controller: controller,
+          indicators: [RsiIndicator(), MacdIndicator()],
+          ratios: [3, 1, 2, 4],
+        ),
+      );
+      final heights = controller.paneHeights;
+      // The two panes hold their 2 : 4 proportion exactly.
+      expect(heights[1] / heights[0], closeTo(2, 0.001));
+
+      // The parts fill the box (the test window is shorter than the box),
+      // less the strip the date axis takes under the last pane.
+      final painter = _painterOf(tester);
+      final bottom = painter.mSecondaryRectList.last.mRect.bottom;
+      expect(
+        bottom,
+        closeTo(
+          tester.view.physicalSize.height / tester.view.devicePixelRatio,
+          30,
+        ),
+      );
+
+      // 3 : 1 : 2 : 4 — the first pane is 2/10 of what is left of the box.
+      final main = painter.mMainRect.height;
+      final volume = painter.mVolRect!.height;
+      expect(main, greaterThan(volume * 2));
+      expect(heights[0], greaterThan(volume));
+    });
+
+    testWidgets('keeps the proportions when the box is resized', (
+      tester,
+    ) async {
+      _tallView(tester);
+      final controller = KChartController();
+      Widget at(double height) => _chart(
+        controller: controller,
+        indicators: [RsiIndicator(), MacdIndicator()],
+        ratios: [3, 1, 2, 4],
+        boxHeight: height,
+      );
+
+      await tester.pumpWidget(at(600));
+      final small = controller.paneHeights;
+      await tester.pumpWidget(at(1000));
+      final large = controller.paneHeights;
+
+      expect(large[0], greaterThan(small[0]));
+      expect(large[1] / large[0], closeTo(2, 0.001));
+      expect(large[0] / small[0], closeTo(large[1] / small[1], 0.001));
+    });
+
+    testWidgets('leaves the volume out of the list when it is hidden', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      await tester.pumpWidget(
+        _chart(
+          controller: controller,
+          volHidden: true,
+          indicators: [RsiIndicator(), MacdIndicator()],
+          ratios: [2, 1, 3],
+        ),
+      );
+      final heights = controller.paneHeights;
+      expect(heights[1] / heights[0], closeTo(3, 0.001));
+    });
+
+    testWidgets('a short list or a bad number counts as 1', (tester) async {
+      final controller = KChartController();
+      await tester.pumpWidget(
+        _chart(
+          controller: controller,
+          indicators: [RsiIndicator(), MacdIndicator()],
+          ratios: [3, 1, double.nan],
+        ),
+      );
+      final heights = controller.paneHeights;
+      expect(heights[0], closeTo(heights[1], 0.001));
+    });
+
+    testWidgets('wins over paneHeights and volumeHeight, and null lets go', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      Widget chart({List<double>? ratios}) => _chart(
+        controller: controller,
+        indicators: [RsiIndicator(), MacdIndicator()],
+        paneHeights: [300, 40],
+        volumeHeight: 200,
+        ratios: ratios,
+      );
+
+      await tester.pumpWidget(chart(ratios: [3, 1, 2, 2]));
+      final heights = controller.paneHeights;
+      expect(heights[0], closeTo(heights[1], 0.001));
+
+      await tester.pumpWidget(chart());
+      expect(controller.paneHeights, [300, 40]);
+    });
+
+    testWidgets('maximizePane wins over it, and restores to it', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      await tester.pumpWidget(
+        _chart(
+          controller: controller,
+          indicators: [RsiIndicator(), MacdIndicator()],
+          ratios: [3, 1, 2, 2],
+        ),
+      );
+      final before = controller.paneHeights;
+
+      controller.maximizePane(0);
+      await tester.pump();
+      expect(controller.paneHeights[0], greaterThan(before[0] * 2));
+
+      controller.restorePanes();
+      await tester.pump();
+      expect(controller.paneHeights, before);
+    });
+
+    testWidgets('a drag reports moved proportions with the total kept', (
+      tester,
+    ) async {
+      final reported = <List<double>>[];
+      await tester.pumpWidget(
+        _chart(
+          resizable: true,
+          indicators: [RsiIndicator(), MacdIndicator()],
+          ratios: [3, 1, 2, 4],
+          onRatios: reported.add,
+        ),
+      );
+      final before = _paneHeightsOf(tester);
+      final edge = _painterOf(tester).mSecondaryRectList.first.mRect.bottom;
+      final box = tester.getTopLeft(find.byType(KChartWidget));
+
+      final gesture = await tester.startGesture(box + Offset(200, edge));
+      await gesture.moveBy(const Offset(0, 20));
+      await gesture.moveBy(const Offset(0, 20));
+      await gesture.up();
+      await tester.pump();
+
+      expect(reported, isNotEmpty);
+      final last = reported.last;
+      expect(last.fold<double>(0, (a, b) => a + b), closeTo(10, 0.0001));
+      // The pane grew and the one below it gave the room; the rest held.
+      expect(last[2], greaterThan(2));
+      expect(last[3], lessThan(4));
+      expect(last[0], 3);
+      expect(last[1], 1);
+      // The host owns the proportions, so nothing moved until it passes them back.
+      expect(_paneHeightsOf(tester), before);
+    });
+
+    testWidgets('is ignored when the candle height is fixed', (tester) async {
+      final controller = KChartController();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 500,
+              height: _boxHeight,
+              child: KChartWidget(
+                _candles(),
+                ChartColors(),
+                isTrendLine: false,
+                timeFrame: const Duration(minutes: 1),
+                mBaseHeight: 300,
+                indicators: [RsiIndicator()],
+                paneRatios: const [1, 1, 5],
+                controller: controller,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(controller.paneHeights, [100]);
+    });
   });
 }
