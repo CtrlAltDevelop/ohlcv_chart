@@ -63,6 +63,17 @@ class _FakeHost implements KChartHost {
   double get chartPricePan => 0;
   @override
   void setChartPricePan(double pan) {}
+
+  @override
+  List<double> get chartPaneHeights => const [];
+  @override
+  bool setChartPaneHeight(int index, double height) => false;
+  @override
+  void resetChartPaneHeights() {}
+  @override
+  int? get chartMaximizedPane => null;
+  @override
+  bool maximizeChartPane(int? index) => false;
 }
 
 List<KLineEntity> series(int count) => [

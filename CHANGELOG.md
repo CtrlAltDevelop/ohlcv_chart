@@ -15,6 +15,19 @@
   lengths, e.g. `[4, 3]`. Null is solid; an empty list or a non-positive length
   is read as solid.
 - The example app has switches for all three.
+- **`KChartWidget.paneHeights`** sizes the indicator panes from the host, and
+  `KChartWidget.volumeHeight` the volume pane. Heights are used as given — past
+  `ChartStyle.maxPaneHeight` if asked — and cut back only when a pane would
+  squeeze the candles out of the box. Null leaves the heights to the chart, as
+  before. `onPaneHeightsChanged` reports drags and controller changes.
+- **`KChartController.maximizePane`, `restorePanes`, `toggleMaximizePane`,
+  `setPaneHeight`, `resetPaneHeights`, `paneHeights` and `maximizedPane`** drive
+  the same from code, for a "maximize this indicator" button. A maximized pane
+  follows the chart's size and its own indicator through a reorder.
+- Dragged pane heights now move with their pane when `onReorderPane` reorders
+  the indicators, instead of staying at their position.
+- `KChartHost` has five new members for the above; only an app that implements
+  it itself (a test double) needs to add them.
 
 ## 3.0.0 - 2026-09-19
 

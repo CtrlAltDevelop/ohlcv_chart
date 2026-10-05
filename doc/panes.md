@@ -29,12 +29,58 @@ KChartWidget(
 
 ## Height and order
 
-Pane heights are managed by the chart, constrained between
-`ChartStyle.minPaneHeight` and `maxPaneHeight`, and reset when the set of panes
-changes.
+By default pane heights are managed by the chart: 100 each, or whatever the user
+dragged them to, constrained between `ChartStyle.minPaneHeight` and
+`maxPaneHeight`, and reset when panes are added or removed. A reorder carries
+each height along with its pane.
 
 Pane order is owned by your indicator list. The chart reports the move through
 `onReorderPane`, and your code applies it.
+
+## Sizing panes from your code
+
+Two ways to set heights from outside — a "maximize this indicator" button is
+the usual reason.
+
+**`KChartController`** takes commands:
+
+```dart
+chart.maximizePane(1);          // pane 1 fills the chart, candles shrink to a strip
+chart.restorePanes();           // …and back
+chart.toggleMaximizePane(1);    // one button for both
+chart.setPaneHeight(0, 220);    // any single pane, any positive height
+chart.resetPaneHeights();       // every pane back to the standard height
+chart.paneHeights;              // what is drawn now
+```
+
+A maximized pane follows the chart's size and moves with its indicator when you
+reorder; dragging any pane lets go of it. It needs the chart to size its own
+candle area, so it has no effect when `mBaseHeight` is set.
+
+**`KChartWidget.paneHeights`** is the same thing as state:
+
+```dart
+KChartWidget(
+  candles,
+  ChartColors(),
+  indicators: indicators,
+  paneHeights: maximized ? [60, 500] : null,   // null: the chart's own layout
+  volumeHeight: 80,                            // the volume pane, default 60
+  onPaneHeightsChanged: (heights) => setState(() => saved = heights),
+);
+```
+
+- Heights set from code are used as given, not held to `minPaneHeight` and
+  `maxPaneHeight`, so a pane can be taller than a user could drag it. A height
+  too big for the box is cut back so the candles keep a strip above it.
+- A pane missing from a shorter list, or given a height that is not a positive
+  number, gets the standard height.
+- The list is a starting point, not a lock: with `resizablePanes` on the user
+  can still drag, and `onPaneHeightsChanged` reports it (and controller
+  changes) so you can keep your copy in step. It is not called for changes you
+  made through `paneHeights`.
+- Panes in `paneHeights` are matched by position. When `onReorderPane` moves
+  one, move its height with it.
 
 `ChartStyle.paneResizeTolerance` and `paneGrabHeight` set the size of the
 resize and reorder hit areas.
