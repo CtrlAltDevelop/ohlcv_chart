@@ -436,6 +436,23 @@ class ChartColors {
   }
 }
 
+/// How the grid's vertical lines are placed.
+enum GridColumnMode {
+  /// Rules a line wherever a candle crosses a time-bucket boundary — see
+  /// [ChartStyle.gridColumns]. Reads well once there are enough candles in
+  /// view to cross several boundaries, since each line then lines up with a
+  /// round time. With only a handful of candles on screen — a sparse
+  /// intraday window, say — there may be only one or two such crossings, so
+  /// the lines cluster together instead of spanning the chart.
+  dateTicks,
+
+  /// Divides the chart width into [ChartStyle.gridColumns] equal bands,
+  /// ignoring candle timestamps entirely. The lines always span the full
+  /// chart, regardless of how many candles are in view, but they no longer
+  /// line up with round times the way [dateTicks] does.
+  evenlySpaced,
+}
+
 /// Geometry of the candlestick chart: paddings, stroke widths, gaps and
 /// text sizes.
 class ChartStyle {
@@ -461,6 +478,10 @@ class ChartStyle {
     this.nowPriceDashed = true,
     this.gridRows = 8,
     this.gridColumns = 4,
+    this.gridColumnMode = GridColumnMode.dateTicks,
+    this.showGridRows = true,
+    this.showGridColumns = true,
+    this.gridDashPattern,
     this.gridStrokeWidth = 0.5,
     this.separatorWidth = 1.0,
     this.hollowUpCandles = false,
@@ -552,6 +573,28 @@ class ChartStyle {
   /// many columns, drops any label that would crowd its neighbour, and rules a
   /// vertical line at each one that survives.
   final int gridColumns;
+
+  /// Whether the grid's vertical lines follow candle timestamps or are
+  /// spread evenly across the chart width. Defaults to
+  /// [GridColumnMode.dateTicks], matching the chart's previous behavior.
+  final GridColumnMode gridColumnMode;
+
+  /// Whether the grid's horizontal (price) lines are drawn.
+  ///
+  /// Independent of [showGridColumns]; `hideGrid` on the widget still hides
+  /// the whole grid. The pane borders and separators are not part of the grid
+  /// and stay.
+  final bool showGridRows;
+
+  /// Whether the grid's vertical (time) lines are drawn. See [gridColumnMode]
+  /// for where they go.
+  final bool showGridColumns;
+
+  /// On/off lengths, in logical pixels, that dash the grid's lines — `[4, 3]`
+  /// is a 4px dash followed by a 3px gap. Null (the default) draws solid
+  /// lines. An empty list, or one with a non-positive or non-finite length,
+  /// is treated as solid.
+  final List<double>? gridDashPattern;
 
   /// Stroke width of the grid's hairlines.
   final double gridStrokeWidth;
@@ -684,6 +727,10 @@ class ChartStyle {
     bool? nowPriceDashed,
     int? gridRows,
     int? gridColumns,
+    GridColumnMode? gridColumnMode,
+    bool? showGridRows,
+    bool? showGridColumns,
+    List<double>? gridDashPattern,
     double? gridStrokeWidth,
     double? separatorWidth,
     bool? hollowUpCandles,
@@ -730,6 +777,10 @@ class ChartStyle {
       nowPriceDashed: nowPriceDashed ?? this.nowPriceDashed,
       gridRows: gridRows ?? this.gridRows,
       gridColumns: gridColumns ?? this.gridColumns,
+      gridColumnMode: gridColumnMode ?? this.gridColumnMode,
+      showGridRows: showGridRows ?? this.showGridRows,
+      showGridColumns: showGridColumns ?? this.showGridColumns,
+      gridDashPattern: gridDashPattern ?? this.gridDashPattern,
       gridStrokeWidth: gridStrokeWidth ?? this.gridStrokeWidth,
       separatorWidth: separatorWidth ?? this.separatorWidth,
       hollowUpCandles: hollowUpCandles ?? this.hollowUpCandles,

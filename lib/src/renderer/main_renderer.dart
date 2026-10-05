@@ -68,6 +68,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
          separatorColor: chartColors.effectiveSeparatorColor,
          gridColumnColor: chartColors.effectiveGridColumnColor,
          gridStrokeWidth: chartStyle.gridStrokeWidth,
+         showGridRows: chartStyle.showGridRows,
+         showGridColumns: chartStyle.showGridColumns,
+         gridDashPattern: chartStyle.gridDashPattern,
          separatorWidth: chartStyle.separatorWidth,
          labelCornerRadius: chartStyle.labelCornerRadius,
          legendPadding: chartStyle.legendPadding,
@@ -1109,16 +1112,20 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     List<double>? columnXs,
   }) {
     // Rule the pane where the labels are, not on evenly spaced pixels.
-    for (final value in priceTicks(gridRows)) {
-      final y = getY(value);
-      if (!y.isFinite || y < chartRect.top || y > chartRect.bottom) continue;
-      canvas.drawLine(
-        Offset(chartRect.left, y),
-        Offset(chartRect.right, y),
-        gridPaint,
-      );
+    if (showGridRows) {
+      for (final value in priceTicks(gridRows)) {
+        final y = getY(value);
+        if (!y.isFinite || y < chartRect.top || y > chartRect.bottom) continue;
+        drawGridLine(
+          canvas,
+          Offset(chartRect.left, y),
+          Offset(chartRect.right, y),
+          gridPaint,
+        );
+      }
     }
 
+    if (!showGridColumns) return;
     final columns =
         columnXs ??
         [
@@ -1126,7 +1133,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
             chartRect.width / gridColumns * i,
         ];
     for (final x in columns) {
-      canvas.drawLine(
+      drawGridLine(
+        canvas,
         Offset(x, 0),
         Offset(x, chartRect.bottom),
         columnGridPaint,

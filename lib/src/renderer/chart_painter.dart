@@ -509,9 +509,14 @@ class ChartPainter extends BaseChartPainter {
     if (!hideGrid) {
       // Every pane rules itself on the same columns, so they line up down the
       // stack and each one meets its own date label at the bottom.
-      final columnXs = [
-        for (final index in dateTickIndices()) translateXtoX(getX(index)),
-      ];
+      //
+      // `evenlySpaced` skips candle timestamps entirely — passing columnXs:
+      // null tells each renderer to divide the chart width into gridColumns
+      // equal bands itself, so the grid always spans the chart no matter how
+      // few candles are in view.
+      final columnXs = chartStyle.gridColumnMode == GridColumnMode.dateTicks
+          ? [for (final index in dateTickIndices()) translateXtoX(getX(index))]
+          : null;
       mMainRenderer.drawGrid(
         canvas,
         mGridRows,
