@@ -169,6 +169,9 @@ chart.resetPaneHeights();     // back to the standard layout
   either reaches its limit: `ChartStyle.minPaneHeight` and `maxPaneHeight` for
   the volume and the panes, a 60 px floor for the candles, which have no
   ceiling because they are what is left.
+- However small `minPaneHeight` is set, a pane or the volume pane is held at 32
+  px or more when dragged or maximized around, so there is always an edge or
+  line left to pull it back out.
 - The chart owns the layout and keeps it as proportions, so it holds through a
   resize. It starts from `paneRatios` when you give some, or from the standard
   heights, and passing a different `paneRatios` later starts it over from that.

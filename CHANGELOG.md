@@ -38,6 +38,9 @@
   `mBaseHeight`; the example app has a switch for them.
 - `KChartController.editPanes`, `finishEditingPanes`, `toggleEditPanes` and
   `isEditingPanes` drive the editing; `KChartHost` has two more members for it.
+- `ChartStyle.minPaneHeight` is held at 32 or more when a pane is dragged or
+  maximized around, so a pane can never be made so small that its edge cannot be
+  grabbed to make it bigger again.
 - Dragged pane heights now move with their pane when `onReorderPane` reorders
   the indicators, instead of staying at their position.
 - `KChartHost` has nine new members for the above; only an app that implements

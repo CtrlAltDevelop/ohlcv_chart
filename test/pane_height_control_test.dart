@@ -26,6 +26,7 @@ Widget _chart({
   ValueChanged<List<double>>? onRatios,
   bool volHidden = false,
   PaneSizeMode? mode,
+  ChartStyle? style,
 }) => MaterialApp(
   home: Scaffold(
     body: SizedBox(
@@ -47,6 +48,7 @@ Widget _chart({
             mode ??
             (ratios != null ? PaneSizeMode.ratios : PaneSizeMode.heights),
         paneRatios: ratios,
+        chartStyle: style ?? ChartStyle(),
         onPaneRatiosChanged: onRatios,
         volHidden: volHidden,
       ),
@@ -868,6 +870,76 @@ void main() {
       await tester.pumpWidget(_chart(controller: controller));
       expect(dividers(), findsNothing);
       expect(controller.isEditingPanes, isFalse);
+    });
+  });
+
+  group('smallest height', () {
+    // Asked for no minimum at all, the chart still keeps one that can be
+    // grabbed again.
+    final noMinimum = ChartStyle(minPaneHeight: 0);
+
+    Finder dividers() => find.byWidgetPredicate(
+      (w) => w is MouseRegion && w.cursor == SystemMouseCursors.resizeUpDown,
+    );
+
+    testWidgets('a line cannot squeeze a pane past what can be grabbed', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      await tester.pumpWidget(
+        _chart(
+          controller: controller,
+          indicators: [RsiIndicator(), MacdIndicator()],
+          mode: PaneSizeMode.custom,
+          style: noMinimum,
+        ),
+      );
+      controller.editPanes();
+      await tester.pump();
+
+      await tester.drag(dividers().at(2), const Offset(0, -300));
+      await tester.pump();
+      expect(controller.paneHeights[0], closeTo(32, 0.5));
+
+      // And the line is still there to pull it back out.
+      expect(dividers(), findsNWidgets(3));
+      await tester.drag(dividers().at(2), const Offset(0, 40));
+      await tester.pump();
+      expect(controller.paneHeights[0], closeTo(72, 0.5));
+    });
+
+    testWidgets('a dragged edge stops at the same floor', (tester) async {
+      final reported = <List<double>>[];
+      await tester.pumpWidget(
+        _chart(resizable: true, onChanged: reported.add, style: noMinimum),
+      );
+      final edge = _painterOf(tester).mSecondaryRectList.first.mRect.bottom;
+      final box = tester.getTopLeft(find.byType(KChartWidget));
+
+      final gesture = await tester.startGesture(box + Offset(200, edge));
+      for (var i = 0; i < 12; i++) {
+        await gesture.moveBy(const Offset(0, -10));
+      }
+      await gesture.up();
+      await tester.pump();
+
+      expect(reported.last[0], closeTo(32, 0.5));
+    });
+
+    testWidgets('maximizing leaves the other panes at that floor', (
+      tester,
+    ) async {
+      final controller = KChartController();
+      await tester.pumpWidget(
+        _chart(
+          controller: controller,
+          indicators: [RsiIndicator(), MacdIndicator()],
+          style: noMinimum,
+        ),
+      );
+      controller.maximizePane(0);
+      await tester.pump();
+      expect(controller.paneHeights[1], closeTo(32, 0.5));
     });
   });
 }

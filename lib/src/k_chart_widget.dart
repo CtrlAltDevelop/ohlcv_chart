@@ -2000,7 +2000,7 @@ class _KChartWidgetState extends State<KChartWidget>
         mHeight.isFinite &&
         mHeight > 0) {
       // Everything else at its smallest, the volume pane gets what is left.
-      final small = widget.chartStyle.minPaneHeight;
+      final small = _minPaneHeight;
       return math.max(
         small,
         mHeight -
@@ -2016,6 +2016,16 @@ class _KChartWidgetState extends State<KChartWidget>
     final height = widget.volumeHeight;
     return height != null && height.isFinite && height > 0 ? height : null;
   }
+
+  /// The least a pane or the volume pane may be dragged to, or maximized
+  /// around: `ChartStyle.minPaneHeight`, but never so little that the edge or
+  /// line left to drag it back out cannot be reached. The drag zones either
+  /// side of a part are 10 px each, so 32 leaves a gap between them.
+  double get _minPaneHeight =>
+      math.max(widget.chartStyle.minPaneHeight, _smallestGrabbablePane);
+
+  /// Shortest a part may be and still have its edges grabbed one at a time.
+  static const double _smallestGrabbablePane = 32;
 
   /// A height worth drawing: finite and above zero.
   static bool _usableHeight(double height) => height.isFinite && height > 0;
@@ -2070,7 +2080,7 @@ class _KChartWidgetState extends State<KChartWidget>
     _hostPaneHeightsStale = false;
 
     if (_volumeMaximized && !widget.volHidden) {
-      final small = widget.chartStyle.minPaneHeight;
+      final small = _minPaneHeight;
       return List<double>.filled(owners.length, small);
     }
     final maximized = _maximizedPaneIndex;
@@ -2121,7 +2131,7 @@ class _KChartWidgetState extends State<KChartWidget>
   /// [_paneHeights] with the maximized pane given everything the others leave,
   /// and the others at their smallest.
   List<double> _heightsWithMaximized(int index) {
-    final small = widget.chartStyle.minPaneHeight;
+    final small = _minPaneHeight;
     final room = _paneRoom;
     return [
       for (var i = 0; i < _paneHeights.length; i++)
@@ -2138,7 +2148,7 @@ class _KChartWidgetState extends State<KChartWidget>
   List<double> _cutBackToFit(List<double> heights) {
     final room = _paneRoom;
     if (room == null) return heights;
-    final ceiling = math.max(room, widget.chartStyle.minPaneHeight);
+    final ceiling = math.max(room, _minPaneHeight);
     return [for (final height in heights) math.min(height, ceiling)];
   }
 
@@ -2943,7 +2953,7 @@ class _KChartWidgetState extends State<KChartWidget>
     // A pane the host made taller than the usual ceiling keeps its height
     // under the finger rather than snapping down to it.
     heights[index] = (heights[index] + delta).clamp(
-      widget.chartStyle.minPaneHeight,
+      _minPaneHeight,
       math.max(widget.chartStyle.maxPaneHeight, heights[index]),
     );
     // A host that owns the heights hears about the drag and passes it back.
@@ -2956,9 +2966,8 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Smallest height part [part] may take in [PaneSizeMode.custom]: the candles
   /// have their own floor, the volume and the panes share one.
-  double _smallestPart(int part) => part == 0
-      ? BaseChartPainter.minMainHeight
-      : widget.chartStyle.minPaneHeight;
+  double _smallestPart(int part) =>
+      part == 0 ? BaseChartPainter.minMainHeight : _minPaneHeight;
 
   /// Largest height part [part] may take in [PaneSizeMode.custom]; the candles
   /// have no ceiling, as they are what is left.
@@ -3085,9 +3094,7 @@ class _KChartWidgetState extends State<KChartWidget>
     final other = slot + 1 < ratios.length ? slot + 1 : slot - 1;
 
     double floorOf(int part) =>
-        (part == 0
-            ? BaseChartPainter.minMainHeight
-            : widget.chartStyle.minPaneHeight) /
+        (part == 0 ? BaseChartPainter.minMainHeight : _minPaneHeight) /
         split.unit;
 
     // Pixels moved, in proportion units, held so neither side drops below its
