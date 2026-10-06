@@ -153,6 +153,25 @@ class DemoState extends ChangeNotifier {
   /// Whether an indicator pane can be dragged taller or shorter.
   bool resizablePanes = true;
 
+  /// How the panes are sized: in pixels, by proportion, or laid out by dragging.
+  PaneSizeMode paneMode = PaneSizeMode.heights;
+
+  /// Proportions of the chart's height — candles, volume, then each pane — for
+  /// [PaneSizeMode.ratios], and where the custom layout starts from.
+  List<double>? paneRatios;
+
+  /// Switches how the panes are sized. Proportions start as 3 for the candles,
+  /// 1 for the volume and 2 for each indicator pane.
+  void setPaneMode(PaneSizeMode mode) => update(() {
+    paneMode = mode;
+    final panes = indicators
+        .where((i) => i.placement != IndicatorPlacement.overlay)
+        .length;
+    paneRatios = mode == PaneSizeMode.ratios
+        ? [3, if (!volHidden) 1, for (var i = 0; i < panes; i++) 2]
+        : null;
+  });
+
   /// Whether an indicator pane can be dragged up or down the stack.
   bool reorderablePanes = true;
 

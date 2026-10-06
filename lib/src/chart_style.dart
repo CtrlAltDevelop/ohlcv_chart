@@ -645,7 +645,10 @@ class ChartStyle {
   /// sized to. Every other bar is drawn relative to that one.
   final double profileWidth;
 
-  /// Shortest an indicator pane may be dragged.
+  /// Shortest an indicator pane, or the volume pane, may be dragged.
+  ///
+  /// Held at 32 or more whatever is set here, so a pane can never be dragged so
+  /// small that its edge cannot be grabbed to make it bigger again.
   final double minPaneHeight;
 
   /// Tallest an indicator pane may be dragged.

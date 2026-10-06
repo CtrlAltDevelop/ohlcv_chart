@@ -412,6 +412,17 @@ class Controls extends StatelessWidget {
               value: state.reorderablePanes,
               onChanged: (v) => state.update(() => state.reorderablePanes = v),
             ),
+            _Choice<PaneSizeMode>(
+              label: 'Sizing',
+              value: state.paneMode,
+              options: const {
+                PaneSizeMode.heights: 'pixels',
+                PaneSizeMode.ratios: '3 : 1 : 2',
+                PaneSizeMode.custom: 'custom',
+              },
+              onChanged: state.setPaneMode,
+            ),
+            _PaneMaximizer(state: state),
           ],
         ),
         _Section(
@@ -954,6 +965,60 @@ class _Choice<T> extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One button per indicator pane that stretches it over the chart, through
+/// `KChartController.toggleMaximizePane`, and one that puts the panes back.
+class _PaneMaximizer extends StatelessWidget {
+  const _PaneMaximizer({required this.state});
+
+  final DemoState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final panes = [
+      for (final indicator in state.indicators)
+        if (indicator.placement != IndicatorPlacement.overlay) indicator,
+    ];
+    return ListenableBuilder(
+      listenable: state.chart,
+      builder: (context, _) {
+        final maximized = state.chart.maximizedPane;
+        return Wrap(
+          spacing: 8,
+          children: [
+            if (state.paneMode == PaneSizeMode.custom)
+              FilterChip(
+                label: const Text('Edit layout'),
+                selected: state.chart.isEditingPanes,
+                onSelected: (_) => state.chart.toggleEditPanes(),
+              ),
+            if (!state.volHidden)
+              FilterChip(
+                label: const Text('Maximize volume'),
+                selected: state.chart.isVolumeMaximized,
+                onSelected: (on) => on
+                    ? state.chart.maximizeVolume()
+                    : state.chart.restorePanes(),
+              ),
+            for (var i = 0; i < panes.length; i++)
+              FilterChip(
+                label: Text('Maximize ${panes[i].label}'),
+                selected: maximized == i,
+                onSelected: (_) => state.chart.toggleMaximizePane(i),
+              ),
+            ActionChip(
+              label: const Text('Reset heights'),
+              onPressed: () {
+                state.chart.restorePanes();
+                state.chart.resetPaneHeights();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

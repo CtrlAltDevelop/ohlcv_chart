@@ -14,7 +14,37 @@
 - **`ChartStyle.gridDashPattern`** dashes the grid lines with a list of on/off
   lengths, e.g. `[4, 3]`. Null is solid; an empty list or a non-positive length
   is read as solid.
-- The example app has switches for all three.
+- The example app has switches for all three, and a chip per pane that maximizes it.
+- **`KChartWidget.paneHeights`** sizes the indicator panes from the host, and
+  `KChartWidget.volumeHeight` the volume pane. Heights are used as given — past
+  `ChartStyle.maxPaneHeight` if asked — and cut back only when a pane would
+  squeeze the candles out of the box. Null leaves the heights to the chart, as
+  before. While a list is given the host owns the heights: a drag or a controller
+  call is reported through `onPaneHeightsChanged` and the pane moves when the
+  list is passed back.
+- **`KChartController.maximizePane`, `maximizeVolume`, `restorePanes`,
+  `toggleMaximizePane`,
+  `setPaneHeight`, `resetPaneHeights`, `paneHeights` and `maximizedPane`** drive
+  the same from code, for a "maximize this indicator" button. A maximized pane
+  follows the chart's size and its own indicator through a reorder.
+- **`KChartWidget.paneSizeMode`** chooses how the chart's parts are sized.
+  `PaneSizeMode.heights` is the default and the behaviour so far. `ratios` splits
+  the height by `paneRatios` — the candles, the volume pane, then each indicator
+  pane, so `[3, 1, 2]` is half, a sixth and a third — and holds the split as the
+  chart is resized. `custom` lets the user lay the chart out: `KChartController.
+  editPanes` shows a line between each two parts to drag between the smallest and
+  largest height each may take, the layout is kept as proportions, and
+  `onPaneRatiosChanged` reports it for saving. Both need a bounded height and no
+  `mBaseHeight`; the example app has a switch for them.
+- `KChartController.editPanes`, `finishEditingPanes`, `toggleEditPanes` and
+  `isEditingPanes` drive the editing; `KChartHost` has two more members for it.
+- `ChartStyle.minPaneHeight` is held at 32 or more when a pane is dragged or
+  maximized around, so a pane can never be made so small that its edge cannot be
+  grabbed to make it bigger again.
+- Dragged pane heights now move with their pane when `onReorderPane` reorders
+  the indicators, instead of staying at their position.
+- `KChartHost` has nine new members for the above; only an app that implements
+  it itself (a test double) needs to add them.
 
 ## 3.0.0 - 2026-09-19
 
