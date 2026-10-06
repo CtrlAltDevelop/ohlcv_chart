@@ -64,6 +64,20 @@ their shape rather than inventing a new one.
   page too. A new top-level feature gets a new page, linked from both
   [`README.md`](README.md) and [`doc/README.md`](doc/README.md).
 
+## Releasing
+
+Maintainers only. Releases are published to pub.dev automatically:
+
+1. Merge `develop` into `main` with the version bumped in `pubspec.yaml` and
+   the `## Unreleased` heading in `CHANGELOG.md` renamed to
+   `## <version> - <date>`.
+2. Create a GitHub release from `main` with the tag `v<version>`.
+
+The tag starts [`publish.yml`](.github/workflows/publish.yml), which checks the
+tag is on `main`, matches the pubspec version and has its changelog entry, and
+then publishes. It needs automated publishing enabled on pub.dev for this
+repository, with the tag pattern `v{{version}}` and the `pub.dev` environment.
+
 ## Reporting a bug or requesting a feature
 
 Use the issue templates — they ask for the couple of things that are always
