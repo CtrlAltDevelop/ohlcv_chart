@@ -387,7 +387,7 @@ indicator and drawing tool is included; there is no paid tier.
 ```yaml
 dependencies:
   material_ui: ">=1.0.0 <2.0.0"
-  ohlcv_chart: ">=3.0.0 <4.0.0"
+  ohlcv_chart: ">=3.1.0 <4.0.0"
 ```
 
 Every widget here is built on the `material_ui` package rather than the
