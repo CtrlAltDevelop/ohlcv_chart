@@ -412,6 +412,17 @@ class Controls extends StatelessWidget {
               value: state.reorderablePanes,
               onChanged: (v) => state.update(() => state.reorderablePanes = v),
             ),
+            _Choice<PaneSizeMode>(
+              label: 'Sizing',
+              value: state.paneMode,
+              options: const {
+                PaneSizeMode.heights: 'pixels',
+                PaneSizeMode.ratios: '3 : 1 : 2',
+                PaneSizeMode.custom: 'custom',
+              },
+              onChanged: state.setPaneMode,
+            ),
+            _PaneMaximizer(state: state),
           ],
         ),
         _Section(
@@ -457,6 +468,30 @@ class Controls extends StatelessWidget {
               subtitle: 'Spreads a short series over the whole plot',
               value: state.fitContent,
               onChanged: (v) => state.update(() => state.fitContent = v),
+            ),
+            _Toggle(
+              label: 'Even grid columns',
+              subtitle: 'Grid lines spread over the chart width, not candles',
+              value: state.evenGridColumns,
+              onChanged: (v) => state.update(() => state.evenGridColumns = v),
+            ),
+            _Toggle(
+              label: 'Grid rows',
+              subtitle: 'The horizontal price lines',
+              value: state.showGridRows,
+              onChanged: (v) => state.update(() => state.showGridRows = v),
+            ),
+            _Toggle(
+              label: 'Grid columns',
+              subtitle: 'The vertical time lines',
+              value: state.showGridColumns,
+              onChanged: (v) => state.update(() => state.showGridColumns = v),
+            ),
+            _Toggle(
+              label: 'Dashed grid',
+              subtitle: 'gridDashPattern of 4 on, 3 off',
+              value: state.dashedGrid,
+              onChanged: (v) => state.update(() => state.dashedGrid = v),
             ),
             _Toggle(
               label: 'Prices as currency',
@@ -930,6 +965,60 @@ class _Choice<T> extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One button per indicator pane that stretches it over the chart, through
+/// `KChartController.toggleMaximizePane`, and one that puts the panes back.
+class _PaneMaximizer extends StatelessWidget {
+  const _PaneMaximizer({required this.state});
+
+  final DemoState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final panes = [
+      for (final indicator in state.indicators)
+        if (indicator.placement != IndicatorPlacement.overlay) indicator,
+    ];
+    return ListenableBuilder(
+      listenable: state.chart,
+      builder: (context, _) {
+        final maximized = state.chart.maximizedPane;
+        return Wrap(
+          spacing: 8,
+          children: [
+            if (state.paneMode == PaneSizeMode.custom)
+              FilterChip(
+                label: const Text('Edit layout'),
+                selected: state.chart.isEditingPanes,
+                onSelected: (_) => state.chart.toggleEditPanes(),
+              ),
+            if (!state.volHidden)
+              FilterChip(
+                label: const Text('Maximize volume'),
+                selected: state.chart.isVolumeMaximized,
+                onSelected: (on) => on
+                    ? state.chart.maximizeVolume()
+                    : state.chart.restorePanes(),
+              ),
+            for (var i = 0; i < panes.length; i++)
+              FilterChip(
+                label: Text('Maximize ${panes[i].label}'),
+                selected: maximized == i,
+                onSelected: (_) => state.chart.toggleMaximizePane(i),
+              ),
+            ActionChip(
+              label: const Text('Reset heights'),
+              onPressed: () {
+                state.chart.restorePanes();
+                state.chart.resetPaneHeights();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

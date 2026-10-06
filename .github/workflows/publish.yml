@@ -1,0 +1,83 @@
+# Publishes the package to pub.dev when a release is created.
+#
+# Creating a GitHub release from main tags it, and the tag is what starts this:
+# `v3.1.0` publishes version 3.1.0. Nothing is published unless the tag is on
+# main, matches the version in pubspec.yaml and has its CHANGELOG entry.
+#
+# One-off setup on pub.dev (package Admin tab > Automated publishing):
+#   - enable publishing from GitHub Actions for CtrlAltDevelop/ohlcv_chart
+#   - tag pattern: v{{version}}
+#   - require the GitHub Actions environment: pub.dev
+# and create an environment named `pub.dev` in the repository settings, with
+# a required reviewer if every publish should be approved by hand.
+
+name: Publish
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+*"]
+
+permissions: {}
+
+jobs:
+  verify:
+    name: Verify the release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: The tag is on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME is not on main; release from main."
+            exit 1
+          fi
+
+      - name: The tag matches the pubspec version
+        run: |
+          version=$(sed -n 's/^version: *//p' pubspec.yaml | tr -d '\r')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec version $version."
+            exit 1
+          fi
+
+      - name: The CHANGELOG has an entry for it
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! grep -q "^## $version\b" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## $version' entry."
+            exit 1
+          fi
+
+  publish:
+    name: Publish to pub.dev
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: pub.dev
+    permissions:
+      contents: read
+      # Lets pub.dev trust this run without a stored secret.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      # Sets up the credentials pub.dev issues to this run; the Flutter
+      # setup below brings the SDK `flutter pub publish` needs.
+      - uses: dart-lang/setup-dart@v1
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Dry run
+        run: flutter pub publish --dry-run
+
+      - name: Publish
+        run: flutter pub publish --force

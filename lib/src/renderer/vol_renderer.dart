@@ -30,6 +30,9 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
          separatorColor: chartColors.effectiveSeparatorColor,
          gridColumnColor: chartColors.effectiveGridColumnColor,
          gridStrokeWidth: chartStyle.gridStrokeWidth,
+         showGridRows: chartStyle.showGridRows,
+         showGridColumns: chartStyle.showGridColumns,
+         gridDashPattern: chartStyle.gridDashPattern,
          separatorWidth: chartStyle.separatorWidth,
          labelCornerRadius: chartStyle.labelCornerRadius,
          legendPadding: chartStyle.legendPadding,
@@ -207,12 +210,22 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     );
 
     // A mark part-way up gives the bars something to be read against.
-    for (final value in volumeTicks) {
-      final y = getVolY(value);
-      if (!y.isFinite || y <= chartRect.top || y >= chartRect.bottom) continue;
-      canvas.drawLine(Offset(0, y), Offset(chartRect.width, y), gridPaint);
+    if (showGridRows) {
+      for (final value in volumeTicks) {
+        final y = getVolY(value);
+        if (!y.isFinite || y <= chartRect.top || y >= chartRect.bottom) {
+          continue;
+        }
+        drawGridLine(
+          canvas,
+          Offset(0, y),
+          Offset(chartRect.width, y),
+          gridPaint,
+        );
+      }
     }
 
+    if (!showGridColumns) return;
     final columns =
         columnXs ??
         [
@@ -220,7 +233,8 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
             chartRect.width / gridColumns * i,
         ];
     for (final x in columns) {
-      canvas.drawLine(
+      drawGridLine(
+        canvas,
         Offset(x, chartRect.top - topPadding),
         Offset(x, chartRect.bottom),
         columnGridPaint,

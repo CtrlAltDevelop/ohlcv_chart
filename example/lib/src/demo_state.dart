@@ -153,6 +153,25 @@ class DemoState extends ChangeNotifier {
   /// Whether an indicator pane can be dragged taller or shorter.
   bool resizablePanes = true;
 
+  /// How the panes are sized: in pixels, by proportion, or laid out by dragging.
+  PaneSizeMode paneMode = PaneSizeMode.heights;
+
+  /// Proportions of the chart's height — candles, volume, then each pane — for
+  /// [PaneSizeMode.ratios], and where the custom layout starts from.
+  List<double>? paneRatios;
+
+  /// Switches how the panes are sized. Proportions start as 3 for the candles,
+  /// 1 for the volume and 2 for each indicator pane.
+  void setPaneMode(PaneSizeMode mode) => update(() {
+    paneMode = mode;
+    final panes = indicators
+        .where((i) => i.placement != IndicatorPlacement.overlay)
+        .length;
+    paneRatios = mode == PaneSizeMode.ratios
+        ? [3, if (!volHidden) 1, for (var i = 0; i < panes; i++) 2]
+        : null;
+  });
+
   /// Whether an indicator pane can be dragged up or down the stack.
   bool reorderablePanes = true;
 
@@ -272,6 +291,17 @@ class DemoState extends ChangeNotifier {
   /// the left at the fixed spacing.
   bool fitContent = false;
 
+  /// Spreads the grid's vertical lines evenly across the chart width rather
+  /// than ruling them at candle timestamps.
+  bool evenGridColumns = false;
+
+  /// Whether the grid's horizontal and vertical lines are drawn.
+  bool showGridRows = true;
+  bool showGridColumns = true;
+
+  /// Dashes the grid lines rather than drawing them solid.
+  bool dashedGrid = false;
+
   /// Writes the prices as currency rather than as plain decimals.
   bool currencyPrices = false;
 
@@ -323,6 +353,12 @@ class DemoState extends ChangeNotifier {
       showSessionDividers: sessionDividers,
       priceAxisWidth: fixedPriceAxis ? 56.0 : 0.0,
       fitContent: fitContent,
+      gridColumnMode: evenGridColumns
+          ? GridColumnMode.evenlySpaced
+          : GridColumnMode.dateTicks,
+      showGridRows: showGridRows,
+      showGridColumns: showGridColumns,
+      gridDashPattern: dashedGrid ? const [4, 3] : null,
     );
   }
 

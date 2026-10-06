@@ -7,6 +7,7 @@ export './comparison.dart';
 export './chart_style.dart';
 export './chart_translations.dart';
 export './chart_type.dart';
+export './pane_size_mode.dart';
 export './chart_workspace.dart';
 export './depth_chart.dart';
 export './depth_ladder.dart';

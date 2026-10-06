@@ -1,3 +1,56 @@
+## 3.1.0 - 2026-10-06
+
+### Added
+
+- **Sizing the panes from your code.** `KChartWidget.paneHeights` sets the
+  indicator panes' heights and `volumeHeight` the volume pane's. Heights are
+  used as given — past `ChartStyle.maxPaneHeight` if asked — and cut back only
+  when a pane would squeeze the candles out of the box. Null leaves the heights
+  to the chart, as before. While a list is given the host owns the heights: a
+  drag or a controller call is reported through `onPaneHeightsChanged`, and the
+  pane moves when the list is passed back.
+- **Maximizing a pane.** `KChartController.maximizePane`, `maximizeVolume`,
+  `restorePanes` and `toggleMaximizePane` stretch one pane over the chart, the
+  candles keeping a strip above it, for a "maximize this indicator" button. The
+  stretch follows the chart's size and its own indicator through a reorder.
+  `setPaneHeight`, `resetPaneHeights`, `paneHeights`, `maximizedPane` and
+  `isVolumeMaximized` complete the set.
+- **`KChartWidget.paneSizeMode`** chooses how the chart's parts are sized.
+  `PaneSizeMode.heights` is the default and the behaviour so far.
+  `PaneSizeMode.ratios` splits the height by `paneRatios` — the candles, the
+  volume pane, then each indicator pane, so `[3, 1, 2]` is half, a sixth and a
+  third — and holds the split as the chart is resized. `PaneSizeMode.custom`
+  lets the user lay the chart out: `KChartController.editPanes` shows a line
+  between each two parts to drag between the smallest and largest height each
+  may take, the layout is kept as proportions, and `onPaneRatiosChanged`
+  reports it for saving. `finishEditingPanes`, `toggleEditPanes` and
+  `isEditingPanes` complete the set. Both modes need a bounded height and no
+  `mBaseHeight`.
+- **`ChartStyle.gridColumnMode`** chooses where the grid's vertical lines go.
+  `GridColumnMode.dateTicks` (the default, and the behaviour so far) rules a line
+  wherever a candle crosses a time bucket; with only a few candles in view that
+  can leave the lines bunched together. `GridColumnMode.evenlySpaced` divides the
+  chart width into `gridColumns` equal bands instead, so the grid spans the whole
+  chart however sparse the data. The date labels keep their round times.
+- **`ChartStyle.showGridRows` and `showGridColumns`** switch the horizontal and
+  vertical grid lines on and off independently. `hideGrid` still hides both, and
+  the pane borders stay either way.
+- **`ChartStyle.gridDashPattern`** dashes the grid lines with a list of on/off
+  lengths, e.g. `[4, 3]`. Null is solid; an empty list or a non-positive length
+  is read as solid.
+- The example app has switches for the grid options, a sizing chooser for the
+  panes, an Edit layout chip, and a chip to maximize each pane and the volume.
+
+### Changed
+
+- Dragged pane heights move with their pane when `onReorderPane` reorders the
+  indicators, instead of staying at their position.
+- `ChartStyle.minPaneHeight` is held at 32 or more when a pane is dragged or
+  maximized around, so a pane can never be made so small that its edge cannot be
+  grabbed to make it bigger again.
+- `KChartHost` has nine new members for the above. Only an app that implements
+  it itself, such as a test double, needs to add them.
+
 ## 3.0.0 - 2026-09-19
 
 ### Breaking

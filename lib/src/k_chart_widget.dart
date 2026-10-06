@@ -18,6 +18,7 @@ import 'trading.dart';
 import 'chart_style.dart';
 import 'chart_translations.dart';
 import 'chart_type.dart';
+import 'pane_size_mode.dart';
 import 'components/popup_info_view.dart';
 import 'drawing/drawing_controller.dart';
 import 'drawing/drawing_coordinates.dart';
@@ -285,6 +286,12 @@ class KChartWidget extends StatefulWidget {
     this.resizablePanes = false,
     this.reorderablePanes = false,
     this.onReorderPane,
+    this.paneHeights,
+    this.volumeHeight,
+    this.onPaneHeightsChanged,
+    this.paneSizeMode = PaneSizeMode.heights,
+    this.paneRatios,
+    this.onPaneRatiosChanged,
     this.onAddTrendLine,
     this.onAddHorizontalLine,
     this.onAddVerticalLine,
@@ -691,6 +698,95 @@ class KChartWidget extends StatefulWidget {
   /// }),
   /// ```
   final void Function(int from, int to)? onReorderPane;
+
+  /// Heights for the indicator panes, in the order they are stacked.
+  ///
+  /// Null — the default — leaves the heights to the chart: the standard height,
+  /// or whatever has been dragged when [resizablePanes] is on. A list sizes the
+  /// panes from outside, which is how a host makes one pane (nearly) fill the
+  /// chart and puts the layout back afterwards by passing null again.
+  ///
+  /// Heights are used as given, not held between `ChartStyle.minPaneHeight` and
+  /// `ChartStyle.maxPaneHeight` as a drag is, so a pane can be made taller than
+  /// a user could drag it. A pane missing from a shorter list, or given a
+  /// height that is not a positive number, gets the standard height. When the
+  /// chart sizes its own candle area, a height too big for the box is cut back
+  /// so the candles keep a strip above it.
+  ///
+  /// While a list is given the host owns the heights, like a controlled text
+  /// field: a drag (with [resizablePanes] on), or a call to
+  /// `KChartController.setPaneHeight`, does not move a pane by itself. It is
+  /// reported through [onPaneHeightsChanged] instead, and the pane moves when
+  /// the host passes the new list back. Panes are told apart by position, so
+  /// when [onReorderPane] moves one, move its height with it:
+  ///
+  /// ```dart
+  /// onReorderPane: (from, to) => setState(() {
+  ///   indicators.insert(to, indicators.removeAt(from));
+  ///   heights.insert(to, heights.removeAt(from));
+  /// }),
+  /// ```
+  ///
+  /// To make a pane fill the chart without working out the heights yourself,
+  /// use `KChartController.maximizePane`.
+  final List<double>? paneHeights;
+
+  /// Height of the volume pane, in place of the standard 60.
+  ///
+  /// Null leaves it to the chart. It has no effect while [volHidden] is on, and
+  /// anything not a positive number is ignored.
+  final double? volumeHeight;
+
+  /// Called with every pane's height when the user drags one, or the heights
+  /// are changed through `KChartController`.
+  ///
+  /// With [paneHeights] given this is how the host hears what was asked for, to
+  /// pass back; without it the chart has already moved the pane. Not called for
+  /// a change made through [paneHeights] itself.
+  final ValueChanged<List<double>>? onPaneHeightsChanged;
+
+  /// How the heights of the candles, the volume pane and the indicator panes
+  /// are worked out: in pixels ([PaneSizeMode.heights], the default), by
+  /// proportion ([PaneSizeMode.ratios]), or laid out by the user dragging the
+  /// lines between them ([PaneSizeMode.custom]).
+  ///
+  /// The proportions and the editing only apply when the box bounds the chart's
+  /// height and `mBaseHeight` is left off; otherwise the pixel heights are used.
+  final PaneSizeMode paneSizeMode;
+
+  /// Proportions of the chart's height, top to bottom: the candles, then the
+  /// volume pane (left out of the list when [volHidden]), then each indicator
+  /// pane.
+  ///
+  /// `[3, 1, 2]` over candles, volume and one indicator pane makes six units:
+  /// half the height for the candles, a sixth for the volume and a third for
+  /// the indicator. The proportions hold as the chart is resized, which is
+  /// what pixel heights cannot do. The room is what is left once the legend
+  /// rows above the candles have taken theirs.
+  ///
+  /// A part missing from a shorter list, or given a number that is not above
+  /// zero, counts as 1.
+  ///
+  /// Used by [PaneSizeMode.ratios], where the host owns the proportions: a drag
+  /// with [resizablePanes] on moves the edge between two neighbours, and is
+  /// reported through [onPaneRatiosChanged] for the host to pass back. In
+  /// [PaneSizeMode.custom] it is where the user starts from, and passing a
+  /// different list puts the layout back to that. A maximized pane (see
+  /// `KChartController.maximizePane`) wins over either.
+  final List<double>? paneRatios;
+
+  /// Called with the new proportions when the user drags a pane's edge or a
+  /// line in [PaneSizeMode.custom], in the order [paneRatios] uses and keeping
+  /// their total, so a drag only moves room between the two parts either side.
+  ///
+  /// In [PaneSizeMode.custom] the chart has already moved; this is for saving
+  /// the layout and passing it back as [paneRatios] later.
+  ///
+  /// ```dart
+  /// paneRatios: ratios,
+  /// onPaneRatiosChanged: (next) => setState(() => ratios = next),
+  /// ```
+  final ValueChanged<List<double>>? onPaneRatiosChanged;
 
   /// Shifted onto every candle's time before it is shown.
   ///
@@ -1099,11 +1195,37 @@ class _KChartWidgetState extends State<KChartWidget>
 
   late Offset _toolbarOffset;
 
-  /// The height of each indicator pane, once the user has dragged one.
+  /// The height of each indicator pane, once one has been sized.
   ///
-  /// Empty until then, and thrown away whenever the panes change, so a new
-  /// indicator never inherits a height meant for a different one.
+  /// Dragged by the user, set through the controller, or given by
+  /// `KChartWidget.paneHeights`. Thrown away whenever panes are added or
+  /// removed, so a new indicator never inherits a height meant for a different
+  /// one; a reorder carries each height along with its pane.
   List<double> _paneHeights = const [];
+
+  /// The indicator behind each of [_paneHeights], to follow a reorder.
+  List<Indicator> _paneOwners = const [];
+
+  /// Whether the heights came from the host rather than the chart, so they are
+  /// cut back to fit the box instead of being trusted to.
+  bool _hostSizedPanes = false;
+
+  /// The indicator whose pane is stretched over the chart, if any.
+  Indicator? _maximizedOwner;
+
+  /// Whether the volume pane is stretched over the chart.
+  bool _volumeMaximized = false;
+
+  /// The proportions the user has laid the chart out to in
+  /// [PaneSizeMode.custom], or empty until they are first worked out.
+  List<double> _customRatios = const [];
+
+  /// Whether the lines between the parts are showing, to be dragged.
+  bool _editingPanes = false;
+
+  /// Set when `KChartWidget.paneHeights` changed and is yet to be taken up,
+  /// which waits for the build because the panes it applies to may change too.
+  bool _hostPaneHeightsStale = false;
 
   /// True while a drag that began on the price labels is stretching the axis.
   bool _scalingPrice = false;
@@ -1655,6 +1777,16 @@ class _KChartWidgetState extends State<KChartWidget>
       widget.replay?.addListener(_onReplayChanged);
     }
     if (!identical(oldWidget.candles, widget.candles)) _resolveIndicators();
+    if (!listEquals(oldWidget.paneHeights, widget.paneHeights)) {
+      _hostPaneHeightsStale = true;
+    }
+    if (oldWidget.paneSizeMode != widget.paneSizeMode ||
+        !listEquals(oldWidget.paneRatios, widget.paneRatios)) {
+      // A new mode, or new proportions from the host, start the user's layout
+      // over from there.
+      _customRatios = const [];
+    }
+    if (widget.paneSizeMode != PaneSizeMode.custom) _editingPanes = false;
     if (oldWidget.lockPriceScale && !widget.lockPriceScale) {
       // Unlocked, the axis goes back to fitting the window.
       _lockedPriceRange = null;
@@ -1781,6 +1913,7 @@ class _KChartWidgetState extends State<KChartWidget>
             paneCount: _resolved.panes.length,
             legendRowCount: _legendRowCount,
             paneHeights: _effectivePaneHeights,
+            volHeight: _volumeHeightOverride,
           ),
     );
   }
@@ -1793,21 +1926,234 @@ class _KChartWidgetState extends State<KChartWidget>
   ChartType get _chartType =>
       widget.chartType ?? (widget.isLine ? ChartType.area : ChartType.candles);
 
-  /// How many legend rows sit above the candles: one per indicator group, plus
-  /// one for the OHLC legend when it is shown.
-  /// The pane heights to lay out with, defaulting each pane to the standard
-  /// height until it has been dragged.
-  List<double> get _effectivePaneHeights {
-    final count = _resolved.panes.length;
-    if (_paneHeights.length != count) {
-      _paneHeights = List<double>.filled(
-        count,
-        BaseDimension.secondaryPaneHeight,
-      );
+  /// The parts of the chart sized by proportion, or null where that does not
+  /// apply: pixel heights, a fixed candle height, or a box that does not bound
+  /// the height.
+  ///
+  /// In [PaneSizeMode.custom] the proportions are the user's, worked out from
+  /// the standard layout until they first change them.
+  ({List<double> ratios, double unit})? get _ratioSplit {
+    final mode = widget.paneSizeMode;
+    if (mode == PaneSizeMode.heights ||
+        widget.mBaseHeight != null ||
+        !mHeight.isFinite ||
+        mHeight <= 0) {
+      return null;
     }
-    return _paneHeights;
+    final parts = 1 + (widget.volHidden ? 0 : 1) + _resolved.panes.length;
+    final room = mHeight - BaseDimension.legendRowHeight * _legendRowCount;
+    if (room <= 0) return null;
+
+    List<double> filled(List<double> given) => [
+      for (var i = 0; i < parts; i++)
+        i < given.length && _usableHeight(given[i]) ? given[i] : 1.0,
+    ];
+
+    final List<double> ratios;
+    if (mode == PaneSizeMode.ratios) {
+      final given = widget.paneRatios;
+      if (given == null) return null;
+      ratios = filled(given);
+    } else {
+      if (_customRatios.length != parts) {
+        _customRatios = _startingRatios(parts, room, filled);
+      }
+      ratios = _customRatios;
+    }
+    return (ratios: ratios, unit: room / ratios.fold(0.0, (a, b) => a + b));
   }
 
+  /// Where the user's layout starts: the host's proportions when it gave some,
+  /// or the standard heights, with the candles taking what they leave.
+  List<double> _startingRatios(
+    int parts,
+    double room,
+    List<double> Function(List<double>) filled,
+  ) {
+    final given = widget.paneRatios;
+    if (given != null) return filled(given);
+
+    final volume = widget.volHidden
+        ? 0.0
+        : (widget.volumeHeight != null && _usableHeight(widget.volumeHeight!)
+              ? widget.volumeHeight!
+              : BaseDimension.volumeHeight);
+    final heights = widget.paneHeights;
+    final panes = [
+      for (var i = 0; i < _resolved.panes.length; i++)
+        heights != null && i < heights.length && _usableHeight(heights[i])
+            ? heights[i]
+            : BaseDimension.secondaryPaneHeight,
+    ];
+    final main = math.max(
+      BaseChartPainter.minMainHeight,
+      room - volume - panes.fold(0.0, (a, b) => a + b),
+    );
+    return [main, if (!widget.volHidden) volume, ...panes];
+  }
+
+  /// The volume pane's height when the host gave a usable one.
+  double? get _volumeHeightOverride {
+    if (_volumeMaximized &&
+        !widget.volHidden &&
+        widget.mBaseHeight == null &&
+        mHeight.isFinite &&
+        mHeight > 0) {
+      // Everything else at its smallest, the volume pane gets what is left.
+      final small = _minPaneHeight;
+      return math.max(
+        small,
+        mHeight -
+            BaseChartPainter.minMainHeight -
+            BaseDimension.legendRowHeight * _legendRowCount -
+            small * _paneOwners.length,
+      );
+    }
+    final split = _ratioSplit;
+    if (split != null && !widget.volHidden) {
+      return split.ratios[1] * split.unit;
+    }
+    final height = widget.volumeHeight;
+    return height != null && height.isFinite && height > 0 ? height : null;
+  }
+
+  /// The least a pane or the volume pane may be dragged to, or maximized
+  /// around: `ChartStyle.minPaneHeight`, but never so little that the edge or
+  /// line left to drag it back out cannot be reached. The drag zones either
+  /// side of a part are 10 px each, so 32 leaves a gap between them.
+  double get _minPaneHeight =>
+      math.max(widget.chartStyle.minPaneHeight, _smallestGrabbablePane);
+
+  /// Shortest a part may be and still have its edges grabbed one at a time.
+  static const double _smallestGrabbablePane = 32;
+
+  /// A height worth drawing: finite and above zero.
+  static bool _usableHeight(double height) => height.isFinite && height > 0;
+
+  /// The pane heights to lay out with, defaulting each pane to the standard
+  /// height until it has been sized.
+  List<double> get _effectivePaneHeights {
+    final owners = [for (final pane in _resolved.panes) pane.indicator];
+    final restructured = _paneHeights.length != owners.length;
+
+    if (restructured) {
+      // Panes came or went: no height is safe to keep.
+      _paneHeights = List<double>.filled(
+        owners.length,
+        BaseDimension.secondaryPaneHeight,
+      );
+      _hostSizedPanes = false;
+      _clearMaximized();
+    } else if (!listEquals(_paneOwners, owners)) {
+      // The same number of panes in another order: each height goes with its
+      // pane, and a pane never seen before starts at the standard height.
+      final before = _paneHeights;
+      _paneHeights = [
+        for (final owner in owners)
+          _paneOwners.contains(owner)
+              ? before[_paneOwners.indexOf(owner)]
+              : BaseDimension.secondaryPaneHeight,
+      ];
+    }
+    _paneOwners = owners;
+
+    final given = widget.paneHeights;
+    if (given != null) {
+      // The host owns the heights: whatever it passes is what is drawn.
+      _paneHeights = [
+        for (var i = 0; i < owners.length; i++)
+          i < given.length && _usableHeight(given[i])
+              ? given[i]
+              : BaseDimension.secondaryPaneHeight,
+      ];
+      _hostSizedPanes = true;
+      if (restructured || _hostPaneHeightsStale) _clearMaximized();
+    } else if (_hostPaneHeightsStale) {
+      // The host let go: back to the chart's own layout.
+      _paneHeights = List<double>.filled(
+        owners.length,
+        BaseDimension.secondaryPaneHeight,
+      );
+      _hostSizedPanes = false;
+      _clearMaximized();
+    }
+    _hostPaneHeightsStale = false;
+
+    if (_volumeMaximized && !widget.volHidden) {
+      final small = _minPaneHeight;
+      return List<double>.filled(owners.length, small);
+    }
+    final maximized = _maximizedPaneIndex;
+    if (maximized != null) return _heightsWithMaximized(maximized);
+    final split = _ratioSplit;
+    if (split != null) {
+      final first = widget.volHidden ? 1 : 2;
+      return [
+        for (var i = 0; i < owners.length; i++)
+          split.ratios[first + i] * split.unit,
+      ];
+    }
+    return _hostSizedPanes ? _cutBackToFit(_paneHeights) : _paneHeights;
+  }
+
+  /// Whether the host owns the pane heights, by having passed a list.
+  bool get _heightsLocked => widget.paneHeights != null;
+
+  /// Lets go of any pane, or the volume pane, stretched over the chart.
+  void _clearMaximized() {
+    _maximizedOwner = null;
+    _volumeMaximized = false;
+  }
+
+  /// Where the maximized pane sits now, or null when none is.
+  int? get _maximizedPaneIndex {
+    final owner = _maximizedOwner;
+    if (owner == null) return null;
+    final at = _paneOwners.indexOf(owner);
+    return at == -1 ? null : at;
+  }
+
+  /// Height the box has left for panes once the candles keep their strip, or
+  /// null when the box does not bound its height or the caller fixed the
+  /// candle height.
+  double? get _paneRoom {
+    if (widget.mBaseHeight != null || !mHeight.isFinite || mHeight <= 0) {
+      return null;
+    }
+    return mHeight -
+        BaseChartPainter.minMainHeight -
+        (widget.volHidden
+            ? 0
+            : _volumeHeightOverride ?? BaseDimension.volumeHeight) -
+        BaseDimension.legendRowHeight * _legendRowCount;
+  }
+
+  /// [_paneHeights] with the maximized pane given everything the others leave,
+  /// and the others at their smallest.
+  List<double> _heightsWithMaximized(int index) {
+    final small = _minPaneHeight;
+    final room = _paneRoom;
+    return [
+      for (var i = 0; i < _paneHeights.length; i++)
+        i != index
+            ? small
+            : room == null
+            ? _paneHeights[i]
+            : math.max(small, room - small * (_paneHeights.length - 1)),
+    ];
+  }
+
+  /// Host-given [heights], with any single pane too tall for the box cut back
+  /// so the candles are not squeezed out.
+  List<double> _cutBackToFit(List<double> heights) {
+    final room = _paneRoom;
+    if (room == null) return heights;
+    final ceiling = math.max(room, _minPaneHeight);
+    return [for (final height in heights) math.min(height, ceiling)];
+  }
+
+  /// How many legend rows sit above the candles: one per indicator group, plus
+  /// one for the OHLC legend when it is shown.
   int get _legendRowCount =>
       _resolved.legendRowCount +
       (widget.showOhlcLegend ? 1 : 0) +
@@ -2119,6 +2465,7 @@ class _KChartWidgetState extends State<KChartWidget>
           paneCount: _resolved.panes.length,
           legendRowCount: _legendRowCount,
           paneHeights: _effectivePaneHeights,
+          volHeight: _volumeHeightOverride,
         );
 
         // Taken from the axis as it stands, which is last frame's fit: this
@@ -2551,6 +2898,7 @@ class _KChartWidgetState extends State<KChartWidget>
                     (defaultTargetPlatform != TargetPlatform.iOS &&
                         defaultTargetPlatform != TargetPlatform.android)))
               _buildScaleX(),
+            ..._buildPaneDividers(baseDimension),
             if (widget.showScrollToNowButton && !isChartAtRightEdge)
               _buildScrollToNowButton(),
           ],
@@ -2565,7 +2913,9 @@ class _KChartWidgetState extends State<KChartWidget>
 
   /// Which indicator pane's lower edge is within reach of [pos], if any.
   int? _paneEdgeAt(Offset pos) {
-    if (!widget.resizablePanes) return null;
+    if (!widget.resizablePanes || widget.paneSizeMode == PaneSizeMode.custom) {
+      return null;
+    }
     final tolerance = widget.chartStyle.paneResizeTolerance;
     for (var i = 0; i < painter.mSecondaryRectList.length; i++) {
       final rect = painter.mSecondaryRectList[i].mRect;
@@ -2594,12 +2944,169 @@ class _KChartWidgetState extends State<KChartWidget>
     final heights = [..._effectivePaneHeights];
     if (index < 0 || index >= heights.length) return;
 
+    final split = _ratioSplit;
+    if (split != null && _maximizedPaneIndex == null && !_volumeMaximized) {
+      _resizeByRatio(split, index, delta);
+      return;
+    }
+
+    // A pane the host made taller than the usual ceiling keeps its height
+    // under the finger rather than snapping down to it.
     heights[index] = (heights[index] + delta).clamp(
-      widget.chartStyle.minPaneHeight,
-      widget.chartStyle.maxPaneHeight,
+      _minPaneHeight,
+      math.max(widget.chartStyle.maxPaneHeight, heights[index]),
     );
-    _paneHeights = heights;
+    // A host that owns the heights hears about the drag and passes it back.
+    if (!_heightsLocked) _paneHeights = heights;
+    _clearMaximized();
     notifyChanged();
+    widget.controller?.hostChanged();
+    widget.onPaneHeightsChanged?.call(List<double>.unmodifiable(heights));
+  }
+
+  /// Smallest height part [part] may take in [PaneSizeMode.custom]: the candles
+  /// have their own floor, the volume and the panes share one.
+  double _smallestPart(int part) =>
+      part == 0 ? BaseChartPainter.minMainHeight : _minPaneHeight;
+
+  /// Largest height part [part] may take in [PaneSizeMode.custom]; the candles
+  /// have no ceiling, as they are what is left.
+  double _largestPart(int part) =>
+      part == 0 ? double.infinity : widget.chartStyle.maxPaneHeight;
+
+  /// Moves the line between part [line] and the one below it by [delta] pixels,
+  /// within what each of the two may take.
+  void _moveDivider(int line, double delta) {
+    final split = _ratioSplit;
+    if (split == null || widget.paneSizeMode != PaneSizeMode.custom) return;
+    if (line < 0 || line + 1 >= split.ratios.length) return;
+
+    final above = split.ratios[line] * split.unit;
+    final below = split.ratios[line + 1] * split.unit;
+    final lowest = math.max(
+      _smallestPart(line) - above,
+      below - _largestPart(line + 1),
+    );
+    final highest = math.min(
+      _largestPart(line) - above,
+      below - _smallestPart(line + 1),
+    );
+    // Parts already outside their bounds, say after a resize, are left alone
+    // rather than snapped.
+    if (lowest > highest) return;
+    final moved = delta.clamp(lowest, highest);
+    if (moved == 0) return;
+
+    final ratios = [...split.ratios];
+    ratios[line] += moved / split.unit;
+    ratios[line + 1] -= moved / split.unit;
+    setState(() => _customRatios = ratios);
+    widget.controller?.hostChanged();
+    widget.onPaneRatiosChanged?.call(List<double>.unmodifiable(ratios));
+  }
+
+  /// Where each line between the parts sits, top to bottom, or none where the
+  /// chart is not laid out for lines.
+  List<double> _dividerPositions(BaseDimension dimension) {
+    final paneHeights = dimension.paneHeights;
+    final volume = dimension.mVolumeHeight;
+    final main =
+        dimension.mDisplayHeight -
+        painter.mTopPadding -
+        painter.mBottomPadding -
+        volume -
+        dimension.totalSecondaryHeight;
+    if (main < BaseChartPainter.minMainHeight) return const [];
+
+    final lines = <double>[];
+    var y = painter.mTopPadding + main;
+    lines.add(y);
+    if (!widget.volHidden) {
+      y += volume;
+      lines.add(y);
+    }
+    for (var i = 0; i < paneHeights.length - 1; i++) {
+      y += paneHeights[i];
+      lines.add(y);
+    }
+    return lines;
+  }
+
+  /// The lines between the parts, while they are being edited.
+  List<Widget> _buildPaneDividers(BaseDimension dimension) {
+    if (!_editingPanes ||
+        widget.paneSizeMode != PaneSizeMode.custom ||
+        _ratioSplit == null ||
+        _maximizedPaneIndex != null ||
+        _volumeMaximized) {
+      return const [];
+    }
+    final accent = widget.chartColors.kLineColor;
+    final lines = _dividerPositions(dimension);
+    return [
+      for (var i = 0; i < lines.length; i++)
+        Positioned(
+          left: 0,
+          right: 0,
+          top: lines[i] - 10,
+          height: 20,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.resizeUpDown,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onVerticalDragUpdate: (details) =>
+                  _moveDivider(i, details.delta.dy),
+              child: Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(height: 2, color: accent.withValues(alpha: 0.8)),
+                    Container(
+                      width: 36,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+    ];
+  }
+
+  /// Moves room between pane [index] and its neighbour by [delta] pixels.
+  ///
+  /// The edge dragged is the pane's lower one, so the room comes from the pane
+  /// below. The last pane has nothing below it and takes from the part above.
+  /// The total is kept, and no part is squeezed under its smallest. The host
+  /// owns the proportions, so this only reports where they would go.
+  void _resizeByRatio(
+    ({List<double> ratios, double unit}) split,
+    int index,
+    double delta,
+  ) {
+    final ratios = [...split.ratios];
+    final slot = (widget.volHidden ? 1 : 2) + index;
+    final other = slot + 1 < ratios.length ? slot + 1 : slot - 1;
+
+    double floorOf(int part) =>
+        (part == 0 ? BaseChartPainter.minMainHeight : _minPaneHeight) /
+        split.unit;
+
+    // Pixels moved, in proportion units, held so neither side drops below its
+    // floor: what the pane can gain is what the other can spare, and back.
+    final lowest = floorOf(slot) - ratios[slot];
+    final highest = ratios[other] - floorOf(other);
+    if (lowest > highest) return;
+    final move = (delta / split.unit).clamp(lowest, highest);
+    ratios[slot] += move;
+    ratios[other] -= move;
+    notifyChanged();
+    widget.onPaneRatiosChanged?.call(List<double>.unmodifiable(ratios));
   }
 
   /// Works out where the pane being dragged was dropped, and reports the move.
@@ -4128,6 +4635,120 @@ class _KChartWidgetState extends State<KChartWidget>
     if (clamped == _pricePan) return;
     setState(() => _pricePan = clamped);
     widget.controller?.hostChanged();
+  }
+
+  @override
+  List<double> get chartPaneHeights =>
+      List<double>.unmodifiable(_effectivePaneHeights);
+
+  @override
+  bool setChartPaneHeight(int index, double height) {
+    final heights = [..._effectivePaneHeights];
+    if (index < 0 || index >= heights.length || !_usableHeight(height)) {
+      return false;
+    }
+    heights[index] = height;
+    setState(() {
+      // A host that owns the heights hears about it and passes it back.
+      if (!_heightsLocked) {
+        _paneHeights = heights;
+        _hostSizedPanes = true;
+      }
+      _clearMaximized();
+    });
+    widget.controller?.hostChanged();
+    widget.onPaneHeightsChanged?.call(List<double>.unmodifiable(heights));
+    return true;
+  }
+
+  @override
+  void resetChartPaneHeights() {
+    _effectivePaneHeights;
+    if (widget.paneSizeMode == PaneSizeMode.custom &&
+        _customRatios.isNotEmpty) {
+      setState(() {
+        _customRatios = const [];
+        _clearMaximized();
+      });
+      widget.controller?.hostChanged();
+      return;
+    }
+    final standard = List<double>.filled(
+      _paneOwners.length,
+      BaseDimension.secondaryPaneHeight,
+    );
+    final untouched =
+        _maximizedOwner == null &&
+        !_volumeMaximized &&
+        listEquals(_paneHeights, standard) &&
+        !_heightsLocked;
+    if (untouched) return;
+    setState(() {
+      if (!_heightsLocked) {
+        _paneHeights = standard;
+        _hostSizedPanes = false;
+      }
+      _clearMaximized();
+    });
+    widget.controller?.hostChanged();
+    widget.onPaneHeightsChanged?.call(List<double>.unmodifiable(standard));
+  }
+
+  @override
+  int? get chartMaximizedPane {
+    _effectivePaneHeights;
+    return _volumeMaximized ? null : _maximizedPaneIndex;
+  }
+
+  @override
+  bool maximizeChartPane(int? index) {
+    _effectivePaneHeights;
+    if (index == null) {
+      if (_maximizedOwner == null && !_volumeMaximized) return true;
+      setState(_clearMaximized);
+      widget.controller?.hostChanged();
+      return true;
+    }
+    if (index < 0 || index >= _paneOwners.length) return false;
+    final owner = _paneOwners[index];
+    if (_maximizedOwner != owner || _volumeMaximized) {
+      setState(() {
+        _volumeMaximized = false;
+        _maximizedOwner = owner;
+      });
+      widget.controller?.hostChanged();
+    }
+    return true;
+  }
+
+  @override
+  bool get chartEditingPanes =>
+      _editingPanes && widget.paneSizeMode == PaneSizeMode.custom;
+
+  @override
+  bool setChartEditingPanes(bool editing) {
+    if (widget.paneSizeMode != PaneSizeMode.custom) return false;
+    if (_editingPanes != editing) {
+      setState(() => _editingPanes = editing);
+      widget.controller?.hostChanged();
+    }
+    return true;
+  }
+
+  @override
+  bool get chartVolumeMaximized => _volumeMaximized && !widget.volHidden;
+
+  @override
+  bool maximizeChartVolume() {
+    if (widget.volHidden) return false;
+    if (!_volumeMaximized) {
+      setState(() {
+        _maximizedOwner = null;
+        _volumeMaximized = true;
+      });
+      widget.controller?.hostChanged();
+    }
+    return true;
   }
 
   @override

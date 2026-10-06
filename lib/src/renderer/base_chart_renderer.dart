@@ -15,13 +15,16 @@ abstract class BaseChartRenderer<T> {
     Color? separatorColor,
     Color? gridColumnColor,
     double gridStrokeWidth = 0.5,
+    this.showGridRows = true,
+    this.showGridColumns = true,
+    List<double>? gridDashPattern,
     double separatorWidth = 1.0,
     this.labelCornerRadius = const BorderRadius.all(Radius.circular(3)),
     this.legendPadding = 4.0,
     this.legendBgColor,
     this.priceAxisGutter = 0.0,
     this.priceAxisGutterOnLeft = false,
-  }) {
+  }) : gridDashPattern = _validDash(gridDashPattern) {
     if (maxValue == minValue) {
       maxValue *= 1.5;
       minValue /= 2;
@@ -36,6 +39,45 @@ abstract class BaseChartRenderer<T> {
     columnGridPaint
       ..color = gridColumnColor ?? gridColor
       ..strokeWidth = gridStrokeWidth;
+  }
+
+  /// Whether the horizontal grid lines are drawn.
+  final bool showGridRows;
+
+  /// Whether the vertical grid lines are drawn.
+  final bool showGridColumns;
+
+  /// Validated dash lengths for the grid, or null for solid lines.
+  final List<double>? gridDashPattern;
+
+  static List<double>? _validDash(List<double>? pattern) {
+    if (pattern == null || pattern.isEmpty) return null;
+    if (pattern.any((v) => !v.isFinite || v <= 0)) return null;
+    return List.unmodifiable(pattern);
+  }
+
+  /// Draws one grid line, dashed when [gridDashPattern] is set.
+  void drawGridLine(Canvas canvas, Offset from, Offset to, Paint paint) {
+    final pattern = gridDashPattern;
+    if (pattern == null) {
+      canvas.drawLine(from, to, paint);
+      return;
+    }
+    final delta = to - from;
+    final length = delta.distance;
+    if (length == 0) return;
+    final unit = delta / length;
+    var travelled = 0.0;
+    var i = 0;
+    while (travelled < length) {
+      final segment = pattern[i % pattern.length];
+      if (i.isEven) {
+        final end = (travelled + segment).clamp(0.0, length);
+        canvas.drawLine(from + unit * travelled, from + unit * end, paint);
+      }
+      travelled += segment;
+      i++;
+    }
   }
 
   /// Corner radius of the legend pill.

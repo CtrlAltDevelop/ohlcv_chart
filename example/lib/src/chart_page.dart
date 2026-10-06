@@ -128,6 +128,10 @@ class _Chart extends StatelessWidget {
       crosshairOnHover: state.crosshairOnHover,
       timeZoneOffset: state.timeZoneOffset,
       resizablePanes: state.resizablePanes,
+      paneSizeMode: state.paneMode,
+      paneRatios: state.paneRatios,
+      onPaneRatiosChanged: (ratios) =>
+          state.update(() => state.paneRatios = ratios),
       reorderablePanes: state.reorderablePanes,
       onReorderPane: state.reorderPane,
       selectAfterDrawing: !state.keepToolArmed,

@@ -63,6 +63,35 @@ abstract interface class KChartHost {
 
   /// Shifts the price axis to [pan], within the range the chart allows.
   void setChartPricePan(double pan);
+
+  /// The height each indicator pane is drawn at, in the order they are stacked.
+  List<double> get chartPaneHeights;
+
+  /// Sizes pane [index] to [height]; false when there is no such pane or the
+  /// height is not a positive number.
+  bool setChartPaneHeight(int index, double height);
+
+  /// Hands every pane back to the standard height.
+  void resetChartPaneHeights();
+
+  /// Which pane is stretched to fill the chart, or null when none is.
+  int? get chartMaximizedPane;
+
+  /// Stretches pane [index] over the chart, or lets go of the stretch for null.
+  bool maximizeChartPane(int? index);
+
+  /// Whether the volume pane is stretched over the chart.
+  bool get chartVolumeMaximized;
+
+  /// Stretches the volume pane over the chart; false when it is hidden.
+  bool maximizeChartVolume();
+
+  /// Whether the lines between the parts are showing, to be dragged.
+  bool get chartEditingPanes;
+
+  /// Shows or hides those lines; false unless the chart is in
+  /// `PaneSizeMode.custom`.
+  bool setChartEditingPanes(bool editing);
 }
 
 /// Drives a chart from outside it: where it is scrolled, how far it is zoomed,
@@ -239,6 +268,94 @@ class KChartController extends ChangeNotifier {
 
   /// Shifts the price axis to [value], within the range the chart allows.
   void setPricePan(double value) => _host?.setChartPricePan(value);
+
+  // ── Pane heights ─────────────────────────────────────────────────────────
+
+  /// The height each indicator pane is drawn at, in the order they are stacked.
+  ///
+  /// Empty while nothing is attached. A pane that is [maximizedPane] reads as
+  /// the height it is currently stretched to.
+  List<double> get paneHeights => _host?.chartPaneHeights ?? const [];
+
+  /// Sizes the indicator pane at [index] to [height].
+  ///
+  /// With `KChartWidget.paneHeights` given the host owns the heights, so this
+  /// is reported through `onPaneHeightsChanged` for the host to pass back
+  /// rather than moving the pane itself.
+  ///
+  /// Unlike a drag, this is not held between `ChartStyle.minPaneHeight` and
+  /// `ChartStyle.maxPaneHeight`: any positive height is used as given, so a host
+  /// can grow a pane past what the user could drag it to. Panes are told apart
+  /// by position, and the heights are thrown away when panes are added or
+  /// removed. Reports whether there was such a pane to size.
+  bool setPaneHeight(int index, double height) =>
+      _host?.setChartPaneHeight(index, height) ?? false;
+
+  /// Hands every pane back to the standard height, undoing anything dragged,
+  /// set from here, or given through `KChartWidget.paneHeights`.
+  void resetPaneHeights() => _host?.resetChartPaneHeights();
+
+  /// Which pane is stretched to fill the chart, or null when none is.
+  int? get maximizedPane => _host?.chartMaximizedPane;
+
+  /// Makes the pane at [index] take all the height it can, squashing the
+  /// candles to a strip above it and the other panes to their smallest.
+  ///
+  /// The stretch follows the chart's size and the pane itself, so it survives a
+  /// resize or the panes being reordered. [restorePanes] — or dragging any pane
+  /// — undoes it, handing back the heights the panes had before. Reports
+  /// whether there was such a pane.
+  ///
+  /// Needs the chart to size its own candle area, so it has no effect on one
+  /// given a fixed `mBaseHeight`.
+  bool maximizePane(int index) => _host?.maximizeChartPane(index) ?? false;
+
+  /// Whether the volume pane is stretched over the chart.
+  bool get isVolumeMaximized => _host?.chartVolumeMaximized ?? false;
+
+  /// Makes the volume pane take all the height it can, in the way
+  /// [maximizePane] does for an indicator pane. Reports false when the volume
+  /// pane is hidden. Only one pane, or the volume, is maximized at a time.
+  bool maximizeVolume() => _host?.maximizeChartVolume() ?? false;
+
+  /// Lets go of [maximizePane] or [maximizeVolume], putting the panes back as
+  /// they were.
+  void restorePanes() => _host?.maximizeChartPane(null);
+
+  /// Whether the lines between the parts are showing, to be dragged.
+  bool get isEditingPanes => _host?.chartEditingPanes ?? false;
+
+  /// Shows a line between each two parts of the chart — the candles, the volume
+  /// and each pane — for the user to drag up or down, between the smallest and
+  /// largest height each may take.
+  ///
+  /// Only has an effect in `PaneSizeMode.custom`, and reports whether it did.
+  /// The lines are not shown while a pane is maximized.
+  bool editPanes() => _host?.setChartEditingPanes(true) ?? false;
+
+  /// Hides the lines, keeping the layout they were dragged to.
+  void finishEditingPanes() => _host?.setChartEditingPanes(false);
+
+  /// Shows the lines, or hides them if they are showing: the shape an "edit
+  /// layout" button wants.
+  bool toggleEditPanes() {
+    if (isEditingPanes) {
+      finishEditingPanes();
+      return true;
+    }
+    return editPanes();
+  }
+
+  /// Maximizes the pane at [index], or restores the panes if it already is.
+  ///
+  /// The shape a "maximize this indicator" button wants.
+  bool toggleMaximizePane(int index) {
+    if (maximizedPane == index) {
+      restorePanes();
+      return true;
+    }
+    return maximizePane(index);
+  }
 }
 
 /// The candles in [candles] that cover [from] to [to], as an index pair.

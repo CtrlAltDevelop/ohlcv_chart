@@ -10,9 +10,10 @@ class BaseDimension {
     required int paneCount,
     required int legendRowCount,
     List<double>? paneHeights,
+    double? volHeight,
   }) {
     _mBaseHeight = mBaseHeight;
-    _mVolumeHeight = volHidden ? 0 : volumeHeight;
+    _mVolumeHeight = volHidden ? 0 : volHeight ?? volumeHeight;
     _paneHeights = [
       for (var i = 0; i < paneCount; i++)
         paneHeights != null && i < paneHeights.length
@@ -49,6 +50,7 @@ class BaseDimension {
     required int paneCount,
     required int legendRowCount,
     List<double>? paneHeights,
+    double? volHeight,
   }) {
     var panes = 0.0;
     for (var i = 0; i < paneCount; i++) {
@@ -56,7 +58,7 @@ class BaseDimension {
           ? paneHeights[i]
           : secondaryPaneHeight;
     }
-    return (volHidden ? 0 : volumeHeight) +
+    return (volHidden ? 0 : volHeight ?? volumeHeight) +
         panes +
         legendRowHeight * legendRowCount;
   }
