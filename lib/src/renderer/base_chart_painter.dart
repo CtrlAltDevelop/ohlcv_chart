@@ -477,6 +477,7 @@ abstract class BaseChartPainter extends CustomPainter {
         pointWidth: fitted,
         candleWidth: chartStyle.candleWidth * spread,
         volWidth: chartStyle.volWidth * spread,
+        macdWidth: chartStyle.macdWidth * spread,
       );
     }
     mDataLen = mItemCount * mPointWidth;
