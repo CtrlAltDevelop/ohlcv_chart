@@ -535,7 +535,9 @@ class ChartStyle {
   ///vol column width
   final double volWidth;
 
-  ///macd column width
+  /// Width of the histogram bars in an indicator pane, MACD or custom.
+  /// The bars follow the candles: they widen when [fitContent] spreads them and
+  /// when the chart is zoomed in, and are never thinner than a pixel.
   final double macdWidth;
 
   /// Stroke width of an indicator's lines, in a pane or over the candles.

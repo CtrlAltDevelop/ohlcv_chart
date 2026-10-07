@@ -662,6 +662,7 @@ class ChartPainter extends BaseChartPainter {
           start: mStartIndex,
           stop: mStopIndex,
           xOf: xOf,
+          scaleX: scaleX,
         );
       }
     }

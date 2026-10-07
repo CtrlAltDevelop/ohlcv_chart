@@ -136,6 +136,7 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
     required int start,
     required int stop,
     required double Function(int index) xOf,
+    double scaleX = 1.0,
   }) {
     canvas.save();
     canvas.clipRect(
@@ -156,7 +157,8 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       yOf: getY,
       colors: chartColors,
       strokeWidth: chartStyle.indicatorLineWidth,
-      barWidth: chartStyle.macdWidth,
+      // View space, so the bar takes the zoom the candles take from the canvas.
+      barWidth: chartStyle.macdWidth * scaleX,
       zeroY: getY(0).clamp(chartRect.top, chartRect.bottom),
     );
     canvas.restore();
