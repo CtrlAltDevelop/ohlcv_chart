@@ -523,8 +523,9 @@ class ChartStyle {
   /// [pointWidth] is a fixed distance, so a short series — a handful of
   /// intraday bars, say — bunches up against the left edge and leaves the rest
   /// of the chart empty. With this set the spacing is widened to whatever makes
-  /// the series span the plot, and [candleWidth] and [ChartStyle.volWidth] are
-  /// widened with it so the bars keep their proportions.
+  /// the series span the plot, and [candleWidth], [ChartStyle.volWidth] and
+  /// [ChartStyle.macdWidth] are widened with it so the bars keep their
+  /// proportions.
   ///
   /// Only ever widens: a series long enough to fill the plot, or one zoomed in
   /// past it, is laid out on [pointWidth] as before.

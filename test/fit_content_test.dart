@@ -12,7 +12,11 @@ ChartPainter _painterOf(WidgetTester tester) {
 }
 
 /// A chart too short to fill its box at the default spacing.
-Widget _chart({required bool fitContent, int count = 10}) {
+Widget _chart({
+  required bool fitContent,
+  int count = 10,
+  List<Indicator> indicators = const [],
+}) {
   final data = candles(rampThenFall(count));
   DataUtil.calculate(data);
 
@@ -30,6 +34,7 @@ Widget _chart({required bool fitContent, int count = 10}) {
           volHidden: true,
           showNowPrice: false,
           chartStyle: ChartStyle(fitContent: fitContent),
+          indicators: indicators,
         ),
       ),
     ),
@@ -64,6 +69,35 @@ void main() {
       expect(
         painter.fittedStyle.candleWidth,
         closeTo(style.candleWidth * spread, 0.001),
+      );
+    });
+
+    testWidgets('on, an indicator pane\'s bars widen with the spacing', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _chart(fitContent: true, indicators: [MacdIndicator()]),
+      );
+      final painter = _painterOf(tester);
+
+      const style = ChartStyle();
+      final spread = painter.mPointWidth / style.pointWidth;
+      expect(
+        painter.mIndicatorPaneList.single.chartStyle.macdWidth,
+        closeTo(style.macdWidth * spread, 0.001),
+      );
+    });
+
+    testWidgets('off, an indicator pane\'s bars keep their width', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _chart(fitContent: false, indicators: [MacdIndicator()]),
+      );
+
+      expect(
+        _painterOf(tester).mIndicatorPaneList.single.chartStyle.macdWidth,
+        const ChartStyle().macdWidth,
       );
     });
 
