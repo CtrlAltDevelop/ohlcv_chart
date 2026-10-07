@@ -1,3 +1,14 @@
+## Unreleased
+
+### Fixed
+
+- Histogram bars in an indicator pane now widen with the candles. They stayed at
+  `ChartStyle.macdWidth` while the candles grew, so MACD bars — and any custom
+  histogram indicator — were hairline-thin beside candles spread by
+  `ChartStyle.fitContent`, and beside candles zoomed in. They follow both now,
+  and a histogram drawn over the candles follows the zoom too. A bar is never
+  thinner than a pixel, so zooming far out does not make them vanish.
+
 ## 3.1.0 - 2026-10-06
 
 ### Added
