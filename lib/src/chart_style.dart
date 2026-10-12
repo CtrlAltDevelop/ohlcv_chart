@@ -523,8 +523,9 @@ class ChartStyle {
   /// [pointWidth] is a fixed distance, so a short series — a handful of
   /// intraday bars, say — bunches up against the left edge and leaves the rest
   /// of the chart empty. With this set the spacing is widened to whatever makes
-  /// the series span the plot, and [candleWidth] and [ChartStyle.volWidth] are
-  /// widened with it so the bars keep their proportions.
+  /// the series span the plot, and [candleWidth], [ChartStyle.volWidth] and
+  /// [ChartStyle.macdWidth] are widened with it so the bars keep their
+  /// proportions.
   ///
   /// Only ever widens: a series long enough to fill the plot, or one zoomed in
   /// past it, is laid out on [pointWidth] as before.
@@ -534,7 +535,9 @@ class ChartStyle {
   ///vol column width
   final double volWidth;
 
-  ///macd column width
+  /// Width of the histogram bars in an indicator pane, MACD or custom.
+  /// The bars follow the candles: they widen when [fitContent] spreads them and
+  /// when the chart is zoomed in, and are never thinner than a pixel.
   final double macdWidth;
 
   /// Stroke width of an indicator's lines, in a pane or over the candles.

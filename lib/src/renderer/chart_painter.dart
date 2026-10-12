@@ -423,7 +423,7 @@ class ChartPainter extends BaseChartPainter {
           mSecondaryRectList[i].mMinValue,
           mChildPadding,
           fixedLength,
-          chartStyle,
+          fittedStyle,
           chartColors,
           panes[i],
           percentBase: _paneBase(panes[i]),
@@ -662,6 +662,7 @@ class ChartPainter extends BaseChartPainter {
           start: mStartIndex,
           stop: mStopIndex,
           xOf: xOf,
+          scaleX: scaleX,
         );
       }
     }

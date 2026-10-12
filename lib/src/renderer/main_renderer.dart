@@ -449,7 +449,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
         yOf: getY,
         colors: chartColors,
         strokeWidth: chartStyle.indicatorLineWidth,
-        barWidth: chartStyle.candleWidth,
+        // View space, so the bar takes the zoom the candles take from the
+        // canvas.
+        barWidth: chartStyle.candleWidth * scaleX,
       );
     }
     canvas.restore();

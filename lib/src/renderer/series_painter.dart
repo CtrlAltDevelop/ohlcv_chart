@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 
 import '../chart_style.dart';
@@ -227,7 +229,9 @@ void _paintHistogram(
   required double zeroY,
 }) {
   final paint = Paint()..isAntiAlias = true;
-  final half = barWidth / 2;
+  // Zoomed far out the candles shrink with the bar; a bar thinner than a hairline
+  // would vanish.
+  final half = math.max(barWidth, 1.0) / 2;
 
   for (var i = start; i <= stop; i++) {
     final value = resolved.valueAt(line, i);
