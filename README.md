@@ -40,7 +40,7 @@ See the [full feature list](doc/features.md) and the [gallery](doc/gallery.md).
 ```yaml
 dependencies:
   material_ui: ">=1.0.0 <2.0.0"
-  ohlcv_chart: ">=3.1.1 <4.0.0"
+  ohlcv_chart: ">=3.2.0 <4.0.0"
 ```
 
 Requires Dart 3.12 and Flutter 3.44 or later. Widgets are built on the
