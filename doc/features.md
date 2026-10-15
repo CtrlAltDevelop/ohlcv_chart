@@ -172,6 +172,7 @@
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
   ratio bar.
+- **`ScalingLawChart`** — loss against parameters, tokens or compute on log-log axes, with the fitted power law, its band, the extrapolation and where it reaches a target.
 - **`TrainingCurveChart`** — loss and accuracy curves of one or more training runs with smoothing, a log axis, the best checkpoint, divergence and the train/validation gap marked.
 
 ## Customisation

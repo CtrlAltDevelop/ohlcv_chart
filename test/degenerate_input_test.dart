@@ -355,6 +355,21 @@ final Map<String, _Build> _charts = {
     logY: true,
     lowerIsBetter: false,
   ),
+  'ScalingLawChart': (v) => ScalingLawChart(
+    points: [
+      for (var i = 0; i < v.length; i++)
+        ScalingPoint(scale: 1e18 * (i + 1), loss: v[i], label: 'm$i'),
+    ],
+    extrapolateTo: 1e24,
+    targetLoss: 1.5,
+  ),
+  'ScalingLawChart (fit from)': (v) => ScalingLawChart(
+    points: [
+      for (var i = 0; i < v.length; i++)
+        ScalingPoint(scale: v[i], loss: v[v.length - 1 - i].abs() + 1),
+    ],
+    fitFrom: 0.5,
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)
