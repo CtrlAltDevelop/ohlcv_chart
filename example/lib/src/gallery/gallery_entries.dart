@@ -2037,7 +2037,7 @@ List<GalleryEntry> _models() => [
       GalleryVariant(
         title: 'Surprisal per token',
         figure: 'top 3 ringed',
-        height: 330,
+        height: 300,
         build: () => TokenHeatmap(
           tokens: galleryTokens(),
           showSummary: true,
@@ -2050,7 +2050,7 @@ List<GalleryEntry> _models() => [
       GalleryVariant(
         title: 'Only the doubtful',
         figure: 'above 2 nats',
-        height: 330,
+        height: 300,
         build: () => TokenHeatmap(
           tokens: galleryTokens(),
           focusAbove: 2,

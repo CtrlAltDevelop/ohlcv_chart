@@ -27,6 +27,7 @@ const _shortScenes = {
   'waterfall',
   'box-plot',
   'histogram',
+  'token-heatmap',
 };
 
 /// The gallery's scenes, added to the set [buildScenes] shoots.
