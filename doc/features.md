@@ -166,6 +166,8 @@
   with the odds of loss and ruin and the real curve laid over.
 - **`SeasonalityChart`** — returns by month and year or weekday and hour, with
   yearly totals and the typical month worked out for you.
+- **`ActivityClockChart`** — a week as a clock face: the hours of the day round
+  the dial and a weekday on each ring, coloured by trades, volume or profit.
 - **`DepthChart`** — order-book depth as a cumulative curve, per-level
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask

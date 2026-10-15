@@ -76,6 +76,8 @@ for what the package does at a glance, see [Features](features.md) and the
   equity paths as percentile bands, with the odds of loss and ruin.
 - **[Seasonality](seasonality-chart.md)** — `SeasonalityChart`: results by month
   and year, or weekday and hour, with totals and averages.
+- **[Activity clock](activity-clock-chart.md)** — `ActivityClockChart`: a week
+  as a clock face, an hour round the dial and a weekday on each ring.
 - **[Sparkline grid](sparkline-grid.md)** — `SparklineGrid`: small multiples
   for a watchlist, a name and a shape each.
 - **[Parallel coordinates](parallel-chart.md)** — `ParallelChart`: many things

@@ -14,6 +14,10 @@
 
 ### Added
 
+- **`ActivityClockChart`** lays a week out as a clock face — the hours of the
+  day round the dial, a weekday on each ring — coloured by what happened then.
+  It takes the same `SeasonalSample`s as `SeasonalityChart`. `layOutClock` and
+  `clockSegmentAt` are the layout and hit test behind it.
 - **`FuturesCurveChart`** plots futures prices against delivery month, one or
   more curves at a time, with the first curve's shape — contango or
   backwardation — and slope in the corner and the calendar spread on touch.

@@ -75,6 +75,7 @@ export './utils/data_util.dart';
 export './heatmap/heatmap_chart.dart';
 export './heatmap/heatmap_data.dart';
 export './heatmap/seasonality_chart.dart';
+export './heatmap/activity_clock_chart.dart';
 export './bullet/bullet_chart.dart';
 export './dumbbell/dumbbell_chart.dart';
 export './slope/slope_chart.dart';

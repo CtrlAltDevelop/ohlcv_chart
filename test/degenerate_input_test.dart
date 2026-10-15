@@ -313,6 +313,16 @@ final Map<String, _Build> _charts = {
       ),
     ],
   ),
+  'ActivityClockChart': (v) => ActivityClockChart(
+    samples: [
+      for (var i = 0; i < v.length; i++)
+        SeasonalSample(
+          time: DateTime.utc(2024).add(Duration(hours: i * 7)),
+          value: v[i],
+        ),
+    ],
+    aggregate: SeasonalityAggregate.sum,
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)
