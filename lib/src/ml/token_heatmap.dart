@@ -111,6 +111,31 @@ String tokenDisplay(String token, {bool showWhitespace = false}) {
   return clean.replaceAll('\n', '').replaceAll(' ', ' ');
 }
 
+/// The text of [token] without the space it begins with, as it is drawn inside
+/// its box — the space is the gap before the box, not part of it.
+///
+/// Spaces inside the token are no-break ones, so they keep their width. With
+/// [showWhitespace] nothing is trimmed: the spaces and line breaks are written
+/// as `·` and `↵` inside the box.
+String tokenText(String token, {bool showWhitespace = false}) {
+  if (showWhitespace) return tokenDisplay(token, showWhitespace: true);
+  return token
+      .replaceAll('\r', '')
+      .replaceAll('\n', '')
+      .trim()
+      .replaceAll(' ', '\u00A0');
+}
+
+/// How the colour of a token is drawn.
+enum TokenShading {
+  /// A tint of the colour behind the text, and a line of the full colour under
+  /// it: the text stays easy to read, and the tokens stay apart.
+  soft,
+
+  /// The full colour behind the text, which turns dark or light to suit it.
+  solid,
+}
+
 /// Where one token was laid out.
 @immutable
 class TokenBox {
@@ -138,6 +163,10 @@ class TokenBox {
   Size Function(String token) measure, {
   double lineGap = 4,
   bool showWhitespace = false,
+  bool trimSpaces = false,
+  double horizontalPadding = 0,
+  double wordGap = 0,
+  double tokenGap = 0,
 }) {
   final boxes = <TokenBox>[];
   var x = 0.0;
@@ -146,15 +175,26 @@ class TokenBox {
   var any = false;
 
   for (var i = 0; i < tokens.length; i++) {
-    final text = tokenDisplay(tokens[i].token, showWhitespace: showWhitespace);
+    final raw = tokens[i].token;
+    // With [trimSpaces] a leading space is the gap before the box rather than
+    // a part of it, so the boxes of one word sit close and words sit apart.
+    final text = trimSpaces
+        ? tokenText(raw, showWhitespace: showWhitespace)
+        : tokenDisplay(raw, showWhitespace: showWhitespace);
+    final startsWord = trimSpaces && !showWhitespace && raw.startsWith(' ');
     final size = text.isEmpty ? const Size(0, 0) : measure(text);
     final h = size.height.isFinite ? size.height : 0.0;
-    final w = size.width.isFinite ? size.width : 0.0;
+    final w =
+        (size.width.isFinite ? size.width : 0.0) +
+        (text.isEmpty ? 0 : horizontalPadding * 2);
+    final gap = x == 0 ? 0.0 : (startsWord ? wordGap : tokenGap);
 
-    if (x > 0 && x + w > width) {
+    if (x > 0 && x + gap + w > width) {
       y += lineHeight + lineGap;
       x = 0;
       lineHeight = 0;
+    } else {
+      x += gap;
     }
     lineHeight = math.max(lineHeight, h);
     if (text.isNotEmpty) {
@@ -343,9 +383,13 @@ class TokenHeatmap extends StatefulWidget {
     this.minValue,
     this.maxValue,
     this.textStyle,
-    this.tokenRadius = const BorderRadius.all(Radius.circular(3)),
-    this.verticalPadding = 3,
-    this.lineGap = 4,
+    this.shading = TokenShading.soft,
+    this.tokenRadius = const BorderRadius.all(Radius.circular(5)),
+    this.horizontalPadding = 5,
+    this.verticalPadding = 4,
+    this.wordGap = 7,
+    this.tokenGap = 2,
+    this.lineGap = 10,
     this.showWhitespace = false,
     this.focusAbove,
     this.dimColor = const Color(0xFF6B7480),
@@ -387,8 +431,22 @@ class TokenHeatmap extends StatefulWidget {
   /// Style of the text; null is 14 px, in the default font.
   final TextStyle? textStyle;
 
+  /// How the colour is drawn: a soft tint with a line under the text, or the
+  /// full colour behind it.
+  final TokenShading shading;
+
   /// The rounding of each token's rectangle.
   final BorderRadius tokenRadius;
+
+  /// Space to the left and right of a token's text inside its rectangle.
+  final double horizontalPadding;
+
+  /// The gap before a token that begins a word, where the tokenizer put a
+  /// space.
+  final double wordGap;
+
+  /// The gap before a token that carries on a word.
+  final double tokenGap;
 
   /// Space above and below a token's text inside its rectangle.
   final double verticalPadding;
@@ -489,6 +547,9 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
   double _flowPadding = -1;
   double _flowGap = -1;
   bool _flowWhitespace = false;
+  double _flowHPad = -1;
+  double _flowWord = -1;
+  double _flowToken = -1;
   ({List<TokenBox> boxes, double height})? _flow;
 
   TextStyle get _style => const TextStyle(
@@ -505,7 +566,10 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
         _flowStyle == style &&
         _flowPadding == pad &&
         _flowGap == widget.lineGap &&
-        _flowWhitespace == widget.showWhitespace) {
+        _flowWhitespace == widget.showWhitespace &&
+        _flowHPad == widget.horizontalPadding &&
+        _flowWord == widget.wordGap &&
+        _flowToken == widget.tokenGap) {
       return _flow!;
     }
     final painter = TextPainter(textDirection: TextDirection.ltr);
@@ -520,6 +584,10 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
       },
       lineGap: widget.lineGap,
       showWhitespace: widget.showWhitespace,
+      trimSpaces: true,
+      horizontalPadding: widget.horizontalPadding,
+      wordGap: widget.wordGap,
+      tokenGap: widget.tokenGap,
     );
     painter.dispose();
     _flowTokens = widget.tokens;
@@ -528,6 +596,9 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
     _flowPadding = pad;
     _flowGap = widget.lineGap;
     _flowWhitespace = widget.showWhitespace;
+    _flowHPad = widget.horizontalPadding;
+    _flowWord = widget.wordGap;
+    _flowToken = widget.tokenGap;
     return _flow = result;
   }
 
@@ -797,45 +868,70 @@ class _TokenPainter extends PlotPainter {
       final token = chart.tokens[box.index];
       final rect = box.rect.shift(plot.topLeft);
       if (rect.top > plot.bottom) break;
-      // A hairline between neighbours, so tokens do not run together.
-      final fill = rect.deflate(0.5);
-
       final scored = token.value.isFinite;
       final focused =
           chart.focusAbove == null ||
           (scored && token.value >= chart.focusAbove!);
-      final rrect = chart.tokenRadius.toRRect(fill);
+      final rrect = chart.tokenRadius.toRRect(rect);
+      final base = style.color ?? const Color(0xFFE9ECEF);
 
-      Color textColor;
+      var textColor = base;
       if (!focused) {
         textColor = chart.dimColor;
+      } else if (scored) {
+        final color = chart.scale.colorAt(token.value, low, high);
+        if (chart.shading == TokenShading.soft) {
+          // A tint behind the text, and a line of the full colour under it.
+          canvas.drawRRect(
+            rrect,
+            Paint()
+              ..color = color.withValues(alpha: 0.4)
+              ..isAntiAlias = true,
+          );
+          canvas
+            ..save()
+            ..clipRRect(rrect)
+            ..drawRect(
+              Rect.fromLTWH(rect.left, rect.bottom - 3, rect.width, 3),
+              Paint()..color = color,
+            )
+            ..restore();
+        } else {
+          canvas.drawRRect(
+            rrect,
+            Paint()
+              ..color = color
+              ..isAntiAlias = true,
+          );
+          // Dark text on a light colour, and the other way round.
+          final opaque = Color.alphaBlend(color, const Color(0xFF161B22));
+          textColor = opaque.computeLuminance() > 0.5
+              ? const Color(0xFF10151C)
+              : const Color(0xFFF1F3F5);
+        }
       } else {
-        final color = scored
-            ? chart.scale.colorAt(token.value, low, high)
-            : chart.scale.emptyColor;
+        // No score: a faint outline, so the token is still a token.
         canvas.drawRRect(
           rrect,
           Paint()
-            ..color = color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1
+            ..color = const Color(0x33FFFFFF)
             ..isAntiAlias = true,
         );
-        // Dark text on a light colour, and the other way round.
-        final opaque = Color.alphaBlend(color, const Color(0xFF161B22));
-        textColor = !scored
-            ? (style.color ?? const Color(0xFFE9ECEF))
-            : (opaque.computeLuminance() > 0.5
-                  ? const Color(0xFF10151C)
-                  : const Color(0xFFF1F3F5));
       }
 
-      final shown = tokenDisplay(
+      final shown = tokenText(
         token.token,
         showWhitespace: chart.showWhitespace,
       );
       final tp = text.get(shown, style.copyWith(color: textColor));
       tp.paint(
         canvas,
-        Offset(rect.left, rect.top + (rect.height - tp.height) / 2),
+        Offset(
+          rect.left + chart.horizontalPadding,
+          rect.top + (rect.height - tp.height) / 2 - 1,
+        ),
       );
 
       final hover = chart.hoverBorder;

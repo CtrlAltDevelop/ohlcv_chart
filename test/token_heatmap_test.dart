@@ -126,6 +126,61 @@ void main() {
     });
   });
 
+  group('the spacing', () {
+    // Ten pixels a character, so padding and gaps are easy to read off.
+    final tokens = [
+      const TokenScore('The', 1),
+      const TokenScore(' cap', 1),
+      const TokenScore('ital', 1),
+    ];
+
+    test('a leading space is the gap before the box, not part of it', () {
+      final flow = flowTokens(
+        tokens,
+        500,
+        _measure,
+        trimSpaces: true,
+        horizontalPadding: 5,
+        wordGap: 8,
+        tokenGap: 2,
+      );
+
+      // "The": 30 + 10 padding. " cap" starts a word, so 8 px after it.
+      expect(flow.boxes[0].rect, const Rect.fromLTWH(0, 0, 40, 20));
+      expect(flow.boxes[1].rect.left, 48);
+      expect(flow.boxes[1].rect.width, 40);
+      // "ital" carries the word on: 2 px after "cap".
+      expect(flow.boxes[2].rect.left, 90);
+    });
+
+    test('no gap is left at the start of a line', () {
+      final flow = flowTokens(
+        tokens,
+        60,
+        _measure,
+        trimSpaces: true,
+        horizontalPadding: 5,
+        wordGap: 8,
+        tokenGap: 2,
+      );
+
+      // " cap" does not fit after "The", so it begins the next line flush left.
+      expect(flow.boxes[1].rect.left, 0);
+      expect(flow.boxes[1].rect.top, greaterThan(0));
+    });
+
+    test('tokenText has no leading space, and keeps inner ones', () {
+      expect(tokenText(' hello world\n'), 'hello\u00A0world');
+      expect(tokenText(' a', showWhitespace: true), '·a');
+    });
+
+    test('the defaults leave tokens as they were', () {
+      final flow = flowTokens(tokens, 500, _measure);
+
+      expect(flow.boxes[1].rect.left, 30);
+    });
+  });
+
   group('ranks', () {
     test('rank by score, highest first, equal scores sharing a rank', () {
       final ranks = tokenRanks(const [
