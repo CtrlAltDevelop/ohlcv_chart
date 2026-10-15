@@ -28,6 +28,8 @@ const _shortScenes = {
   'box-plot',
   'histogram',
   'token-heatmap',
+  'progress',
+  'progress-card',
 };
 
 /// The gallery's scenes, added to the set [buildScenes] shoots.

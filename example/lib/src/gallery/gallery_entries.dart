@@ -21,6 +21,9 @@ enum GalleryGroup {
   /// The charts a dashboard or a report is built from.
   dashboard('Dashboards and reports'),
 
+  /// How far things have got towards a goal.
+  progress('Progress and goals'),
+
   /// Training runs, evaluations and what models cost to serve.
   models('Models and training');
 
@@ -2062,4 +2065,244 @@ List<GalleryEntry> _models() => [
       ),
     ],
   ),
+  GalleryEntry(
+    id: 'progress',
+    title: 'Progress bars',
+    blurb:
+        'How far each goal has got, as pills, blocks or cells, with a mark '
+        'for where it should be by now.',
+    group: GalleryGroup.progress,
+    doc: 'progress-bars.md',
+    variants: [
+      GalleryVariant(
+        title: 'Goals this month',
+        figure: '3 of 4',
+        figureColor: galleryGreen,
+        height: 300,
+        build: () => const ProgressBars(
+          items: [
+            ProgressItem(
+              label: 'Net profit',
+              value: 72,
+              target: 60,
+              color: galleryGreen,
+            ),
+            ProgressItem(
+              label: 'Trades taken',
+              value: 64,
+              target: 50,
+              color: galleryBlue,
+            ),
+            ProgressItem(
+              label: 'Journal entries',
+              value: 88,
+              target: 75,
+              color: galleryPurple,
+            ),
+            ProgressItem(
+              label: 'Risk reviews',
+              value: 35,
+              target: 60,
+              color: galleryAmber,
+            ),
+          ],
+          barHeight: 14,
+          rowGap: 34,
+          labelStyle: TextStyle(color: Color(0xFFD0D5DB), fontSize: 13),
+          valueStyle: TextStyle(
+            color: Color(0xFFE9ECEF),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+        ),
+      ),
+      GalleryVariant(
+        title: 'In cells',
+        figure: '7 of 10',
+        height: 300,
+        build: () => const ProgressBars(
+          shape: ProgressShape.segmented,
+          items: [
+            ProgressItem(
+              label: 'Backtest coverage',
+              value: 70,
+              valueLabel: '7 / 10',
+              color: galleryBlue,
+            ),
+            ProgressItem(
+              label: 'Walk-forward windows',
+              value: 40,
+              valueLabel: '4 / 10',
+              color: galleryTeal,
+            ),
+            ProgressItem(
+              label: 'Paper-trading days',
+              value: 95,
+              valueLabel: '19 / 20',
+              color: galleryGreen,
+            ),
+          ],
+          segments: 10,
+          barHeight: 16,
+          rowGap: 48,
+          labelStyle: TextStyle(color: Color(0xFFD0D5DB), fontSize: 13),
+          valueStyle: TextStyle(
+            color: Color(0xFFE9ECEF),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+        ),
+      ),
+      GalleryVariant(
+        title: 'Budgets used',
+        figure: '1 over',
+        figureColor: galleryRed,
+        height: 300,
+        build: () => const ProgressBars(
+          shape: ProgressShape.block,
+          items: [
+            ProgressItem(
+              label: 'Daily loss limit',
+              value: 41,
+              color: galleryGreen,
+            ),
+            ProgressItem(label: 'Margin used', value: 78, color: galleryAmber),
+            ProgressItem(label: 'Order rate', value: 100, color: galleryRed),
+            ProgressItem(label: 'API quota', value: 22, color: galleryBlue),
+          ],
+          barHeight: 14,
+          rowGap: 34,
+          labelStyle: TextStyle(color: Color(0xFFD0D5DB), fontSize: 13),
+          valueStyle: TextStyle(
+            color: Color(0xFFE9ECEF),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'progress-card',
+    title: 'Progress card',
+    blurb:
+        'A card around any widget whose whole background is the progress — '
+        'swept round like a clock, grown as a circle, or filled along the '
+        'card.',
+    group: GalleryGroup.progress,
+    doc: 'progress-bars.md',
+    variants: [
+      GalleryVariant(
+        title: 'Sweep, like a clock',
+        figure: 'sweep',
+        height: 300,
+        build: () => const _CourseCards(mode: ProgressCardMode.sweep),
+      ),
+      GalleryVariant(
+        title: 'A growing circle',
+        figure: 'circle',
+        height: 300,
+        build: () => const _CourseCards(mode: ProgressCardMode.circle),
+      ),
+      GalleryVariant(
+        title: 'Along the card',
+        figure: 'linear',
+        height: 300,
+        build: () => const _CourseCards(mode: ProgressCardMode.linear),
+      ),
+    ],
+  ),
 ];
+
+/// Two courses as cards, one just begun and one nearly done, filled in as
+/// [mode] says.
+class _CourseCards extends StatelessWidget {
+  const _CourseCards({required this.mode});
+
+  final ProgressCardMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _CourseCard(title: 'Chart patterns', lessons: 3, of: 20, mode: mode),
+        const SizedBox(height: 14),
+        _CourseCard(
+          title: 'Order flow',
+          lessons: 9,
+          of: 12,
+          color: galleryGreen,
+          mode: mode,
+        ),
+      ],
+    );
+  }
+}
+
+/// A course as a card: its name, how many lessons are done and the share.
+class _CourseCard extends StatelessWidget {
+  const _CourseCard({
+    required this.title,
+    required this.lessons,
+    required this.of,
+    required this.mode,
+    this.color = galleryBlue,
+  });
+
+  final String title;
+  final int lessons;
+  final int of;
+  final ProgressCardMode mode;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = lessons / of;
+    return ProgressCard(
+      progress: progress,
+      mode: mode,
+      color: color,
+      semanticLabel: '$title, $lessons of $of lessons',
+      child: SizedBox(
+        height: 96,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFFF1F3F5),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${(progress * 100).round()}%',
+                  style: const TextStyle(
+                    color: Color(0xFFF1F3F5),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              '$lessons of $of lessons',
+              style: const TextStyle(color: Color(0xFFD0D5DB), fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
