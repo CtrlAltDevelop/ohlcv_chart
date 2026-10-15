@@ -78,8 +78,7 @@ final Map<String, _Build> _charts = {
   'RMultipleChart': (v) => RMultipleChart(results: v),
   'MaeMfeChart': (v) => MaeMfeChart(
     trades: [
-      for (final x in v)
-        TradeExcursion(pnl: x, mae: x.abs(), mfe: x.abs() * 2),
+      for (final x in v) TradeExcursion(pnl: x, mae: x.abs(), mfe: x.abs() * 2),
     ],
     xReferenceLines: const [1],
   ),
@@ -279,6 +278,12 @@ final Map<String, _Build> _charts = {
         ],
       ),
     ],
+  ),
+  'VolatilitySurfaceChart': (v) => VolatilitySurfaceChart(
+    strikes: [for (var i = 0; i < v.length; i++) 90.0 + i * 5],
+    expiries: const ['1M', '3M'],
+    volatilities: [v, v.reversed.toList()],
+    spot: 100,
   ),
   'WaffleChart': (v) => WaffleChart(
     slices: [

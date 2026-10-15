@@ -47,6 +47,9 @@ for what the package does at a glance, see [Features](features.md) and the
   strategy makes or loses at expiry, with break-evens marked.
 - **[Volatility curve](volatility-curve-chart.md)** — `VolatilityCurveChart`:
   smiles, skews and term structures, several expiries at once.
+- **[Volatility surface](volatility-surface-chart.md)** —
+  `VolatilitySurfaceChart`: implied volatility across strike and expiry as a
+  heatmap, with the skew against the at-the-money strike.
 - **[Market profile](market-profile-chart.md)** — `MarketProfileChart`: time at
   price as TPO letters, with the point of control and value area.
 - **[Footprint](footprint-chart.md)** — `FootprintChart`: bid and ask volume at

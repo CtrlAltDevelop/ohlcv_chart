@@ -14,6 +14,9 @@
 
 ### Added
 
+- **`VolatilitySurfaceChart`** draws implied volatility across strike and
+  expiry as a heatmap, with the skew against the at-the-money strike on touch.
+  `atTheMoneyIndex` and `surfaceSkew` are the numbers behind it.
 - **`MaeMfeChart`** plots every trade by how far it went against the position
   (MAE) or for it (MFE) and what it made, with the limit line no trade can pass
   and reference lines for a stop or a target. `ExcursionStats` and

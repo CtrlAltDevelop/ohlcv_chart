@@ -137,6 +137,8 @@
   break-evens, strike lines, the spot marked, and profit and loss shaded apart.
 - **`VolatilityCurveChart`** — implied volatility smiles, skews and term
   structures, several expiries at once with a crosshair that reads them all.
+- **`VolatilitySurfaceChart`** — implied volatility across strike and expiry as
+  a heatmap, with the skew against the at-the-money strike on touch.
 - **`MarketProfileChart`** — time at price as TPO letters, with the point of
   control and the value area worked out from your candles.
 - **`FootprintChart`** — bid against ask volume at every price inside every bar,

@@ -103,6 +103,7 @@ export './equity/equity_curve_chart.dart';
 export './equity/monte_carlo_chart.dart';
 export './options/option_payoff_chart.dart';
 export './volatility/volatility_curve_chart.dart';
+export './volatility/volatility_surface_chart.dart';
 export './profile/market_profile_chart.dart';
 export './footprint/footprint_chart.dart';
 export './book/book_heatmap_chart.dart';
