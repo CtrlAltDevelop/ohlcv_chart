@@ -92,6 +92,29 @@ void main() {
     });
   });
 
+  group('the bars', () {
+    test('grow to fill the box, up to a limit', () {
+      const chart = EvalBreakdownChart(categories: []);
+
+      // 200 px for four rows: 200 - 26 header over 4, less the 8 gap.
+      expect(chart.barHeightFor(200, 4, 26), closeTo(34, 1e-9));
+      // Plenty of room: held at the largest.
+      expect(chart.barHeightFor(900, 4, 26), 34);
+    });
+
+    test('shrink to a least height when there are too many', () {
+      const chart = EvalBreakdownChart(categories: []);
+
+      expect(chart.barHeightFor(100, 40, 26), 18);
+    });
+
+    test('with nothing to draw they keep the least height', () {
+      const chart = EvalBreakdownChart(categories: []);
+
+      expect(chart.barHeightFor(200, 0, 26), 18);
+    });
+  });
+
   group('the widget', () {
     Widget host(Widget chart) => MaterialApp(
       home: Scaffold(body: SizedBox(width: 500, height: 300, child: chart)),

@@ -160,6 +160,7 @@ class EvalBreakdownChart extends StatelessWidget {
     this.nameWidth = 96,
     this.rateWidth = 92,
     this.barHeight = 18,
+    this.maxBarHeight = 34,
     this.rowGap = 8,
     this.barRadius = const BorderRadius.all(Radius.circular(3)),
     this.hoverColor = const Color(0x14FFFFFF),
@@ -217,8 +218,13 @@ class EvalBreakdownChart extends StatelessWidget {
   /// Room held for the pass rate and count.
   final double rateWidth;
 
-  /// How tall a bar is.
+  /// How short a bar may be, when there are more categories than the box holds
+  /// comfortably.
   final double barHeight;
+
+  /// How tall a bar may be: the bars grow from [barHeight] to this to fill the
+  /// box, so a few categories are not left at the top of it.
+  final double maxBarHeight;
 
   /// The gap between bars.
   final double rowGap;
@@ -260,6 +266,13 @@ class EvalBreakdownChart extends StatelessWidget {
   /// What a screen reader announces for the chart.
   final String? semanticLabel;
 
+  /// How tall a bar is in a plot [height] high holding [count] categories.
+  double barHeightFor(double height, int count, double header) {
+    if (count == 0) return barHeight;
+    final room = (height - header) / count - rowGap;
+    return room.clamp(barHeight, math.max(barHeight, maxBarHeight));
+  }
+
   @override
   Widget build(BuildContext context) {
     final rows = sortWorstFirst ? sortedByPassRate(categories) : categories;
@@ -267,12 +280,13 @@ class EvalBreakdownChart extends StatelessWidget {
     final headerHeight = showOverall ? 26.0 : 0.0;
 
     Rect rowRect(int i, Rect plot) {
-      final pitch = barHeight + rowGap;
+      final bar = barHeightFor(plot.height, rows.length, headerHeight);
+      final pitch = bar + rowGap;
       return Rect.fromLTWH(
         plot.left,
         plot.top + headerHeight + i * pitch - rowGap / 2,
         plot.width,
-        barHeight + rowGap,
+        bar + rowGap,
       );
     }
 
@@ -358,10 +372,11 @@ class _EvalPainter extends PlotPainter {
       tp.paint(canvas, Offset(plot.left, plot.top + 2));
     }
 
+    final bar = chart.barHeightFor(plot.height, rows.length, headerHeight);
     final barLeft = plot.left + chart.nameWidth;
     final barRight = math.max(barLeft, plot.right - chart.rateWidth);
     final barWidth = barRight - barLeft;
-    final pitch = chart.barHeight + chart.rowGap;
+    final pitch = bar + chart.rowGap;
 
     // The longest category sets the scale, so every bar counts in the same unit.
     var longest = 0;
@@ -372,7 +387,7 @@ class _EvalPainter extends PlotPainter {
     for (var i = 0; i < rows.length; i++) {
       final c = rows[i];
       final top = plot.top + headerHeight + i * pitch;
-      if (top + chart.barHeight > plot.bottom + 1) break;
+      if (top + bar > plot.bottom + 1) break;
 
       if (hovered == i) {
         canvas.drawRect(
@@ -380,7 +395,7 @@ class _EvalPainter extends PlotPainter {
             plot.left,
             top - chart.rowGap / 2,
             plot.right,
-            top + chart.barHeight + chart.rowGap / 2,
+            top + bar + chart.rowGap / 2,
           ),
           Paint()..color = chart.hoverColor,
         );
@@ -391,21 +406,18 @@ class _EvalPainter extends PlotPainter {
       if (name.width > chart.nameWidth - 8) {
         shown = text.get(_fit(c.name, base, chart.nameWidth - 8), base);
       }
-      shown.paint(
-        canvas,
-        Offset(plot.left, top + (chart.barHeight - shown.height) / 2),
-      );
+      shown.paint(canvas, Offset(plot.left, top + (bar - shown.height) / 2));
 
       if (longest > 0 && barWidth > 0) {
         final scale = barWidth / longest * t;
         var x = barLeft;
-        final bar = RRect.fromRectAndRadius(
-          Rect.fromLTWH(barLeft, top, c.total * scale, chart.barHeight),
+        final outline = RRect.fromRectAndRadius(
+          Rect.fromLTWH(barLeft, top, c.total * scale, bar),
           chart.barRadius.topLeft,
         );
         canvas
           ..save()
-          ..clipRRect(bar);
+          ..clipRRect(outline);
         for (final (count, color) in [
           (math.max(0, c.passed), chart.passedColor),
           (math.max(0, c.failed), chart.failedColor),
@@ -414,7 +426,7 @@ class _EvalPainter extends PlotPainter {
           if (count == 0) continue;
           final w = count * scale;
           canvas.drawRect(
-            Rect.fromLTWH(x, top, w, chart.barHeight),
+            Rect.fromLTWH(x, top, w, bar),
             Paint()..color = color,
           );
           x += w;
@@ -436,10 +448,7 @@ class _EvalPainter extends PlotPainter {
                     : base.color),
         ),
       );
-      tp.paint(
-        canvas,
-        Offset(barRight + 8, top + (chart.barHeight - tp.height) / 2),
-      );
+      tp.paint(canvas, Offset(barRight + 8, top + (bar - tp.height) / 2));
     }
 
     // The threshold: where a bar would have to reach its passed part to meet it
@@ -452,11 +461,11 @@ class _EvalPainter extends PlotPainter {
         final c = rows[i];
         if (c.attempted == 0) continue;
         final top = plot.top + headerHeight + i * pitch;
-        if (top + chart.barHeight > plot.bottom + 1) break;
+        if (top + bar > plot.bottom + 1) break;
         final x = barLeft + c.attempted * th * (barWidth / longest) * t;
         canvas.drawLine(
           Offset(x, top - 2),
-          Offset(x, top + chart.barHeight + 2),
+          Offset(x, top + bar + 2),
           Paint()
             ..color = chart.thresholdColor
             ..strokeWidth = 2,

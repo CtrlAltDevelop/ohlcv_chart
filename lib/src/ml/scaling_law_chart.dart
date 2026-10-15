@@ -343,10 +343,16 @@ class ScalingLawChart extends StatelessWidget {
 
   static String _scientific(double v) {
     if (!v.isFinite || v <= 0) return '–';
-    final exponent = (math.log(v) / math.ln10).floor();
-    final mantissa = v / math.pow(10.0, exponent);
-    final m = mantissa.toStringAsFixed(mantissa >= 9.95 ? 0 : 1);
-    return m == '1.0' || m == '1' ? '1e$exponent' : '${m}e$exponent';
+    var exponent = (math.log(v) / math.ln10 + 1e-9).floor();
+    var mantissa = v / math.pow(10.0, exponent);
+    // Rounding to one decimal can carry into the next power: 9.97 -> 10.0.
+    if (double.parse(mantissa.toStringAsFixed(1)) >= 10) {
+      exponent += 1;
+      mantissa = v / math.pow(10.0, exponent);
+    }
+    var m = mantissa.toStringAsFixed(1);
+    if (m.endsWith('.0')) m = m.substring(0, m.length - 2);
+    return m == '1' ? '1e$exponent' : '${m}e$exponent';
   }
 
   @override
@@ -643,9 +649,10 @@ class _ScalingPainter extends PlotPainter {
         color: chart.targetColor,
       ),
     );
-    var x = o.dx + 10;
-    if (x + tp.width > plot.right) x = o.dx - 10 - tp.width;
-    tp.paint(canvas, Offset(math.max(plot.left, x), o.dy - tp.height - 4));
+    // Below the line and to the left of the ring, off the fitted line that
+    // comes down into it from the upper left.
+    final x = math.max(plot.left, o.dx + 8 - tp.width);
+    tp.paint(canvas, Offset(x, o.dy + 8));
   }
 
   void _paintPoints(Canvas canvas, double t) {
@@ -681,11 +688,13 @@ class _ScalingPainter extends PlotPainter {
             color: Color(0xCCFFFFFF),
           ).merge(chart.labelStyle),
         );
-        var x = o.dx + chart.dotRadius + 4;
+        // Above and to the right: the fit descends to the right, so that
+        // corner is the empty one.
+        var x = o.dx + chart.dotRadius + 3;
         if (x + tp.width > plot.right) {
-          x = o.dx - chart.dotRadius - 4 - tp.width;
+          x = o.dx - chart.dotRadius - 3 - tp.width;
         }
-        tp.paint(canvas, Offset(x, o.dy + 3));
+        tp.paint(canvas, Offset(x, o.dy - chart.dotRadius - tp.height + 2));
       }
     }
   }

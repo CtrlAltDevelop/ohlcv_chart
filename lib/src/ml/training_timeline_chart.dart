@@ -124,6 +124,10 @@ class TrainingTimelineChart extends StatelessWidget {
     this.nameStyle,
     this.showRunningCount = true,
     this.countColor = const Color(0xFF4C86CD),
+    this.maxRowHeight = 44,
+    this.showLegend = true,
+    this.legendStyle,
+    this.statusLabels = const {},
     this.laneLabelWidth = 72,
     this.laneLabelStyle,
     this.axisLabelStyle,
@@ -173,6 +177,19 @@ class TrainingTimelineChart extends StatelessWidget {
 
   /// The colour of that strip.
   final Color countColor;
+
+  /// How tall a job's bar may be, so a few lanes fill the box rather than
+  /// hugging the top of it.
+  final double maxRowHeight;
+
+  /// Whether the statuses in use are listed under the chart.
+  final bool showLegend;
+
+  /// Style of the legend.
+  final TextStyle? legendStyle;
+
+  /// What each status is called in the legend; those left out use English.
+  final Map<JobStatus, String> statusLabels;
 
   /// Room held for the lane names.
   final double laneLabelWidth;
@@ -249,8 +266,9 @@ class TrainingTimelineChart extends StatelessWidget {
           time: t.time,
         );
 
-    return TradeTimelineChart(
+    final chart = TradeTimelineChart(
       trades: trades,
+      maxRowHeight: maxRowHeight,
       now: now,
       showPnl: false,
       showSideMarkers: false,
@@ -275,6 +293,78 @@ class TrainingTimelineChart extends StatelessWidget {
       backgroundColor: backgroundColor,
       defaultHeight: defaultHeight,
       semanticLabel: semanticLabel,
+    );
+    if (!showLegend || jobs.isEmpty) return chart;
+
+    const names = {
+      JobStatus.running: 'Running',
+      JobStatus.completed: 'Completed',
+      JobStatus.failed: 'Failed',
+      JobStatus.preempted: 'Preempted',
+      JobStatus.cancelled: 'Cancelled',
+    };
+    final used = [
+      for (final s in JobStatus.values)
+        if (jobs.any((j) => j.status == s)) s,
+    ];
+    final style = const TextStyle(
+      fontSize: 11,
+      color: Color(0xFF8B95A1),
+    ).merge(legendStyle);
+    final legend = Padding(
+      padding: EdgeInsets.only(
+        top: 8,
+        left: padding.left + laneLabelWidth,
+        right: padding.right,
+      ),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 4,
+        children: [
+          for (final s in used)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colorOf(s),
+                    borderRadius: const BorderRadius.all(Radius.circular(2)),
+                  ),
+                  child: const SizedBox(width: 10, height: 10),
+                ),
+                const SizedBox(width: 5),
+                Text(statusLabels[s] ?? names[s]!, style: style),
+              ],
+            ),
+        ],
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          (constraints.hasBoundedHeight && constraints.maxHeight < 100) ||
+              (constraints.hasBoundedWidth &&
+                  constraints.maxWidth <
+                      padding.horizontal + laneLabelWidth + 80)
+          // No room for a legend as well: the chart alone, rather than
+          // overflowing.
+          ? chart
+          : constraints.hasBoundedHeight
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: chart),
+                legend,
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: defaultHeight, child: chart),
+                legend,
+              ],
+            ),
     );
   }
 

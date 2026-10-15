@@ -463,12 +463,14 @@ class _TokenPainter extends PlotPainter {
       final token = chart.tokens[box.index];
       final rect = box.rect.shift(plot.topLeft);
       if (rect.top > plot.bottom) break;
+      // A hairline between neighbours, so tokens do not run together.
+      final fill = rect.deflate(0.5);
 
       final scored = token.value.isFinite;
       final color = scored
           ? chart.scale.colorAt(token.value, low, high)
           : chart.scale.emptyColor;
-      final rrect = chart.tokenRadius.toRRect(rect);
+      final rrect = chart.tokenRadius.toRRect(fill);
       canvas.drawRRect(
         rrect,
         Paint()

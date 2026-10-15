@@ -75,6 +75,20 @@ List<double> niceLogTicks(double min, double max, {int target = 5}) {
   final lowDecade = (math.log(min) / math.ln10).floor();
   final highDecade = (math.log(max) / math.ln10).ceil();
 
+  // Past a handful of decades the 2s and 5s only crowd the axis: tick on powers
+  // of ten, every few of them when there are very many.
+  final decades = highDecade - lowDecade;
+  if (decades > 6) {
+    final every = (decades / target).ceil().clamp(1, decades);
+    final wide = <double>[];
+    for (var decade = lowDecade; decade <= highDecade; decade += every) {
+      final value = math.pow(10.0, decade).toDouble();
+      if (value >= min && value <= max) wide.add(value);
+      if (wide.length >= _maxTicks) break;
+    }
+    if (wide.length >= 2) return wide;
+  }
+
   final ticks = <double>[];
   for (var decade = lowDecade; decade <= highDecade; decade++) {
     final magnitude = math.pow(10.0, decade).toDouble();

@@ -56,6 +56,55 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('lists the statuses in use, and only those', (tester) async {
+    await tester.pumpWidget(host(TrainingTimelineChart(jobs: _jobs())));
+
+    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Failed'), findsOneWidget);
+    expect(find.text('Running'), findsOneWidget);
+    expect(find.text('Preempted'), findsNothing);
+  });
+
+  testWidgets('the legend can go, and the statuses can be renamed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(TrainingTimelineChart(jobs: _jobs(), showLegend: false)),
+    );
+    expect(find.text('Completed'), findsNothing);
+
+    await tester.pumpWidget(
+      host(
+        TrainingTimelineChart(
+          jobs: _jobs(),
+          statusLabels: const {JobStatus.failed: 'Crashed'},
+        ),
+      ),
+    );
+    expect(find.text('Crashed'), findsOneWidget);
+  });
+
+  testWidgets('a box too small for a legend draws the chart alone', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 1,
+              height: 1,
+              child: TrainingTimelineChart(jobs: _jobs()),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Completed'), findsNothing);
+  });
+
   testWidgets('a running job is open whatever end it was given', (
     tester,
   ) async {

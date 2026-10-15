@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 
@@ -216,6 +218,23 @@ void main() {
         expect(tick, lessThanOrEqualTo(1e24));
       }
       expect(ticks, contains(1e21));
+    });
+
+    test('a log axis over many decades ticks on powers of ten only', () {
+      final ticks = niceLogTicks(1e17, 1e26, target: 6);
+
+      for (final tick in ticks) {
+        final decade = (math.log(tick) / math.ln10).round();
+        expect(tick, closeTo(math.pow(10.0, decade), tick * 1e-9));
+      }
+      expect(ticks.length, lessThanOrEqualTo(10));
+      expect(ticks.length, greaterThanOrEqualTo(2));
+    });
+
+    test('a few decades keep the 2s and the 5s', () {
+      final ticks = niceLogTicks(1, 1000, target: 5);
+
+      expect(ticks, containsAll([1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0]));
     });
 
     test('a linear step of a span of 1e20 is a round number of that size', () {
