@@ -142,3 +142,5 @@ export './ml/training_timeline_chart.dart';
 export './ml/benchmark_matrix_chart.dart';
 export './ml/model_pareto_chart.dart';
 export './ml/latency_band_chart.dart';
+export './ml/token_usage_chart.dart';
+export './ml/eval_breakdown_chart.dart';

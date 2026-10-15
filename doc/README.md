@@ -112,6 +112,8 @@ for what the package does at a glance, see [Features](features.md) and the
 - **[Benchmark matrix](benchmark-matrix-chart.md)** — `BenchmarkMatrixChart`: models against benchmarks, coloured by standing, with the leaders starred.
 - **[Model cost against quality](model-pareto-chart.md)** — `ModelParetoChart`: models by cost and score with the Pareto frontier traced through the ones nothing beats.
 - **[Latency bands](latency-band-chart.md)** — `LatencyBandChart`: p50, p95 and p99 latency over time as bands, with an objective and the intervals that broke it.
+- **[Token usage](token-usage-chart.md)** — `TokenUsageChart`: input, output and cached tokens over time as stacked columns, with the cost as a line.
+- **[Evaluation breakdown](eval-breakdown-chart.md)** — `EvalBreakdownChart`: an evaluation by category: passed, failed and skipped, worst first, with an interval on each rate.
 
 ## Indicators and data
 

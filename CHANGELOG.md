@@ -14,6 +14,8 @@
 
 ### Added
 
+- **`EvalBreakdownChart`** shows an evaluation by category as bars of passed, failed and skipped tasks, worst first, with the pass rate, how many tasks stand behind it, an overall figure and a threshold. `wilsonInterval`, `overallPassRate` and `sortedByPassRate` are the numbers behind it.
+- **`TokenUsageChart`** shows tokens served over time as stacked cached, input and output columns with the cost as a line against its own axis. `usageTotals`, `UsageBucket.cacheHitRate` and `compactCount` are the numbers behind it.
 - **`LatencyBandChart`** shows inference latency over time as p50, p95 and p99 bands, with an objective drawn across and the intervals that broke it marked. `sloBreaches` is the number behind it.
 - **`ModelParetoChart`** plots models by cost against quality — a price per million tokens against a benchmark score — with the Pareto frontier traced through the ones nothing beats, bubbles sized by context window and models grouped by provider. `paretoIndices` is the number behind it.
 - **`BenchmarkMatrixChart`** compares models across benchmarks in one grid coloured by each score's standing within its benchmark, the leader of each starred and an average column to rank by. `benchmarkQuality`, `benchmarkAverages` and `benchmarkLeaders` are the numbers behind it.

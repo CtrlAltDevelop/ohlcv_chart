@@ -452,6 +452,40 @@ final Map<String, _Build> _charts = {
         ),
     ],
   ),
+  'TokenUsageChart': (v) => TokenUsageChart(
+    buckets: [
+      for (var i = 0; i < v.length; i++)
+        UsageBucket(
+          time: DateTime.utc(2026).add(Duration(days: i)),
+          inputTokens: v[i],
+          outputTokens: v[v.length - 1 - i],
+          cachedTokens: v[i].abs(),
+          cost: v[i],
+        ),
+    ],
+  ),
+  'TokenUsageChart (no cost)': (v) => TokenUsageChart(
+    showCost: false,
+    buckets: [
+      for (var i = 0; i < v.length; i++)
+        UsageBucket(
+          time: DateTime.utc(2026).add(Duration(hours: i)),
+          inputTokens: v[i],
+        ),
+    ],
+  ),
+  'EvalBreakdownChart': (v) => EvalBreakdownChart(
+    threshold: 0.8,
+    categories: [
+      for (var i = 0; i < v.length; i++)
+        EvalCategory(
+          name: 'c$i',
+          passed: v[i].isFinite ? v[i].abs().round().clamp(0, 1000) : 0,
+          failed: i,
+          skipped: i % 2,
+        ),
+    ],
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)
