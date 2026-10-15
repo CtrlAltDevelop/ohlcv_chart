@@ -365,7 +365,8 @@ class KChartController extends ChangeNotifier {
 ///
 /// Widened outwards where the instants fall between candles, so the span asked
 /// for is always covered. Null where there are no candles, or where the span
-/// falls entirely outside them.
+/// ends before the first of them. A span that starts after the last candle is
+/// covered by that candle, which is still open for the length of its period.
 (int, int)? indexRangeCovering(
   List<KLineEntity> candles,
   DateTime from,

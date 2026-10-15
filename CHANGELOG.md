@@ -1,10 +1,73 @@
 ## Unreleased
 
+### Changed
+
+- The data classes charts take — `WaterfallStep`, `TreemapItem`, `DeltaBar`,
+  `PieSection`, `TimelineTrade`, `MarketProfile`, `MonteCarloResult` and the
+  rest — compare by value, so two lists built from the same numbers are equal.
+  Things that do not shape the data — `ParallelAxis.formatter` and
+  `PieSection.badge` — are left out of the comparison, so an inline closure or
+  widget does not make every rebuild look like new data.
+- `PieChart` and `HeatmapChart` now animate in again when their values change,
+  as every other chart does; before, only a change in how many sections or
+  cells there were started the animation.
+
 ### Added
 
 - **`KChartController.resetZoom`** zooms back to the natural candle width,
   undoing `zoomIn`/`zoomOut`/`zoomTo` the way `resetPriceScale` already undoes
   a price stretch.
+- **`ChartReplayController.progress`** reports how far a replay has got, from 0
+  to 1, for a scrub bar or progress indicator.
+
+### Fixed
+
+- Williams %R looked back over `period + 1` candles instead of `period`, so the
+  line sat a little off every other charting tool. It reads exactly `period`
+  candles now; the values shift slightly.
+- **A candle chart no longer throws while painting** when a pane is squeezed
+  smaller than its own padding — a small box with several indicator panes — or
+  when a pane's values are all equal (a single candle, a flat market, MACD at
+  zero). A flat negative range was also drawn upside down.
+- A market profile counted nothing for a candle with no range that sat on a
+  level's edge, and `tickSize: 0` threw.
+- Option break-evens reported a payoff that crossed zero exactly on a strike
+  twice.
+- `histogramBins` with a decimal `binWidth` such as 0.1 added an empty bin at
+  the end.
+- Weekly time buckets, and so weekly resampling and the week axis labels,
+  started on a Thursday; they start on a Monday now. A 180-day step bucketed by
+  quarter instead of by half-year.
+- A pair's hedge ratio fell back to 1 for prices quoted in very small numbers.
+- A treemap item with an infinite value starved every other tile of space.
+- **A chart with an entry animation no longer restarts it** every time its
+  parent rebuilds with the same data in a new list, which made a chart flash
+  empty on every hover when the parent kept the touched item in its state.
+  Animations now start only when the data's values change.
+- The candle chart and the depth chart no longer throw for a candle or a rung
+  whose price is NaN or infinite; the bad point is left as a gap and does not
+  poison the price scale or the volume scale.
+- A moving average, volume average and anything built on them no longer turn
+  to NaN for the rest of the series after one close that is not a number.
+- `CandleTransforms.renko` and `rangeBars` stop at `maxBlocks` instead of
+  looping for millions of bricks when the size is far smaller than the move.
+- A replay interval of zero started a timer that fired without pause; it is
+  held to a millisecond.
+- The cumulative-delta chart worked out its divergences again on every frame
+  of its animation.
+- The documentation of `indexRangeCovering` said a span after the data gives
+  null; it gives the last candle, which is open for its whole period, and the
+  documentation now says so.
+- A funnel with a value that is not finite threw while labelling it, and a
+  bubble, footprint, order-book or option-payoff chart with a NaN threw while
+  painting. They draw around it now.
+- An R-multiple chart in a box too short for its figures overflowed.
+- A chart taken off a `ChartLink` while a scroll was waiting for the end of the
+  frame still moved the others once the frame ended.
+- A replay that caught up with the end of a shrunken series stopped its timer
+  without telling its listeners, leaving a play/pause button stale. Passing
+  `play(interval:)` while playing now changes the pace instead of being ignored,
+  and a series reduced to nothing keeps one candle in play.
 
 ## 3.1.1 - 2026-10-12
 

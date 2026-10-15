@@ -4,8 +4,9 @@ Reference documentation for every feature, one page each. Start with
 [Candlestick chart](candlestick-chart.md); the remaining pages can be read in
 any order.
 
-For installation and an overview of features, see the
-[package README](../README.md).
+For installation and a quick start, see the [package README](../README.md);
+for what the package does at a glance, see [Features](features.md) and the
+[Gallery](gallery.md).
 
 ## Getting started
 
