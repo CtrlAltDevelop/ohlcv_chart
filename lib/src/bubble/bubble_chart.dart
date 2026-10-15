@@ -609,6 +609,11 @@ class BubbleChartPainter extends CustomPainter {
     // Largest first, so a small bubble is never buried.
     final order = [...circles]..sort((a, b) => b.radius.compareTo(a.radius));
     for (final circle in order) {
+      if (!circle.center.dx.isFinite ||
+          !circle.center.dy.isFinite ||
+          !circle.radius.isFinite) {
+        continue;
+      }
       final color = _colorOf(circle);
       final radius = circle.radius * t;
       canvas

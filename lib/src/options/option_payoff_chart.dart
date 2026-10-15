@@ -862,7 +862,7 @@ class OptionPayoffChartPainter extends CustomPainter {
       ..color = chart.strikeColor
       ..strokeWidth = 1;
     for (final leg in chart.legs) {
-      if (leg.kind == OptionKind.underlying) continue;
+      if (leg.kind == OptionKind.underlying || !leg.strike.isFinite) continue;
       if (leg.strike < layout.minPrice || leg.strike > layout.maxPrice) {
         continue;
       }

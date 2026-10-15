@@ -15,6 +15,7 @@ import '../utils/axis_ticks.dart';
 import 'base_chart_renderer.dart';
 import 'path_batch.dart';
 import 'series_painter.dart';
+import '../extension/num_ext.dart';
 
 /// Which side of the main chart the price axis labels sit on.
 enum VerticalTextAlignment {
@@ -556,6 +557,15 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     Canvas canvas, {
     int index = 0,
   }) {
+    // A candle with a hole in it — a feed's NaN for a missing bar — is left as
+    // a gap; handing it to the canvas would throw.
+    if (!(curPoint.open.isFinite &&
+        curPoint.high.isFinite &&
+        curPoint.low.isFinite &&
+        curPoint.close.isFinite &&
+        lastPoint.close.isFinite)) {
+      return;
+    }
     switch (chartType) {
       case ChartType.candles:
         drawCandle(curPoint, canvas, curX, index);
@@ -1073,7 +1083,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       // The label sits above its own line, and is nudged back inside the pane
       // at either end so the top one clears the legend and the bottom one is
       // not clipped away.
-      final offsetY = (y - tp.height).clamp(
+      final offsetY = (y - tp.height).clampWithin(
         chartRect.top - topPadding,
         chartRect.bottom - tp.height,
       );

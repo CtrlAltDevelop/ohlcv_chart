@@ -6,3 +6,10 @@ extension NumExt on num? {
     return this!.abs().toStringAsFixed(4) != '0.0000';
   }
 }
+
+extension SafeClamp on double {
+  /// [clamp], except that a range turned inside out — a pane squeezed below
+  /// its own padding, say — collapses to [lower] instead of throwing.
+  double clampWithin(double lower, double upper) =>
+      clamp(lower, upper < lower ? lower : upper).toDouble();
+}

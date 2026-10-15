@@ -539,6 +539,7 @@ class FunnelChartPainter extends CustomPainter {
   String _formatValue(double value) {
     final format = chart.valueFormatter;
     if (format != null) return format(value);
+    if (!value.isFinite) return '–';
     final whole = value.round();
     final digits = whole.abs().toString();
     final grouped = digits.replaceAllMapped(

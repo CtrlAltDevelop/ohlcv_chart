@@ -538,8 +538,10 @@ abstract class BaseChartPainter extends CustomPainter {
 
   /// compute maximum and minimum value
   void getMainMaxMinValue(KLineEntity item, int i) {
-    double maxPrice = item.high;
-    double minPrice = item.low;
+    // A candle with no price (a feed's NaN) must not poison the scale: `max`
+    // of a NaN is a NaN, and the whole axis would go with it.
+    double maxPrice = item.high.isFinite ? item.high : double.negativeInfinity;
+    double minPrice = item.low.isFinite ? item.low : double.infinity;
 
     // An overlay may sit outside the candles it is drawn over — a long average
     // lags, a band steps outside — so the price scale has to hold it too.
@@ -577,7 +579,7 @@ abstract class BaseChartPainter extends CustomPainter {
       mMainMinIndex = i;
     }
 
-    if (isLine == true) {
+    if (isLine == true && item.close.isFinite) {
       mMainMaxValue = max(mMainMaxValue, item.close);
       mMainMinValue = min(mMainMinValue, item.close);
     }
@@ -585,14 +587,12 @@ abstract class BaseChartPainter extends CustomPainter {
 
   // get the maximum and minimum of the Vol value
   void getVolMaxMinValue(KLineEntity item) {
-    mVolMaxValue = max(
-      mVolMaxValue,
-      max(item.vol, max(item.ma5Volume ?? 0, item.ma10Volume ?? 0)),
-    );
-    mVolMinValue = min(
-      mVolMinValue,
-      min(item.vol, min(item.ma5Volume ?? 0, item.ma10Volume ?? 0)),
-    );
+    double finite(double? v) => v != null && v.isFinite ? v : 0;
+    final vol = finite(item.vol);
+    final ma5 = finite(item.ma5Volume);
+    final ma10 = finite(item.ma10Volume);
+    mVolMaxValue = max(mVolMaxValue, max(vol, max(ma5, ma10)));
+    mVolMinValue = min(mVolMinValue, min(vol, min(ma5, ma10)));
   }
 
   // translate x

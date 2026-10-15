@@ -677,7 +677,7 @@ class BookHeatmapChartPainter extends CustomPainter {
     Offset? previous;
     for (final column in layout.columns) {
       final y = column.midY;
-      if (y == null) {
+      if (y == null || !y.isFinite) {
         previous = null;
         continue;
       }

@@ -817,6 +817,12 @@ class FootprintChartPainter extends CustomPainter {
     final open = column.openY;
     final close = column.closeY;
     if (open == null || close == null) return;
+    if (!(open.isFinite &&
+        close.isFinite &&
+        column.highY.isFinite &&
+        column.lowY.isFinite)) {
+      return;
+    }
     final x = column.rect.center.dx;
     final pen = Paint()
       ..color = chart.candleColor
