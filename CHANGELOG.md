@@ -14,6 +14,15 @@
 
 ### Added
 
+- **`ProgressBars`** — how far each goal has got, as pill, block or segmented
+  bars with a label and figure above each, an optional target mark, touch and a
+  draw-in animation. A new "Progress and goals" group in the gallery holds it.
+  `ProgressItem`, `ProgressShape`, `ProgressLayout`, `ProgressRowLayout` and
+  `layOutProgress` are public. See [Progress bars](doc/progress-bars.md).
+- **`ProgressCard`** — a card around any widget whose whole background is a
+  progress fill, for a course, a goal or a task. `mode` picks how it fills:
+  `ProgressCardMode.sweep` sweeps round the card like a clock, `circle` grows
+  a circle from its left edge, `linear` fills along it from the left.
 - **`TokenHeatmap` is easier to read.** Touching a token opens a readout of its
   score, its rank, the probability the model gave it and — from the new
   `TokenScore.alternatives` — what it was weighing instead. `highlightTop` rings

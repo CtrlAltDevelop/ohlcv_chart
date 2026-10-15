@@ -100,6 +100,7 @@ Screenshots and a reference page for every chart are in the
   [bullet](doc/bullet-chart.md), [gauge](doc/gauge-chart.md),
   [waffle](doc/waffle-chart.md), [funnel](doc/funnel-chart.md),
   [sparkline grid](doc/sparkline-grid.md)
+- **Progress and goals** — [progress bars and progress cards](doc/progress-bars.md)
 
 ### Trading analysis
 

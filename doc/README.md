@@ -98,6 +98,10 @@ for what the package does at a glance, see [Features](features.md) and the
   squares, a cell per per cent.
 - **[Bullet](bullet-chart.md)** — `BulletChart`: a measure against its target
   on a banded track, a row per KPI.
+- **[Progress bars and cards](progress-bars.md)** — `ProgressBars`: how far
+  each goal has got, as pills, blocks or cells, with a mark for where it should
+  be; `ProgressCard`: a card whose whole background is the progress, as a sweep,
+  a growing circle or a bar.
 - **[Pair spread](pair-spread-chart.md)** — `PairSpreadChart`: the spread or
   ratio of two symbols, with z-score bands and entry and exit signals.
 - **[Efficient frontier](efficient-frontier-chart.md)** —

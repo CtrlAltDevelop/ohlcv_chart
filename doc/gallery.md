@@ -112,6 +112,16 @@ Each image links to the documentation page for that feature.
 </tr>
 </table>
 
+## Progress and goals
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="progress-bars.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/progress.png" width="100%" alt="Progress bars"></a><br /><sub><b><a href="progress-bars.md">Progress bars</a></b><br />Goals as pills, blocks or cells, with a mark for where each should be.</sub></td>
+<td width="33%" valign="top"><a href="progress-bars.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/progress-card.png" width="100%" alt="Progress card"></a><br /><sub><b><a href="progress-bars.md">Progress card</a></b><br />Course cards whose whole background is the progress: a sweep, a growing circle or a bar.</sub></td>
+<td width="33%"></td>
+</tr>
+</table>
+
 ## Models and training
 
 <table>
