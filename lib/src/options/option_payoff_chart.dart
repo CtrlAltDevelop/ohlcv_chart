@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -123,6 +124,21 @@ class OptionLeg {
     final cost = kind == OptionKind.underlying ? 0.0 : premium;
     return (intrinsic - cost) * quantity * contractSize;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OptionLeg &&
+          other.kind == kind &&
+          other.strike == strike &&
+          other.premium == premium &&
+          other.quantity == quantity &&
+          other.contractSize == contractSize &&
+          other.label == label;
+
+  @override
+  int get hashCode =>
+      Object.hashAll([kind, strike, premium, quantity, contractSize, label]);
 }
 
 /// What [legs] are worth together if the underlying expires at [price].
@@ -558,7 +574,7 @@ class _OptionPayoffChartState extends State<OptionPayoffChart>
   void didUpdateWidget(OptionPayoffChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.legs, widget.legs)) {
+    if (!listEquals(oldWidget.legs, widget.legs)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

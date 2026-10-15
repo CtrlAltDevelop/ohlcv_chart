@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -341,7 +342,7 @@ class _HeatmapChartState extends State<HeatmapChart>
   void didUpdateWidget(HeatmapChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (oldWidget.cells.length != widget.cells.length &&
+    if (!listEquals(oldWidget.cells, widget.cells) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

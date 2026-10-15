@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -39,6 +40,17 @@ class DensityCurve {
     if (densities.length <= 1) return min;
     return min + (max - min) * index / (densities.length - 1);
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DensityCurve &&
+          other.min == min &&
+          other.max == max &&
+          listEquals(other.densities, densities);
+
+  @override
+  int get hashCode => Object.hashAll([min, max, Object.hashAll(densities)]);
 }
 
 /// Estimates the shape of [samples] as a smooth curve.
@@ -151,6 +163,27 @@ class ViolinSeries {
 
   /// Its quartiles, worked out if they were not given.
   BoxPlotStats resolvedStats() => stats ?? BoxPlotStats.fromSamples(samples);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ViolinSeries &&
+          other.label == label &&
+          listEquals(other.samples, samples) &&
+          other.color == color &&
+          other.curve == curve &&
+          other.stats == stats &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode => Object.hashAll([
+    label,
+    Object.hashAll(samples),
+    color,
+    curve,
+    stats,
+    tooltip,
+  ]);
 }
 
 /// Whether a [ViolinChart] draws violins or a ridgeline.
@@ -657,7 +690,7 @@ class _ViolinChartState extends State<ViolinChart>
   void didUpdateWidget(ViolinChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.series, widget.series) &&
+    if (!listEquals(oldWidget.series, widget.series) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

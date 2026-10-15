@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -28,6 +29,18 @@ class PairPoint {
 
   /// Anything the app wants back when this point is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PairPoint &&
+          other.time == time &&
+          other.a == a &&
+          other.b == b &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([time, a, b, data]);
 }
 
 /// Pairs two price series by time, keeping only the times both have.
@@ -619,7 +632,7 @@ class _PairSpreadChartState extends State<PairSpreadChart>
   void didUpdateWidget(PairSpreadChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.points, widget.points)) {
+    if (!listEquals(oldWidget.points, widget.points)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

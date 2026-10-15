@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -21,6 +22,17 @@ class VolatilityPoint {
 
   /// Anything the app wants back when this reading is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VolatilityPoint &&
+          other.x == x &&
+          other.volatility == volatility &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([x, volatility, data]);
 }
 
 /// One curve of a [VolatilityCurveChart] — an expiry's smile, or one term
@@ -50,6 +62,20 @@ class VolatilitySlice {
 
   /// Anything the app wants back when this curve is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VolatilitySlice &&
+          listEquals(other.points, points) &&
+          other.label == label &&
+          other.color == color &&
+          other.dashed == dashed &&
+          other.data == data;
+
+  @override
+  int get hashCode =>
+      Object.hashAll([Object.hashAll(points), label, color, dashed, data]);
 }
 
 /// Where one [VolatilitySlice] was laid out.
@@ -464,7 +490,7 @@ class _VolatilityCurveChartState extends State<VolatilityCurveChart>
   void didUpdateWidget(VolatilityCurveChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.slices, widget.slices)) {
+    if (!listEquals(oldWidget.slices, widget.slices)) {
       _touchedX = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

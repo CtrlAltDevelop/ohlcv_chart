@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -98,6 +99,31 @@ class MonteCarloResult {
 
   /// The account value counted as ruin; null counts none.
   final double? ruinLevel;
+
+  /// Two results are alike when they hold the same paths. The bands and the
+  /// drawdowns are worked out from those, so they are not compared again.
+  ///
+  /// This is what lets a parent rebuild with a result it made again from the
+  /// same seed without the fan animating in afresh.
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! MonteCarloResult ||
+        other.startingEquity != startingEquity ||
+        other.ruinLevel != ruinLevel ||
+        other.paths.length != paths.length ||
+        !listEquals(other.percentiles, percentiles)) {
+      return false;
+    }
+    for (var i = 0; i < paths.length; i++) {
+      if (!listEquals(other.paths[i], paths[i])) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(startingEquity, ruinLevel, paths.length, steps);
 
   /// Whether there is nothing to show.
   bool get isEmpty => bands.isEmpty || bands.first.isEmpty;
@@ -606,7 +632,7 @@ class _MonteCarloChartState extends State<MonteCarloChart>
   void didUpdateWidget(MonteCarloChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.result, widget.result)) {
+    if (oldWidget.result != widget.result) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

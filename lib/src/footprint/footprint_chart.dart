@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -37,6 +38,18 @@ class FootprintLevel {
 
   /// How lopsided the level was, from -1 (all selling) to 1 (all buying).
   double get imbalance => total <= 0 ? 0 : delta / total;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FootprintLevel &&
+          other.price == price &&
+          other.bidVolume == bidVolume &&
+          other.askVolume == askVolume &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([price, bidVolume, askVolume, data]);
 }
 
 /// One bar of a [FootprintChart]: a candle and what traded inside it.
@@ -118,6 +131,29 @@ class FootprintBar {
     }
     return value;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FootprintBar &&
+          other.time == time &&
+          listEquals(other.levels, levels) &&
+          other.open == open &&
+          other.high == high &&
+          other.low == low &&
+          other.close == close &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([
+    time,
+    Object.hashAll(levels),
+    open,
+    high,
+    low,
+    close,
+    data,
+  ]);
 }
 
 /// The running total of [bars]' deltas — the cumulative delta.

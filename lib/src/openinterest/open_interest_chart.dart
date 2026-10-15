@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -34,6 +35,18 @@ class OpenInterestPoint {
     final rate = funding;
     return rate != null && rate.isFinite ? rate : null;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OpenInterestPoint &&
+          other.time == time &&
+          other.openInterest == openInterest &&
+          other.funding == funding &&
+          other.price == price;
+
+  @override
+  int get hashCode => Object.hashAll([time, openInterest, funding, price]);
 }
 
 /// What open interest and price did together over one step.
@@ -530,7 +543,7 @@ class _OpenInterestChartState extends State<OpenInterestChart>
   void didUpdateWidget(OpenInterestChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.points, widget.points)) {
+    if (!listEquals(oldWidget.points, widget.points)) {
       _moves = openInterestMoves(widget.points);
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

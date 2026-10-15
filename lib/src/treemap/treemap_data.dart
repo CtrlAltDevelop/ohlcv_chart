@@ -71,6 +71,27 @@ class TreemapItem {
     }
     return sum;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TreemapItem &&
+          other.value == value &&
+          listEquals(other.children, children) &&
+          other.label == label &&
+          other.color == color &&
+          other.colorValue == colorValue &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([
+    value,
+    Object.hashAll(children),
+    label,
+    color,
+    colorValue,
+    data,
+  ]);
 }
 
 /// Where one [TreemapItem] was laid out.

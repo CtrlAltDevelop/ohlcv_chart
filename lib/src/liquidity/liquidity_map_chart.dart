@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -44,6 +45,19 @@ class LiquidityLevel {
 
   /// The size actually counted.
   double get drawnSize => size.isFinite && size > 0 ? size : 0;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LiquidityLevel &&
+          other.price == price &&
+          other.size == size &&
+          other.side == side &&
+          other.leverage == leverage &&
+          other.label == label;
+
+  @override
+  int get hashCode => Object.hashAll([price, size, side, leverage, label]);
 }
 
 /// One price bucket of a [LiquidityMapChart].
@@ -82,6 +96,20 @@ class LiquidityBin {
   /// Which side dominates it, and by how much, from -1 (all long) to 1 (all
   /// short).
   double get imbalance => total > 0 ? (shortSize - longSize) / total : 0;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LiquidityBin &&
+          other.from == from &&
+          other.to == to &&
+          other.longSize == longSize &&
+          other.shortSize == shortSize &&
+          listEquals(other.levels, levels);
+
+  @override
+  int get hashCode =>
+      Object.hashAll([from, to, longSize, shortSize, Object.hashAll(levels)]);
 }
 
 /// Buckets [levels] into [binCount] price bands between [min] and [max].
@@ -504,7 +532,7 @@ class _LiquidityMapChartState extends State<LiquidityMapChart>
   void didUpdateWidget(LiquidityMapChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.bins, widget.bins) &&
+    if (!listEquals(oldWidget.bins, widget.bins) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

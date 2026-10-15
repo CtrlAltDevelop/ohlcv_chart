@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -64,6 +65,35 @@ class TimelineTrade {
     final exit = exitTime ?? now;
     return exit.isBefore(entryTime) ? entryTime : exit;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TimelineTrade &&
+          other.entryTime == entryTime &&
+          other.exitTime == exitTime &&
+          other.lane == lane &&
+          other.side == side &&
+          other.pnl == pnl &&
+          other.entryPrice == entryPrice &&
+          other.exitPrice == exitPrice &&
+          other.quantity == quantity &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([
+    entryTime,
+    exitTime,
+    lane,
+    side,
+    pnl,
+    entryPrice,
+    exitPrice,
+    quantity,
+    color,
+    data,
+  ]);
 }
 
 /// The span [trades] cover, from the first entry to the last exit.
@@ -663,7 +693,7 @@ class _TradeTimelineChartState extends State<TradeTimelineChart>
   void didUpdateWidget(TradeTimelineChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.trades, widget.trades)) {
+    if (!listEquals(oldWidget.trades, widget.trades)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

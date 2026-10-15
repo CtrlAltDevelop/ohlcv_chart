@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -26,6 +27,18 @@ class WaffleSlice {
 
   /// Shown when one of its cells is touched; null shows the label and share.
   final String? tooltip;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WaffleSlice &&
+          other.label == label &&
+          other.value == value &&
+          other.color == color &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode => Object.hashAll([label, value, color, tooltip]);
 }
 
 /// How the cells of a [WaffleChart] are handed out.
@@ -356,7 +369,7 @@ class _WaffleChartState extends State<WaffleChart>
   void didUpdateWidget(WaffleChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.slices, widget.slices) &&
+    if (!listEquals(oldWidget.slices, widget.slices) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

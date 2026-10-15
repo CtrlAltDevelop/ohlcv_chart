@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -195,7 +196,7 @@ class _TreemapChartState extends State<TreemapChart>
   void didUpdateWidget(TreemapChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.items, widget.items)) {
+    if (!listEquals(oldWidget.items, widget.items)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

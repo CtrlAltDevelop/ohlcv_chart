@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -39,6 +40,19 @@ class HistogramBin {
 
   /// How wide the range is.
   double get width => to - from;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HistogramBin &&
+          other.from == from &&
+          other.to == to &&
+          other.count == count &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([from, to, count, color, data]);
 }
 
 /// Counts [samples] into bins of equal width.
@@ -359,7 +373,7 @@ class _HistogramChartState extends State<HistogramChart>
   void didUpdateWidget(HistogramChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.bins, widget.bins)) {
+    if (!listEquals(oldWidget.bins, widget.bins)) {
       if (_touched != null && _touched! >= widget.bins.length) _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

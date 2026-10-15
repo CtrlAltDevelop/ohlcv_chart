@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -33,6 +34,19 @@ class ChordFlow {
 
   /// The value actually drawn.
   double get drawnValue => value.isFinite && value > 0 ? value : 0;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChordFlow &&
+          other.from == from &&
+          other.to == to &&
+          other.value == value &&
+          other.color == color &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode => Object.hashAll([from, to, value, color, tooltip]);
 }
 
 /// A node round the ring of a [ChordChart].
@@ -50,6 +64,17 @@ class ChordNode {
 
   /// Shown when its arc is touched; null shows its label and total.
   final String? tooltip;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChordNode &&
+          other.label == label &&
+          other.color == color &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode => Object.hashAll([label, color, tooltip]);
 }
 
 /// The totals of a set of [ChordFlow]s, by node.
@@ -525,8 +550,8 @@ class _ChordChartState extends State<ChordChart>
   void didUpdateWidget(ChordChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.flows, widget.flows) ||
-        !identical(oldWidget.nodes, widget.nodes)) {
+    if (!listEquals(oldWidget.flows, widget.flows) ||
+        !listEquals(oldWidget.nodes, widget.nodes)) {
       _node = null;
       _flow = null;
       if (widget.animationDuration > Duration.zero) {
