@@ -50,6 +50,8 @@ for what the package does at a glance, see [Features](features.md) and the
 - **[Volatility surface](volatility-surface-chart.md)** —
   `VolatilitySurfaceChart`: implied volatility across strike and expiry as a
   heatmap, with the skew against the at-the-money strike.
+- **[Futures curve](futures-curve-chart.md)** — `FuturesCurveChart`: prices
+  against delivery month, with contango, backwardation and calendar spreads.
 - **[Market profile](market-profile-chart.md)** — `MarketProfileChart`: time at
   price as TPO letters, with the point of control and value area.
 - **[Footprint](footprint-chart.md)** — `FootprintChart`: bid and ask volume at

@@ -133,3 +133,4 @@ export './series/series_range_selector.dart';
 export './series/series_scale.dart' show SeriesOrientation;
 export './series/series_touch.dart';
 export './portfolio/efficient_frontier_chart.dart';
+export './futures/futures_curve_chart.dart';

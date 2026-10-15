@@ -294,6 +294,25 @@ final Map<String, _Build> _charts = {
     current: PortfolioPoint(risk: v.isEmpty ? 0 : v.first, expectedReturn: 1),
     riskFreeRate: 0.01,
   ),
+  'FuturesCurveChart': (v) => FuturesCurveChart(
+    curves: [
+      FuturesCurve(
+        label: 'now',
+        contracts: [
+          for (var i = 0; i < v.length; i++)
+            FuturesContract(label: 'M$i', price: v[i]),
+        ],
+      ),
+      FuturesCurve(
+        label: 'then',
+        dashed: true,
+        contracts: [
+          for (var i = 0; i < v.length; i++)
+            FuturesContract(label: 'M$i', price: v[v.length - 1 - i]),
+        ],
+      ),
+    ],
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)

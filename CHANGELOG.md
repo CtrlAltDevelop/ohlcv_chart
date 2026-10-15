@@ -14,6 +14,10 @@
 
 ### Added
 
+- **`FuturesCurveChart`** plots futures prices against delivery month, one or
+  more curves at a time, with the first curve's shape — contango or
+  backwardation — and slope in the corner and the calendar spread on touch.
+  `curveShape`, `curveSlope` and `calendarSpreads` are the numbers behind it.
 - **`VarChart`** shows a set of returns as a histogram with the loss tail
   picked out and the value at risk and expected shortfall marked.
   `ValueAtRisk.fromReturns` works the figures out by the historical method, and

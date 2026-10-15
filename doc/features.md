@@ -139,6 +139,9 @@
   structures, several expiries at once with a crosshair that reads them all.
 - **`VolatilitySurfaceChart`** — implied volatility across strike and expiry as
   a heatmap, with the skew against the at-the-money strike on touch.
+- **`FuturesCurveChart`** — prices against delivery month, one or more curves,
+  with contango and backwardation read off the first and the calendar spread on
+  touch.
 - **`MarketProfileChart`** — time at price as TPO letters, with the point of
   control and the value area worked out from your candles.
 - **`FootprintChart`** — bid against ask volume at every price inside every bar,
