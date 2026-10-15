@@ -29,8 +29,14 @@ class ChartReplayController extends ChangeNotifier {
   ChartReplayController({
     Duration interval = const Duration(milliseconds: 500),
   }) {
-    _interval = interval;
+    _interval = _atLeastOneMillisecond(interval);
   }
+
+  /// A zero or negative interval would make the timer fire without pause.
+  static Duration _atLeastOneMillisecond(Duration value) =>
+      value < const Duration(milliseconds: 1)
+      ? const Duration(milliseconds: 1)
+      : value;
 
   int? _position;
   int _length = 0;
@@ -68,7 +74,9 @@ class ChartReplayController extends ChangeNotifier {
   void reportLength(int length) {
     if (length == _length) return;
     _length = length;
-    if (_position != null && _position! > length) _position = length;
+    if (_position != null && _position! > length) {
+      _position = length < 1 ? 1 : length;
+    }
   }
 
   /// Rewinds to [at] and holds the chart there.
@@ -102,7 +110,11 @@ class ChartReplayController extends ChangeNotifier {
     if (_position == null || by <= 0) return;
     final next = _clamp(_position! + by);
     if (next == _position) {
-      _stopTimer();
+      // Caught up while playing: say so, or a play/pause button stays stale.
+      if (_timer != null) {
+        _stopTimer();
+        notifyListeners();
+      }
       return;
     }
     _position = next;
@@ -125,7 +137,15 @@ class ChartReplayController extends ChangeNotifier {
   /// button works without a bar having been picked first. Does nothing once
   /// the playback is at the end — [stepBack] or [start] first.
   void play({Duration? interval}) {
-    if (interval != null) _interval = interval;
+    if (interval != null) interval = _atLeastOneMillisecond(interval);
+    if (interval != null && interval != _interval) {
+      // Already playing: the new pace applies from the next candle on.
+      if (_timer != null) {
+        setInterval(interval);
+        return;
+      }
+      _interval = interval;
+    }
     if (_position == null) start(at: (_length / 2).round());
     if (isAtEnd || _timer != null) return;
 
@@ -147,6 +167,7 @@ class ChartReplayController extends ChangeNotifier {
   ///
   /// Takes effect immediately, restarting the timer if one is running.
   void setInterval(Duration value) {
+    value = _atLeastOneMillisecond(value);
     if (value == _interval) return;
     _interval = value;
     if (_timer != null) {

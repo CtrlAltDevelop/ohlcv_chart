@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ohlcv_chart/ohlcv_chart.dart';
 
@@ -247,6 +248,34 @@ void main() {
       a.host.scrollTo(100, 119);
       expect(b.host.asked, isEmpty);
     });
+
+    testWidgets(
+      'a chart removed before the frame ends no longer carries the rest',
+      (tester) async {
+        final a = chart();
+        final b = chart();
+        final link = ChartLink()
+          ..add(a.controller)
+          ..add(b.controller);
+
+        // Moving a chart while building defers the spread to after the frame;
+        // taking it off the link in between must cancel it.
+        await tester.pumpWidget(
+          Builder(
+            builder: (context) {
+              if (b.host.first == 0) {
+                a.host.scrollTo(100, 119);
+                link.remove(a.controller);
+              }
+              return const SizedBox();
+            },
+          ),
+        );
+        await tester.pump();
+
+        expect(b.host.first, 0);
+      },
+    );
 
     test('adding the same chart twice changes nothing', () {
       final a = chart();
