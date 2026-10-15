@@ -23,8 +23,10 @@ double niceStep(double span, int target) {
   if (!span.isFinite || span <= 0 || target <= 0) return 0;
 
   final raw = span / target;
+  // 10.0, not 10: with two ints `pow` is an integer power, which wraps round
+  // past 1e18 and turns the axis of a very large number into noise.
   final magnitude = math
-      .pow(10, (math.log(raw) / math.ln10).floor())
+      .pow(10.0, (math.log(raw) / math.ln10).floor())
       .toDouble();
   if (magnitude <= 0 || !magnitude.isFinite) return 0;
 
@@ -75,7 +77,7 @@ List<double> niceLogTicks(double min, double max, {int target = 5}) {
 
   final ticks = <double>[];
   for (var decade = lowDecade; decade <= highDecade; decade++) {
-    final magnitude = math.pow(10, decade).toDouble();
+    final magnitude = math.pow(10.0, decade).toDouble();
     for (final mantissa in const [1.0, 2.0, 5.0]) {
       final value = mantissa * magnitude;
       if (value < min || value > max) continue;

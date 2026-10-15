@@ -205,6 +205,26 @@ void main() {
       );
     });
   });
+
+  group('very large numbers', () {
+    test('a log axis over 1e18..1e24 ticks on whole powers of ten', () {
+      final ticks = niceLogTicks(1e18, 1e24, target: 6);
+
+      expect(ticks, isNotEmpty);
+      for (final tick in ticks) {
+        expect(tick, greaterThanOrEqualTo(1e18));
+        expect(tick, lessThanOrEqualTo(1e24));
+      }
+      expect(ticks, contains(1e21));
+    });
+
+    test('a linear step of a span of 1e20 is a round number of that size', () {
+      final step = niceStep(1e20, 5);
+
+      expect(step, greaterThan(1e19));
+      expect(step, lessThan(1e21));
+    });
+  });
 }
 
 /// The largest power of ten no bigger than [value].
