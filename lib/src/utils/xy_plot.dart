@@ -78,6 +78,8 @@ void paintXyAxes(
   double axisWidth = 44,
   double axisHeight = 18,
   List<String>? xLabels,
+  bool logX = false,
+  bool logY = false,
 }) {
   final style = seriesAxisLabelStyle.merge(labelStyle);
   final line = gridColor == null
@@ -86,8 +88,14 @@ void paintXyAxes(
           ..color = gridColor
           ..strokeWidth = 1);
 
-  for (final tick in niceTicks(minY, maxY, target: tickCount)) {
-    final y = mapAcross(tick, minY, maxY, plot.bottom, plot.top);
+  final yTicks = logY
+      ? niceLogTicks(minY, maxY, target: tickCount)
+      : niceTicks(minY, maxY, target: tickCount);
+  for (final tick in yTicks) {
+    final y = logY
+        ? mapAcrossLog(tick, minY, maxY, plot.bottom, plot.top)
+        : mapAcross(tick, minY, maxY, plot.bottom, plot.top);
+    if (y == null) continue;
     if (line != null) {
       canvas.drawLine(Offset(plot.left, y), Offset(plot.right, y), line);
     }
@@ -115,8 +123,14 @@ void paintXyAxes(
       if (showAxes) label(x, xLabels[i]);
     }
   } else {
-    for (final tick in niceTicks(minX, maxX, target: tickCount)) {
-      final x = mapAcross(tick, minX, maxX, plot.left, plot.right);
+    final xTicks = logX
+        ? niceLogTicks(minX, maxX, target: tickCount)
+        : niceTicks(minX, maxX, target: tickCount);
+    for (final tick in xTicks) {
+      final x = logX
+          ? mapAcrossLog(tick, minX, maxX, plot.left, plot.right)
+          : mapAcross(tick, minX, maxX, plot.left, plot.right);
+      if (x == null) continue;
       if (line != null) {
         canvas.drawLine(Offset(x, plot.top), Offset(x, plot.bottom), line);
       }
@@ -177,4 +191,27 @@ class XyTooltipLayout extends SingleChildLayoutDelegate {
   @override
   bool shouldRelayout(XyTooltipLayout oldDelegate) =>
       oldDelegate.anchor != anchor || oldDelegate.margin != margin;
+}
+
+/// The base-10 logarithm of [value], or null where it has none — zero, a
+/// negative number or one that is not finite.
+double? log10OrNull(double value) {
+  if (!value.isFinite || value <= 0) return null;
+  return math.log(value) / math.ln10;
+}
+
+/// Where [value] falls between [min] and [max] on a logarithmic scale, mapped
+/// onto [from]..[to]; null for a value or range a logarithm cannot take.
+double? mapAcrossLog(
+  double value,
+  double min,
+  double max,
+  double from,
+  double to,
+) {
+  final v = log10OrNull(value);
+  final lo = log10OrNull(min);
+  final hi = log10OrNull(max);
+  if (v == null || lo == null || hi == null) return null;
+  return mapAcross(v, lo, hi, from, to);
 }
