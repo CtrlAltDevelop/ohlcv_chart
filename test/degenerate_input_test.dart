@@ -76,6 +76,13 @@ final Map<String, _Build> _charts = {
       BoxPlotChart(entries: [BoxPlotEntry.fromSamples(v, label: 'a')]),
   'HistogramChart': (v) => HistogramChart(bins: histogramBins(v)),
   'RMultipleChart': (v) => RMultipleChart(results: v),
+  'MaeMfeChart': (v) => MaeMfeChart(
+    trades: [
+      for (final x in v)
+        TradeExcursion(pnl: x, mae: x.abs(), mfe: x.abs() * 2),
+    ],
+    xReferenceLines: const [1],
+  ),
   'DumbbellChart': (v) => DumbbellChart(
     rows: [for (final x in v) DumbbellRow(label: 'a', from: x, to: x * 2)],
   ),

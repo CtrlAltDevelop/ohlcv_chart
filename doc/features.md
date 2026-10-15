@@ -149,6 +149,9 @@
   symbol, coloured by result, with an open-trade count beneath.
 - **`RMultipleChart`** — trade results in R, with expectancy, win rate, profit
   factor and SQN worked out for you.
+- **`MaeMfeChart`** — every trade as a point by how far it went against you or
+  for you and what it made, with the limit line, reference stops, and the
+  winners a stop would have cost.
 - **`MonteCarloChart`** — a fan of simulated equity paths as percentile bands,
   with the odds of loss and ruin and the real curve laid over.
 - **`SeasonalityChart`** — returns by month and year or weekday and hour, with

@@ -14,6 +14,10 @@
 
 ### Added
 
+- **`MaeMfeChart`** plots every trade by how far it went against the position
+  (MAE) or for it (MFE) and what it made, with the limit line no trade can pass
+  and reference lines for a stop or a target. `ExcursionStats` and
+  `winnersStoppedAt` work out the edge ratio and what a stop would have cost.
 - **`KChartController.resetZoom`** zooms back to the natural candle width,
   undoing `zoomIn`/`zoomOut`/`zoomTo` the way `resetPriceScale` already undoes
   a price stretch.

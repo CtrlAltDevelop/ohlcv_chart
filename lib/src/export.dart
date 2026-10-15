@@ -96,6 +96,7 @@ export './sunburst/sunburst_chart.dart';
 export './distribution/box_plot_chart.dart';
 export './distribution/histogram_chart.dart';
 export './distribution/r_multiple_chart.dart';
+export './distribution/mae_mfe_chart.dart';
 export './bubble/bubble_chart.dart';
 export './calendar/calendar_chart.dart';
 export './equity/equity_curve_chart.dart';
