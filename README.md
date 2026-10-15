@@ -21,7 +21,7 @@ Free for any use, with no paid tier.
   with higher-timeframe values that never repaint.
 - **29 drawing tools** — Fibonacci, channels, patterns and positions, with an
   editor, undo/redo, alerts and JSON persistence.
-- **39 more chart widgets** — series, pie, heatmap, treemap, sankey, depth,
+- **45 more chart widgets** — series, pie, heatmap, treemap, sankey, depth,
   order flow, and the charts a backtest report is made of.
 - **Fully themeable** — `ChartStyle`, `ChartColors` and `ChartTranslations`.
 
