@@ -18,11 +18,27 @@ List<double?> smaSeries(List<KLineEntity> candles, int period) {
   final out = List<double?>.filled(candles.length, null);
   if (period <= 0) return out;
 
+  // A window holding a value that is not a number has no average. Counting
+  // them, rather than adding them in, keeps one bad candle from turning the
+  // running sum — and every average after it — into NaN.
   var sum = 0.0;
+  var missing = 0;
   for (var i = 0; i < candles.length; i++) {
-    sum += candles[i].close;
-    if (i >= period) sum -= candles[i - period].close;
-    if (i >= period - 1) out[i] = sum / period;
+    final entering = candles[i].close;
+    if (entering.isFinite) {
+      sum += entering;
+    } else {
+      missing++;
+    }
+    if (i >= period) {
+      final leaving = candles[i - period].close;
+      if (leaving.isFinite) {
+        sum -= leaving;
+      } else {
+        missing--;
+      }
+    }
+    if (i >= period - 1 && missing == 0) out[i] = sum / period;
   }
   return out;
 }
@@ -543,7 +559,7 @@ List<double?> wrSeries(List<KLineEntity> candles, int period) {
   for (var i = 0; i < candles.length; i++) {
     var highest = -double.maxFinite;
     var lowest = double.maxFinite;
-    for (var window = max(0, i - period); window <= i; window++) {
+    for (var window = max(0, i - period + 1); window <= i; window++) {
       highest = max(highest, candles[window].high);
       lowest = min(lowest, candles[window].low);
     }
@@ -1006,10 +1022,23 @@ List<double?> volumeMaSeries(List<KLineEntity> candles, int period) {
   if (period <= 0) return out;
 
   var sum = 0.0;
+  var missing = 0;
   for (var i = 0; i < candles.length; i++) {
-    sum += candles[i].vol;
-    if (i >= period) sum -= candles[i - period].vol;
-    if (i >= period - 1) out[i] = sum / period;
+    final entering = candles[i].vol;
+    if (entering.isFinite) {
+      sum += entering;
+    } else {
+      missing++;
+    }
+    if (i >= period) {
+      final leaving = candles[i - period].vol;
+      if (leaving.isFinite) {
+        sum -= leaving;
+      } else {
+        missing--;
+      }
+    }
+    if (i >= period - 1 && missing == 0) out[i] = sum / period;
   }
   return out;
 }
@@ -1236,10 +1265,21 @@ List<double?> _smaOf(List<double> values, int period) {
   if (period <= 0) return out;
 
   var sum = 0.0;
+  var missing = 0;
   for (var i = 0; i < values.length; i++) {
-    sum += values[i];
-    if (i >= period) sum -= values[i - period];
-    if (i >= period - 1) out[i] = sum / period;
+    if (values[i].isFinite) {
+      sum += values[i];
+    } else {
+      missing++;
+    }
+    if (i >= period) {
+      if (values[i - period].isFinite) {
+        sum -= values[i - period];
+      } else {
+        missing--;
+      }
+    }
+    if (i >= period - 1 && missing == 0) out[i] = sum / period;
   }
   return out;
 }
