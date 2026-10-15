@@ -1,3 +1,11 @@
+## Unreleased
+
+### Added
+
+- **`KChartController.resetZoom`** zooms back to the natural candle width,
+  undoing `zoomIn`/`zoomOut`/`zoomTo` the way `resetPriceScale` already undoes
+  a price stretch.
+
 ## 3.1.1 - 2026-10-12
 
 ### Fixed

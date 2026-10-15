@@ -148,6 +148,9 @@ class KChartController extends ChangeNotifier {
   /// Zooms out by [step].
   void zoomOut([double step = 0.2]) => zoomTo(scale - step);
 
+  /// Resets the zoom to the natural candle width, undoing any [zoomTo].
+  void resetZoom() => zoomTo(1.0);
+
   /// Whether the newest candle is in view.
   bool get isAtRightEdge => _host?.isChartAtRightEdge ?? true;
 
