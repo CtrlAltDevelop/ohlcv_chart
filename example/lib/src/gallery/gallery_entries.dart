@@ -117,6 +117,73 @@ const _grid = Color(0x14FFFFFF);
 
 List<GalleryEntry> _orderFlow() => [
   GalleryEntry(
+    id: 'volatility-surface',
+    title: 'Volatility surface',
+    blurb:
+        'Implied volatility across strike and expiry at once, with the '
+        'skew against the at-the-money strike on touch.',
+    group: GalleryGroup.orderFlow,
+    doc: 'volatility-surface-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Strike by expiry',
+        figure: 'spot 100',
+        height: 360,
+        build: () {
+          final surface = galleryVolatilitySurface();
+          return VolatilitySurfaceChart(
+            strikes: surface.strikes,
+            expiries: surface.expiries,
+            volatilities: surface.vols,
+            spot: 100,
+            lowColor: galleryBlue,
+            midColor: galleryAmber,
+            highColor: galleryRed,
+            axisLabelStyle: _smallAxisStyle,
+            labelStyle: _darkLabel,
+          );
+        },
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'futures-curve',
+    title: 'Futures curve',
+    blurb:
+        'Prices against delivery month, with contango or backwardation '
+        'read off the curve and last month\'s drawn dashed behind it.',
+    group: GalleryGroup.orderFlow,
+    doc: 'futures-curve-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Crude, today and a month ago',
+        figure: '12 months out',
+        height: 340,
+        build: () {
+          final curves = galleryFuturesCurves();
+          return FuturesCurveChart(
+            curves: [
+              FuturesCurve(
+                label: 'Today',
+                contracts: curves.today,
+                color: galleryBlue,
+              ),
+              FuturesCurve(
+                label: 'A month ago',
+                contracts: curves.before,
+                color: galleryAmber,
+                dashed: true,
+              ),
+            ],
+            priceFormatter: (v) => '\$${v.toStringAsFixed(1)}',
+            axisLabelStyle: _smallAxisStyle,
+            gridColor: _grid,
+          );
+        },
+      ),
+    ],
+  ),
+  GalleryEntry(
     id: 'market-profile',
     title: 'Market profile',
     blurb:
@@ -434,6 +501,139 @@ List<GalleryEntry> _orderFlow() => [
 ];
 
 List<GalleryEntry> _results() => [
+  GalleryEntry(
+    id: 'mae-mfe',
+    title: 'MAE / MFE scatter',
+    blurb:
+        'Every trade by how far it went against you, or for you, and what '
+        'it finally made — to place a stop and a target.',
+    group: GalleryGroup.results,
+    doc: 'mae-mfe-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Max adverse excursion',
+        figure: 'stop at 1R',
+        height: 360,
+        build: () => MaeMfeChart(
+          trades: galleryExcursions(),
+          xReferenceLines: const [1],
+          winnerColor: galleryGreen,
+          loserColor: galleryRed,
+          xFormatter: (v) => '${v.toStringAsFixed(1)}R',
+          yFormatter: (v) => '${v.toStringAsFixed(0)}R',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          yAxisTitle: 'Result',
+          gridColor: _grid,
+        ),
+      ),
+      GalleryVariant(
+        title: 'Max favourable excursion',
+        figure: 'the limit line',
+        height: 360,
+        build: () => MaeMfeChart(
+          trades: galleryExcursions(),
+          kind: ExcursionKind.favourable,
+          winnerColor: galleryGreen,
+          loserColor: galleryRed,
+          xFormatter: (v) => '${v.toStringAsFixed(1)}R',
+          yFormatter: (v) => '${v.toStringAsFixed(0)}R',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          yAxisTitle: 'Result',
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'var',
+    title: 'Value at risk',
+    blurb:
+        'The shape of the returns, with the loss tail picked out and the '
+        'value at risk and expected shortfall marked.',
+    group: GalleryGroup.results,
+    doc: 'var-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Daily returns, 95%',
+        figure: '400 days',
+        height: 380,
+        build: () => VarChart(
+          returns: [for (final r in galleryReturns()) r / 100],
+          barColor: galleryBlue,
+          tailColor: galleryRed,
+          axisLabelStyle: _smallAxisStyle,
+          statLabelStyle: _smallAxisStyle,
+          statValueStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'efficient-frontier',
+    title: 'Efficient frontier',
+    blurb:
+        'Portfolios by risk and return, with the frontier, the best Sharpe '
+        'ratio, the least risky portfolio and the one held now.',
+    group: GalleryGroup.results,
+    doc: 'efficient-frontier-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Risk and return',
+        figure: 'risk-free 2%',
+        height: 400,
+        build: () => EfficientFrontierChart(
+          points: galleryPortfolios(),
+          riskFreeRate: 0.02,
+          current: const PortfolioPoint(risk: 0.19, expectedReturn: 0.083),
+          portfolioColor: const Color(0x664DABF7),
+          frontierColor: galleryGreen,
+          maxSharpeColor: galleryAmber,
+          minRiskColor: galleryTeal,
+          currentColor: galleryRed,
+          riskFormatter: (v) => '${(v * 100).toStringAsFixed(0)}%',
+          returnFormatter: (v) => '${(v * 100).toStringAsFixed(0)}%',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'activity-clock',
+    title: 'Activity clock',
+    blurb:
+        'A week as a clock face — an hour round the dial, a weekday on '
+        'each ring — coloured by when the trades were opened.',
+    group: GalleryGroup.results,
+    doc: 'activity-clock-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Trades opened by hour',
+        figure: 'Mon is innermost',
+        height: 420,
+        build: () => ActivityClockChart(
+          samples: galleryActivity(),
+          aggregate: SeasonalityAggregate.mean,
+          scale: HeatmapGradientScale(
+            colors: [
+              galleryBlue.withValues(alpha: 0.12),
+              galleryBlue,
+              galleryAmber,
+            ],
+          ),
+          labelStyle: _smallAxisStyle,
+        ),
+      ),
+    ],
+  ),
   GalleryEntry(
     id: 'equity-curve',
     title: 'Equity curve',

@@ -371,3 +371,113 @@ List<double> galleryBand(
   for (var i = 0; i < periods; i++)
     (base + sin(i / 3.4 + phase) * base * 0.45 + i * drift).clamp(2.0, 200.0),
 ];
+
+/// Trades seen from the inside, in R: the losers go about a stop's distance
+/// against the position before they are cut, the winners dip a little first and
+/// then run.
+List<TradeExcursion> galleryExcursions({int count = 140}) => [
+  for (var i = 0; i < count; i++)
+    () {
+      final wave = sin(i * 1.7).abs();
+      final other = cos(i * 0.9).abs();
+      if (i % 5 < 3) {
+        // A loser: out near -1R, having gone a little further against, and
+        // sometimes a little way for the position first.
+        final loss = 0.85 + wave * 0.35;
+        return TradeExcursion(
+          pnl: -loss * 0.95,
+          mae: loss + other * 0.15,
+          mfe: 0.1 + other * 0.55,
+        );
+      }
+      // A winner: a shallow dip, then a run of its own size.
+      final win = 0.5 + wave * 2.6 + other * 0.9;
+      return TradeExcursion(
+        pnl: win,
+        mae: other * 0.7 + (i % 11 == 0 ? 0.9 : 0),
+        mfe: win + 0.15 + wave * 0.8,
+      );
+    }(),
+];
+
+/// A volatility surface: a smile that deepens into short expiries, and a term
+/// structure that slopes up a little.
+({List<double> strikes, List<String> expiries, List<List<double?>> vols})
+galleryVolatilitySurface() {
+  const strikes = [80.0, 85.0, 90.0, 95.0, 100.0, 105.0, 110.0, 115.0, 120.0];
+  const expiries = ['1W', '2W', '1M', '2M', '3M', '6M', '1Y'];
+  const months = [0.25, 0.5, 1.0, 2.0, 3.0, 6.0, 12.0];
+  return (
+    strikes: strikes,
+    expiries: expiries,
+    vols: [
+      for (var e = 0; e < expiries.length; e++)
+        [
+          for (var s = 0; s < strikes.length; s++)
+            // No quote for the far wings of the shortest expiries.
+            e < 2 && (s == 0 || s == strikes.length - 1)
+                ? null
+                : 0.22 +
+                      0.01 * log(1 + months[e]) +
+                      pow((strikes[s] - 100) / 100, 2) *
+                          (1.4 / sqrt(months[e])) -
+                      (strikes[s] - 100) / 100 * 0.12,
+        ],
+    ],
+  );
+}
+
+/// Candidate portfolios scattered under a concave frontier.
+List<PortfolioPoint> galleryPortfolios({int count = 160}) => [
+  for (var i = 0; i < count; i++)
+    () {
+      final risk = 0.07 + (i / count) * 0.23;
+      // The best return a portfolio of this risk can have.
+      final best = 0.02 + 0.115 * sqrt((risk - 0.06) / 0.24);
+      // How far short of it this one falls, deterministic and never negative.
+      final shortfall =
+          (0.012 + sin(i * 2.1).abs() * 0.03) * (i % 4 == 0 ? 0.2 : 1);
+      return PortfolioPoint(risk: risk, expectedReturn: best - shortfall);
+    }(),
+];
+
+/// Two futures curves: today's in mild contango, and last month's flatter.
+({List<FuturesContract> today, List<FuturesContract> before})
+galleryFuturesCurves() {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return (
+    today: [
+      for (var i = 0; i < 12; i++)
+        FuturesContract(
+          label: months[i],
+          price: 71.4 + i * 0.55 - i * i * 0.012 + sin(i / 2.3) * 0.18,
+        ),
+    ],
+    before: [
+      for (var i = 0; i < 12; i++)
+        FuturesContract(
+          label: months[i],
+          price: 69.6 + i * 0.2 - i * i * 0.004 + sin(i / 2.3) * 0.12,
+        ),
+    ],
+  );
+}
+
+/// Eight weeks of trades opened through the day: busy at the open and again in
+/// the afternoon, quiet at night and at weekends.
+List<SeasonalSample> galleryActivity({int weeks = 8}) => [
+  for (var day = 0; day < weeks * 7; day++)
+    for (var hour = 0; hour < 24; hour++)
+      SeasonalSample(
+        time: DateTime(2026, 3, 2).add(Duration(days: day, hours: hour)),
+        value:
+            (day % 7 >= 5 ? 0.15 : 1.0) *
+            (exp(-pow(hour - 9.5, 2) / 6) * 9 +
+                exp(-pow(hour - 15.5, 2) / 5) * 6 +
+                (hour >= 1 && hour <= 6 ? 0.2 : 1.2) +
+                sin(day * 1.3 + hour) * 0.6),
+      ),
+];
