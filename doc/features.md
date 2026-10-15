@@ -154,6 +154,8 @@
 - **`MaeMfeChart`** — every trade as a point by how far it went against you or
   for you and what it made, with the limit line, reference stops, and the
   winners a stop would have cost.
+- **`VarChart`** — a histogram of returns with the loss tail picked out and the
+  value at risk and expected shortfall marked, worked out from the history.
 - **`EfficientFrontierChart`** — portfolios by risk and return with the
   efficient frontier traced through the best, the best Sharpe ratio, the least
   risky portfolio and the capital market line.

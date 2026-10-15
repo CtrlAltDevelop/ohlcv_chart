@@ -68,6 +68,8 @@ for what the package does at a glance, see [Features](features.md) and the
   results in R, with expectancy, profit factor and SQN.
 - **[MAE / MFE scatter](mae-mfe-chart.md)** — `MaeMfeChart`: every trade by how
   far it went against you or for you, to place a stop and a target.
+- **[Value at risk](var-chart.md)** — `VarChart`: a histogram of returns with the
+  loss tail picked out, and VaR and expected shortfall marked.
 - **[Monte Carlo fan](monte-carlo-chart.md)** — `MonteCarloChart`: simulated
   equity paths as percentile bands, with the odds of loss and ruin.
 - **[Seasonality](seasonality-chart.md)** — `SeasonalityChart`: results by month

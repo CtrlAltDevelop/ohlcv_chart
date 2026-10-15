@@ -14,6 +14,10 @@
 
 ### Added
 
+- **`VarChart`** shows a set of returns as a histogram with the loss tail
+  picked out and the value at risk and expected shortfall marked.
+  `ValueAtRisk.fromReturns` works the figures out by the historical method, and
+  `varBins` colours the tail for a histogram of your own.
 - **`EfficientFrontierChart`** plots portfolios by risk and return and traces
   the efficient frontier through the ones nothing beats, marking the best
   return per unit of risk, the least risky portfolio, the capital market line

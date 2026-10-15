@@ -76,6 +76,7 @@ final Map<String, _Build> _charts = {
       BoxPlotChart(entries: [BoxPlotEntry.fromSamples(v, label: 'a')]),
   'HistogramChart': (v) => HistogramChart(bins: histogramBins(v)),
   'RMultipleChart': (v) => RMultipleChart(results: v),
+  'VarChart': (v) => VarChart(returns: v, confidence: 0.9),
   'MaeMfeChart': (v) => MaeMfeChart(
     trades: [
       for (final x in v) TradeExcursion(pnl: x, mae: x.abs(), mfe: x.abs() * 2),
