@@ -508,6 +508,33 @@ class _CumulativeDeltaChartState extends State<CumulativeDeltaChart>
     super.dispose();
   }
 
+  // The marks depend on the bars alone, but build runs on every animation
+  // frame; working them out each time is a scan of the window per bar.
+  List<DeltaBar>? _marksFor;
+  int _marksLength = -1;
+  int _marksLookback = -1;
+  double? _marksLastDelta;
+  double? _marksLastPrice;
+  List<DeltaDivergenceMark> _marks = const [];
+
+  List<DeltaDivergenceMark> _divergences() {
+    final bars = widget.bars;
+    final last = bars.isEmpty ? null : bars.last;
+    if (!identical(_marksFor, bars) ||
+        _marksLength != bars.length ||
+        _marksLookback != widget.divergenceLookback ||
+        _marksLastDelta != last?.delta ||
+        _marksLastPrice != last?.price) {
+      _marksFor = bars;
+      _marksLength = bars.length;
+      _marksLookback = widget.divergenceLookback;
+      _marksLastDelta = last?.delta;
+      _marksLastPrice = last?.price;
+      _marks = deltaDivergences(bars, lookback: widget.divergenceLookback);
+    }
+    return _marks;
+  }
+
   void _handle(Offset local) {
     final index = _layout.indexAt(local.dx);
     if (index == _touched) return;
@@ -537,7 +564,7 @@ class _CumulativeDeltaChartState extends State<CumulativeDeltaChart>
   Widget build(BuildContext context) {
     final t = widget.animationCurve.transform(_animation.value);
     final marks = widget.showDivergences
-        ? deltaDivergences(widget.bars, lookback: widget.divergenceLookback)
+        ? _divergences()
         : const <DeltaDivergenceMark>[];
 
     Widget chart = LayoutBuilder(
