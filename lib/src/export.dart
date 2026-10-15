@@ -131,3 +131,4 @@ export './series/series_data.dart' hide pointsOf;
 export './series/series_range_selector.dart';
 export './series/series_scale.dart' show SeriesOrientation;
 export './series/series_touch.dart';
+export './portfolio/efficient_frontier_chart.dart';

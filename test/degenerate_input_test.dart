@@ -285,6 +285,14 @@ final Map<String, _Build> _charts = {
     volatilities: [v, v.reversed.toList()],
     spot: 100,
   ),
+  'EfficientFrontierChart': (v) => EfficientFrontierChart(
+    points: [
+      for (var i = 0; i < v.length; i++)
+        PortfolioPoint(risk: v[i].abs(), expectedReturn: v[v.length - 1 - i]),
+    ],
+    current: PortfolioPoint(risk: v.isEmpty ? 0 : v.first, expectedReturn: 1),
+    riskFreeRate: 0.01,
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)

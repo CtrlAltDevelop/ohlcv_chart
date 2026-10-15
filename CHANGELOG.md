@@ -14,6 +14,11 @@
 
 ### Added
 
+- **`EfficientFrontierChart`** plots portfolios by risk and return and traces
+  the efficient frontier through the ones nothing beats, marking the best
+  return per unit of risk, the least risky portfolio, the capital market line
+  and the portfolio held now. `efficientFrontierIndices`, `maxSharpeIndex` and
+  `minRiskIndex` are the numbers behind it.
 - **`VolatilitySurfaceChart`** draws implied volatility across strike and
   expiry as a heatmap, with the skew against the at-the-money strike on touch.
   `atTheMoneyIndex` and `surfaceSkew` are the numbers behind it.

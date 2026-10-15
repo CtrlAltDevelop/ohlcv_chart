@@ -94,6 +94,9 @@ for what the package does at a glance, see [Features](features.md) and the
   on a banded track, a row per KPI.
 - **[Pair spread](pair-spread-chart.md)** — `PairSpreadChart`: the spread or
   ratio of two symbols, with z-score bands and entry and exit signals.
+- **[Efficient frontier](efficient-frontier-chart.md)** —
+  `EfficientFrontierChart`: portfolios by risk and return, with the frontier,
+  the best Sharpe ratio and the capital market line.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
 
