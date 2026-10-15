@@ -172,6 +172,7 @@
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
   ratio bar.
+- **`TokenHeatmap`** — a model's text with each token shaded by its surprisal, entropy or attribution, flowing and wrapping like text.
 - **`EvalBreakdownChart`** — an evaluation by category as bars of passed, failed and skipped tasks, worst first, with pass rate, task count and a threshold.
 - **`TokenUsageChart`** — tokens served over time as stacked cached, input and output columns, with the cost as a line on its own axis.
 - **`LatencyBandChart`** — latency over time as bands — the median, and the span to the 95th and 99th percentile — with an objective drawn across and the intervals that broke it marked.

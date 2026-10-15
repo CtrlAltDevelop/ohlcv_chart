@@ -486,6 +486,19 @@ final Map<String, _Build> _charts = {
         ),
     ],
   ),
+  'TokenHeatmap': (v) => TokenHeatmap(
+    showSummary: true,
+    tokens: [
+      for (var i = 0; i < v.length; i++)
+        TokenScore(i % 3 == 0 ? ' tok$i\n' : ' tok$i', v[i]),
+    ],
+  ),
+  'TokenHeatmap (long)': (v) => TokenHeatmap(
+    tokens: [
+      for (var i = 0; i < 400; i++)
+        TokenScore(' w$i', v.isEmpty ? 0 : v[i % v.length]),
+    ],
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)

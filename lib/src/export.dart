@@ -144,3 +144,4 @@ export './ml/model_pareto_chart.dart';
 export './ml/latency_band_chart.dart';
 export './ml/token_usage_chart.dart';
 export './ml/eval_breakdown_chart.dart';
+export './ml/token_heatmap.dart';

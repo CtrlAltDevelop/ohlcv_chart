@@ -14,6 +14,7 @@
 
 ### Added
 
+- **`TokenHeatmap`** shows a model's text with each token shaded by a score — its surprisal, an entropy, an attribution — flowing and wrapping like text, with a legend and the perplexity. `summarizeTokens` and `flowTokens` are the numbers behind it.
 - **`EvalBreakdownChart`** shows an evaluation by category as bars of passed, failed and skipped tasks, worst first, with the pass rate, how many tasks stand behind it, an overall figure and a threshold. `wilsonInterval`, `overallPassRate` and `sortedByPassRate` are the numbers behind it.
 - **`TokenUsageChart`** shows tokens served over time as stacked cached, input and output columns with the cost as a line against its own axis. `usageTotals`, `UsageBucket.cacheHitRate` and `compactCount` are the numbers behind it.
 - **`LatencyBandChart`** shows inference latency over time as p50, p95 and p99 bands, with an objective drawn across and the intervals that broke it marked. `sloBreaches` is the number behind it.
