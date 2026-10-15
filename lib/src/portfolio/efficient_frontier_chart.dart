@@ -885,11 +885,26 @@ class EfficientFrontierChartPainter extends CustomPainter {
       color: Color(0xCCFFFFFF),
     ).merge(chart.markerLabelStyle);
     final tp = textCache.get(name, style);
-    var left = dot.center.dx + chart.markerSize + 4;
-    if (left + tp.width > plot.right + chart.markerSize) {
-      left = dot.center.dx - chart.markerSize - 4 - tp.width;
+
+    // The frontier climbs to the right, so the room is above and to the left of
+    // a marker on it; the current portfolio sits off the line and takes its
+    // name at the side.
+    final Offset at;
+    if (dot.role == FrontierRole.current) {
+      var left = dot.center.dx + chart.markerSize + 4;
+      if (left + tp.width > plot.right + chart.markerSize) {
+        left = dot.center.dx - chart.markerSize - 4 - tp.width;
+      }
+      at = Offset(left, dot.center.dy - tp.height / 2);
+    } else {
+      var top = dot.center.dy - chart.markerSize - 4 - tp.height;
+      if (top < plot.top) top = dot.center.dy + chart.markerSize + 4;
+      at = Offset(
+        math.max(plot.left, dot.center.dx + chart.markerSize - tp.width),
+        top,
+      );
     }
-    tp.paint(canvas, Offset(left, dot.center.dy - tp.height / 2));
+    tp.paint(canvas, at);
   }
 
   @override

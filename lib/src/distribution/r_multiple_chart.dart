@@ -375,7 +375,10 @@ class RMultipleChart extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (showStats && room >= 120) ...[
-                Flexible(
+                ConstrainedBox(
+                  // Never more than part of the box, so a wrapped row cannot starve
+                  // the histogram; what does not fit is clipped.
+                  constraints: BoxConstraints(maxHeight: room * 0.4),
                   child: ClipRect(
                     child: _StatsRow(
                       stats:

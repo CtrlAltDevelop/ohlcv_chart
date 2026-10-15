@@ -112,6 +112,17 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('the histogram takes the height the figures leave', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(VarChart(returns: _hundred()), height: 380));
+
+      // The figures are one short row; the rest of the box is the histogram,
+      // not half of it.
+      final histogram = tester.getSize(find.byType(HistogramChart));
+      expect(histogram.height, greaterThan(380 * 0.7));
+    });
+
     testWidgets('survives no returns', (tester) async {
       await tester.pumpWidget(host(const VarChart(returns: [])));
 
