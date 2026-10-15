@@ -22,7 +22,8 @@ Free for any use, with no paid tier.
 - **29 drawing tools** — Fibonacci, channels, patterns and positions, with an
   editor, undo/redo, alerts and JSON persistence.
 - **45 more chart widgets** — series, pie, heatmap, treemap, sankey, depth,
-  order flow, and the charts a backtest report is made of.
+  order flow, volatility and futures curves, risk and portfolio charts, and the
+  charts a backtest report is made of.
 - **Fully themeable** — `ChartStyle`, `ChartColors` and `ChartTranslations`.
 
 See the [full feature list](doc/features.md) and the [gallery](doc/gallery.md).
@@ -73,6 +74,11 @@ The [example app](example/) demonstrates every option in the package.
 <td width="33%"><a href="doc/series-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-charts.png" alt="Business charts"></a></td>
 <td width="33%"><a href="doc/depth-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/depth.png" alt="Depth chart"></a></td>
 <td width="33%"><a href="doc/heatmap-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/heatmap.png" alt="Heatmap"></a></td>
+</tr>
+<tr>
+<td width="33%"><a href="doc/mae-mfe-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/mae-mfe.png" alt="MAE and MFE scatter"></a></td>
+<td width="33%"><a href="doc/volatility-surface-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/volatility-surface.png" alt="Volatility surface"></a></td>
+<td width="33%"><a href="doc/efficient-frontier-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/efficient-frontier.png" alt="Efficient frontier"></a></td>
 </tr>
 </table>
 

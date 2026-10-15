@@ -1,5 +1,7 @@
 # MAE / MFE scatter
 
+![Every trade by how far it went against you and for you](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/mae-mfe.png)
+
 `MaeMfeChart` puts every trade on a plane by how far it went against you (maximum
 adverse excursion, MAE) or for you (maximum favourable excursion, MFE), and what
 it finally made. It is the picture system designers use to place a stop and a

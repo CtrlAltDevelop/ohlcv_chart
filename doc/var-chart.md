@@ -1,5 +1,7 @@
 # Value at risk
 
+![Daily returns with the loss tail, VaR and expected shortfall](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/var.png)
+
 `VarChart` shows the shape of a set of returns with the loss tail picked out and
 two figures marked: **value at risk** (VaR), the return that only a small share
 of outcomes were worse than, and **expected shortfall** (CVaR), the average of

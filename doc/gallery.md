@@ -45,6 +45,11 @@ Each image links to the documentation page for that feature.
 <td width="33%" valign="top"><a href="volatility-curve-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/volatility-curve.png" width="100%" alt="Volatility curves"></a><br /><sub><b><a href="volatility-curve-chart.md">Volatility curves</a></b><br />A smile at three expiries, and a term structure.</sub></td>
 <td width="33%" valign="top"><a href="pair-spread-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/pair-spread.png" width="100%" alt="Pair spread"></a><br /><sub><b><a href="pair-spread-chart.md">Pair spread</a></b><br />The log ratio of two symbols, with bands and a z-score.</sub></td>
 </tr>
+<tr>
+<td width="33%" valign="top"><a href="volatility-surface-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/volatility-surface.png" width="100%" alt="Volatility surface"></a><br /><sub><b><a href="volatility-surface-chart.md">Volatility surface</a></b><br />Implied volatility across strike and expiry, with the skew against the money.</sub></td>
+<td width="33%" valign="top"><a href="futures-curve-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/futures-curve.png" width="100%" alt="Futures curve"></a><br /><sub><b><a href="futures-curve-chart.md">Futures curve</a></b><br />Prices by delivery month, with contango or backwardation read off.</sub></td>
+<td width="33%"></td>
+</tr>
 </table>
 
 ## Backtests and results
@@ -62,7 +67,12 @@ Each image links to the documentation page for that feature.
 </tr>
 <tr>
 <td width="33%" valign="top"><a href="waterfall-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/waterfall.png" width="100%" alt="Waterfall"></a><br /><sub><b><a href="waterfall-chart.md">Waterfall</a></b><br />A balance built up step by step, from opening to closing.</sub></td>
-<td width="33%"></td>
+<td width="33%" valign="top"><a href="mae-mfe-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/mae-mfe.png" width="100%" alt="MAE / MFE scatter"></a><br /><sub><b><a href="mae-mfe-chart.md">MAE / MFE scatter</a></b><br />Every trade by how far it went against you or for you, and what it made.</sub></td>
+<td width="33%" valign="top"><a href="var-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/var.png" width="100%" alt="Value at risk"></a><br /><sub><b><a href="var-chart.md">Value at risk</a></b><br />Returns with the loss tail picked out, and VaR and expected shortfall marked.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="efficient-frontier-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/efficient-frontier.png" width="100%" alt="Efficient frontier"></a><br /><sub><b><a href="efficient-frontier-chart.md">Efficient frontier</a></b><br />Portfolios by risk and return, with the frontier and the best Sharpe ratio.</sub></td>
+<td width="33%" valign="top"><a href="activity-clock-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/activity-clock.png" width="100%" alt="Activity clock"></a><br /><sub><b><a href="activity-clock-chart.md">Activity clock</a></b><br />A week as a clock face: an hour round the dial, a weekday on each ring.</sub></td>
 <td width="33%"></td>
 </tr>
 </table>

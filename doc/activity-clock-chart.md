@@ -1,5 +1,7 @@
 # Activity clock
 
+![Trades opened by hour and weekday on a clock face](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/activity-clock.png)
+
 `ActivityClockChart` lays a week out as a clock face: the hours of the day run
 round the dial, each weekday takes a ring, and every segment is coloured by what
 happened then — trades opened, volume traded, profit made.

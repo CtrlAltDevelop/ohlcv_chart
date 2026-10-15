@@ -14,6 +14,8 @@
 
 ### Added
 
+- The example app's Gallery tab has the six new charts — 40 in all — and the
+  documentation pages have their screenshots.
 - **`ActivityClockChart`** lays a week out as a clock face — the hours of the
   day round the dial, a weekday on each ring — coloured by what happened then.
   It takes the same `SeasonalSample`s as `SeasonalityChart`. `layOutClock` and

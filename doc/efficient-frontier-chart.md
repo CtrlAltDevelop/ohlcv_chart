@@ -1,5 +1,7 @@
 # Efficient frontier
 
+![Portfolios by risk and return with the efficient frontier](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/efficient-frontier.png)
+
 `EfficientFrontierChart` plots portfolios by risk and expected return and traces
 the **efficient frontier** through the ones nothing beats: for the risk they
 carry, no other candidate returns more. It marks the portfolio with the best

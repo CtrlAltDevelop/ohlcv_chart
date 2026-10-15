@@ -1,5 +1,7 @@
 # Volatility surface
 
+![Implied volatility across strike and expiry](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/volatility-surface.png)
+
 `VolatilitySurfaceChart` draws implied volatility across strike and expiry at
 once, as a heatmap. `VolatilityCurveChart` shows one smile or one term structure
 at a time; the surface is the whole picture, where a skew that steepens into

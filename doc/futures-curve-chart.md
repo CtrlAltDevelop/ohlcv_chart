@@ -1,5 +1,7 @@
 # Futures curve
 
+![A futures curve in contango, with last month dashed behind it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/futures-curve.png)
+
 `FuturesCurveChart` plots futures prices against delivery month — the market's
 term structure. One curve shows whether the market is in **contango** (later
 contracts cost more) or **backwardation** (they cost less); several curves, such
