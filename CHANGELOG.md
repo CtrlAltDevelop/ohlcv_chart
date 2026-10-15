@@ -14,6 +14,12 @@
 
 ### Added
 
+- **Ten charts for training and serving language models:** `TrainingCurveChart`,
+  `ScalingLawChart`, `SweepChart`, `TrainingTimelineChart`,
+  `BenchmarkMatrixChart`, `ModelParetoChart`, `LatencyBandChart`,
+  `TokenUsageChart`, `EvalBreakdownChart` and `TokenHeatmap`. The example app's
+  Gallery tab has a *Models and training* group for them — 50 charts in all —
+  and each has a documentation page with its screenshot.
 - **`TokenHeatmap`** shows a model's text with each token shaded by a score — its surprisal, an entropy, an attribution — flowing and wrapping like text, with a legend and the perplexity. `summarizeTokens` and `flowTokens` are the numbers behind it.
 - **`EvalBreakdownChart`** shows an evaluation by category as bars of passed, failed and skipped tasks, worst first, with the pass rate, how many tasks stand behind it, an overall figure and a threshold. `wilsonInterval`, `overallPassRate` and `sortedByPassRate` are the numbers behind it.
 - **`TokenUsageChart`** shows tokens served over time as stacked cached, input and output columns with the cost as a line against its own axis. `usageTotals`, `UsageBucket.cacheHitRate` and `compactCount` are the numbers behind it.
@@ -58,6 +64,9 @@
 
 ### Fixed
 
+- Log axes spanning more than six decades ticked on every 1, 2 and 5, which
+  crowded the axis; they tick on powers of ten, every few when there are very
+  many.
 - Williams %R looked back over `period + 1` candles instead of `period`, so the
   line sat a little off every other charting tool. It reads exactly `period`
   candles now; the values shift slightly.

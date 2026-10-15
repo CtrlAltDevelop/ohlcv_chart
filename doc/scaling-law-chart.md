@@ -1,5 +1,7 @@
 # Scaling laws
 
+![Loss against training compute on log-log axes with the fitted power law carried to a target](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/scaling-law.png)
+
 `ScalingLawChart` plots the loss models reached against how much they were given
 — parameters, training tokens or FLOPs — on log-log axes, fits the **power law**
 through them and carries it past the largest model, so the question "what would

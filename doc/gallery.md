@@ -112,6 +112,31 @@ Each image links to the documentation page for that feature.
 </tr>
 </table>
 
+## Models and training
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="training-curve-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/training-curve.png" width="100%" alt="Training curves"></a><br /><sub><b><a href="training-curve-chart.md">Training curves</a></b><br />Loss and accuracy of runs, smoothed, with the best checkpoint and divergence marked.</sub></td>
+<td width="33%" valign="top"><a href="scaling-law-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/scaling-law.png" width="100%" alt="Scaling laws"></a><br /><sub><b><a href="scaling-law-chart.md">Scaling laws</a></b><br />Loss against compute on log-log axes, with the power law fitted and extrapolated.</sub></td>
+<td width="33%" valign="top"><a href="sweep-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sweep.png" width="100%" alt="Hyperparameter sweep"></a><br /><sub><b><a href="sweep-chart.md">Hyperparameter sweep</a></b><br />A learning-rate by batch-size grid, the best combination starred.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="training-timeline-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/training-timeline.png" width="100%" alt="Training timeline"></a><br /><sub><b><a href="training-timeline-chart.md">Training timeline</a></b><br />Jobs by machine, coloured by how each finished.</sub></td>
+<td width="33%" valign="top"><a href="benchmark-matrix-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/benchmark-matrix.png" width="100%" alt="Benchmark matrix"></a><br /><sub><b><a href="benchmark-matrix-chart.md">Benchmark matrix</a></b><br />Models against benchmarks, coloured by standing, leaders starred.</sub></td>
+<td width="33%" valign="top"><a href="model-pareto-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/model-pareto.png" width="100%" alt="Model cost against quality"></a><br /><sub><b><a href="model-pareto-chart.md">Model cost against quality</a></b><br />Models by price and score, with the Pareto frontier.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="latency-band-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/latency-band.png" width="100%" alt="Latency bands"></a><br /><sub><b><a href="latency-band-chart.md">Latency bands</a></b><br />p50, p95 and p99 over a day, with an objective and its breaches.</sub></td>
+<td width="33%" valign="top"><a href="token-usage-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/token-usage.png" width="100%" alt="Token usage"></a><br /><sub><b><a href="token-usage-chart.md">Token usage</a></b><br />Cached, input and output tokens, with the cost as a line.</sub></td>
+<td width="33%" valign="top"><a href="eval-breakdown-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/eval-breakdown.png" width="100%" alt="Evaluation breakdown"></a><br /><sub><b><a href="eval-breakdown-chart.md">Evaluation breakdown</a></b><br />Pass rate by category, worst first, with a threshold.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="token-heatmap.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/token-heatmap.png" width="100%" alt="Token heatmap"></a><br /><sub><b><a href="token-heatmap.md">Token heatmap</a></b><br />A completion with each token shaded by its surprisal.</sub></td>
+<td width="33%"></td>
+<td width="33%"></td>
+</tr>
+</table>
+
 ## Chart types
 
 <table>

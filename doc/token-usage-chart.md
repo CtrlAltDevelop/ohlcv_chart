@@ -1,5 +1,7 @@
 # Token usage
 
+![Tokens served over two weeks as stacked cached, input and output columns with the cost as a line](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/token-usage.png)
+
 `TokenUsageChart` shows what a model served over time: tokens as **stacked
 columns** — cached, input and output — and the **cost** as a line against its
 own axis on the right. The cached share, the part of the prompt that was a cache

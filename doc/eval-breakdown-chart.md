@@ -1,5 +1,7 @@
 # Evaluation breakdown
 
+![An evaluation by category as bars of passed, failed and skipped tasks with a threshold](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/eval-breakdown.png)
+
 `EvalBreakdownChart` shows how an evaluation went **by category**: a bar of
 passed, failed and skipped tasks for each, with the pass rate and the number of
 tasks behind it, the worst category first. An overall figure sits above them,

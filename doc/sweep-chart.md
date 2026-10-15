@@ -1,5 +1,7 @@
 # Hyperparameter sweep
 
+![A hyperparameter sweep as a grid of validation losses with the best combination starred](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/sweep.png)
+
 `SweepChart` lays a two-setting sweep out as a grid of scores — a learning rate
 across, a batch size down — coloured good to bad, with the **best combination
 starred** and a last column and row holding the **mean** of each setting, which

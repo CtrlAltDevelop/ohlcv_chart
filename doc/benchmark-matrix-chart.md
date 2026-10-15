@@ -1,5 +1,7 @@
 # Benchmark matrix
 
+![Six models against six benchmarks, each score coloured by its standing in its column](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/benchmark-matrix.png)
+
 `BenchmarkMatrixChart` compares models across benchmarks in one grid: each score
 coloured by **how it stands among the models on that benchmark**, the leader of
 each benchmark starred, and an average column to rank the models by.

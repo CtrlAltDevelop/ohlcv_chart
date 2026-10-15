@@ -1,5 +1,7 @@
 # Training timeline
 
+![Training jobs by pod, coloured by completed, failed, preempted, cancelled and running](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/training-timeline.png)
+
 `TrainingTimelineChart` shows training jobs on a timeline: a lane per machine or
 pool, a bar from start to end **coloured by how the job finished**, and a strip
 underneath counting how many jobs were running at each moment. It answers "what

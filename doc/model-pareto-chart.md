@@ -1,5 +1,7 @@
 # Model cost against quality
 
+![Models by price per million tokens against a benchmark score with the Pareto frontier](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/model-pareto.png)
+
 `ModelParetoChart` plots models by what they cost and how good they are, and
 traces the **Pareto frontier** through the ones nothing beats: the cheapest way
 to get each level of quality. Models off the frontier are drawn faintly, and

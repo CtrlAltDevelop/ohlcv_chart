@@ -21,9 +21,10 @@ Free for any use, with no paid tier.
   with higher-timeframe values that never repaint.
 - **29 drawing tools** — Fibonacci, channels, patterns and positions, with an
   editor, undo/redo, alerts and JSON persistence.
-- **45 more chart widgets** — series, pie, heatmap, treemap, sankey, depth,
-  order flow, volatility and futures curves, risk and portfolio charts, and the
-  charts a backtest report is made of.
+- **55 more chart widgets** — series, pie, heatmap, treemap, sankey, depth,
+  order flow, volatility and futures curves, risk and portfolio charts, the
+  charts a backtest report is made of, and charts for training and serving
+  language models.
 - **Fully themeable** — `ChartStyle`, `ChartColors` and `ChartTranslations`.
 
 See the [full feature list](doc/features.md) and the [gallery](doc/gallery.md).
@@ -79,6 +80,11 @@ The [example app](example/) demonstrates every option in the package.
 <td width="33%"><a href="doc/mae-mfe-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/mae-mfe.png" alt="MAE and MFE scatter"></a></td>
 <td width="33%"><a href="doc/volatility-surface-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/volatility-surface.png" alt="Volatility surface"></a></td>
 <td width="33%"><a href="doc/efficient-frontier-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/efficient-frontier.png" alt="Efficient frontier"></a></td>
+</tr>
+<tr>
+<td width="33%"><a href="doc/training-curve-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/training-curve.png" alt="Training curves"></a></td>
+<td width="33%"><a href="doc/model-pareto-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/model-pareto.png" alt="Model cost against quality"></a></td>
+<td width="33%"><a href="doc/token-heatmap.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/token-heatmap.png" alt="Token heatmap"></a></td>
 </tr>
 </table>
 

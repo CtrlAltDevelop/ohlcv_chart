@@ -1,6 +1,6 @@
 name: ohlcv_chart
 description: >-
-  Candlestick charts for Flutter: 31 indicators, 29 drawing tools and 45 more
+  Candlestick charts for Flutter: 31 indicators, 29 drawing tools and 55 more
   chart types. Pure CustomPainter, no WebView.
 version: 3.1.1
 homepage: https://github.com/CtrlAltDevelop

@@ -1,5 +1,7 @@
 # Token heatmap
 
+![A model completion with each token shaded by how surprised the model was by it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/token-heatmap.png)
+
 `TokenHeatmap` shows a model's text with **each token shaded by a number**:
 where the model was unsure, what a prediction leaned on, which words an
 attribution method found important. Tokens flow and wrap like text, so a

@@ -1,5 +1,7 @@
 # Latency bands
 
+![Latency over a day as p50, p95 and p99 bands with an objective and the intervals that broke it](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/latency-band.png)
+
 `LatencyBandChart` shows an inference service's latency over time as **bands**:
 the median as a line, the span up to the 95th percentile and on to the 99th
 shaded, an **objective** drawn across, and the intervals that broke it marked.

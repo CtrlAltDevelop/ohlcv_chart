@@ -1,5 +1,7 @@
 # Training curves
 
+![Training curves: train and validation loss with the overfitting gap, and three learning rates on a log axis](https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/training-curve.png)
+
 `TrainingCurveChart` draws the loss and accuracy curves of one or more training
 runs, the way a training dashboard does: raw readings faint under a **smoothed**
 line, an optional **log axis** for a loss that spans decades, the **best
