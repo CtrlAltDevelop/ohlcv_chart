@@ -481,3 +481,333 @@ List<SeasonalSample> galleryActivity({int weeks = 8}) => [
                 sin(day * 1.3 + hour) * 0.6),
       ),
 ];
+
+// ── Models and training ────────────────────────────────────────────────────
+
+/// A training loss that falls fast and flattens, with noise; a validation loss
+/// that follows it, then turns up as the model starts to overfit.
+({List<TrainingPoint> train, List<TrainingPoint> validation})
+galleryLossCurves({int points = 160}) {
+  final train = <TrainingPoint>[];
+  final validation = <TrainingPoint>[];
+  for (var i = 0; i < points; i++) {
+    final step = i * 25.0;
+    final base = 0.55 + 3.4 * exp(-i / 22);
+    final noise = sin(i * 1.9) * 0.07 + cos(i * 0.7) * 0.05;
+    train.add(TrainingPoint(step, base + noise));
+    final overfit = i > 90 ? (i - 90) * 0.0042 : 0.0;
+    validation.add(TrainingPoint(step, base + 0.16 + overfit + noise * 0.55));
+  }
+  return (train: train, validation: validation);
+}
+
+/// Three learning rates on one task: one learns, one is slow, one blows up.
+List<TrainingRun> galleryLearningRates({int points = 120}) => [
+  TrainingRun(
+    label: 'lr 3e-4',
+    points: [
+      for (var i = 0; i < points; i++)
+        TrainingPoint(i * 50.0, 0.8 + 5.2 * exp(-i / 18) + sin(i * 2.3) * 0.05),
+    ],
+  ),
+  TrainingRun(
+    label: 'lr 3e-5',
+    points: [
+      for (var i = 0; i < points; i++)
+        TrainingPoint(i * 50.0, 1.6 + 4.4 * exp(-i / 60) + cos(i * 1.7) * 0.04),
+    ],
+  ),
+  TrainingRun(
+    label: 'lr 3e-3',
+    points: [
+      for (var i = 0; i < points; i++)
+        TrainingPoint(
+          i * 50.0,
+          i < 46
+              ? 0.9 + 5.0 * exp(-i / 14) + sin(i * 2.9) * 0.06
+              : (i < 50 ? 1.4 * pow(2.6, (i - 45).toDouble()) : double.nan),
+        ),
+    ],
+  ),
+];
+
+/// Eight models on a loss that falls as a power of compute, with scatter.
+List<ScalingPoint> galleryScaling() => [
+  for (var i = 0; i < 8; i++)
+    ScalingPoint(
+      scale: 1e18 * pow(5.0, i),
+      loss:
+          14.0 *
+          pow(1e18 * pow(5.0, i), -0.0325).toDouble() *
+          (1 + sin(i * 2.7) * 0.012),
+      label: ['125M', '350M', '760M', '1.3B', '2.7B', '6.7B', '13B', '30B'][i],
+    ),
+];
+
+/// A learning-rate by batch-size sweep with a valley and a cliff.
+List<SweepTrial> gallerySweep() {
+  const rates = [1e-4, 3e-4, 1e-3, 3e-3, 1e-2];
+  const batches = [16.0, 32.0, 64.0, 128.0, 256.0];
+  return [
+    for (final lr in rates)
+      for (final bs in batches)
+        SweepTrial(
+          x: lr,
+          y: bs,
+          score:
+              1.9 +
+              pow(log(lr / 1.2e-3) / ln10, 2) * 0.55 +
+              pow(log(bs / 80) / ln10, 2) * 0.35 +
+              (lr >= 1e-2 && bs <= 32 ? 1.4 : 0),
+        ),
+  ];
+}
+
+/// Training jobs over two days across four pods.
+List<TrainingJob> galleryJobs() {
+  final t0 = DateTime(2026, 9, 1, 6);
+  TrainingJob job(
+    String name,
+    String node,
+    double startHour,
+    double? hours,
+    JobStatus status, {
+    int gpus = 64,
+  }) => TrainingJob(
+    name: name,
+    node: node,
+    start: t0.add(Duration(minutes: (startHour * 60).round())),
+    end: hours == null
+        ? null
+        : t0.add(Duration(minutes: ((startHour + hours) * 60).round())),
+    status: status,
+    gpus: gpus,
+  );
+  return [
+    job('pretrain-7b', 'pod-a', 0, 30, JobStatus.completed, gpus: 256),
+    job('sft-7b', 'pod-a', 31, 9, JobStatus.completed),
+    job('dpo-7b', 'pod-a', 41, null, JobStatus.running),
+    job('pretrain-13b', 'pod-b', 2, 14, JobStatus.preempted, gpus: 512),
+    job('pretrain-13b·2', 'pod-b', 17, 20, JobStatus.failed, gpus: 512),
+    job('pretrain-13b·3', 'pod-b', 39, null, JobStatus.running, gpus: 512),
+    job('eval-sweep', 'pod-c', 4, 3, JobStatus.completed, gpus: 8),
+    job('ablation-1', 'pod-c', 8, 6, JobStatus.completed, gpus: 16),
+    job('ablation-2', 'pod-c', 15, 2, JobStatus.cancelled, gpus: 16),
+    job('ablation-3', 'pod-c', 18, 7, JobStatus.completed, gpus: 16),
+    job('rl-tune', 'pod-d', 10, 12, JobStatus.completed, gpus: 32),
+    job('rl-tune·2', 'pod-d', 24, 5, JobStatus.failed, gpus: 32),
+    job('rl-tune·3', 'pod-d', 30, null, JobStatus.running, gpus: 32),
+  ];
+}
+
+/// Six models across six benchmarks; the last is perplexity, where lower wins.
+({List<String> models, List<String> benchmarks, List<List<double?>> scores})
+galleryBenchmarkScores() => (
+  models: [
+    'Atlas-L',
+    'Atlas-M',
+    'Borealis',
+    'Cobalt-70B',
+    'Delta-8B',
+    'Echo-mini',
+  ],
+  benchmarks: ['MMLU', 'GSM8K', 'HumanEval', 'MATH', 'GPQA', 'Perplexity'],
+  scores: [
+    [88.4, 95.1, 90.2, 72.0, 56.1, 4.6],
+    [84.9, 91.0, 84.8, 61.5, 48.7, 5.0],
+    [86.7, 92.4, 88.1, 66.3, 52.9, 4.8],
+    [82.1, 88.9, 79.4, 53.0, 41.5, 5.4],
+    [73.6, 79.2, 68.0, 36.8, 31.0, 6.3],
+    [62.0, 58.3, null, 21.0, 24.8, 7.9],
+  ],
+);
+
+/// Fourteen models by price per million tokens and a quality score.
+List<ModelPoint> galleryModels() => const [
+  ModelPoint(
+    name: 'Atlas-L',
+    cost: 15,
+    score: 88.4,
+    size: 200000,
+    group: 'Atlas',
+  ),
+  ModelPoint(
+    name: 'Atlas-M',
+    cost: 3,
+    score: 84.9,
+    size: 200000,
+    group: 'Atlas',
+  ),
+  ModelPoint(
+    name: 'Atlas-S',
+    cost: 0.25,
+    score: 75.2,
+    size: 200000,
+    group: 'Atlas',
+  ),
+  ModelPoint(
+    name: 'Borealis',
+    cost: 10,
+    score: 86.7,
+    size: 128000,
+    group: 'Borealis',
+  ),
+  ModelPoint(
+    name: 'Borealis-mini',
+    cost: 0.6,
+    score: 79.5,
+    size: 128000,
+    group: 'Borealis',
+  ),
+  ModelPoint(
+    name: 'Cobalt-70B',
+    cost: 0.9,
+    score: 82.1,
+    size: 32000,
+    group: 'Open',
+  ),
+  ModelPoint(
+    name: 'Cobalt-8B',
+    cost: 0.15,
+    score: 69.0,
+    size: 32000,
+    group: 'Open',
+  ),
+  ModelPoint(
+    name: 'Delta-8B',
+    cost: 0.2,
+    score: 73.6,
+    size: 128000,
+    group: 'Open',
+  ),
+  ModelPoint(
+    name: 'Echo-mini',
+    cost: 0.08,
+    score: 62.0,
+    size: 8000,
+    group: 'Open',
+  ),
+  ModelPoint(
+    name: 'Foxtrot',
+    cost: 30,
+    score: 84.0,
+    size: 100000,
+    group: 'Foxtrot',
+  ),
+  ModelPoint(
+    name: 'Foxtrot-fast',
+    cost: 5,
+    score: 78.8,
+    size: 100000,
+    group: 'Foxtrot',
+  ),
+  ModelPoint(
+    name: 'Golf-XL',
+    cost: 20,
+    score: 83.2,
+    size: 1000000,
+    group: 'Golf',
+  ),
+  ModelPoint(
+    name: 'Golf-Flash',
+    cost: 0.4,
+    score: 76.9,
+    size: 1000000,
+    group: 'Golf',
+  ),
+  ModelPoint(
+    name: 'Hotel',
+    cost: 6,
+    score: 70.5,
+    size: 16000,
+    group: 'Foxtrot',
+  ),
+];
+
+/// Latency every fifteen minutes for a day, with a bad hour in the afternoon.
+List<LatencySample> galleryLatency({int count = 96}) => [
+  for (var i = 0; i < count; i++)
+    () {
+      final hour = i / 4;
+      final load = 1 + 0.35 * sin((hour - 6) / 24 * 2 * pi).clamp(-1, 1);
+      final incident = (i >= 58 && i <= 66)
+          ? 1 + (1 - (i - 62).abs() / 5) * 1.6
+          : 1.0;
+      final p50 =
+          420 * load * (1 + sin(i * 1.3) * 0.04) * (incident > 1 ? 1.3 : 1);
+      return LatencySample(
+        time: DateTime(2026, 9, 1).add(Duration(minutes: i * 15)),
+        p50: p50,
+        p95: p50 * (2.0 * incident + 0.2 * sin(i * 0.7)),
+        p99: p50 * (3.4 * incident + 0.5 * cos(i * 0.5)),
+      );
+    }(),
+];
+
+/// Fourteen days of tokens served, with a cache that warms up.
+List<UsageBucket> galleryUsage({int days = 14}) => [
+  for (var i = 0; i < days; i++)
+    () {
+      final traffic = 1 + i * 0.05 + sin(i * 1.2) * 0.18;
+      final cacheShare = (0.15 + i * 0.045).clamp(0.0, 0.7);
+      final prompt = 42e6 * traffic;
+      return UsageBucket(
+        time: DateTime(2026, 9, 1).add(Duration(days: i)),
+        inputTokens: prompt * (1 - cacheShare),
+        cachedTokens: prompt * cacheShare,
+        outputTokens: 9e6 * traffic,
+        cost:
+            prompt * (1 - cacheShare) * 3e-6 +
+            prompt * cacheShare * 0.3e-6 +
+            9e6 * traffic * 15e-6,
+      );
+    }(),
+];
+
+/// An evaluation across eight categories, with very different sample sizes.
+List<EvalCategory> galleryEval() => const [
+  EvalCategory(name: 'Arithmetic', passed: 188, failed: 12),
+  EvalCategory(name: 'Word problems', passed: 142, failed: 58),
+  EvalCategory(name: 'Coding', passed: 301, failed: 44, skipped: 7),
+  EvalCategory(name: 'Long context', passed: 64, failed: 36, skipped: 9),
+  EvalCategory(name: 'Tool use', passed: 77, failed: 23),
+  EvalCategory(name: 'Safety', passed: 480, failed: 20),
+  EvalCategory(name: 'Translation', passed: 9, failed: 1),
+  EvalCategory(name: 'Reasoning', passed: 118, failed: 82),
+];
+
+/// A completion with the surprisal of each token: mostly sure, doubtful where
+/// it had to pick a fact.
+List<TokenScore> galleryTokens() {
+  const words = [
+    ('The', 0.3),
+    (' capital', 0.9),
+    (' of', 0.1),
+    (' Australia', 2.1),
+    (' is', 0.2),
+    (' Canberra', 3.6),
+    (',', 0.4),
+    (' not', 2.8),
+    (' Sydney', 1.9),
+    (' as', 1.2),
+    (' many', 1.5),
+    (' people', 0.6),
+    (' assume', 0.9),
+    ('.\n', 0.5),
+    ('It', 1.1),
+    (' was', 0.8),
+    (' chosen', 2.4),
+    (' in', 0.7),
+    (' 1908', 4.8),
+    (' as', 1.3),
+    (' a', 0.2),
+    (' compromise', 2.2),
+    (' between', 0.4),
+    (' the', 0.2),
+    (' two', 0.8),
+    (' largest', 1.4),
+    (' cities', 0.3),
+    ('.', 0.2),
+  ];
+  return [for (final (token, s) in words) TokenScore(token, s)];
+}

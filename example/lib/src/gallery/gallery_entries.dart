@@ -19,7 +19,10 @@ enum GalleryGroup {
   results('Backtests and results'),
 
   /// The charts a dashboard or a report is built from.
-  dashboard('Dashboards and reports');
+  dashboard('Dashboards and reports'),
+
+  /// Training runs, evaluations and what models cost to serve.
+  models('Models and training');
 
   const GalleryGroup(this.title);
 
@@ -96,6 +99,7 @@ List<GalleryEntry> galleryEntries() => [
   ..._orderFlow(),
   ..._results(),
   ..._dashboard(),
+  ..._models(),
 ];
 
 /// The entry with this [id], or null when there is none.
@@ -1742,3 +1746,304 @@ TreemapItem _symbol(String name, double weight, double change) => TreemapItem(
   label: '$name\n${change >= 0 ? '+' : ''}${change.toStringAsFixed(1)}%',
   colorValue: change,
 );
+
+List<GalleryEntry> _models() => [
+  GalleryEntry(
+    id: 'training-curve',
+    title: 'Training curves',
+    blurb:
+        'Loss and accuracy of one or more runs, with smoothing, a log axis, '
+        'the best checkpoint and the step a run diverged.',
+    group: GalleryGroup.models,
+    doc: 'training-curve-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Train and validation',
+        figure: 'overfits at 2,250',
+        height: 380,
+        build: () {
+          final curves = galleryLossCurves();
+          return TrainingCurveChart(
+            runs: [
+              TrainingRun(
+                label: 'train',
+                points: curves.train,
+                color: galleryBlue,
+              ),
+              TrainingRun(
+                label: 'validation',
+                points: curves.validation,
+                color: galleryAmber,
+                dashed: true,
+              ),
+            ],
+            smoothing: 0.85,
+            gapBetween: (0, 1),
+            gapColor: const Color(0x33FA5252),
+            yAxisTitle: 'Loss',
+            axisLabelStyle: _smallAxisStyle,
+            axisTitleStyle: _smallAxisStyle,
+            gridColor: _grid,
+          );
+        },
+      ),
+      GalleryVariant(
+        title: 'Three learning rates',
+        figure: 'log axis',
+        height: 380,
+        build: () => TrainingCurveChart(
+          runs: galleryLearningRates(),
+          logY: true,
+          smoothing: 0.4,
+          yAxisTitle: 'Loss (log)',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'scaling-law',
+    title: 'Scaling laws',
+    blurb:
+        'Loss against compute on log-log axes, with the power law fitted '
+        'and carried to where it reaches a target.',
+    group: GalleryGroup.models,
+    doc: 'scaling-law-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Loss against FLOPs',
+        figure: 'fit and extrapolation',
+        height: 400,
+        build: () => ScalingLawChart(
+          points: galleryScaling(),
+          extrapolateTo: 1e26,
+          targetLoss: 2.0,
+          pointColor: galleryBlue,
+          fitColor: galleryAmber,
+          bandColor: const Color(0x22FAB005),
+          targetColor: galleryGreen,
+          xAxisTitle: 'Training compute (FLOPs)',
+          yAxisTitle: 'Loss',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'sweep',
+    title: 'Hyperparameter sweep',
+    blurb:
+        'A learning-rate by batch-size grid of validation losses, the best '
+        'combination starred and the mean of each setting alongside.',
+    group: GalleryGroup.models,
+    doc: 'sweep-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Validation loss',
+        figure: '5 × 5',
+        height: 340,
+        build: () => SweepChart(
+          trials: gallerySweep(),
+          goodColor: galleryGreen,
+          midColor: galleryAmber,
+          badColor: galleryRed,
+          labelStyle: _darkLabel,
+          axisLabelStyle: _smallAxisStyle,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'training-timeline',
+    title: 'Training timeline',
+    blurb:
+        'Training jobs by machine, coloured by how each finished, with how '
+        'many were running underneath.',
+    group: GalleryGroup.models,
+    doc: 'training-timeline-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Two days on four pods',
+        figure: '13 jobs',
+        height: 360,
+        build: () => TrainingTimelineChart(
+          jobs: galleryJobs(),
+          runningColor: galleryBlue,
+          completedColor: galleryGreen,
+          failedColor: galleryRed,
+          preemptedColor: galleryAmber,
+          cancelledColor: const Color(0xFF6B7480),
+          axisLabelStyle: _smallAxisStyle,
+          laneLabelStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'benchmark-matrix',
+    title: 'Benchmark matrix',
+    blurb:
+        'Models against benchmarks, each score coloured by where it stands '
+        'in its column, the leaders starred.',
+    group: GalleryGroup.models,
+    doc: 'benchmark-matrix-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Six models, six benchmarks',
+        figure: 'perplexity: lower wins',
+        height: 340,
+        build: () {
+          final data = galleryBenchmarkScores();
+          return BenchmarkMatrixChart(
+            models: data.models,
+            benchmarks: data.benchmarks,
+            scores: data.scores,
+            lowerIsBetter: const {5},
+            lowColor: galleryRed,
+            midColor: galleryAmber,
+            highColor: galleryGreen,
+            labelStyle: _darkLabel,
+            axisLabelStyle: _smallAxisStyle,
+            modelAxisWidth: 96,
+          );
+        },
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'model-pareto',
+    title: 'Model cost against quality',
+    blurb:
+        'Models by price and score on a log axis, with the Pareto frontier '
+        'through the ones nothing beats.',
+    group: GalleryGroup.models,
+    doc: 'model-pareto-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Price against MMLU',
+        figure: 'size = context window',
+        height: 420,
+        build: () => ModelParetoChart(
+          models: galleryModels(),
+          palette: galleryPalette,
+          costFormatter: (v) => '\$${v < 1 ? v : v.toStringAsFixed(0)}',
+          xAxisTitle: 'Price per 1M tokens',
+          yAxisTitle: 'MMLU',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          legendStyle: _axisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'latency-band',
+    title: 'Latency bands',
+    blurb:
+        'p50, p95 and p99 latency over a day as bands, with an objective '
+        'drawn across and the intervals that broke it marked.',
+    group: GalleryGroup.models,
+    doc: 'latency-band-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Time to first token',
+        figure: 'SLO 1,200 ms on p95',
+        figureColor: galleryAmber,
+        height: 380,
+        build: () => LatencyBandChart(
+          samples: galleryLatency(),
+          slo: 1200,
+          medianColor: galleryBlue,
+          p95Color: galleryBlue,
+          p99Color: galleryPurple,
+          sloColor: galleryAmber,
+          breachColor: galleryRed,
+          valueFormatter: (v) => '${v.round()} ms',
+          axisLabelStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'token-usage',
+    title: 'Token usage',
+    blurb:
+        'Cached, input and output tokens over two weeks as stacked columns, '
+        'with the cost as a line on its own axis.',
+    group: GalleryGroup.models,
+    doc: 'token-usage-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Tokens and spend',
+        figure: 'cache warming up',
+        height: 380,
+        build: () => TokenUsageChart(
+          buckets: galleryUsage(),
+          inputColor: galleryBlue,
+          outputColor: galleryPurple,
+          cachedColor: galleryTeal,
+          costColor: galleryAmber,
+          costFormatter: (v) => '\$${v.toStringAsFixed(0)}',
+          axisLabelStyle: _smallAxisStyle,
+          legendStyle: _axisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'eval-breakdown',
+    title: 'Evaluation breakdown',
+    blurb:
+        'An evaluation by category as bars of passed, failed and skipped '
+        'tasks, the worst first, with a threshold held across.',
+    group: GalleryGroup.models,
+    doc: 'eval-breakdown-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Pass rate by category',
+        figure: 'threshold 80%',
+        figureColor: galleryAmber,
+        height: 380,
+        build: () => EvalBreakdownChart(
+          categories: galleryEval(),
+          threshold: 0.8,
+          passedColor: galleryGreen,
+          failedColor: galleryRed,
+          skippedColor: const Color(0xFF6B7480),
+          thresholdColor: galleryAmber,
+          labelStyle: const TextStyle(color: Color(0xFFD0D5DB), fontSize: 12),
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'token-heatmap',
+    title: 'Token heatmap',
+    blurb:
+        'A completion with each token shaded by how surprised the model was '
+        'by it, and the perplexity of the whole.',
+    group: GalleryGroup.models,
+    doc: 'token-heatmap.md',
+    variants: [
+      GalleryVariant(
+        title: 'Surprisal per token',
+        figure: 'nats',
+        height: 300,
+        build: () => TokenHeatmap(
+          tokens: galleryTokens(),
+          showSummary: true,
+          textStyle: const TextStyle(fontSize: 16),
+          legendStyle: _axisStyle,
+        ),
+      ),
+    ],
+  ),
+];

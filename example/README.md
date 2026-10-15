@@ -96,7 +96,7 @@ All nine follow the palette switch in the app bar.
 ## The Gallery tab
 
 Every chart in the package that is not the candlestick, depth or series screen
-— 40 of them — with a page each: the order-flow and derivatives charts, the
+— 50 of them — with a page each: the order-flow and derivatives charts, the
 ones a backtest report is built from, and the ones a dashboard is.
 
 The tab opens on a searchable list grouped by what the charts are for. Tapping
