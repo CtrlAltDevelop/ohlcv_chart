@@ -106,7 +106,98 @@ void main() {
     });
   });
 
+  group('displaying a token', () {
+    test('keeps a leading space as a no-break one, and drops the newline', () {
+      expect(tokenDisplay(' the\n'), '\u00A0the');
+    });
+
+    test('can show the whitespace as it is', () {
+      expect(tokenDisplay(' a b\n', showWhitespace: true), '·a·b↵');
+    });
+
+    test('a token of only a newline takes a box when whitespace is shown', () {
+      final tokens = [const TokenScore('a', 1), const TokenScore('\n', 1)];
+
+      expect(flowTokens(tokens, 100, _measure).boxes, hasLength(1));
+      expect(
+        flowTokens(tokens, 100, _measure, showWhitespace: true).boxes,
+        hasLength(2),
+      );
+    });
+  });
+
+  group('ranks', () {
+    test('rank by score, highest first, equal scores sharing a rank', () {
+      final ranks = tokenRanks(const [
+        TokenScore('a', 1),
+        TokenScore('b', 5),
+        TokenScore('c', 5),
+        TokenScore('d', 3),
+        TokenScore('e', double.nan),
+      ]);
+
+      expect(ranks, [4, 1, 1, 3, null]);
+    });
+
+    test('the top tokens are the highest, earlier first on a tie', () {
+      final top = topTokens(const [
+        TokenScore('a', 1),
+        TokenScore('b', 5),
+        TokenScore('c', 5),
+        TokenScore('d', 3),
+        TokenScore('e', double.nan),
+      ], 3);
+
+      expect(top, [1, 2, 3]);
+      expect(topTokens(const [TokenScore('a', 1)], 0), isEmpty);
+      expect(topTokens(const [TokenScore('a', 1)], 5), [0]);
+    });
+  });
+
+  group('the strip', () {
+    test('takes the highest score of each slice', () {
+      final bins = binTokenScores([
+        for (final v in [1.0, 4.0, 2.0, 2.0, 9.0, 1.0]) TokenScore('t', v),
+      ], 3);
+
+      expect(bins, [4.0, 2.0, 9.0]);
+    });
+
+    test('has fewer bins than tokens when there are fewer tokens', () {
+      final bins = binTokenScores(const [TokenScore('a', 1)], 4);
+
+      expect(bins.where((b) => b != null), hasLength(1));
+    });
+
+    test('a slice with nothing scored is null', () {
+      final bins = binTokenScores(const [
+        TokenScore('a', double.nan),
+        TokenScore('b', 2),
+      ], 2);
+
+      expect(bins, [null, 2.0]);
+      expect(binTokenScores(const [], 3), [null, null, null]);
+      expect(binTokenScores(const [TokenScore('a', 1)], 0), isEmpty);
+    });
+  });
+
   group('scores', () {
+    test('a log-probability gives the probability too', () {
+      final t = TokenScore.fromLogProb('the', -0.6931471805599453);
+
+      expect(t.probability, closeTo(0.5, 1e-9));
+    });
+
+    test('tokens with the same alternatives are equal', () {
+      const a = TokenScore('x', 1, alternatives: [TokenAlternative('y', 0.2)]);
+      const b = TokenScore('x', 1, alternatives: [TokenAlternative('y', 0.2)]);
+      const c = TokenScore('x', 1, alternatives: [TokenAlternative('z', 0.2)]);
+
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(a, isNot(c));
+    });
+
     test('a log-probability is scored as its surprisal', () {
       final t = TokenScore.fromLogProb('the', -2.5);
 
@@ -173,6 +264,151 @@ void main() {
 
       await gesture.moveTo(origin + const Offset(390, 150));
       expect(touched, isNull);
+    });
+
+    testWidgets('opens a readout with the score, rank and alternatives', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(
+          TokenHeatmap(
+            tokens: [
+              const TokenScore('The', 0.2),
+              TokenScore.fromLogProb(
+                ' Paris',
+                -2.3,
+                alternatives: const [
+                  TokenAlternative(' Lyon', 0.4),
+                  TokenAlternative(' Nice', 0.05),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: Offset.zero);
+      addTearDown(gesture.removePointer);
+      final origin = tester.getTopLeft(find.byType(TokenHeatmap));
+      // Past "The", inside " Paris".
+      await gesture.moveTo(origin + const Offset(60, 8));
+      await tester.pump();
+
+      expect(find.text('·Paris'), findsOneWidget);
+      expect(find.textContaining('rank 1 of 2'), findsOneWidget);
+      expect(find.textContaining('probability 10%'), findsOneWidget);
+      expect(find.text('instead'), findsOneWidget);
+      expect(find.textContaining('Lyon'), findsOneWidget);
+      expect(find.textContaining('40%'), findsOneWidget);
+    });
+
+    testWidgets('the readout can be turned off, or replaced', (tester) async {
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: const Offset(399, 299));
+      addTearDown(gesture.removePointer);
+
+      Future<void> hover() async {
+        final origin = tester.getTopLeft(find.byType(TokenHeatmap));
+        await gesture.moveTo(origin + const Offset(3, 8));
+        await tester.pump();
+      }
+
+      await tester.pumpWidget(
+        host(
+          const TokenHeatmap(
+            tokens: [TokenScore('Hello', 1)],
+            showReadout: false,
+          ),
+        ),
+      );
+      await hover();
+      expect(find.textContaining('surprisal'), findsNothing);
+
+      // Off the token and back on, so the new chart sees a fresh hover.
+      await gesture.moveTo(const Offset(399, 299));
+      await tester.pumpWidget(
+        host(
+          TokenHeatmap(
+            tokens: const [TokenScore('Hello', 1)],
+            tooltipBuilder: (context, d) => const Text('mine'),
+          ),
+        ),
+      );
+      await hover();
+      expect(find.text('mine'), findsOneWidget);
+    });
+
+    testWidgets('a readout wider than the chart shrinks to fit it', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: 60,
+                height: 120,
+                child: TokenHeatmap(
+                  tokens: [
+                    TokenScore.fromLogProb(
+                      'tokenizer',
+                      -3,
+                      alternatives: const [
+                        TokenAlternative(' another long alternative', 0.3),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await gesture.addPointer(location: Offset.zero);
+      addTearDown(gesture.removePointer);
+      await gesture.moveTo(const Offset(5, 8));
+      await tester.pump();
+
+      expect(find.text('instead'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a strip adds height, and the extras draw', (tester) async {
+      Future<double> heightOf(TokenHeatmap chart) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: ListView(children: [chart])),
+          ),
+        );
+        return tester.getSize(find.byType(TokenHeatmap)).height;
+      }
+
+      final tokens = [
+        for (var i = 0; i < 30; i++) TokenScore(' w$i', (i % 7).toDouble()),
+      ];
+      final plain = await heightOf(TokenHeatmap(tokens: tokens));
+      final strip = await heightOf(
+        TokenHeatmap(tokens: tokens, showStrip: true),
+      );
+      expect(strip, greaterThan(plain));
+
+      await tester.pumpWidget(
+        host(
+          TokenHeatmap(
+            tokens: tokens,
+            showStrip: true,
+            highlightTop: 3,
+            focusAbove: 4,
+            showWhitespace: true,
+            selectedIndex: 5,
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('takes the height its text needs in a box with no height', (

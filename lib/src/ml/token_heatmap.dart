@@ -1,24 +1,66 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
 import '../heatmap/heatmap_data.dart';
 import '../utils/plot_scaffold.dart';
+
+/// A token the model could have written instead of the one it did.
+@immutable
+class TokenAlternative {
+  /// Creates the alternative [token], which the model gave [probability].
+  const TokenAlternative(this.token, this.probability);
+
+  /// The alternative's text.
+  final String token;
+
+  /// The probability the model gave it, 0 to 1.
+  final double probability;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TokenAlternative &&
+          other.token == token &&
+          other.probability == probability;
+
+  @override
+  int get hashCode => Object.hash(token, probability);
+}
 
 /// One token of a model's text, with a number that says something about it.
 @immutable
 class TokenScore {
   /// Creates a token [token] scored [value] — a surprisal, an entropy, an
   /// attribution, a probability.
-  const TokenScore(this.token, this.value, {this.data});
+  ///
+  /// [probability] is the probability the model gave the token itself, and
+  /// [alternatives] what else it was weighing, most likely first; both are for
+  /// the readout.
+  const TokenScore(
+    this.token,
+    this.value, {
+    this.probability,
+    this.alternatives = const [],
+    this.data,
+  });
 
   /// Creates a token from the log-probability the model gave it, scored as its
   /// surprisal `-logProb`: the less likely the model thought it, the higher.
+  /// Its [probability] is `exp(logProb)`.
   factory TokenScore.fromLogProb(
     String token,
     double logProb, {
+    List<TokenAlternative> alternatives = const [],
     Object? data,
-  }) => TokenScore(token, -logProb, data: data);
+  }) => TokenScore(
+    token,
+    -logProb,
+    probability: logProb.isFinite ? math.exp(logProb) : null,
+    alternatives: alternatives,
+    data: data,
+  );
 
   /// The token's text, as the tokenizer produced it. A newline in it ends the
   /// line.
@@ -26,6 +68,12 @@ class TokenScore {
 
   /// The score; a value that is not finite is left uncoloured.
   final double value;
+
+  /// The probability the model gave this token, 0 to 1, if known.
+  final double? probability;
+
+  /// What else the model was weighing at this position, most likely first.
+  final List<TokenAlternative> alternatives;
 
   /// Anything the app wants back when this token is touched.
   final Object? data;
@@ -36,10 +84,31 @@ class TokenScore {
       other is TokenScore &&
           other.token == token &&
           other.value == value &&
+          other.probability == probability &&
+          listEquals(other.alternatives, alternatives) &&
           other.data == data;
 
   @override
-  int get hashCode => Object.hash(token, value, data);
+  int get hashCode => Object.hash(
+    token,
+    value,
+    probability,
+    Object.hashAll(alternatives),
+    data,
+  );
+}
+
+/// How [token] is written on screen.
+///
+/// A space is a no-break space, so the width of a leading space is kept, and a
+/// newline is dropped. With [showWhitespace] a space is a `·` and a newline a
+/// `↵`, so what the tokenizer really produced can be read.
+String tokenDisplay(String token, {bool showWhitespace = false}) {
+  final clean = token.replaceAll('\r', '');
+  if (showWhitespace) {
+    return clean.replaceAll(' ', '·').replaceAll('\n', '↵');
+  }
+  return clean.replaceAll('\n', '').replaceAll(' ', ' ');
 }
 
 /// Where one token was laid out.
@@ -57,15 +126,18 @@ class TokenBox {
 
 /// Flows [tokens] into lines no wider than [width], in the way text wraps.
 ///
-/// [measure] gives the size of one token's text, so the layout can be worked
-/// out — and tested — without a renderer. A token that contains a newline ends
-/// its line; one wider than a whole line sits alone on its own. Returns the
-/// boxes and the height the lines take.
+/// [measure] gives the size of one token's text as it is displayed — see
+/// [tokenDisplay] — so the layout can be worked out, and tested, without a
+/// renderer. A token that contains a newline ends its line; one wider than a
+/// whole line sits alone on its own. With [showWhitespace] a token that is only
+/// a newline still takes a box, to show the `↵`. Returns the boxes and the
+/// height the lines take.
 ({List<TokenBox> boxes, double height}) flowTokens(
   List<TokenScore> tokens,
   double width,
   Size Function(String token) measure, {
   double lineGap = 4,
+  bool showWhitespace = false,
 }) {
   final boxes = <TokenBox>[];
   var x = 0.0;
@@ -74,7 +146,7 @@ class TokenBox {
   var any = false;
 
   for (var i = 0; i < tokens.length; i++) {
-    final text = tokens[i].token.replaceAll('\n', '').replaceAll('\r', '');
+    final text = tokenDisplay(tokens[i].token, showWhitespace: showWhitespace);
     final size = text.isEmpty ? const Size(0, 0) : measure(text);
     final h = size.height.isFinite ? size.height : 0.0;
     final w = size.width.isFinite ? size.width : 0.0;
@@ -159,6 +231,50 @@ TokenSummary summarizeTokens(List<TokenScore> tokens) {
   );
 }
 
+/// Each token's rank by score: 1 for the highest. Null for a token whose score
+/// is not finite. Equal scores share the better rank.
+List<int?> tokenRanks(List<TokenScore> tokens) {
+  final values = [
+    for (final t in tokens)
+      if (t.value.isFinite) t.value,
+  ]..sort((a, b) => b.compareTo(a));
+  return [
+    for (final t in tokens)
+      if (!t.value.isFinite) null else values.indexOf(t.value) + 1,
+  ];
+}
+
+/// The indices of the [count] highest-scoring tokens, highest first. Ties go to
+/// the earlier token. Fewer when fewer have a score.
+List<int> topTokens(List<TokenScore> tokens, int count) {
+  if (count <= 0) return const [];
+  final order =
+      [
+        for (var i = 0; i < tokens.length; i++)
+          if (tokens[i].value.isFinite) i,
+      ]..sort((a, b) {
+        final c = tokens[b].value.compareTo(tokens[a].value);
+        return c != 0 ? c : a.compareTo(b);
+      });
+  return order.take(count).toList();
+}
+
+/// The maximum score of each of [bins] equal slices of [tokens], in order —
+/// what the strip over a long text draws. A slice with no score is null.
+List<double?> binTokenScores(List<TokenScore> tokens, int bins) {
+  if (bins <= 0) return const [];
+  final out = List<double?>.filled(bins, null);
+  if (tokens.isEmpty) return out;
+  for (var i = 0; i < tokens.length; i++) {
+    final v = tokens[i].value;
+    if (!v.isFinite) continue;
+    final bin = math.min(bins - 1, i * bins ~/ tokens.length);
+    final current = out[bin];
+    if (current == null || v > current) out[bin] = v;
+  }
+  return out;
+}
+
 /// What a touch on a [TokenHeatmap] landed on.
 @immutable
 class TokenTouchDetails {
@@ -167,6 +283,8 @@ class TokenTouchDetails {
     required this.index,
     required this.token,
     required this.rect,
+    required this.rank,
+    required this.scored,
   });
 
   /// The token's position.
@@ -177,6 +295,13 @@ class TokenTouchDetails {
 
   /// Where it was drawn, in the chart's local pixels.
   final Rect rect;
+
+  /// Its rank by score among the tokens, 1 for the highest; null when it has
+  /// none.
+  final int? rank;
+
+  /// How many tokens have a score.
+  final int scored;
 }
 
 /// A model's text with each token shaded by a number — where it was unsure, what
@@ -186,15 +311,27 @@ class TokenTouchDetails {
 /// TokenHeatmap(
 ///   tokens: [
 ///     for (final t in completion.tokens)
-///       TokenScore.fromLogProb(t.text, t.logProb),
+///       TokenScore.fromLogProb(
+///         t.text,
+///         t.logProb,
+///         alternatives: [
+///           for (final a in t.topLogProbs)
+///             TokenAlternative(a.text, exp(a.logProb)),
+///         ],
+///       ),
 ///   ],
+///   highlightTop: 3,
+///   showStrip: true,
 /// );
 /// ```
 ///
 /// Tokens flow and wrap like text, each over a rectangle coloured by its score
-/// on [scale]; a legend under them runs from the lowest score to the highest.
-/// The chart takes the height its text needs, unless the box it is given is
-/// shorter, when the text is cut off.
+/// on [scale]. Touching one opens a readout — its score, its rank, and what the
+/// model was weighing instead — unless [tooltipBuilder] says otherwise. A
+/// legend under the text runs from the lowest score to the highest, and a strip
+/// above it shows the score of every token in order, which is how a long text is
+/// read at a glance. The chart takes the height its text needs, unless the box it
+/// is given is shorter, when the text is cut off.
 class TokenHeatmap extends StatefulWidget {
   /// Creates a heatmap of [tokens].
   const TokenHeatmap({
@@ -209,6 +346,14 @@ class TokenHeatmap extends StatefulWidget {
     this.tokenRadius = const BorderRadius.all(Radius.circular(3)),
     this.verticalPadding = 3,
     this.lineGap = 4,
+    this.showWhitespace = false,
+    this.focusAbove,
+    this.dimColor = const Color(0xFF6B7480),
+    this.highlightTop = 0,
+    this.highlightColor = const Color(0xFFFFFFFF),
+    this.selectedIndex,
+    this.showStrip = false,
+    this.stripHeight = 28,
     this.showLegend = true,
     this.lowLabel,
     this.highLabel,
@@ -217,6 +362,8 @@ class TokenHeatmap extends StatefulWidget {
     this.legendStyle,
     this.valueFormatter,
     this.hoverBorder = const BorderSide(color: Color(0xFFFFFFFF), width: 1.5),
+    this.showReadout = true,
+    this.scoreLabel = 'surprisal',
     this.onTouch,
     this.tooltipBuilder,
     this.tooltipMargin = 8,
@@ -249,6 +396,36 @@ class TokenHeatmap extends StatefulWidget {
   /// The gap between lines.
   final double lineGap;
 
+  /// Whether spaces and line breaks are made visible, as `·` and `↵`, so that
+  /// what the tokenizer produced can be read.
+  final bool showWhitespace;
+
+  /// A score below which a token is left unshaded and dimmed, so that only the
+  /// doubtful ones are lit. Null shades every token.
+  final double? focusAbove;
+
+  /// The colour of the text of a token left out by [focusAbove].
+  final Color dimColor;
+
+  /// How many of the highest-scoring tokens are ringed and numbered, 1 for the
+  /// highest; zero marks none.
+  final int highlightTop;
+
+  /// The colour of that ring.
+  final Color highlightColor;
+
+  /// A token to hold outlined whatever the pointer does — one the app has
+  /// selected; null holds none.
+  final int? selectedIndex;
+
+  /// Whether a strip of every token's score, in order, is drawn above the
+  /// legend. Over a text longer than the strip is wide, each bar is the highest
+  /// of the tokens it covers.
+  final bool showStrip;
+
+  /// How tall the strip is.
+  final double stripHeight;
+
   /// Whether the legend bar is drawn under the text.
   final bool showLegend;
 
@@ -273,10 +450,17 @@ class TokenHeatmap extends StatefulWidget {
   /// Drawn round the token under the pointer; null marks none.
   final BorderSide? hoverBorder;
 
+  /// Whether touching a token opens the built-in readout. Ignored when
+  /// [tooltipBuilder] is given.
+  final bool showReadout;
+
+  /// What the score is called in the readout.
+  final String scoreLabel;
+
   /// Called as a touch moves over the tokens, and with null when it leaves.
   final ValueChanged<TokenTouchDetails?>? onTouch;
 
-  /// Builds a card shown beside the touched token; null shows none.
+  /// Builds a card shown beside the touched token, in place of the readout.
   final Widget? Function(BuildContext context, TokenTouchDetails details)?
   tooltipBuilder;
 
@@ -303,9 +487,9 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
   double _flowWidth = -1;
   TextStyle? _flowStyle;
   double _flowPadding = -1;
+  double _flowGap = -1;
+  bool _flowWhitespace = false;
   ({List<TokenBox> boxes, double height})? _flow;
-
-  static const _space = ' ';
 
   TextStyle get _style => const TextStyle(
     fontSize: 14,
@@ -319,21 +503,31 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
         identical(_flowTokens, widget.tokens) &&
         _flowWidth == width &&
         _flowStyle == style &&
-        _flowPadding == pad) {
+        _flowPadding == pad &&
+        _flowGap == widget.lineGap &&
+        _flowWhitespace == widget.showWhitespace) {
       return _flow!;
     }
     final painter = TextPainter(textDirection: TextDirection.ltr);
-    final result = flowTokens(widget.tokens, width, (token) {
-      painter
-        ..text = TextSpan(text: token.replaceAll(' ', _space), style: style)
-        ..layout();
-      return Size(painter.width, painter.height + pad * 2);
-    }, lineGap: widget.lineGap);
+    final result = flowTokens(
+      widget.tokens,
+      width,
+      (text) {
+        painter
+          ..text = TextSpan(text: text, style: style)
+          ..layout();
+        return Size(painter.width, painter.height + pad * 2);
+      },
+      lineGap: widget.lineGap,
+      showWhitespace: widget.showWhitespace,
+    );
     painter.dispose();
     _flowTokens = widget.tokens;
     _flowWidth = width;
     _flowStyle = style;
     _flowPadding = pad;
+    _flowGap = widget.lineGap;
+    _flowWhitespace = widget.showWhitespace;
     return _flow = result;
   }
 
@@ -341,22 +535,16 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
   Widget build(BuildContext context) {
     final tokens = widget.tokens;
     final summary = summarizeTokens(tokens);
-    var low = widget.minValue;
-    var high = widget.maxValue;
-    low ??= tokens.any((t) => t.value.isFinite)
-        ? tokens
-              .where((t) => t.value.isFinite)
-              .map((t) => t.value)
-              .reduce(math.min)
-        : 0;
-    high ??= tokens.any((t) => t.value.isFinite)
-        ? tokens
-              .where((t) => t.value.isFinite)
-              .map((t) => t.value)
-              .reduce(math.max)
-        : 1;
-    final lo = low;
-    final hi = high;
+    final finite = [
+      for (final t in tokens)
+        if (t.value.isFinite) t.value,
+    ];
+    final lo =
+        widget.minValue ?? (finite.isEmpty ? 0.0 : finite.reduce(math.min));
+    final hi =
+        widget.maxValue ?? (finite.isEmpty ? 1.0 : finite.reduce(math.max));
+    final ranks = tokenRanks(tokens);
+    final top = topTokens(tokens, widget.highlightTop);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -365,26 +553,36 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
             : MediaQuery.maybeSizeOf(context)?.width ?? 400;
         final inner = math.max(0.0, width - widget.padding.horizontal);
         final flow = _layOut(inner);
-        final legendHeight = widget.showLegend ? 34.0 : 0.0;
+        final stripHeight = widget.showStrip && tokens.isNotEmpty
+            ? widget.stripHeight + 10
+            : 0.0;
+        final legendHeight = widget.showLegend
+            ? (widget.showSummary ? 52.0 : 34.0)
+            : 0.0;
         final wanted =
             widget.padding.vertical +
             flow.height +
+            stripHeight +
             (widget.showLegend ? 12 : 0) +
             legendHeight;
         final height = constraints.hasBoundedHeight
             ? math.min(constraints.maxHeight, wanted)
             : wanted;
 
+        TokenTouchDetails details(TokenBox box, Rect plot) => TokenTouchDetails(
+          index: box.index,
+          token: tokens[box.index],
+          rect: box.rect.shift(plot.topLeft),
+          rank: ranks[box.index],
+          scored: summary.count,
+        );
+
         TokenTouchDetails? hit(Offset local, Rect plot) {
           final box = tokenBoxAt(flow.boxes, local - plot.topLeft);
-          if (box == null) return null;
-          return TokenTouchDetails(
-            index: box.index,
-            token: tokens[box.index],
-            rect: box.rect.shift(plot.topLeft),
-          );
+          return box == null ? null : details(box, plot);
         }
 
+        final custom = widget.tooltipBuilder;
         return SizedBox(
           width: width,
           height: height,
@@ -398,7 +596,19 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
                 tokens.map((t) => t.token).join().trim(),
             tooltipMargin: widget.tooltipMargin,
             onTouch: widget.onTouch,
-            tooltipBuilder: widget.tooltipBuilder,
+            tooltipBuilder:
+                custom ??
+                (widget.showReadout
+                    ? (context, d) => _Readout(
+                        details: d,
+                        scoreLabel: widget.scoreLabel,
+                        format: _format,
+                        scale: widget.scale,
+                        low: lo,
+                        high: hi,
+                        showWhitespace: widget.showWhitespace,
+                      )
+                    : null),
             hitTest: hit,
             keyOf: (d) => d.index,
             anchorOf: (d, plot) => d.rect,
@@ -410,6 +620,7 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
               low: lo,
               high: hi,
               summary: summary,
+              top: top,
               hovered: hovered?.index,
               plot: plot,
               animation: t,
@@ -419,6 +630,127 @@ class _TokenHeatmapState extends State<TokenHeatmap> {
           ),
         );
       },
+    );
+  }
+
+  String _format(double v) {
+    if (widget.valueFormatter != null) return widget.valueFormatter!(v);
+    final r = double.parse(v.toStringAsFixed(2));
+    return r == r.roundToDouble() ? r.toStringAsFixed(0) : r.toString();
+  }
+}
+
+/// The card shown over a touched token: its text, its score, how it ranks, how
+/// likely the model thought it, and what it was weighing instead.
+class _Readout extends StatelessWidget {
+  const _Readout({
+    required this.details,
+    required this.scoreLabel,
+    required this.format,
+    required this.scale,
+    required this.low,
+    required this.high,
+    required this.showWhitespace,
+  });
+
+  final TokenTouchDetails details;
+  final String scoreLabel;
+  final String Function(double) format;
+  final HeatmapScale scale;
+  final double low;
+  final double high;
+  final bool showWhitespace;
+
+  static String _percent(double p) {
+    final v = p * 100;
+    if (v >= 10) return '${v.toStringAsFixed(0)}%';
+    if (v >= 1) return '${v.toStringAsFixed(1)}%';
+    if (v > 0) return '<1%';
+    return '0%';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final token = details.token;
+    const muted = Color(0xFF8B95A1);
+    const text = Color(0xFFF1F3F5);
+    final swatch = token.value.isFinite
+        ? scale.colorAt(token.value, low, high)
+        : scale.emptyColor;
+    final shown = tokenDisplay(token.token, showWhitespace: true);
+
+    final lines = <Widget>[
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: swatch,
+              borderRadius: const BorderRadius.all(Radius.circular(2)),
+            ),
+            child: const SizedBox(width: 10, height: 10),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            shown.isEmpty ? '∅' : shown,
+            style: const TextStyle(
+              color: text,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 4),
+      Text(
+        token.value.isFinite
+            ? '$scoreLabel ${format(token.value)}'
+            : 'no $scoreLabel',
+        style: const TextStyle(color: text, fontSize: 12),
+      ),
+      if (details.rank != null)
+        Text(
+          'rank ${details.rank} of ${details.scored}',
+          style: const TextStyle(color: muted, fontSize: 11),
+        ),
+      if (token.probability != null)
+        Text(
+          'probability ${_percent(token.probability!)}',
+          style: const TextStyle(color: muted, fontSize: 11),
+        ),
+    ];
+
+    if (token.alternatives.isNotEmpty) {
+      lines
+        ..add(const SizedBox(height: 6))
+        ..add(
+          const Text('instead', style: TextStyle(color: muted, fontSize: 10)),
+        );
+      for (final a in token.alternatives.take(5)) {
+        lines.add(
+          Text(
+            '${tokenDisplay(a.token, showWhitespace: true)}  '
+            '${_percent(a.probability)}',
+            style: const TextStyle(color: text, fontSize: 11),
+          ),
+        );
+      }
+    }
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Color(0xF2161B22),
+        borderRadius: BorderRadius.all(Radius.circular(6)),
+        border: Border.fromBorderSide(BorderSide(color: Color(0x33FFFFFF))),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: lines,
+        ),
+      ),
     );
   }
 }
@@ -432,6 +764,7 @@ class _TokenPainter extends PlotPainter {
     required this.low,
     required this.high,
     required this.summary,
+    required this.top,
     required this.hovered,
     required super.plot,
     required super.animation,
@@ -445,6 +778,7 @@ class _TokenPainter extends PlotPainter {
   final TextStyle style;
   final double low, high;
   final TokenSummary summary;
+  final List<int> top;
   final int? hovered;
 
   String _format(double v) {
@@ -467,29 +801,38 @@ class _TokenPainter extends PlotPainter {
       final fill = rect.deflate(0.5);
 
       final scored = token.value.isFinite;
-      final color = scored
-          ? chart.scale.colorAt(token.value, low, high)
-          : chart.scale.emptyColor;
+      final focused =
+          chart.focusAbove == null ||
+          (scored && token.value >= chart.focusAbove!);
       final rrect = chart.tokenRadius.toRRect(fill);
-      canvas.drawRRect(
-        rrect,
-        Paint()
-          ..color = color
-          ..isAntiAlias = true,
-      );
 
-      // Dark text on a light colour, and the other way round.
-      final opaque = Color.alphaBlend(color, const Color(0xFF161B22));
-      final onColor = opaque.computeLuminance() > 0.5
-          ? const Color(0xFF10151C)
-          : const Color(0xFFF1F3F5);
-      final tp = text.get(
-        token.token
-            .replaceAll('\n', '')
-            .replaceAll('\r', '')
-            .replaceAll(' ', ' '),
-        style.copyWith(color: scored ? onColor : style.color),
+      Color textColor;
+      if (!focused) {
+        textColor = chart.dimColor;
+      } else {
+        final color = scored
+            ? chart.scale.colorAt(token.value, low, high)
+            : chart.scale.emptyColor;
+        canvas.drawRRect(
+          rrect,
+          Paint()
+            ..color = color
+            ..isAntiAlias = true,
+        );
+        // Dark text on a light colour, and the other way round.
+        final opaque = Color.alphaBlend(color, const Color(0xFF161B22));
+        textColor = !scored
+            ? (style.color ?? const Color(0xFFE9ECEF))
+            : (opaque.computeLuminance() > 0.5
+                  ? const Color(0xFF10151C)
+                  : const Color(0xFFF1F3F5));
+      }
+
+      final shown = tokenDisplay(
+        token.token,
+        showWhitespace: chart.showWhitespace,
       );
+      final tp = text.get(shown, style.copyWith(color: textColor));
       tp.paint(
         canvas,
         Offset(rect.left, rect.top + (rect.height - tp.height) / 2),
@@ -506,14 +849,106 @@ class _TokenPainter extends PlotPainter {
             ..isAntiAlias = true,
         );
       }
+      if (chart.selectedIndex == box.index) {
+        canvas.drawRRect(
+          rrect.inflate(1.5),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..color = chart.highlightColor
+            ..isAntiAlias = true,
+        );
+      }
     }
-    canvas.restore();
 
-    if (chart.showLegend) _legend(canvas);
+    canvas.restore();
+    // After the clip: a badge on the first line sits partly above the text.
+    _paintTop(canvas);
+
+    var y = plot.top + flowHeight + 10;
+    if (chart.showStrip && chart.tokens.isNotEmpty) {
+      _strip(canvas, y);
+      y += chart.stripHeight + 10;
+    }
+    if (chart.showLegend) _legend(canvas, y + 2);
   }
 
-  void _legend(Canvas canvas) {
-    final top = plot.top + flowHeight + 12;
+  /// A ring and a rank on each of the highest-scoring tokens.
+  void _paintTop(Canvas canvas) {
+    for (var rank = 0; rank < top.length; rank++) {
+      final box = boxes.where((b) => b.index == top[rank]).firstOrNull;
+      if (box == null) continue;
+      final rect = box.rect.shift(plot.topLeft);
+      canvas.drawRRect(
+        chart.tokenRadius.toRRect(rect.deflate(0.5)).inflate(1.5),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = chart.highlightColor
+          ..isAntiAlias = true,
+      );
+      final badge = text.get(
+        '${rank + 1}',
+        const TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF10151C),
+        ),
+      );
+      final centre = Offset(rect.right - 1, rect.top + 1);
+      canvas.drawCircle(
+        centre,
+        math.max(badge.width, badge.height) / 2 + 2,
+        Paint()
+          ..color = chart.highlightColor
+          ..isAntiAlias = true,
+      );
+      badge.paint(canvas, centre - Offset(badge.width / 2, badge.height / 2));
+    }
+  }
+
+  /// One bar per slice of the text, the height of its highest score.
+  void _strip(Canvas canvas, double top) {
+    final height = chart.stripHeight;
+    final bins = math.max(1, math.min(chart.tokens.length, plot.width ~/ 4));
+    final values = binTokenScores(chart.tokens, bins);
+    final width = plot.width / bins;
+    final range = high - low;
+
+    canvas.drawRect(
+      Rect.fromLTWH(plot.left, top, plot.width, height),
+      Paint()..color = const Color(0x10FFFFFF),
+    );
+    for (var i = 0; i < bins; i++) {
+      final v = values[i];
+      if (v == null) continue;
+      final f = range <= 0 ? 1.0 : ((v - low) / range).clamp(0.0, 1.0);
+      final h = math.max(1.5, height * f);
+      canvas.drawRect(
+        Rect.fromLTWH(plot.left + i * width, top + height - h, width, h),
+        Paint()..color = chart.scale.colorAt(v, low, high),
+      );
+    }
+
+    final at = hovered;
+    if (at != null && chart.tokens.isNotEmpty) {
+      final bin = math.min(bins - 1, at * bins ~/ chart.tokens.length);
+      canvas.drawRect(
+        Rect.fromLTWH(
+          plot.left + bin * width - 1,
+          top - 2,
+          width + 2,
+          height + 4,
+        ),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = const Color(0xFFFFFFFF),
+      );
+    }
+  }
+
+  void _legend(Canvas canvas, double top) {
     if (top + 10 > plot.bottom + 40) return;
     const barHeight = 8.0;
     final barWidth = math.min(plot.width, 220.0);
@@ -540,13 +975,30 @@ class _TokenPainter extends PlotPainter {
     lowText.paint(canvas, Offset(bar.left, bar.bottom + 3));
     highText.paint(canvas, Offset(bar.right - highText.width, bar.bottom + 3));
 
+    // Where the mean falls on the scale.
+    if (summary.count > 0 && high > low) {
+      final f = ((summary.mean - low) / (high - low)).clamp(0.0, 1.0);
+      final x = bar.left + bar.width * f;
+      canvas.drawPath(
+        Path()
+          ..moveTo(x - 4, bar.top - 5)
+          ..lineTo(x + 4, bar.top - 5)
+          ..lineTo(x, bar.top - 1)
+          ..close(),
+        Paint()
+          ..color = const Color(0xFFE9ECEF)
+          ..isAntiAlias = true,
+      );
+    }
+
     if (chart.showSummary && summary.count > 0) {
       final tp = text.get(
         'mean ${_format(summary.mean)}  ·  ${chart.summaryLabel} '
         '${_format(summary.perplexity)}',
         labelStyle,
       );
-      tp.paint(canvas, Offset(bar.right + 16, bar.top - 2));
+      // Under the scale, where there is room however narrow the chart is.
+      tp.paint(canvas, Offset(bar.left, bar.bottom + 20));
     }
   }
 }
