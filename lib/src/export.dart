@@ -135,3 +135,4 @@ export './series/series_scale.dart' show SeriesOrientation;
 export './series/series_touch.dart';
 export './portfolio/efficient_frontier_chart.dart';
 export './futures/futures_curve_chart.dart';
+export './ml/training_curve_chart.dart';

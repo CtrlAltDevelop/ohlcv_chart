@@ -172,6 +172,7 @@
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
   ratio bar.
+- **`TrainingCurveChart`** — loss and accuracy curves of one or more training runs with smoothing, a log axis, the best checkpoint, divergence and the train/validation gap marked.
 
 ## Customisation
 

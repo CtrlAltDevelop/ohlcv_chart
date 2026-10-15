@@ -323,6 +323,38 @@ final Map<String, _Build> _charts = {
     ],
     aggregate: SeasonalityAggregate.sum,
   ),
+  'TrainingCurveChart': (v) => TrainingCurveChart(
+    runs: [
+      TrainingRun(
+        label: 'train',
+        points: [
+          for (var i = 0; i < v.length; i++) TrainingPoint(i * 10.0, v[i]),
+        ],
+      ),
+      TrainingRun(
+        label: 'val',
+        dashed: true,
+        points: [
+          for (var i = 0; i < v.length; i++)
+            TrainingPoint(i * 10.0, v[v.length - 1 - i]),
+        ],
+      ),
+    ],
+    smoothing: 0.7,
+    gapBetween: (0, 1),
+  ),
+  'TrainingCurveChart (log)': (v) => TrainingCurveChart(
+    runs: [
+      TrainingRun(
+        label: 'loss',
+        points: [
+          for (var i = 0; i < v.length; i++) TrainingPoint(i.toDouble(), v[i]),
+        ],
+      ),
+    ],
+    logY: true,
+    lowerIsBetter: false,
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)

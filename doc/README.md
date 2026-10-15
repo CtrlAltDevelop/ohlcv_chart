@@ -105,6 +105,7 @@ for what the package does at a glance, see [Features](features.md) and the
   the best Sharpe ratio and the capital market line.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
+- **[Training curves](training-curve-chart.md)** — `TrainingCurveChart`: loss and accuracy of one or more runs, with smoothing, a log axis, the best checkpoint and divergence marked.
 
 ## Indicators and data
 

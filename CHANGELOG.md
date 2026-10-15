@@ -14,6 +14,7 @@
 
 ### Added
 
+- **`TrainingCurveChart`** draws the loss and accuracy curves of one or more training runs, with exponential smoothing over faint raw readings, a logarithmic axis, the best checkpoint, the step a run diverged at and the train/validation gap. `smoothValues`, `bestIndex` and `divergenceIndex` are the numbers behind it.
 - The example app's Gallery tab has the six new charts — 40 in all — and the
   documentation pages have their screenshots.
 - **`ActivityClockChart`** lays a week out as a clock face — the hours of the
