@@ -223,7 +223,12 @@ class _PlotScaffoldState<T extends Object> extends State<PlotScaffold<T>>
                             anchor: anchor(hovered, _plot),
                             margin: widget.tooltipMargin,
                           ),
-                          child: tooltip,
+                          // A card wider than the chart shrinks to fit it rather
+                          // than overflowing.
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: tooltip,
+                          ),
                         ),
                       ),
                     ),

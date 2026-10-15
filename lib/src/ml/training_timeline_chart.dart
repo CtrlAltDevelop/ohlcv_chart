@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
@@ -311,32 +313,49 @@ class TrainingTimelineChart extends StatelessWidget {
       fontSize: 11,
       color: Color(0xFF8B95A1),
     ).merge(legendStyle);
-    final legend = Padding(
-      padding: EdgeInsets.only(
-        top: 8,
-        left: padding.left + laneLabelWidth,
-        right: padding.right,
-      ),
-      child: Wrap(
-        spacing: 14,
-        runSpacing: 4,
-        children: [
-          for (final s in used)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: colorOf(s),
-                    borderRadius: const BorderRadius.all(Radius.circular(2)),
+    final legend = LayoutBuilder(
+      builder: (context, space) => Padding(
+        padding: EdgeInsets.only(
+          top: 8,
+          left: padding.left + laneLabelWidth,
+          right: padding.right,
+        ),
+        child: Wrap(
+          spacing: 14,
+          runSpacing: 4,
+          children: [
+            for (final s in used)
+              // An item wider than the room left shrinks to it.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: math.max(
+                    40.0,
+                    space.maxWidth - padding.horizontal - laneLabelWidth,
                   ),
-                  child: const SizedBox(width: 10, height: 10),
                 ),
-                const SizedBox(width: 5),
-                Text(statusLabels[s] ?? names[s]!, style: style),
-              ],
-            ),
-        ],
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: colorOf(s),
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(2),
+                          ),
+                        ),
+                        child: const SizedBox(width: 10, height: 10),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(statusLabels[s] ?? names[s]!, style: style),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
 

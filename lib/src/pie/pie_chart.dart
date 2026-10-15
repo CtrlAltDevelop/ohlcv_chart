@@ -451,7 +451,12 @@ class _PieChartState extends State<PieChart>
                       top: centre.dy - inner,
                       width: inner * 2,
                       height: inner * 2,
-                      child: Center(child: widget.centerChild),
+                      child: Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: widget.centerChild,
+                        ),
+                      ),
                     ),
                   for (final slice in slices)
                     if (widget.sections[slice.index].badge != null)

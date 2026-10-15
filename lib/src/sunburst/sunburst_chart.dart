@@ -465,7 +465,15 @@ class _SunburstChartState extends State<SunburstChart>
                         center: _center,
                         radius: inner / math.sqrt2,
                       ),
-                      child: IgnorePointer(child: Center(child: widget.center)),
+                      child: IgnorePointer(
+                        // Shrunk to fit the hole rather than overflowing it.
+                        child: Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: widget.center,
+                          ),
+                        ),
+                      ),
                     ),
                   if (tooltip != null && details != null)
                     Positioned.fill(

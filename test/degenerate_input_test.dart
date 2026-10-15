@@ -493,6 +493,23 @@ final Map<String, _Build> _charts = {
         TokenScore(i % 3 == 0 ? ' tok$i\n' : ' tok$i', v[i]),
     ],
   ),
+  'TokenHeatmap (every option)': (v) => TokenHeatmap(
+    showSummary: true,
+    showStrip: true,
+    showWhitespace: true,
+    highlightTop: 3,
+    focusAbove: 0.5,
+    selectedIndex: 1,
+    tokens: [
+      for (var i = 0; i < v.length; i++)
+        TokenScore(
+          i % 4 == 0 ? '\n' : ' tok$i',
+          v[i],
+          probability: v[i].isFinite ? 0.25 : null,
+          alternatives: const [TokenAlternative(' other', 0.1)],
+        ),
+    ],
+  ),
   'TokenHeatmap (long)': (v) => TokenHeatmap(
     tokens: [
       for (var i = 0; i < 400; i++)
@@ -552,10 +569,21 @@ final Map<String, _Build> _charts = {
 void main() {
   for (final MapEntry(key: name, value: build) in _charts.entries) {
     for (final MapEntry(key: input, value: values) in _inputs.entries) {
-      for (final (label, width, height) in const [
+      for (final (label, width, height) in [
         ('300x200', 300.0, 200.0),
         ('1x1', 1.0, 1.0),
         ('0x0', 0.0, 0.0),
+        // Boxes of other shapes, where a label or a legend can run out of
+        // room: small, narrow and tall, short and wide. Overflow is an error
+        // here, so a chart that does not fit its box fails. Three kinds of
+        // data are enough to move the labels about.
+        if (const {'mixed', 'one', 'huge'}.contains(input)) ...[
+          ('120x90', 120.0, 90.0),
+          ('60x300', 60.0, 300.0),
+          ('200x400', 200.0, 400.0),
+          ('800x100', 800.0, 100.0),
+          ('360x240', 360.0, 240.0),
+        ],
       ]) {
         testWidgets('$name survives $input data in a $label box', (
           tester,

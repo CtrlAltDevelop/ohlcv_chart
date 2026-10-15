@@ -492,7 +492,9 @@ class _GaugeChartState extends State<GaugeChart>
                   top: layout.center.dy - layout.radius,
                   width: layout.radius * 2,
                   height: layout.radius * 2,
-                  child: Center(child: center),
+                  child: Center(
+                    child: FittedBox(fit: BoxFit.scaleDown, child: center),
+                  ),
                 ),
             ],
           ),
