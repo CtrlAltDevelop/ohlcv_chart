@@ -14,6 +14,14 @@
 
 ### Added
 
+- **`TokenHeatmap` is easier to read.** Touching a token opens a readout of its
+  score, its rank, the probability the model gave it and — from the new
+  `TokenScore.alternatives` — what it was weighing instead. `highlightTop` rings
+  and numbers the most doubtful tokens, `focusAbove` leaves the confident ones
+  unshaded, `showStrip` draws every token's score in order for a long text,
+  `showWhitespace` writes spaces and line breaks as `·` and `↵`, and
+  `selectedIndex` holds one outlined. The legend marks the mean. `tokenRanks`,
+  `topTokens`, `binTokenScores` and `tokenDisplay` are the numbers behind it.
 - **Ten charts for training and serving language models:** `TrainingCurveChart`,
   `ScalingLawChart`, `SweepChart`, `TrainingTimelineChart`,
   `BenchmarkMatrixChart`, `ModelParetoChart`, `LatencyBandChart`,
@@ -64,6 +72,13 @@
 
 ### Fixed
 
+- **Overflow in narrow and short boxes.** A tooltip card wider than its chart
+  now shrinks to fit it instead of overflowing; the widget put in the middle of
+  a sunburst, a doughnut or a gauge shrinks to fit the hole; the equity curve's
+  time labels no longer throw when the plot is narrower than a label; and the
+  training timeline's legend shrinks its items in a narrow box. Every chart is
+  now built in boxes from 60 to 800 pixels across, with overflow counted as a
+  failure, and the example's Gallery is built at widths from 240 to 1,400.
 - Log axes spanning more than six decades ticked on every 1, 2 and 5, which
   crowded the axis; they tick on powers of ten, every few when there are very
   many.

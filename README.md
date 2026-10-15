@@ -29,6 +29,12 @@ Free for any use, with no paid tier.
 
 See the [full feature list](doc/features.md) and the [gallery](doc/gallery.md).
 
+> [!NOTE]
+> This package has grown large. To keep it fast and focused, the next update
+> will split it into separate packages. `ohlcv_chart` will keep only the
+> candlestick (OHLCV) chart, its indicators and its drawing tools; the other
+> chart widgets will move to their own packages.
+
 ## Installation
 
 ```yaml
@@ -63,30 +69,82 @@ KChartWidget(
 
 The [example app](example/) demonstrates every option in the package.
 
-## Preview
+## Charts
 
-<table>
-<tr>
-<td width="33%"><a href="doc/indicators.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/overlays.png" alt="Ichimoku and Supertrend overlays"></a></td>
-<td width="33%"><a href="doc/drawing-tools.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/shapes.png" alt="Drawing tools"></a></td>
-<td width="33%"><a href="doc/orders-and-positions.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/trading.png" alt="Orders and positions"></a></td>
-</tr>
-<tr>
-<td width="33%"><a href="doc/series-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/series-charts.png" alt="Business charts"></a></td>
-<td width="33%"><a href="doc/depth-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/depth.png" alt="Depth chart"></a></td>
-<td width="33%"><a href="doc/heatmap-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/heatmap.png" alt="Heatmap"></a></td>
-</tr>
-<tr>
-<td width="33%"><a href="doc/mae-mfe-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/mae-mfe.png" alt="MAE and MFE scatter"></a></td>
-<td width="33%"><a href="doc/volatility-surface-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/volatility-surface.png" alt="Volatility surface"></a></td>
-<td width="33%"><a href="doc/efficient-frontier-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/efficient-frontier.png" alt="Efficient frontier"></a></td>
-</tr>
-<tr>
-<td width="33%"><a href="doc/training-curve-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/training-curve.png" alt="Training curves"></a></td>
-<td width="33%"><a href="doc/model-pareto-chart.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/model-pareto.png" alt="Model cost against quality"></a></td>
-<td width="33%"><a href="doc/token-heatmap.md"><img src="https://raw.githubusercontent.com/CtrlAltDevelop/ohlcv_chart/main/screenshots/token-heatmap.png" alt="Token heatmap"></a></td>
-</tr>
-</table>
+Screenshots and a reference page for every chart are in the
+[gallery](doc/gallery.md).
+
+### Candlestick, indicators and drawing
+
+- **Chart types** — [candles, Heikin-Ashi, Renko, Kagi and more](doc/chart-types.md),
+  [symbol comparison](doc/comparison.md), [bar replay](doc/bar-replay.md)
+- **Indicators** — [31 overlays and stacked panes](doc/indicators.md),
+  [panes](doc/panes.md)
+- **Drawing tools and trading** — [29 drawing tools](doc/drawing-tools.md),
+  [line editor](doc/line-editor.md),
+  [orders and positions](doc/orders-and-positions.md),
+  [event marks](doc/event-marks.md)
+
+### Business and statistical
+
+- **Series, pie, radar, heatmap and depth** — [series](doc/series-chart.md),
+  [pie and radar](doc/pie-chart.md), [heatmap](doc/heatmap-chart.md),
+  [depth](doc/depth-chart.md)
+- **Dashboards and reports** — [treemap](doc/treemap-chart.md),
+  [sunburst](doc/sunburst-chart.md), [sankey](doc/sankey-chart.md),
+  [chord](doc/chord-chart.md), [marimekko](doc/marimekko-chart.md),
+  [stream](doc/stream-chart.md), [parallel coordinates](doc/parallel-chart.md),
+  [slope and bump](doc/slope-chart.md), [bubble](doc/bubble-chart.md),
+  [box plot](doc/box-plot-chart.md), [histogram](doc/histogram-chart.md),
+  [violin and ridgeline](doc/violin-chart.md), [dumbbell](doc/dumbbell-chart.md),
+  [bullet](doc/bullet-chart.md), [gauge](doc/gauge-chart.md),
+  [waffle](doc/waffle-chart.md), [funnel](doc/funnel-chart.md),
+  [sparkline grid](doc/sparkline-grid.md)
+
+### Trading analysis
+
+- **Order flow and derivatives** — [market profile](doc/market-profile-chart.md),
+  [footprint](doc/footprint-chart.md),
+  [order-book heatmap](doc/book-heatmap-chart.md),
+  [cumulative delta](doc/cumulative-delta-chart.md),
+  [liquidity map](doc/liquidity-map-chart.md),
+  [open interest and funding](doc/open-interest-chart.md),
+  [options payoff](doc/option-payoff-chart.md),
+  [volatility curves](doc/volatility-curve-chart.md),
+  [volatility surface](doc/volatility-surface-chart.md),
+  [pair spread](doc/pair-spread-chart.md),
+  [futures curve](doc/futures-curve-chart.md)
+- **Backtests and results** — [equity curve](doc/equity-curve-chart.md),
+  [Monte Carlo fan](doc/monte-carlo-chart.md),
+  [R-multiple](doc/r-multiple-chart.md),
+  [trade timeline](doc/trade-timeline-chart.md),
+  [seasonality](doc/seasonality-chart.md), [calendar](doc/calendar-chart.md),
+  [waterfall](doc/waterfall-chart.md), [MAE / MFE](doc/mae-mfe-chart.md),
+  [value at risk](doc/var-chart.md),
+  [efficient frontier](doc/efficient-frontier-chart.md),
+  [activity clock](doc/activity-clock-chart.md)
+
+### Models, tokens and AI — new
+
+- **Training** — [training curves](doc/training-curve-chart.md),
+  [scaling laws](doc/scaling-law-chart.md),
+  [hyperparameter sweep](doc/sweep-chart.md),
+  [training timeline](doc/training-timeline-chart.md)
+- **Evaluation** — [benchmark matrix](doc/benchmark-matrix-chart.md),
+  [model cost against quality](doc/model-pareto-chart.md),
+  [evaluation breakdown](doc/eval-breakdown-chart.md)
+- **Serving and tokens** — [latency bands](doc/latency-band-chart.md),
+  [token usage](doc/token-usage-chart.md),
+  [token heatmap](doc/token-heatmap.md)
+
+### Axes and interaction
+
+- **Axes, sessions and layout** — [price axes](doc/price-axis.md),
+  [date axis](doc/date-axis.md), [sessions](doc/sessions.md),
+  [sizing](doc/sizing.md), [theming](doc/theming.md)
+- **Interaction** — [legend and crosshair](doc/legend-and-crosshair.md),
+  [long-press readout](doc/readout.md),
+  [driving the chart](doc/driving-the-chart.md)
 
 ## Documentation
 
