@@ -153,7 +153,11 @@ bool _isCalendarStep(Duration step) => step >= const Duration(days: 28);
 int timeBucket(DateTime time, Duration step) {
   if (_isCalendarStep(step)) {
     if (step >= const Duration(days: 365)) return time.year;
-    final months = step.inDays >= 90 ? 3 : 1;
+    final months = step.inDays >= 180
+        ? 6
+        : step.inDays >= 90
+        ? 3
+        : 1;
     return time.year * 12 + (time.month - 1) ~/ months;
   }
   final wallClock = DateTime.utc(
@@ -164,7 +168,14 @@ int timeBucket(DateTime time, Duration step) {
     time.minute,
     time.second,
   );
-  return wallClock.millisecondsSinceEpoch ~/ step.inMilliseconds;
+  // Weeks are counted from a Monday. The epoch began on a Thursday, so a bare
+  // division would open every weekly bucket — and every weekly candle — then.
+  const week = Duration.millisecondsPerDay * 7;
+  final shift = step.inMilliseconds % week == 0
+      ? Duration.millisecondsPerDay * 4
+      : 0;
+  return ((wallClock.millisecondsSinceEpoch - shift) / step.inMilliseconds)
+      .floor();
 }
 
 /// Whether a label at [time] should name the day rather than the clock time.

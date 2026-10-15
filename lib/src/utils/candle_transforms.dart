@@ -16,6 +16,10 @@ import 'axis_ticks.dart';
 /// KChartWidget(ha, colors, /* … */);
 /// ```
 abstract final class CandleTransforms {
+  /// The most bricks or bars one call lays down. A size far smaller than the
+  /// market's moves would otherwise ask for millions, and hang the app.
+  static const int maxBlocks = 200000;
+
   /// Smooths [candles] into Heikin-Ashi candles.
   ///
   /// Each candle is averaged with the one before it, which strips most of the
@@ -66,7 +70,8 @@ abstract final class CandleTransforms {
   /// the axis and for anything drawn on it. Volume is carried across from the
   /// candles a brick covers.
   ///
-  /// Returns an empty list for a non-positive [brickSize].
+  /// Returns an empty list for a non-positive [brickSize], and stops at
+  /// [maxBlocks] bricks.
   static List<KLineEntity> renko(
     List<KLineEntity> candles, {
     required double brickSize,
@@ -105,11 +110,13 @@ abstract final class CandleTransforms {
 
       // A reversal has to clear two bricks: one to undo the last, one to lay
       // the first of the other side.
-      while (candle.close >= level + brickSize * (direction < 0 ? 2 : 1)) {
+      while (bricks.length < maxBlocks &&
+          candle.close >= level + brickSize * (direction < 0 ? 2 : 1)) {
         final open = direction < 0 ? level + brickSize : level;
         lay(open, open + brickSize);
       }
-      while (candle.close <= level - brickSize * (direction > 0 ? 2 : 1)) {
+      while (bricks.length < maxBlocks &&
+          candle.close <= level - brickSize * (direction > 0 ? 2 : 1)) {
         final open = direction > 0 ? level - brickSize : level;
         lay(open, open - brickSize);
       }
@@ -427,7 +434,8 @@ abstract final class CandleTransforms {
   /// is drawn — a bar is at least [range] tall, and taller where the candles it
   /// covered reached further.
   ///
-  /// Returns an empty list for a non-positive [range].
+  /// Returns an empty list for a non-positive [range], and stops at
+  /// [maxBlocks] bars.
   static List<KLineEntity> rangeBars(
     List<KLineEntity> candles, {
     required double range,
@@ -451,7 +459,7 @@ abstract final class CandleTransforms {
       // One candle may carry price through several bars' worth of range, so the
       // move is drained a bar at a time. Each pass moves the open a whole
       // range towards the close, so the loop always gets shorter.
-      while ((close - open).abs() >= range) {
+      while (bars.length < maxBlocks && (close - open).abs() >= range) {
         final up = close > open;
         final end = up ? open + range : open - range;
 

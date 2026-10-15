@@ -104,6 +104,10 @@ MarketProfile buildMarketProfile(
   int? rowCount,
   double valueAreaFraction = 0.7,
 }) {
+  // A tick that is not a positive number would divide the range by zero.
+  if (tickSize != null && !(tickSize > 0 && tickSize.isFinite)) {
+    tickSize = null;
+  }
   var low = double.infinity;
   var high = double.negativeInfinity;
   for (final candle in candles) {
@@ -127,7 +131,11 @@ MarketProfile buildMarketProfile(
     final candle = candles[i];
     if (!candle.low.isFinite || !candle.high.isFinite) continue;
     final first = ((candle.low - low) / tick).floor().clamp(0, rows - 1);
-    final last = ((candle.high - low) / tick).ceil().clamp(1, rows);
+    // A candle with no range sitting on a level's edge still traded there.
+    final last = math.max(
+      first + 1,
+      ((candle.high - low) / tick).ceil().clamp(1, rows),
+    );
     for (var row = first; row < last; row++) {
       periods[row].add(i);
     }

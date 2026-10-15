@@ -77,7 +77,8 @@ double pairHedgeRatio(List<PairPoint> points) {
   }
   if (n < 2) return 1;
   final variance = sumBB - sumB * sumB / n;
-  if (variance.abs() < 1e-12) return 1;
+  // Relative to the prices' own size, so a series quoted in 1e-7s still fits.
+  if (variance.abs() <= 1e-12 * sumBB) return 1;
   return (sumAB - sumA * sumB / n) / variance;
 }
 

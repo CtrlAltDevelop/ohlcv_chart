@@ -188,7 +188,17 @@ List<double> optionBreakEvens(List<OptionLeg> legs, double min, double max) {
     found.add(a + (b - a) * (-pa / span));
   }
   if (optionPayoff(legs, max) == 0) found.add(max);
-  return found;
+
+  // A payoff that reaches zero exactly on a strike is found from both sides of
+  // it, and the same price must not be reported twice.
+  final span = max - min;
+  final unique = <double>[];
+  for (final price in found) {
+    if (unique.isEmpty || (price - unique.last).abs() > span * 1e-9) {
+      unique.add(price);
+    }
+  }
+  return unique;
 }
 
 /// Where an option payoff was laid out.

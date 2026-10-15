@@ -164,7 +164,8 @@ void _layOutLevel(
 
   final entries = <_Entry>[
     for (var i = 0; i < items.length; i++)
-      if (items[i].total > 0) _Entry(items[i], i, items[i].total),
+      if (items[i].total.isFinite && items[i].total > 0)
+        _Entry(items[i], i, items[i].total),
   ];
   if (entries.isEmpty) return;
   if (sort) entries.sort((a, b) => b.weight.compareTo(a.weight));

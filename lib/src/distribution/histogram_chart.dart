@@ -72,7 +72,9 @@ List<HistogramBin> histogramBins(
 
   final int count;
   if (binWidth != null && binWidth > 0) {
-    count = math.max(1, ((high - low) / binWidth).ceil());
+    // The quotient of two decimals is a hair over a whole number as often as
+    // not (0.7 / 0.1), which would otherwise earn an extra, empty bin.
+    count = math.max(1, ((high - low) / binWidth - 1e-9).ceil());
     high = low + count * binWidth;
   } else {
     count = math.max(1, binCount ?? math.sqrt(values.length).round());
