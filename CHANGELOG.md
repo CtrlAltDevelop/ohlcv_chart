@@ -20,7 +20,11 @@
   and numbers the most doubtful tokens, `focusAbove` leaves the confident ones
   unshaded, `showStrip` draws every token's score in order for a long text,
   `showWhitespace` writes spaces and line breaks as `·` and `↵`, and
-  `selectedIndex` holds one outlined. The legend marks the mean. `tokenRanks`,
+  `selectedIndex` holds one outlined. Tokens now have room round their text and
+  a gap where the tokenizer put a space, and are shaded softly — a tint with a
+  line of the full colour under the text — rather than in solid blocks that ran
+  together; `shading: TokenShading.solid` brings the old look back. The legend
+  marks the mean. `tokenRanks`,
   `topTokens`, `binTokenScores` and `tokenDisplay` are the numbers behind it.
 - **Ten charts for training and serving language models:** `TrainingCurveChart`,
   `ScalingLawChart`, `SweepChart`, `TrainingTimelineChart`,

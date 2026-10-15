@@ -42,6 +42,19 @@ A newline inside a token ends the line. Leading spaces are kept, so tokens such
 as `" capital"` read as they were produced. A score that is not finite leaves
 the token uncoloured.
 
+## How it is drawn
+
+Each token is a rounded box with room round its text. A token that begins a word
+— where the tokenizer put a space — sits a little apart from the one before it,
+and one that carries a word on sits close, so the boxes of a word read as a word.
+
+| Parameter | Description |
+| --- | --- |
+| `shading` | `TokenShading.soft` (the default) tints the box and draws a line of the full colour under the text; `TokenShading.solid` fills it with the full colour, the text turning dark or light to suit |
+| `horizontalPadding`, `verticalPadding` | Room round the text inside a box |
+| `wordGap`, `tokenGap` | The gap before a token that begins a word, and before one that carries on |
+| `lineGap`, `tokenRadius` | Space between lines, and the rounding |
+
 ## Reading a long text
 
 | Parameter | What it does |
