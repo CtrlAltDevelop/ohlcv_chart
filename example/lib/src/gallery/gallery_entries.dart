@@ -2268,7 +2268,7 @@ class _CourseCard extends StatelessWidget {
       color: color,
       semanticLabel: '$title, $lessons of $of lessons',
       child: SizedBox(
-        height: 96,
+        height: 76,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2278,6 +2278,8 @@ class _CourseCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFFF1F3F5),
                       fontSize: 16,
