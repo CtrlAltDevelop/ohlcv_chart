@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -39,6 +40,19 @@ class HistogramBin {
 
   /// How wide the range is.
   double get width => to - from;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HistogramBin &&
+          other.from == from &&
+          other.to == to &&
+          other.count == count &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([from, to, count, color, data]);
 }
 
 /// Counts [samples] into bins of equal width.
@@ -72,7 +86,9 @@ List<HistogramBin> histogramBins(
 
   final int count;
   if (binWidth != null && binWidth > 0) {
-    count = math.max(1, ((high - low) / binWidth).ceil());
+    // The quotient of two decimals is a hair over a whole number as often as
+    // not (0.7 / 0.1), which would otherwise earn an extra, empty bin.
+    count = math.max(1, ((high - low) / binWidth - 1e-9).ceil());
     high = low + count * binWidth;
   } else {
     count = math.max(1, binCount ?? math.sqrt(values.length).round());
@@ -357,7 +373,7 @@ class _HistogramChartState extends State<HistogramChart>
   void didUpdateWidget(HistogramChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.bins, widget.bins)) {
+    if (!listEquals(oldWidget.bins, widget.bins)) {
       if (_touched != null && _touched! >= widget.bins.length) _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

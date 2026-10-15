@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -66,6 +67,27 @@ class SparklineTile {
     if (from == null || to == null) return true;
     return to >= from;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SparklineTile &&
+          other.label == label &&
+          listEquals(other.values, values) &&
+          other.color == color &&
+          other.valueLabel == valueLabel &&
+          other.subtitle == subtitle &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode => Object.hashAll([
+    label,
+    Object.hashAll(values),
+    color,
+    valueLabel,
+    subtitle,
+    tooltip,
+  ]);
 }
 
 /// Where one tile of a [SparklineGrid] sits.
@@ -487,7 +509,7 @@ class _SparklineGridState extends State<SparklineGrid>
   void didUpdateWidget(SparklineGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.tiles, widget.tiles) &&
+    if (!listEquals(oldWidget.tiles, widget.tiles) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

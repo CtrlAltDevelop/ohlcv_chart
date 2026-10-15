@@ -63,6 +63,7 @@ import 'renderer/chart_painter.dart';
 import 'renderer/main_renderer.dart';
 import 'renderer/text_painter_cache.dart';
 import 'utils/date_format_util.dart';
+import 'extension/num_ext.dart';
 
 /// The drawing mode the chart is currently in.
 ///
@@ -2628,7 +2629,7 @@ class _KChartWidgetState extends State<KChartWidget>
                     isOnTap = false;
                     isLongPress = true;
                     mSelectX = details.localPosition.dx;
-                    mSelectY = details.localPosition.dy.clamp(
+                    mSelectY = details.localPosition.dy.clampWithin(
                       painter.mMainRect.top,
                       painter.mMainRect.bottom,
                     );
@@ -2952,7 +2953,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
     // A pane the host made taller than the usual ceiling keeps its height
     // under the finger rather than snapping down to it.
-    heights[index] = (heights[index] + delta).clamp(
+    heights[index] = (heights[index] + delta).clampWithin(
       _minPaneHeight,
       math.max(widget.chartStyle.maxPaneHeight, heights[index]),
     );
@@ -3164,7 +3165,10 @@ class _KChartWidgetState extends State<KChartWidget>
       return;
     }
     mSelectX = pos.dx;
-    mSelectY = pos.dy.clamp(painter.mMainRect.top, painter.mMainRect.bottom);
+    mSelectY = pos.dy.clampWithin(
+      painter.mMainRect.top,
+      painter.mMainRect.bottom,
+    );
   }
 
   /// The last thing the info dialog was told, so a repeat can be dropped.
@@ -4778,7 +4782,7 @@ class _KChartWidgetState extends State<KChartWidget>
         ? middle
         : painter
               .getMainY(price)
-              .clamp(painter.mMainRect.top, painter.mMainRect.bottom);
+              .clampWithin(painter.mMainRect.top, painter.mMainRect.bottom);
 
     // A crosshair put up from outside reads as a hover, not as a press, so it
     // does not take a held finger's place or leave one behind when it goes.

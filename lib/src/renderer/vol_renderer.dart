@@ -73,7 +73,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     final r = mVolWidth / 2;
     final bottom = chartRect.bottom;
     final top = math.min(getVolY(curPoint.vol), bottom - 1);
-    if (curPoint.vol != 0) {
+    if (curPoint.vol != 0 && curPoint.vol.isFinite && top.isFinite) {
       canvas.drawRect(
         Rect.fromLTRB(curX - r, top, curX + r, bottom),
         chartPaint
@@ -183,7 +183,10 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
       // The top mark is lifted onto the legend row, where the old single
       // maximum label sat; the rest ride above their own line.
       final top = chartRect.top - topPadding;
-      final offsetY = (y - tp.height).clamp(top, chartRect.bottom - tp.height);
+      final offsetY = (y - tp.height).clampWithin(
+        top,
+        chartRect.bottom - tp.height,
+      );
 
       tp.paint(canvas, Offset(axisLabelX(tp.width, padding), offsetY));
       tp.dispose();

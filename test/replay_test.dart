@@ -41,6 +41,68 @@ List<KLineEntity> _data([int count = 60]) {
 
 void main() {
   group('the controller', () {
+    test('reports how far it has got', () {
+      final replay = ChartReplayController()..reportLength(40);
+      expect(replay.progress, 1);
+
+      replay.start(at: 10);
+      expect(replay.progress, 0.25);
+
+      replay.stop();
+      expect(replay.progress, 1);
+      replay.dispose();
+    });
+
+    test('a series shrunk to nothing still leaves one candle in play', () {
+      final replay = ChartReplayController()..reportLength(40);
+      replay.start(at: 10);
+
+      replay.reportLength(0);
+      expect(replay.position, 1);
+      replay.dispose();
+    });
+
+    testWidgets('tells its listeners when playback catches up and stops', (
+      tester,
+    ) async {
+      final replay = ChartReplayController(
+        interval: const Duration(milliseconds: 100),
+      )..reportLength(10);
+      var notified = 0;
+      replay.addListener(() => notified++);
+
+      replay.start(at: 9);
+      replay.play();
+      expect(replay.isPlaying, isTrue);
+
+      // The series shrinks under the running replay, so the next tick finds
+      // nothing to advance and has to announce that playback has ended.
+      replay.reportLength(9);
+      final before = notified;
+      await tester.pump(const Duration(milliseconds: 150));
+
+      expect(replay.isPlaying, isFalse);
+      expect(notified, greaterThan(before));
+      replay.dispose();
+    });
+
+    testWidgets('play(interval:) changes the pace of a running playback', (
+      tester,
+    ) async {
+      final replay = ChartReplayController(
+        interval: const Duration(seconds: 10),
+      )..reportLength(100);
+
+      replay.start(at: 10);
+      replay.play();
+      replay.play(interval: const Duration(milliseconds: 100));
+      expect(replay.interval, const Duration(milliseconds: 100));
+
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(replay.position, 13);
+      replay.dispose();
+    });
+
     test('starts inactive and hands the whole series over', () {
       final replay = ChartReplayController();
 

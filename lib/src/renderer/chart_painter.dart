@@ -17,6 +17,7 @@ import 'base_chart_renderer.dart';
 import 'indicator_pane_renderer.dart';
 import 'main_renderer.dart';
 import 'vol_renderer.dart';
+import '../extension/num_ext.dart';
 
 enum CrossArea { main, volume, secondary, none }
 
@@ -2985,6 +2986,8 @@ class ChartPainter extends BaseChartPainter {
 
     final x = translateXtoX(getX(index));
     final y = getMainY(value);
+    // No candle in view had a price to mark.
+    if (!x.isFinite || !y.isFinite) return;
     final tp = getTextPainter(mMainRenderer.formatPrice(value), color);
     final linePaint = Paint()
       ..color = color
@@ -3231,7 +3234,8 @@ class ChartPainter extends BaseChartPainter {
 
   /// Pins [y] to the candle area, for a label that has to stay findable even
   /// when the price it points at is off the top or the bottom of the axis.
-  double clampToMain(double y) => y.clamp(mMainRect.top, mMainRect.bottom);
+  double clampToMain(double y) =>
+      y.clampWithin(mMainRect.top, mMainRect.bottom);
 }
 
 /// Draws the crosshair, its readouts and the legends, over the chart.

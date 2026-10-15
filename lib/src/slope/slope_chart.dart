@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -29,6 +30,19 @@ class SlopeSeries {
 
   /// Shown when the series is touched; null shows its label and values.
   final String? tooltip;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SlopeSeries &&
+          other.label == label &&
+          listEquals(other.values, values) &&
+          other.color == color &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode =>
+      Object.hashAll([label, Object.hashAll(values), color, tooltip]);
 }
 
 /// What a [SlopeChart] puts on its vertical axis.
@@ -500,7 +514,7 @@ class _SlopeChartState extends State<SlopeChart>
   void didUpdateWidget(SlopeChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.series, widget.series) &&
+    if (!listEquals(oldWidget.series, widget.series) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

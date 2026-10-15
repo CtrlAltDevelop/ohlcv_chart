@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -29,6 +30,18 @@ class CalendarDay {
 
   /// Anything the app wants back when this day is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CalendarDay &&
+          other.date == date &&
+          other.value == value &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([date, value, color, data]);
 }
 
 /// Where one day was laid out.
@@ -535,7 +548,7 @@ class _CalendarChartState extends State<CalendarChart>
   void didUpdateWidget(CalendarChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.days, widget.days)) {
+    if (!listEquals(oldWidget.days, widget.days)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

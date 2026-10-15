@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -22,6 +23,18 @@ class SankeyNode {
 
   /// Anything the app wants back when this node is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SankeyNode &&
+          other.id == id &&
+          other.label == label &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([id, label, color, data]);
 }
 
 /// A quantity moving from one [SankeyNode] to another.
@@ -50,6 +63,19 @@ class SankeyLink {
 
   /// Anything the app wants back when this flow is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SankeyLink &&
+          other.source == source &&
+          other.target == target &&
+          other.value == value &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([source, target, value, color, data]);
 }
 
 /// Where one [SankeyNode] was laid out.
@@ -492,8 +518,8 @@ class _SankeyChartState extends State<SankeyChart>
   void didUpdateWidget(SankeyChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.nodes, widget.nodes) ||
-        !identical(oldWidget.links, widget.links)) {
+    if (!listEquals(oldWidget.nodes, widget.nodes) ||
+        !listEquals(oldWidget.links, widget.links)) {
       _node = null;
       _link = null;
       if (widget.animationDuration > Duration.zero) {

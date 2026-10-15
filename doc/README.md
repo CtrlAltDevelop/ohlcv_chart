@@ -4,8 +4,9 @@ Reference documentation for every feature, one page each. Start with
 [Candlestick chart](candlestick-chart.md); the remaining pages can be read in
 any order.
 
-For installation and an overview of features, see the
-[package README](../README.md).
+For installation and a quick start, see the [package README](../README.md);
+for what the package does at a glance, see [Features](features.md) and the
+[Gallery](gallery.md).
 
 ## Getting started
 
@@ -46,6 +47,11 @@ For installation and an overview of features, see the
   strategy makes or loses at expiry, with break-evens marked.
 - **[Volatility curve](volatility-curve-chart.md)** — `VolatilityCurveChart`:
   smiles, skews and term structures, several expiries at once.
+- **[Volatility surface](volatility-surface-chart.md)** —
+  `VolatilitySurfaceChart`: implied volatility across strike and expiry as a
+  heatmap, with the skew against the at-the-money strike.
+- **[Futures curve](futures-curve-chart.md)** — `FuturesCurveChart`: prices
+  against delivery month, with contango, backwardation and calendar spreads.
 - **[Market profile](market-profile-chart.md)** — `MarketProfileChart`: time at
   price as TPO letters, with the point of control and value area.
 - **[Footprint](footprint-chart.md)** — `FootprintChart`: bid and ask volume at
@@ -62,10 +68,16 @@ For installation and an overview of features, see the
   trade from entry to exit, a lane per symbol, coloured by result.
 - **[R-multiple distribution](r-multiple-chart.md)** — `RMultipleChart`: trade
   results in R, with expectancy, profit factor and SQN.
+- **[MAE / MFE scatter](mae-mfe-chart.md)** — `MaeMfeChart`: every trade by how
+  far it went against you or for you, to place a stop and a target.
+- **[Value at risk](var-chart.md)** — `VarChart`: a histogram of returns with the
+  loss tail picked out, and VaR and expected shortfall marked.
 - **[Monte Carlo fan](monte-carlo-chart.md)** — `MonteCarloChart`: simulated
   equity paths as percentile bands, with the odds of loss and ruin.
 - **[Seasonality](seasonality-chart.md)** — `SeasonalityChart`: results by month
   and year, or weekday and hour, with totals and averages.
+- **[Activity clock](activity-clock-chart.md)** — `ActivityClockChart`: a week
+  as a clock face, an hour round the dial and a weekday on each ring.
 - **[Sparkline grid](sparkline-grid.md)** — `SparklineGrid`: small multiples
   for a watchlist, a name and a shape each.
 - **[Parallel coordinates](parallel-chart.md)** — `ParallelChart`: many things
@@ -86,10 +98,27 @@ For installation and an overview of features, see the
   squares, a cell per per cent.
 - **[Bullet](bullet-chart.md)** — `BulletChart`: a measure against its target
   on a banded track, a row per KPI.
+- **[Progress bars and cards](progress-bars.md)** — `ProgressBars`: how far
+  each goal has got, as pills, blocks or cells, with a mark for where it should
+  be; `ProgressCard`: a card whose whole background is the progress, as a sweep,
+  a growing circle or a bar.
 - **[Pair spread](pair-spread-chart.md)** — `PairSpreadChart`: the spread or
   ratio of two symbols, with z-score bands and entry and exit signals.
+- **[Efficient frontier](efficient-frontier-chart.md)** —
+  `EfficientFrontierChart`: portfolios by risk and return, with the frontier,
+  the best Sharpe ratio and the capital market line.
 - **[Migrating from fl_chart and candlesticks](migrating-from-fl_chart.md)** —
   API mapping from both packages, with examples.
+- **[Training curves](training-curve-chart.md)** — `TrainingCurveChart`: loss and accuracy of one or more runs, with smoothing, a log axis, the best checkpoint and divergence marked.
+- **[Scaling laws](scaling-law-chart.md)** — `ScalingLawChart`: loss against compute on log-log axes, with the power law fitted and carried past the data.
+- **[Hyperparameter sweep](sweep-chart.md)** — `SweepChart`: a two-setting sweep as a grid of scores, with the best combination starred.
+- **[Training timeline](training-timeline-chart.md)** — `TrainingTimelineChart`: training jobs by machine, coloured by how they finished.
+- **[Benchmark matrix](benchmark-matrix-chart.md)** — `BenchmarkMatrixChart`: models against benchmarks, coloured by standing, with the leaders starred.
+- **[Model cost against quality](model-pareto-chart.md)** — `ModelParetoChart`: models by cost and score with the Pareto frontier traced through the ones nothing beats.
+- **[Latency bands](latency-band-chart.md)** — `LatencyBandChart`: p50, p95 and p99 latency over time as bands, with an objective and the intervals that broke it.
+- **[Token usage](token-usage-chart.md)** — `TokenUsageChart`: input, output and cached tokens over time as stacked columns, with the cost as a line.
+- **[Evaluation breakdown](eval-breakdown-chart.md)** — `EvalBreakdownChart`: an evaluation by category: passed, failed and skipped, worst first, with an interval on each rate.
+- **[Token heatmap](token-heatmap.md)** — `TokenHeatmap`: a model's text with each token shaded by its surprisal, entropy or attribution.
 
 ## Indicators and data
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -30,6 +31,17 @@ class MarketProfileRow {
 
   /// How many periods touched it.
   int get count => periods.length;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MarketProfileRow &&
+          other.from == from &&
+          other.to == to &&
+          listEquals(other.periods, periods);
+
+  @override
+  int get hashCode => Object.hashAll([from, to, Object.hashAll(periods)]);
 }
 
 /// Price levels, the level most traded, and the range around it where most of
@@ -89,6 +101,27 @@ class MarketProfile {
   /// Whether [price] is inside the value area.
   bool inValueArea(double price) =>
       price >= valueAreaLow && price <= valueAreaHigh;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MarketProfile &&
+          listEquals(other.rows, rows) &&
+          other.tickSize == tickSize &&
+          other.pointOfControl == pointOfControl &&
+          other.valueAreaLow == valueAreaLow &&
+          other.valueAreaHigh == valueAreaHigh &&
+          other.periodCount == periodCount;
+
+  @override
+  int get hashCode => Object.hashAll([
+    Object.hashAll(rows),
+    tickSize,
+    pointOfControl,
+    valueAreaLow,
+    valueAreaHigh,
+    periodCount,
+  ]);
 }
 
 /// Builds a market profile from [candles], one period per candle.
@@ -104,6 +137,10 @@ MarketProfile buildMarketProfile(
   int? rowCount,
   double valueAreaFraction = 0.7,
 }) {
+  // A tick that is not a positive number would divide the range by zero.
+  if (tickSize != null && !(tickSize > 0 && tickSize.isFinite)) {
+    tickSize = null;
+  }
   var low = double.infinity;
   var high = double.negativeInfinity;
   for (final candle in candles) {
@@ -127,7 +164,11 @@ MarketProfile buildMarketProfile(
     final candle = candles[i];
     if (!candle.low.isFinite || !candle.high.isFinite) continue;
     final first = ((candle.low - low) / tick).floor().clamp(0, rows - 1);
-    final last = ((candle.high - low) / tick).ceil().clamp(1, rows);
+    // A candle with no range sitting on a level's edge still traded there.
+    final last = math.max(
+      first + 1,
+      ((candle.high - low) / tick).ceil().clamp(1, rows),
+    );
     for (var row = first; row < last; row++) {
       periods[row].add(i);
     }
@@ -441,7 +482,7 @@ class _MarketProfileChartState extends State<MarketProfileChart>
   void didUpdateWidget(MarketProfileChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.profile, widget.profile)) {
+    if (oldWidget.profile != widget.profile) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

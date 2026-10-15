@@ -100,7 +100,11 @@ class ChartLink {
   /// Adds [controller], if it is not already on the link.
   void add(KChartController controller) {
     if (_following.containsKey(controller)) return;
-    void listener() => _whenSafe(() => _spreadFrom(controller));
+    // The work may be deferred to after the frame, by which time the chart may
+    // have been taken off the link — and a removed chart must not move the rest.
+    void listener() => _whenSafe(() {
+      if (_following.containsKey(controller)) _spreadFrom(controller);
+    });
     _following[controller] = listener;
     controller.addListener(listener);
   }

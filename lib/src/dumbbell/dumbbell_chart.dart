@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -45,6 +46,22 @@ class DumbbellRow {
 
   /// Whether the row ended higher than it started.
   bool get rose => to >= from;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DumbbellRow &&
+          other.label == label &&
+          other.from == from &&
+          other.to == to &&
+          other.fromColor == fromColor &&
+          other.toColor == toColor &&
+          other.barColor == barColor &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode =>
+      Object.hashAll([label, from, to, fromColor, toColor, barColor, tooltip]);
 }
 
 /// Where one row of a [DumbbellChart] sits.
@@ -417,7 +434,7 @@ class _DumbbellChartState extends State<DumbbellChart>
   void didUpdateWidget(DumbbellChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.rows, widget.rows) &&
+    if (!listEquals(oldWidget.rows, widget.rows) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

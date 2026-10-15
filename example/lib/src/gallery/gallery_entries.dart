@@ -19,7 +19,13 @@ enum GalleryGroup {
   results('Backtests and results'),
 
   /// The charts a dashboard or a report is built from.
-  dashboard('Dashboards and reports');
+  dashboard('Dashboards and reports'),
+
+  /// How far things have got towards a goal.
+  progress('Progress and goals'),
+
+  /// Training runs, evaluations and what models cost to serve.
+  models('Models and training');
 
   const GalleryGroup(this.title);
 
@@ -96,6 +102,7 @@ List<GalleryEntry> galleryEntries() => [
   ..._orderFlow(),
   ..._results(),
   ..._dashboard(),
+  ..._models(),
 ];
 
 /// The entry with this [id], or null when there is none.
@@ -116,6 +123,73 @@ const _darkLabel = TextStyle(
 const _grid = Color(0x14FFFFFF);
 
 List<GalleryEntry> _orderFlow() => [
+  GalleryEntry(
+    id: 'volatility-surface',
+    title: 'Volatility surface',
+    blurb:
+        'Implied volatility across strike and expiry at once, with the '
+        'skew against the at-the-money strike on touch.',
+    group: GalleryGroup.orderFlow,
+    doc: 'volatility-surface-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Strike by expiry',
+        figure: 'spot 100',
+        height: 360,
+        build: () {
+          final surface = galleryVolatilitySurface();
+          return VolatilitySurfaceChart(
+            strikes: surface.strikes,
+            expiries: surface.expiries,
+            volatilities: surface.vols,
+            spot: 100,
+            lowColor: galleryBlue,
+            midColor: galleryAmber,
+            highColor: galleryRed,
+            axisLabelStyle: _smallAxisStyle,
+            labelStyle: _darkLabel,
+          );
+        },
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'futures-curve',
+    title: 'Futures curve',
+    blurb:
+        'Prices against delivery month, with contango or backwardation '
+        'read off the curve and last month\'s drawn dashed behind it.',
+    group: GalleryGroup.orderFlow,
+    doc: 'futures-curve-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Crude, today and a month ago',
+        figure: '12 months out',
+        height: 340,
+        build: () {
+          final curves = galleryFuturesCurves();
+          return FuturesCurveChart(
+            curves: [
+              FuturesCurve(
+                label: 'Today',
+                contracts: curves.today,
+                color: galleryBlue,
+              ),
+              FuturesCurve(
+                label: 'A month ago',
+                contracts: curves.before,
+                color: galleryAmber,
+                dashed: true,
+              ),
+            ],
+            priceFormatter: (v) => '\$${v.toStringAsFixed(1)}',
+            axisLabelStyle: _smallAxisStyle,
+            gridColor: _grid,
+          );
+        },
+      ),
+    ],
+  ),
   GalleryEntry(
     id: 'market-profile',
     title: 'Market profile',
@@ -434,6 +508,139 @@ List<GalleryEntry> _orderFlow() => [
 ];
 
 List<GalleryEntry> _results() => [
+  GalleryEntry(
+    id: 'mae-mfe',
+    title: 'MAE / MFE scatter',
+    blurb:
+        'Every trade by how far it went against you, or for you, and what '
+        'it finally made — to place a stop and a target.',
+    group: GalleryGroup.results,
+    doc: 'mae-mfe-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Max adverse excursion',
+        figure: 'stop at 1R',
+        height: 360,
+        build: () => MaeMfeChart(
+          trades: galleryExcursions(),
+          xReferenceLines: const [1],
+          winnerColor: galleryGreen,
+          loserColor: galleryRed,
+          xFormatter: (v) => '${v.toStringAsFixed(1)}R',
+          yFormatter: (v) => '${v.toStringAsFixed(0)}R',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          yAxisTitle: 'Result',
+          gridColor: _grid,
+        ),
+      ),
+      GalleryVariant(
+        title: 'Max favourable excursion',
+        figure: 'the limit line',
+        height: 360,
+        build: () => MaeMfeChart(
+          trades: galleryExcursions(),
+          kind: ExcursionKind.favourable,
+          winnerColor: galleryGreen,
+          loserColor: galleryRed,
+          xFormatter: (v) => '${v.toStringAsFixed(1)}R',
+          yFormatter: (v) => '${v.toStringAsFixed(0)}R',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          yAxisTitle: 'Result',
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'var',
+    title: 'Value at risk',
+    blurb:
+        'The shape of the returns, with the loss tail picked out and the '
+        'value at risk and expected shortfall marked.',
+    group: GalleryGroup.results,
+    doc: 'var-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Daily returns, 95%',
+        figure: '400 days',
+        height: 380,
+        build: () => VarChart(
+          returns: [for (final r in galleryReturns()) r / 100],
+          barColor: galleryBlue,
+          tailColor: galleryRed,
+          axisLabelStyle: _smallAxisStyle,
+          statLabelStyle: _smallAxisStyle,
+          statValueStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'efficient-frontier',
+    title: 'Efficient frontier',
+    blurb:
+        'Portfolios by risk and return, with the frontier, the best Sharpe '
+        'ratio, the least risky portfolio and the one held now.',
+    group: GalleryGroup.results,
+    doc: 'efficient-frontier-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Risk and return',
+        figure: 'risk-free 2%',
+        height: 400,
+        build: () => EfficientFrontierChart(
+          points: galleryPortfolios(),
+          riskFreeRate: 0.02,
+          current: const PortfolioPoint(risk: 0.19, expectedReturn: 0.083),
+          portfolioColor: const Color(0x664DABF7),
+          frontierColor: galleryGreen,
+          maxSharpeColor: galleryAmber,
+          minRiskColor: galleryTeal,
+          currentColor: galleryRed,
+          riskFormatter: (v) => '${(v * 100).toStringAsFixed(0)}%',
+          returnFormatter: (v) => '${(v * 100).toStringAsFixed(0)}%',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'activity-clock',
+    title: 'Activity clock',
+    blurb:
+        'A week as a clock face — an hour round the dial, a weekday on '
+        'each ring — coloured by when the trades were opened.',
+    group: GalleryGroup.results,
+    doc: 'activity-clock-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Trades opened by hour',
+        figure: 'Mon is innermost',
+        height: 420,
+        build: () => ActivityClockChart(
+          samples: galleryActivity(),
+          aggregate: SeasonalityAggregate.mean,
+          scale: HeatmapGradientScale(
+            colors: [
+              galleryBlue.withValues(alpha: 0.12),
+              galleryBlue,
+              galleryAmber,
+            ],
+          ),
+          labelStyle: _smallAxisStyle,
+        ),
+      ),
+    ],
+  ),
   GalleryEntry(
     id: 'equity-curve',
     title: 'Equity curve',
@@ -1542,3 +1749,562 @@ TreemapItem _symbol(String name, double weight, double change) => TreemapItem(
   label: '$name\n${change >= 0 ? '+' : ''}${change.toStringAsFixed(1)}%',
   colorValue: change,
 );
+
+List<GalleryEntry> _models() => [
+  GalleryEntry(
+    id: 'training-curve',
+    title: 'Training curves',
+    blurb:
+        'Loss and accuracy of one or more runs, with smoothing, a log axis, '
+        'the best checkpoint and the step a run diverged.',
+    group: GalleryGroup.models,
+    doc: 'training-curve-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Train and validation',
+        figure: 'overfits at 2,250',
+        height: 380,
+        build: () {
+          final curves = galleryLossCurves();
+          return TrainingCurveChart(
+            runs: [
+              TrainingRun(
+                label: 'train',
+                points: curves.train,
+                color: galleryBlue,
+              ),
+              TrainingRun(
+                label: 'validation',
+                points: curves.validation,
+                color: galleryAmber,
+                dashed: true,
+              ),
+            ],
+            smoothing: 0.85,
+            gapBetween: (0, 1),
+            gapColor: const Color(0x33FA5252),
+            yAxisTitle: 'Loss',
+            axisLabelStyle: _smallAxisStyle,
+            axisTitleStyle: _smallAxisStyle,
+            gridColor: _grid,
+          );
+        },
+      ),
+      GalleryVariant(
+        title: 'Three learning rates',
+        figure: 'log axis',
+        height: 380,
+        build: () => TrainingCurveChart(
+          runs: galleryLearningRates(),
+          logY: true,
+          smoothing: 0.4,
+          yAxisTitle: 'Loss (log)',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'scaling-law',
+    title: 'Scaling laws',
+    blurb:
+        'Loss against compute on log-log axes, with the power law fitted '
+        'and carried to where it reaches a target.',
+    group: GalleryGroup.models,
+    doc: 'scaling-law-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Loss against FLOPs',
+        figure: 'fit and extrapolation',
+        height: 400,
+        build: () => ScalingLawChart(
+          points: galleryScaling(),
+          extrapolateTo: 1e26,
+          targetLoss: 2.0,
+          pointColor: galleryBlue,
+          fitColor: galleryAmber,
+          bandColor: const Color(0x22FAB005),
+          targetColor: galleryGreen,
+          xAxisTitle: 'Training compute (FLOPs)',
+          yAxisTitle: 'Loss',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'sweep',
+    title: 'Hyperparameter sweep',
+    blurb:
+        'A learning-rate by batch-size grid of validation losses, the best '
+        'combination starred and the mean of each setting alongside.',
+    group: GalleryGroup.models,
+    doc: 'sweep-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Validation loss',
+        figure: '5 × 5',
+        height: 340,
+        build: () => SweepChart(
+          trials: gallerySweep(),
+          goodColor: galleryGreen,
+          midColor: galleryAmber,
+          badColor: galleryRed,
+          labelStyle: _darkLabel,
+          axisLabelStyle: _smallAxisStyle,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'training-timeline',
+    title: 'Training timeline',
+    blurb:
+        'Training jobs by machine, coloured by how each finished, with how '
+        'many were running underneath.',
+    group: GalleryGroup.models,
+    doc: 'training-timeline-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Two days on four pods',
+        figure: '13 jobs',
+        height: 360,
+        build: () => TrainingTimelineChart(
+          jobs: galleryJobs(),
+          runningColor: galleryBlue,
+          completedColor: galleryGreen,
+          failedColor: galleryRed,
+          preemptedColor: galleryAmber,
+          cancelledColor: const Color(0xFF6B7480),
+          axisLabelStyle: _smallAxisStyle,
+          laneLabelStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'benchmark-matrix',
+    title: 'Benchmark matrix',
+    blurb:
+        'Models against benchmarks, each score coloured by where it stands '
+        'in its column, the leaders starred.',
+    group: GalleryGroup.models,
+    doc: 'benchmark-matrix-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Six models, six benchmarks',
+        figure: 'perplexity: lower wins',
+        height: 340,
+        build: () {
+          final data = galleryBenchmarkScores();
+          return BenchmarkMatrixChart(
+            models: data.models,
+            benchmarks: data.benchmarks,
+            scores: data.scores,
+            lowerIsBetter: const {5},
+            lowColor: galleryRed,
+            midColor: galleryAmber,
+            highColor: galleryGreen,
+            labelStyle: _darkLabel,
+            axisLabelStyle: _smallAxisStyle,
+            modelAxisWidth: 96,
+          );
+        },
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'model-pareto',
+    title: 'Model cost against quality',
+    blurb:
+        'Models by price and score on a log axis, with the Pareto frontier '
+        'through the ones nothing beats.',
+    group: GalleryGroup.models,
+    doc: 'model-pareto-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Price against MMLU',
+        figure: 'size = context window',
+        height: 420,
+        build: () => ModelParetoChart(
+          models: galleryModels(),
+          palette: galleryPalette,
+          costFormatter: (v) => '\$${v < 1 ? v : v.toStringAsFixed(0)}',
+          xAxisTitle: 'Price per 1M tokens',
+          yAxisTitle: 'MMLU',
+          axisLabelStyle: _smallAxisStyle,
+          axisTitleStyle: _smallAxisStyle,
+          legendStyle: _axisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'latency-band',
+    title: 'Latency bands',
+    blurb:
+        'p50, p95 and p99 latency over a day as bands, with an objective '
+        'drawn across and the intervals that broke it marked.',
+    group: GalleryGroup.models,
+    doc: 'latency-band-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Time to first token',
+        figure: 'SLO 1,200 ms on p95',
+        figureColor: galleryAmber,
+        height: 380,
+        build: () => LatencyBandChart(
+          samples: galleryLatency(),
+          slo: 1200,
+          medianColor: galleryBlue,
+          p95Color: galleryBlue,
+          p99Color: galleryPurple,
+          sloColor: galleryAmber,
+          breachColor: galleryRed,
+          valueFormatter: (v) => '${v.round()} ms',
+          axisLabelStyle: _smallAxisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'token-usage',
+    title: 'Token usage',
+    blurb:
+        'Cached, input and output tokens over two weeks as stacked columns, '
+        'with the cost as a line on its own axis.',
+    group: GalleryGroup.models,
+    doc: 'token-usage-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Tokens and spend',
+        figure: 'cache warming up',
+        height: 380,
+        build: () => TokenUsageChart(
+          buckets: galleryUsage(),
+          inputColor: galleryBlue,
+          outputColor: galleryPurple,
+          cachedColor: galleryTeal,
+          costColor: galleryAmber,
+          costFormatter: (v) => '\$${v.toStringAsFixed(0)}',
+          axisLabelStyle: _smallAxisStyle,
+          legendStyle: _axisStyle,
+          gridColor: _grid,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'eval-breakdown',
+    title: 'Evaluation breakdown',
+    blurb:
+        'An evaluation by category as bars of passed, failed and skipped '
+        'tasks, the worst first, with a threshold held across.',
+    group: GalleryGroup.models,
+    doc: 'eval-breakdown-chart.md',
+    variants: [
+      GalleryVariant(
+        title: 'Pass rate by category',
+        figure: 'threshold 80%',
+        figureColor: galleryAmber,
+        height: 380,
+        build: () => EvalBreakdownChart(
+          categories: galleryEval(),
+          threshold: 0.8,
+          passedColor: galleryGreen,
+          failedColor: galleryRed,
+          skippedColor: const Color(0xFF6B7480),
+          thresholdColor: galleryAmber,
+          labelStyle: const TextStyle(color: Color(0xFFD0D5DB), fontSize: 12),
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'token-heatmap',
+    title: 'Token heatmap',
+    blurb:
+        'A completion with each token shaded by how surprised the model was '
+        'by it — the doubtful ones ringed and numbered, what it weighed '
+        'instead on touch.',
+    group: GalleryGroup.models,
+    doc: 'token-heatmap.md',
+    variants: [
+      GalleryVariant(
+        title: 'Surprisal per token',
+        figure: 'top 3 ringed',
+        height: 300,
+        build: () => TokenHeatmap(
+          tokens: galleryTokens(),
+          showSummary: true,
+          showStrip: true,
+          highlightTop: 3,
+          textStyle: const TextStyle(fontSize: 15),
+          legendStyle: _axisStyle,
+        ),
+      ),
+      GalleryVariant(
+        title: 'Only the doubtful',
+        figure: 'above 2 nats',
+        height: 300,
+        build: () => TokenHeatmap(
+          tokens: galleryTokens(),
+          focusAbove: 2,
+          showWhitespace: true,
+          showStrip: true,
+          textStyle: const TextStyle(fontSize: 15),
+          legendStyle: _axisStyle,
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'progress',
+    title: 'Progress bars',
+    blurb:
+        'How far each goal has got, as pills, blocks or cells, with a mark '
+        'for where it should be by now.',
+    group: GalleryGroup.progress,
+    doc: 'progress-bars.md',
+    variants: [
+      GalleryVariant(
+        title: 'Goals this month',
+        figure: '3 of 4',
+        figureColor: galleryGreen,
+        height: 300,
+        build: () => const ProgressBars(
+          items: [
+            ProgressItem(
+              label: 'Net profit',
+              value: 72,
+              target: 60,
+              color: galleryGreen,
+            ),
+            ProgressItem(
+              label: 'Trades taken',
+              value: 64,
+              target: 50,
+              color: galleryBlue,
+            ),
+            ProgressItem(
+              label: 'Journal entries',
+              value: 88,
+              target: 75,
+              color: galleryPurple,
+            ),
+            ProgressItem(
+              label: 'Risk reviews',
+              value: 35,
+              target: 60,
+              color: galleryAmber,
+            ),
+          ],
+          barHeight: 14,
+          rowGap: 34,
+          labelStyle: TextStyle(color: Color(0xFFD0D5DB), fontSize: 13),
+          valueStyle: TextStyle(
+            color: Color(0xFFE9ECEF),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+        ),
+      ),
+      GalleryVariant(
+        title: 'In cells',
+        figure: '7 of 10',
+        height: 300,
+        build: () => const ProgressBars(
+          shape: ProgressShape.segmented,
+          items: [
+            ProgressItem(
+              label: 'Backtest coverage',
+              value: 70,
+              valueLabel: '7 / 10',
+              color: galleryBlue,
+            ),
+            ProgressItem(
+              label: 'Walk-forward windows',
+              value: 40,
+              valueLabel: '4 / 10',
+              color: galleryTeal,
+            ),
+            ProgressItem(
+              label: 'Paper-trading days',
+              value: 95,
+              valueLabel: '19 / 20',
+              color: galleryGreen,
+            ),
+          ],
+          segments: 10,
+          barHeight: 16,
+          rowGap: 48,
+          labelStyle: TextStyle(color: Color(0xFFD0D5DB), fontSize: 13),
+          valueStyle: TextStyle(
+            color: Color(0xFFE9ECEF),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+        ),
+      ),
+      GalleryVariant(
+        title: 'Budgets used',
+        figure: '1 over',
+        figureColor: galleryRed,
+        height: 300,
+        build: () => const ProgressBars(
+          shape: ProgressShape.block,
+          items: [
+            ProgressItem(
+              label: 'Daily loss limit',
+              value: 41,
+              color: galleryGreen,
+            ),
+            ProgressItem(label: 'Margin used', value: 78, color: galleryAmber),
+            ProgressItem(label: 'Order rate', value: 100, color: galleryRed),
+            ProgressItem(label: 'API quota', value: 22, color: galleryBlue),
+          ],
+          barHeight: 14,
+          rowGap: 34,
+          labelStyle: TextStyle(color: Color(0xFFD0D5DB), fontSize: 13),
+          valueStyle: TextStyle(
+            color: Color(0xFFE9ECEF),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+          padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
+        ),
+      ),
+    ],
+  ),
+  GalleryEntry(
+    id: 'progress-card',
+    title: 'Progress card',
+    blurb:
+        'A card around any widget whose whole background is the progress — '
+        'swept round like a clock, grown as a circle, or filled along the '
+        'card.',
+    group: GalleryGroup.progress,
+    doc: 'progress-bars.md',
+    variants: [
+      GalleryVariant(
+        title: 'Sweep, like a clock',
+        figure: 'sweep',
+        height: 300,
+        build: () => const _CourseCards(mode: ProgressCardMode.sweep),
+      ),
+      GalleryVariant(
+        title: 'A growing circle',
+        figure: 'circle',
+        height: 300,
+        build: () => const _CourseCards(mode: ProgressCardMode.circle),
+      ),
+      GalleryVariant(
+        title: 'Along the card',
+        figure: 'linear',
+        height: 300,
+        build: () => const _CourseCards(mode: ProgressCardMode.linear),
+      ),
+    ],
+  ),
+];
+
+/// Two courses as cards, one just begun and one nearly done, filled in as
+/// [mode] says.
+class _CourseCards extends StatelessWidget {
+  const _CourseCards({required this.mode});
+
+  final ProgressCardMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _CourseCard(title: 'Chart patterns', lessons: 3, of: 20, mode: mode),
+        const SizedBox(height: 14),
+        _CourseCard(
+          title: 'Order flow',
+          lessons: 9,
+          of: 12,
+          color: galleryGreen,
+          mode: mode,
+        ),
+      ],
+    );
+  }
+}
+
+/// A course as a card: its name, how many lessons are done and the share.
+class _CourseCard extends StatelessWidget {
+  const _CourseCard({
+    required this.title,
+    required this.lessons,
+    required this.of,
+    required this.mode,
+    this.color = galleryBlue,
+  });
+
+  final String title;
+  final int lessons;
+  final int of;
+  final ProgressCardMode mode;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = lessons / of;
+    return ProgressCard(
+      progress: progress,
+      mode: mode,
+      color: color,
+      semanticLabel: '$title, $lessons of $of lessons',
+      child: SizedBox(
+        height: 76,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFF1F3F5),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${(progress * 100).round()}%',
+                  style: const TextStyle(
+                    color: Color(0xFFF1F3F5),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              '$lessons of $of lessons',
+              style: const TextStyle(color: Color(0xFFD0D5DB), fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

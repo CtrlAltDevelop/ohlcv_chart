@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -20,6 +21,17 @@ class EquityPoint {
 
   /// Anything the app wants back when this point is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EquityPoint &&
+          other.time == time &&
+          other.equity == equity &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([time, equity, data]);
 }
 
 /// What an equity curve is worth and how far it fell.
@@ -495,7 +507,7 @@ class _EquityCurveChartState extends State<EquityCurveChart>
   void didUpdateWidget(EquityCurveChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.points, widget.points)) {
+    if (!listEquals(oldWidget.points, widget.points)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);
@@ -899,10 +911,17 @@ class EquityCurveChartPainter extends CustomPainter {
       final time = _timeAt(index);
       if (time == null) continue;
       final tp = textCache.get(_formatTime(time), style);
-      final left = (points[index].dx - tp.width / 2).clamp(
-        layout.equityRect.left,
-        layout.equityRect.right - tp.width,
-      );
+      // A label wider than the plot is pinned to its left edge, not clamped
+      // into a range that has turned inside out.
+      final left = (points[index].dx - tp.width / 2)
+          .clamp(
+            layout.equityRect.left,
+            math.max(
+              layout.equityRect.left,
+              layout.equityRect.right - tp.width,
+            ),
+          )
+          .toDouble();
       if (left < written) continue;
       tp.paint(canvas, Offset(left, layout.drawdownRect.bottom + 3));
       written = left + tp.width + 6;

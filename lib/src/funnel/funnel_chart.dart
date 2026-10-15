@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -23,6 +24,18 @@ class FunnelStage {
 
   /// Anything the app wants back when this stage is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FunnelStage &&
+          other.value == value &&
+          other.label == label &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([value, label, color, data]);
 }
 
 /// How a [FunnelChart]'s stages join.
@@ -312,7 +325,7 @@ class _FunnelChartState extends State<FunnelChart>
   void didUpdateWidget(FunnelChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.stages, widget.stages)) {
+    if (!listEquals(oldWidget.stages, widget.stages)) {
       if (_touched != null && _touched! >= widget.stages.length) {
         _touched = null;
       }
@@ -539,6 +552,7 @@ class FunnelChartPainter extends CustomPainter {
   String _formatValue(double value) {
     final format = chart.valueFormatter;
     if (format != null) return format(value);
+    if (!value.isFinite) return '–';
     final whole = value.round();
     final digits = whole.abs().toString();
     final grouped = digits.replaceAllMapped(

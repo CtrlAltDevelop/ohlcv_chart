@@ -9,6 +9,7 @@ import '../utils/axis_ticks.dart';
 import '../utils/number_util.dart';
 import 'base_chart_renderer.dart';
 import 'series_painter.dart';
+import '../extension/num_ext.dart';
 
 /// One indicator in its own pane below the candles.
 ///
@@ -159,7 +160,7 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
       strokeWidth: chartStyle.indicatorLineWidth,
       // View space, so the bar takes the zoom the candles take from the canvas.
       barWidth: chartStyle.macdWidth * scaleX,
-      zeroY: getY(0).clamp(chartRect.top, chartRect.bottom),
+      zeroY: getY(0).clampWithin(chartRect.top, chartRect.bottom),
     );
     canvas.restore();
   }
@@ -227,7 +228,7 @@ class IndicatorPaneRenderer extends BaseChartRenderer<KLineEntity> {
 
       // The pane is short, so a label is pulled inside its own box rather than
       // being allowed to run over the pane above or below.
-      final offsetY = (y - tp.height).clamp(
+      final offsetY = (y - tp.height).clampWithin(
         chartRect.top - topPadding,
         chartRect.bottom - tp.height,
       );

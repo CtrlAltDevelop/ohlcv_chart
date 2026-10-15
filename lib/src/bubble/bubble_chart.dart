@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -38,6 +39,20 @@ class BubblePoint {
 
   /// Anything the app wants back when this bubble is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BubblePoint &&
+          other.x == x &&
+          other.y == y &&
+          other.size == size &&
+          other.label == label &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([x, y, size, label, color, data]);
 }
 
 /// Where one [BubblePoint] was laid out.
@@ -385,7 +400,7 @@ class _BubbleChartState extends State<BubbleChart>
   void didUpdateWidget(BubbleChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.points, widget.points)) {
+    if (!listEquals(oldWidget.points, widget.points)) {
       if (_touched != null && _touched! >= widget.points.length) {
         _touched = null;
       }
@@ -609,6 +624,11 @@ class BubbleChartPainter extends CustomPainter {
     // Largest first, so a small bubble is never buried.
     final order = [...circles]..sort((a, b) => b.radius.compareTo(a.radius));
     for (final circle in order) {
+      if (!circle.center.dx.isFinite ||
+          !circle.center.dy.isFinite ||
+          !circle.radius.isFinite) {
+        continue;
+      }
       final color = _colorOf(circle);
       final radius = circle.radius * t;
       canvas

@@ -16,6 +16,14 @@ class SeasonalSample {
 
   /// Its result — usually a return, as a fraction: 0.012 is 1.2%.
   final double value;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SeasonalSample && other.time == time && other.value == value;
+
+  @override
+  int get hashCode => Object.hashAll([time, value]);
 }
 
 /// Turns a price series into the return of each period over the one before.

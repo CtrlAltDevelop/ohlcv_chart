@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -36,6 +37,19 @@ class StreamSeries {
     final value = values[period];
     return value.isFinite && value > 0 ? value : 0;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StreamSeries &&
+          other.label == label &&
+          listEquals(other.values, values) &&
+          other.color == color &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode =>
+      Object.hashAll([label, Object.hashAll(values), color, tooltip]);
 }
 
 /// Where a [StreamChart]'s stack is centred.
@@ -599,7 +613,7 @@ class _StreamChartState extends State<StreamChart>
   void didUpdateWidget(StreamChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.series, widget.series) &&
+    if (!listEquals(oldWidget.series, widget.series) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

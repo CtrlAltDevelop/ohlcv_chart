@@ -71,6 +71,27 @@ class TreemapItem {
     }
     return sum;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TreemapItem &&
+          other.value == value &&
+          listEquals(other.children, children) &&
+          other.label == label &&
+          other.color == color &&
+          other.colorValue == colorValue &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([
+    value,
+    Object.hashAll(children),
+    label,
+    color,
+    colorValue,
+    data,
+  ]);
 }
 
 /// Where one [TreemapItem] was laid out.
@@ -164,7 +185,8 @@ void _layOutLevel(
 
   final entries = <_Entry>[
     for (var i = 0; i < items.length; i++)
-      if (items[i].total > 0) _Entry(items[i], i, items[i].total),
+      if (items[i].total.isFinite && items[i].total > 0)
+        _Entry(items[i], i, items[i].total),
   ];
   if (entries.isEmpty) return;
   if (sort) entries.sort((a, b) => b.weight.compareTo(a.weight));

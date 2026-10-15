@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -123,6 +124,21 @@ class OptionLeg {
     final cost = kind == OptionKind.underlying ? 0.0 : premium;
     return (intrinsic - cost) * quantity * contractSize;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OptionLeg &&
+          other.kind == kind &&
+          other.strike == strike &&
+          other.premium == premium &&
+          other.quantity == quantity &&
+          other.contractSize == contractSize &&
+          other.label == label;
+
+  @override
+  int get hashCode =>
+      Object.hashAll([kind, strike, premium, quantity, contractSize, label]);
 }
 
 /// What [legs] are worth together if the underlying expires at [price].
@@ -188,7 +204,17 @@ List<double> optionBreakEvens(List<OptionLeg> legs, double min, double max) {
     found.add(a + (b - a) * (-pa / span));
   }
   if (optionPayoff(legs, max) == 0) found.add(max);
-  return found;
+
+  // A payoff that reaches zero exactly on a strike is found from both sides of
+  // it, and the same price must not be reported twice.
+  final span = max - min;
+  final unique = <double>[];
+  for (final price in found) {
+    if (unique.isEmpty || (price - unique.last).abs() > span * 1e-9) {
+      unique.add(price);
+    }
+  }
+  return unique;
 }
 
 /// Where an option payoff was laid out.
@@ -548,7 +574,7 @@ class _OptionPayoffChartState extends State<OptionPayoffChart>
   void didUpdateWidget(OptionPayoffChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.legs, widget.legs)) {
+    if (!listEquals(oldWidget.legs, widget.legs)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);
@@ -852,7 +878,7 @@ class OptionPayoffChartPainter extends CustomPainter {
       ..color = chart.strikeColor
       ..strokeWidth = 1;
     for (final leg in chart.legs) {
-      if (leg.kind == OptionKind.underlying) continue;
+      if (leg.kind == OptionKind.underlying || !leg.strike.isFinite) continue;
       if (leg.strike < layout.minPrice || leg.strike > layout.maxPrice) {
         continue;
       }

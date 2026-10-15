@@ -107,6 +107,15 @@ void main() {
   });
 
   group('calcWR', () {
+    test('looks back over exactly `period` candles', () {
+      // Highs sit a point above the close and lows a point below, so the three
+      // candles ending at 40 span 19..41 — the 10 before them is out of reach.
+      final data = candles([10, 20, 30, 40]);
+      DataUtil.calcWR(data, 3);
+
+      expect(data[3].r, closeTo(-100 * (41 - 40) / (41 - 19), 1e-9));
+    });
+
     test('stays within the -100..0 band', () {
       final data = candles(rampThenFall(50));
       DataUtil.calcWR(data);

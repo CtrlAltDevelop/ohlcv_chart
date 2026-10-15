@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -63,6 +64,31 @@ class RadarSeries {
 
   /// The colour the outline is drawn in.
   Color get strokeColor => color ?? radarDefaultColor;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RadarSeries &&
+          listEquals(other.values, values) &&
+          other.label == label &&
+          other.color == color &&
+          other.fillColor == fillColor &&
+          other.width == width &&
+          listEquals(other.dashPattern, dashPattern) &&
+          other.dot == dot &&
+          other.showInTooltip == showInTooltip;
+
+  @override
+  int get hashCode => Object.hashAll([
+    Object.hashAll(values),
+    label,
+    color,
+    fillColor,
+    width,
+    Object.hashAll(dashPattern ?? const <double>[]),
+    dot,
+    showInTooltip,
+  ]);
 }
 
 /// What a touch on a [RadarChart] landed on.

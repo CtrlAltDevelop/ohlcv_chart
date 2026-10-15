@@ -23,8 +23,10 @@ double niceStep(double span, int target) {
   if (!span.isFinite || span <= 0 || target <= 0) return 0;
 
   final raw = span / target;
+  // 10.0, not 10: with two ints `pow` is an integer power, which wraps round
+  // past 1e18 and turns the axis of a very large number into noise.
   final magnitude = math
-      .pow(10, (math.log(raw) / math.ln10).floor())
+      .pow(10.0, (math.log(raw) / math.ln10).floor())
       .toDouble();
   if (magnitude <= 0 || !magnitude.isFinite) return 0;
 
@@ -73,9 +75,23 @@ List<double> niceLogTicks(double min, double max, {int target = 5}) {
   final lowDecade = (math.log(min) / math.ln10).floor();
   final highDecade = (math.log(max) / math.ln10).ceil();
 
+  // Past a handful of decades the 2s and 5s only crowd the axis: tick on powers
+  // of ten, every few of them when there are very many.
+  final decades = highDecade - lowDecade;
+  if (decades > 6) {
+    final every = (decades / target).ceil().clamp(1, decades);
+    final wide = <double>[];
+    for (var decade = lowDecade; decade <= highDecade; decade += every) {
+      final value = math.pow(10.0, decade).toDouble();
+      if (value >= min && value <= max) wide.add(value);
+      if (wide.length >= _maxTicks) break;
+    }
+    if (wide.length >= 2) return wide;
+  }
+
   final ticks = <double>[];
   for (var decade = lowDecade; decade <= highDecade; decade++) {
-    final magnitude = math.pow(10, decade).toDouble();
+    final magnitude = math.pow(10.0, decade).toDouble();
     for (final mantissa in const [1.0, 2.0, 5.0]) {
       final value = mantissa * magnitude;
       if (value < min || value > max) continue;
@@ -153,7 +169,11 @@ bool _isCalendarStep(Duration step) => step >= const Duration(days: 28);
 int timeBucket(DateTime time, Duration step) {
   if (_isCalendarStep(step)) {
     if (step >= const Duration(days: 365)) return time.year;
-    final months = step.inDays >= 90 ? 3 : 1;
+    final months = step.inDays >= 180
+        ? 6
+        : step.inDays >= 90
+        ? 3
+        : 1;
     return time.year * 12 + (time.month - 1) ~/ months;
   }
   final wallClock = DateTime.utc(
@@ -164,7 +184,14 @@ int timeBucket(DateTime time, Duration step) {
     time.minute,
     time.second,
   );
-  return wallClock.millisecondsSinceEpoch ~/ step.inMilliseconds;
+  // Weeks are counted from a Monday. The epoch began on a Thursday, so a bare
+  // division would open every weekly bucket — and every weekly candle — then.
+  const week = Duration.millisecondsPerDay * 7;
+  final shift = step.inMilliseconds % week == 0
+      ? Duration.millisecondsPerDay * 4
+      : 0;
+  return ((wallClock.millisecondsSinceEpoch - shift) / step.inMilliseconds)
+      .floor();
 }
 
 /// Whether a label at [time] should name the day rather than the clock time.

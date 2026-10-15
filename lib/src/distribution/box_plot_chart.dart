@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -117,6 +118,29 @@ class BoxPlotStats {
 
   /// The highest value drawn, outliers included.
   double get max => outliers.fold(upper, math.max);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BoxPlotStats &&
+          other.lower == lower &&
+          other.q1 == q1 &&
+          other.median == median &&
+          other.q3 == q3 &&
+          other.upper == upper &&
+          other.mean == mean &&
+          listEquals(other.outliers, outliers);
+
+  @override
+  int get hashCode => Object.hashAll([
+    lower,
+    q1,
+    median,
+    q3,
+    upper,
+    mean,
+    Object.hashAll(outliers),
+  ]);
 }
 
 /// One box of a [BoxPlotChart] — a strategy, a symbol, a month.
@@ -145,6 +169,18 @@ class BoxPlotEntry {
 
   /// Anything the app wants back when this entry is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BoxPlotEntry &&
+          other.stats == stats &&
+          other.label == label &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([stats, label, color, data]);
 }
 
 /// Where one [BoxPlotEntry] was laid out.
@@ -478,7 +514,7 @@ class _BoxPlotChartState extends State<BoxPlotChart>
   void didUpdateWidget(BoxPlotChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.entries, widget.entries)) {
+    if (!listEquals(oldWidget.entries, widget.entries)) {
       if (_touched != null && _touched! >= widget.entries.length) {
         _touched = null;
       }

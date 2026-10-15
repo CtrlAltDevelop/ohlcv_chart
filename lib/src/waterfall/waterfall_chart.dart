@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -61,6 +62,19 @@ class WaterfallStep {
 
   /// Anything the app wants back when this step is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WaterfallStep &&
+          other.value == value &&
+          other.label == label &&
+          other.kind == kind &&
+          other.color == color &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([value, label, kind, color, data]);
 }
 
 /// Where one [WaterfallStep] was laid out.
@@ -411,7 +425,7 @@ class _WaterfallChartState extends State<WaterfallChart>
   void didUpdateWidget(WaterfallChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.steps, widget.steps)) {
+    if (!listEquals(oldWidget.steps, widget.steps)) {
       if (_touched != null && _touched! >= widget.steps.length) {
         _touched = null;
       }

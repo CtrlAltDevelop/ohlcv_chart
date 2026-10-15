@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -365,7 +366,7 @@ class _SunburstChartState extends State<SunburstChart>
   void didUpdateWidget(SunburstChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.items, widget.items)) {
+    if (!listEquals(oldWidget.items, widget.items)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);
@@ -464,7 +465,15 @@ class _SunburstChartState extends State<SunburstChart>
                         center: _center,
                         radius: inner / math.sqrt2,
                       ),
-                      child: IgnorePointer(child: Center(child: widget.center)),
+                      child: IgnorePointer(
+                        // Shrunk to fit the hole rather than overflowing it.
+                        child: Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: widget.center,
+                          ),
+                        ),
+                      ),
                     ),
                   if (tooltip != null && details != null)
                     Positioned.fill(

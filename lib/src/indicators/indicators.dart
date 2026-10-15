@@ -800,12 +800,11 @@ class WrIndicator extends Indicator {
     IndicatorSeries previous,
     int from,
   ) => IndicatorSeries([
-    // The window reaches back `period` candles, not `period - 1`.
     graftTail(
       candles,
       previous.lines[0],
       from,
-      period,
+      period - 1,
       (slice) => wrSeries(slice, period),
     ),
   ]);

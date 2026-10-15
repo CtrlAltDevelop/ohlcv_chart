@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -30,6 +31,18 @@ class MarimekkoCell {
 
   /// The value actually drawn.
   double get drawnValue => value.isFinite && value > 0 ? value : 0;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MarimekkoCell &&
+          other.label == label &&
+          other.value == value &&
+          other.color == color &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode => Object.hashAll([label, value, color, tooltip]);
 }
 
 /// One column of a [MarimekkoChart] — a whole split into cells.
@@ -67,6 +80,19 @@ class MarimekkoColumn {
     if (given != null && given.isFinite && given > 0) return given;
     return total;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MarimekkoColumn &&
+          other.label == label &&
+          listEquals(other.cells, cells) &&
+          other.width == width &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode =>
+      Object.hashAll([label, Object.hashAll(cells), width, tooltip]);
 }
 
 /// Where one cell of a [MarimekkoChart] sits.
@@ -458,7 +484,7 @@ class _MarimekkoChartState extends State<MarimekkoChart>
   void didUpdateWidget(MarimekkoChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.columns, widget.columns)) {
+    if (!listEquals(oldWidget.columns, widget.columns)) {
       _touched = null;
       if (widget.animationDuration > Duration.zero) {
         _animation.forward(from: 0);

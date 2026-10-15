@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -36,6 +37,18 @@ class BookLevel {
 
   /// Anything the app wants back when this level is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BookLevel &&
+          other.price == price &&
+          other.size == size &&
+          other.side == side &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([price, size, side, data]);
 }
 
 /// The book at one moment.
@@ -60,6 +73,18 @@ class BookSnapshot {
 
   /// Anything the app wants back when this column is touched.
   final Object? data;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BookSnapshot &&
+          other.time == time &&
+          listEquals(other.levels, levels) &&
+          other.mid == mid &&
+          other.data == data;
+
+  @override
+  int get hashCode => Object.hashAll([time, Object.hashAll(levels), mid, data]);
 }
 
 /// Where one [BookLevel] was laid out.
@@ -677,7 +702,7 @@ class BookHeatmapChartPainter extends CustomPainter {
     Offset? previous;
     for (final column in layout.columns) {
       final y = column.midY;
-      if (y == null) {
+      if (y == null || !y.isFinite) {
         previous = null;
         continue;
       }

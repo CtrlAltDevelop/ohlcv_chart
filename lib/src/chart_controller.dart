@@ -148,6 +148,9 @@ class KChartController extends ChangeNotifier {
   /// Zooms out by [step].
   void zoomOut([double step = 0.2]) => zoomTo(scale - step);
 
+  /// Resets the zoom to the natural candle width, undoing any [zoomTo].
+  void resetZoom() => zoomTo(1.0);
+
   /// Whether the newest candle is in view.
   bool get isAtRightEdge => _host?.isChartAtRightEdge ?? true;
 
@@ -362,7 +365,8 @@ class KChartController extends ChangeNotifier {
 ///
 /// Widened outwards where the instants fall between candles, so the span asked
 /// for is always covered. Null where there are no candles, or where the span
-/// falls entirely outside them.
+/// ends before the first of them. A span that starts after the last candle is
+/// covered by that candle, which is still open for the length of its period.
 (int, int)? indexRangeCovering(
   List<KLineEntity> candles,
   DateTime from,

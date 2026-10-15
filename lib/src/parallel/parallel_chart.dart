@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -32,6 +33,21 @@ class ParallelAxis {
   /// Writes a value on the axis; null writes it with as few decimals as it
   /// needs.
   final String Function(double value)? formatter;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParallelAxis &&
+          other.label == label &&
+          other.min == min &&
+          other.max == max &&
+          other.inverted == inverted;
+  // [formatter] is left out: it changes how a value is written, never where it
+  // is drawn, and an inline closure is a different object on every build — it
+  // would make every rebuild look like new data.
+
+  @override
+  int get hashCode => Object.hash(label, min, max, inverted);
 }
 
 /// One line of a [ParallelChart] — a thing measured on every axis.
@@ -65,6 +81,19 @@ class ParallelLine {
     final value = values[index];
     return value != null && value.isFinite ? value : null;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParallelLine &&
+          other.label == label &&
+          listEquals(other.values, values) &&
+          other.color == color &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode =>
+      Object.hashAll([label, Object.hashAll(values), color, tooltip]);
 }
 
 /// The ends of one axis, worked out from the data where they were not given.
@@ -509,7 +538,7 @@ class _ParallelChartState extends State<ParallelChart>
   void didUpdateWidget(ParallelChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.lines, widget.lines) &&
+    if (!listEquals(oldWidget.lines, widget.lines) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

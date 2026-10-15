@@ -25,9 +25,15 @@ abstract class BaseChartRenderer<T> {
     this.priceAxisGutter = 0.0,
     this.priceAxisGutterOnLeft = false,
   }) : gridDashPattern = _validDash(gridDashPattern) {
-    if (maxValue == minValue) {
-      maxValue *= 1.5;
-      minValue /= 2;
+    if (!maxValue.isFinite || !minValue.isFinite) {
+      maxValue = 1;
+      minValue = 0;
+    } else if (maxValue == minValue) {
+      // A flat range needs room either side of it. Scaling it would leave 0
+      // with no span at all, and turn a negative range upside down.
+      final room = maxValue == 0 ? 1.0 : maxValue.abs() / 2;
+      maxValue += room;
+      minValue -= room;
     }
     scaleY = chartRect.height / (maxValue - minValue);
     gridPaint

@@ -364,6 +364,9 @@ class RMultipleChart extends StatelessWidget {
         final height = constraints.hasBoundedHeight
             ? constraints.maxHeight
             : defaultHeight;
+        // A box too short to hold the figures and a histogram under them shows
+        // only the histogram, rather than overflowing.
+        final room = height - padding.vertical;
         return Container(
           height: height,
           color: backgroundColor,
@@ -371,22 +374,29 @@ class RMultipleChart extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (showStats) ...[
-                _StatsRow(
-                  stats:
-                      (statsBuilder ??
-                      (s) => defaultRMultipleStats(
-                        s,
-                        profitColor: profitColor,
-                        lossColor: lossColor,
-                      ))(stats),
-                  labelStyle: seriesAxisLabelStyle.merge(statLabelStyle),
-                  valueStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFE9ECEF),
-                  ).merge(statValueStyle),
-                  spacing: statSpacing,
+              if (showStats && room >= 120) ...[
+                ConstrainedBox(
+                  // Never more than part of the box, so a wrapped row cannot starve
+                  // the histogram; what does not fit is clipped.
+                  constraints: BoxConstraints(maxHeight: room * 0.4),
+                  child: ClipRect(
+                    child: _StatsRow(
+                      stats:
+                          (statsBuilder ??
+                          (s) => defaultRMultipleStats(
+                            s,
+                            profitColor: profitColor,
+                            lossColor: lossColor,
+                          ))(stats),
+                      labelStyle: seriesAxisLabelStyle.merge(statLabelStyle),
+                      valueStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE9ECEF),
+                      ).merge(statValueStyle),
+                      spacing: statSpacing,
+                    ),
+                  ),
                 ),
                 SizedBox(height: statsGap),
               ],

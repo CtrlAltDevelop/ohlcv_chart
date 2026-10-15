@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -19,6 +20,17 @@ class BulletBand {
 
   /// What it is called, for a legend of your own.
   final String? label;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BulletBand &&
+          other.to == to &&
+          other.color == color &&
+          other.label == label;
+
+  @override
+  int get hashCode => Object.hashAll([to, color, label]);
 }
 
 /// One measure against its target — a row of a [BulletChart].
@@ -85,6 +97,35 @@ class BulletRow {
     if (top <= min) return min + 1;
     return bands.isEmpty && max == null ? top + (top - min) * 0.08 : top;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BulletRow &&
+          other.label == label &&
+          other.value == value &&
+          other.target == target &&
+          other.min == min &&
+          other.max == max &&
+          listEquals(other.bands, bands) &&
+          other.color == color &&
+          other.targetColor == targetColor &&
+          other.valueLabel == valueLabel &&
+          other.tooltip == tooltip;
+
+  @override
+  int get hashCode => Object.hashAll([
+    label,
+    value,
+    target,
+    min,
+    max,
+    Object.hashAll(bands),
+    color,
+    targetColor,
+    valueLabel,
+    tooltip,
+  ]);
 }
 
 /// Where one row of a [BulletChart] sits.
@@ -396,7 +437,7 @@ class _BulletChartState extends State<BulletChart>
   void didUpdateWidget(BulletChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (!identical(oldWidget.rows, widget.rows) &&
+    if (!listEquals(oldWidget.rows, widget.rows) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }

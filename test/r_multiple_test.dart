@@ -77,6 +77,27 @@ void main() {
       expect(find.text('2.00'), findsOneWidget);
     });
 
+    testWidgets('the histogram takes the height the figures leave', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 400,
+              height: 380,
+              child: RMultipleChart(results: _results),
+            ),
+          ),
+        ),
+      );
+
+      // The figures are one short row; the rest of the box is the histogram,
+      // not half of it.
+      final histogram = tester.getSize(find.byType(HistogramChart));
+      expect(histogram.height, greaterThan(380 * 0.7));
+    });
+
     testWidgets('takes its own figures, or none', (tester) async {
       await tester.pumpWidget(
         MaterialApp(

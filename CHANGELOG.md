@@ -1,3 +1,147 @@
+## 3.2.0 - 2026-10-15
+
+### Changed
+
+- The data classes charts take — `WaterfallStep`, `TreemapItem`, `DeltaBar`,
+  `PieSection`, `TimelineTrade`, `MarketProfile`, `MonteCarloResult` and the
+  rest — compare by value, so two lists built from the same numbers are equal.
+  Things that do not shape the data — `ParallelAxis.formatter` and
+  `PieSection.badge` — are left out of the comparison, so an inline closure or
+  widget does not make every rebuild look like new data.
+- `PieChart` and `HeatmapChart` now animate in again when their values change,
+  as every other chart does; before, only a change in how many sections or
+  cells there were started the animation.
+
+### Added
+
+- **`ProgressBars`** — how far each goal has got, as pill, block or segmented
+  bars with a label and figure above each, an optional target mark, touch and a
+  draw-in animation. A new "Progress and goals" group in the gallery holds it.
+  `ProgressItem`, `ProgressShape`, `ProgressLayout`, `ProgressRowLayout` and
+  `layOutProgress` are public. See [Progress bars](doc/progress-bars.md).
+- **`ProgressCard`** — a card around any widget whose whole background is a
+  progress fill, for a course, a goal or a task. `mode` picks how it fills:
+  `ProgressCardMode.sweep` sweeps round the card like a clock, `circle` grows
+  a circle from its left edge, `linear` fills along it from the left.
+- **`TokenHeatmap` is easier to read.** Touching a token opens a readout of its
+  score, its rank, the probability the model gave it and — from the new
+  `TokenScore.alternatives` — what it was weighing instead. `highlightTop` rings
+  and numbers the most doubtful tokens, `focusAbove` leaves the confident ones
+  unshaded, `showStrip` draws every token's score in order for a long text,
+  `showWhitespace` writes spaces and line breaks as `·` and `↵`, and
+  `selectedIndex` holds one outlined. Tokens now have room round their text and
+  a gap where the tokenizer put a space, and are shaded softly — a tint with a
+  line of the full colour under the text — rather than in solid blocks that ran
+  together; `shading: TokenShading.solid` brings the old look back. The legend
+  marks the mean. `tokenRanks`,
+  `topTokens`, `binTokenScores` and `tokenDisplay` are the numbers behind it.
+- **Ten charts for training and serving language models:** `TrainingCurveChart`,
+  `ScalingLawChart`, `SweepChart`, `TrainingTimelineChart`,
+  `BenchmarkMatrixChart`, `ModelParetoChart`, `LatencyBandChart`,
+  `TokenUsageChart`, `EvalBreakdownChart` and `TokenHeatmap`. The example app's
+  Gallery tab has a *Models and training* group for them — 50 charts in all —
+  and each has a documentation page with its screenshot.
+- **`TokenHeatmap`** shows a model's text with each token shaded by a score — its surprisal, an entropy, an attribution — flowing and wrapping like text, with a legend and the perplexity. `summarizeTokens` and `flowTokens` are the numbers behind it.
+- **`EvalBreakdownChart`** shows an evaluation by category as bars of passed, failed and skipped tasks, worst first, with the pass rate, how many tasks stand behind it, an overall figure and a threshold. `wilsonInterval`, `overallPassRate` and `sortedByPassRate` are the numbers behind it.
+- **`TokenUsageChart`** shows tokens served over time as stacked cached, input and output columns with the cost as a line against its own axis. `usageTotals`, `UsageBucket.cacheHitRate` and `compactCount` are the numbers behind it.
+- **`LatencyBandChart`** shows inference latency over time as p50, p95 and p99 bands, with an objective drawn across and the intervals that broke it marked. `sloBreaches` is the number behind it.
+- **`ModelParetoChart`** plots models by cost against quality — a price per million tokens against a benchmark score — with the Pareto frontier traced through the ones nothing beats, bubbles sized by context window and models grouped by provider. `paretoIndices` is the number behind it.
+- **`BenchmarkMatrixChart`** compares models across benchmarks in one grid coloured by each score's standing within its benchmark, the leader of each starred and an average column to rank by. `benchmarkQuality`, `benchmarkAverages` and `benchmarkLeaders` are the numbers behind it.
+- **`TrainingTimelineChart`** shows training jobs on a timeline — a lane per machine, a bar from start to end coloured by whether it completed, failed, was preempted or cancelled, and a strip counting the jobs running at each moment.
+- **`SweepChart`** lays a two-setting hyperparameter sweep out as a grid of scores coloured good to bad, with the best combination starred and the mean of each setting alongside. `sweepGrid` is the numbers behind it.
+- **`ScalingLawChart`** plots loss against parameters, tokens or compute on log-log axes with the fitted power law, a residual band, an extrapolation and the scale at which the law reaches a target loss. `fitPowerLaw` and `PowerLawFit` are the numbers behind it.
+- **`TrainingCurveChart`** draws the loss and accuracy curves of one or more training runs, with exponential smoothing over faint raw readings, a logarithmic axis, the best checkpoint, the step a run diverged at and the train/validation gap. `smoothValues`, `bestIndex` and `divergenceIndex` are the numbers behind it.
+- The example app's Gallery tab has the six new charts — 40 in all — and the
+  documentation pages have their screenshots.
+- **`ActivityClockChart`** lays a week out as a clock face — the hours of the
+  day round the dial, a weekday on each ring — coloured by what happened then.
+  It takes the same `SeasonalSample`s as `SeasonalityChart`. `layOutClock` and
+  `clockSegmentAt` are the layout and hit test behind it.
+- **`FuturesCurveChart`** plots futures prices against delivery month, one or
+  more curves at a time, with the first curve's shape — contango or
+  backwardation — and slope in the corner and the calendar spread on touch.
+  `curveShape`, `curveSlope` and `calendarSpreads` are the numbers behind it.
+- **`VarChart`** shows a set of returns as a histogram with the loss tail
+  picked out and the value at risk and expected shortfall marked.
+  `ValueAtRisk.fromReturns` works the figures out by the historical method, and
+  `varBins` colours the tail for a histogram of your own.
+- **`EfficientFrontierChart`** plots portfolios by risk and return and traces
+  the efficient frontier through the ones nothing beats, marking the best
+  return per unit of risk, the least risky portfolio, the capital market line
+  and the portfolio held now. `efficientFrontierIndices`, `maxSharpeIndex` and
+  `minRiskIndex` are the numbers behind it.
+- **`VolatilitySurfaceChart`** draws implied volatility across strike and
+  expiry as a heatmap, with the skew against the at-the-money strike on touch.
+  `atTheMoneyIndex` and `surfaceSkew` are the numbers behind it.
+- **`MaeMfeChart`** plots every trade by how far it went against the position
+  (MAE) or for it (MFE) and what it made, with the limit line no trade can pass
+  and reference lines for a stop or a target. `ExcursionStats` and
+  `winnersStoppedAt` work out the edge ratio and what a stop would have cost.
+- **`KChartController.resetZoom`** zooms back to the natural candle width,
+  undoing `zoomIn`/`zoomOut`/`zoomTo` the way `resetPriceScale` already undoes
+  a price stretch.
+- **`ChartReplayController.progress`** reports how far a replay has got, from 0
+  to 1, for a scrub bar or progress indicator.
+
+### Fixed
+
+- **Overflow in narrow and short boxes.** A tooltip card wider than its chart
+  now shrinks to fit it instead of overflowing; the widget put in the middle of
+  a sunburst, a doughnut or a gauge shrinks to fit the hole; the equity curve's
+  time labels no longer throw when the plot is narrower than a label; and the
+  training timeline's legend shrinks its items in a narrow box. Every chart is
+  now built in boxes from 60 to 800 pixels across, with overflow counted as a
+  failure, and the example's Gallery is built at widths from 240 to 1,400.
+- Log axes spanning more than six decades ticked on every 1, 2 and 5, which
+  crowded the axis; they tick on powers of ten, every few when there are very
+  many.
+- Williams %R looked back over `period + 1` candles instead of `period`, so the
+  line sat a little off every other charting tool. It reads exactly `period`
+  candles now; the values shift slightly.
+- **A candle chart no longer throws while painting** when a pane is squeezed
+  smaller than its own padding — a small box with several indicator panes — or
+  when a pane's values are all equal (a single candle, a flat market, MACD at
+  zero). A flat negative range was also drawn upside down.
+- A market profile counted nothing for a candle with no range that sat on a
+  level's edge, and `tickSize: 0` threw.
+- Option break-evens reported a payoff that crossed zero exactly on a strike
+  twice.
+- `histogramBins` with a decimal `binWidth` such as 0.1 added an empty bin at
+  the end.
+- Weekly time buckets, and so weekly resampling and the week axis labels,
+  started on a Thursday; they start on a Monday now. A 180-day step bucketed by
+  quarter instead of by half-year.
+- A pair's hedge ratio fell back to 1 for prices quoted in very small numbers.
+- A treemap item with an infinite value starved every other tile of space.
+- **A chart with an entry animation no longer restarts it** every time its
+  parent rebuilds with the same data in a new list, which made a chart flash
+  empty on every hover when the parent kept the touched item in its state.
+  Animations now start only when the data's values change.
+- The candle chart and the depth chart no longer throw for a candle or a rung
+  whose price is NaN or infinite; the bad point is left as a gap and does not
+  poison the price scale or the volume scale.
+- A moving average, volume average and anything built on them no longer turn
+  to NaN for the rest of the series after one close that is not a number.
+- `CandleTransforms.renko` and `rangeBars` stop at `maxBlocks` instead of
+  looping for millions of bricks when the size is far smaller than the move.
+- A replay interval of zero started a timer that fired without pause; it is
+  held to a millisecond.
+- The cumulative-delta chart worked out its divergences again on every frame
+  of its animation.
+- The documentation of `indexRangeCovering` said a span after the data gives
+  null; it gives the last candle, which is open for its whole period, and the
+  documentation now says so.
+- A funnel with a value that is not finite threw while labelling it, and a
+  bubble, footprint, order-book or option-payoff chart with a NaN threw while
+  painting. They draw around it now.
+- An R-multiple chart in a box too short for its figures overflowed.
+- A chart taken off a `ChartLink` while a scroll was waiting for the end of the
+  frame still moved the others once the frame ended.
+- A replay that caught up with the end of a shrunken series stopped its timer
+  without telling its listeners, leaving a play/pause button stale. Passing
+  `play(interval:)` while playing now changes the pace instead of being ignored,
+  and a series reduced to nothing keeps one candle in play.
+
 ## 3.1.1 - 2026-10-12
 
 ### Fixed

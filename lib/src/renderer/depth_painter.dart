@@ -11,6 +11,7 @@ import '../entity/depth_book.dart';
 import '../entity/depth_entity.dart';
 import '../extension/canvas_extension.dart';
 import '../utils/number_util.dart';
+import '../extension/num_ext.dart';
 
 class DepthChartPainter extends CustomPainter {
   DepthChartPainter(
@@ -53,6 +54,11 @@ class DepthChartPainter extends CustomPainter {
       ..isAntiAlias = true
       ..strokeWidth = chartStyle.crossWidth
       ..color = chartColors.crossColor;
+
+    // A rung with no price or no volume has nowhere to be drawn.
+    bool drawable(DepthEntity e) => e.price.isFinite && e.vol.isFinite;
+    mBuyData = mBuyData?.where(drawable).toList();
+    mSellData = mSellData?.where(drawable).toList();
 
     mBuyPath ??= Path();
     mSellPath ??= Path();
@@ -448,7 +454,7 @@ class DepthChartPainter extends CustomPainter {
     dx = dx < mWidth * 0.25
         ? dx + offset.dx
         : dx - offset.dx - popupPainter.width;
-    dy = (dy - popupPainter.height / 2).clamp(
+    dy = (dy - popupPainter.height / 2).clampWithin(
       offset.dy,
       mDrawHeight - popupPainter.height - offset.dy,
     );
@@ -513,7 +519,7 @@ class DepthChartPainter extends CustomPainter {
     // dy = dy < mDrawHeight / 2
     //   ? dy + offset.dy
     //   : dy - offset.dy - popupPainter.height;
-    dy = (dy - popupPainter.height / 2).clamp(
+    dy = (dy - popupPainter.height / 2).clampWithin(
       offset.dy,
       mDrawHeight - popupPainter.height - offset.dy,
     );

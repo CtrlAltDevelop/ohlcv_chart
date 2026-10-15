@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
@@ -66,6 +67,37 @@ class PieSection {
 
   /// How far out [badge] is pinned, the way [labelPosition] measures.
   final double badgePosition;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PieSection &&
+          other.value == value &&
+          other.color == color &&
+          other.gradient == gradient &&
+          other.label == label &&
+          other.labelStyle == labelStyle &&
+          other.labelPosition == labelPosition &&
+          other.radius == radius &&
+          other.border == border &&
+          other.offset == offset &&
+          other.badgePosition == badgePosition;
+  // [badge] is left out: a widget made inline is a new object on every build,
+  // and it is drawn over the section rather than shaping it.
+
+  @override
+  int get hashCode => Object.hashAll([
+    value,
+    color,
+    gradient,
+    label,
+    labelStyle,
+    labelPosition,
+    radius,
+    border,
+    offset,
+    badgePosition,
+  ]);
 }
 
 /// One section as it was laid out: which part of the circle it covers.
@@ -319,7 +351,7 @@ class _PieChartState extends State<PieChart>
   void didUpdateWidget(PieChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     _animation.duration = widget.animationDuration;
-    if (oldWidget.sections.length != widget.sections.length &&
+    if (!listEquals(oldWidget.sections, widget.sections) &&
         widget.animationDuration > Duration.zero) {
       _animation.forward(from: 0);
     }
@@ -419,7 +451,12 @@ class _PieChartState extends State<PieChart>
                       top: centre.dy - inner,
                       width: inner * 2,
                       height: inner * 2,
-                      child: Center(child: widget.centerChild),
+                      child: Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: widget.centerChild,
+                        ),
+                      ),
                     ),
                   for (final slice in slices)
                     if (widget.sections[slice.index].badge != null)
