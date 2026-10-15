@@ -110,6 +110,8 @@ for what the package does at a glance, see [Features](features.md) and the
 - **[Hyperparameter sweep](sweep-chart.md)** — `SweepChart`: a two-setting sweep as a grid of scores, with the best combination starred.
 - **[Training timeline](training-timeline-chart.md)** — `TrainingTimelineChart`: training jobs by machine, coloured by how they finished.
 - **[Benchmark matrix](benchmark-matrix-chart.md)** — `BenchmarkMatrixChart`: models against benchmarks, coloured by standing, with the leaders starred.
+- **[Model cost against quality](model-pareto-chart.md)** — `ModelParetoChart`: models by cost and score with the Pareto frontier traced through the ones nothing beats.
+- **[Latency bands](latency-band-chart.md)** — `LatencyBandChart`: p50, p95 and p99 latency over time as bands, with an objective and the intervals that broke it.
 
 ## Indicators and data
 

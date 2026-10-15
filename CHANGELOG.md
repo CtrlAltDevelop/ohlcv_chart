@@ -14,6 +14,8 @@
 
 ### Added
 
+- **`LatencyBandChart`** shows inference latency over time as p50, p95 and p99 bands, with an objective drawn across and the intervals that broke it marked. `sloBreaches` is the number behind it.
+- **`ModelParetoChart`** plots models by cost against quality — a price per million tokens against a benchmark score — with the Pareto frontier traced through the ones nothing beats, bubbles sized by context window and models grouped by provider. `paretoIndices` is the number behind it.
 - **`BenchmarkMatrixChart`** compares models across benchmarks in one grid coloured by each score's standing within its benchmark, the leader of each starred and an average column to rank by. `benchmarkQuality`, `benchmarkAverages` and `benchmarkLeaders` are the numbers behind it.
 - **`TrainingTimelineChart`** shows training jobs on a timeline — a lane per machine, a bar from start to end coloured by whether it completed, failed, was preempted or cancelled, and a strip counting the jobs running at each moment.
 - **`SweepChart`** lays a two-setting hyperparameter sweep out as a grid of scores coloured good to bad, with the best combination starred and the mean of each setting alongside. `sweepGrid` is the numbers behind it.

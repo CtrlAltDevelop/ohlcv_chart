@@ -172,6 +172,8 @@
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
   ratio bar.
+- **`LatencyBandChart`** — latency over time as bands — the median, and the span to the 95th and 99th percentile — with an objective drawn across and the intervals that broke it marked.
+- **`ModelParetoChart`** — models by cost against quality with the Pareto frontier traced through the ones nothing beats, sized by context window or parameters.
 - **`BenchmarkMatrixChart`** — models against benchmarks coloured by how each score stands in its column, with each leader starred and an average column.
 - **`TrainingTimelineChart`** — training jobs on a timeline, a lane per machine, coloured by how each finished, with the running count underneath.
 - **`SweepChart`** — a hyperparameter sweep as a grid of scores with the best combination starred and the mean of each setting.

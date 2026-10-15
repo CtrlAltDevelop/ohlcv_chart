@@ -406,6 +406,52 @@ final Map<String, _Build> _charts = {
     ],
     lowerIsBetter: const {1},
   ),
+  'ModelParetoChart': (v) => ModelParetoChart(
+    models: [
+      for (var i = 0; i < v.length; i++)
+        ModelPoint(
+          name: 'm$i',
+          cost: v[i],
+          score: v[v.length - 1 - i],
+          size: v[i].abs(),
+          group: i.isEven ? 'a' : 'b',
+        ),
+    ],
+  ),
+  'ModelParetoChart (linear)': (v) => ModelParetoChart(
+    logCost: false,
+    labelAll: true,
+    models: [
+      for (var i = 0; i < v.length; i++)
+        ModelPoint(name: 'm$i', cost: v[i], score: v[i]),
+    ],
+  ),
+  'LatencyBandChart': (v) => LatencyBandChart(
+    slo: 1,
+    samples: [
+      for (var i = 0; i < v.length; i++)
+        LatencySample(
+          time: DateTime.utc(2026).add(Duration(minutes: i)),
+          p50: v[i],
+          p95: v[i] + 1,
+          p99: v[i] + 2,
+        ),
+    ],
+  ),
+  'LatencyBandChart (log)': (v) => LatencyBandChart(
+    logY: true,
+    sloPercentile: LatencyPercentile.p99,
+    slo: 10,
+    samples: [
+      for (var i = 0; i < v.length; i++)
+        LatencySample(
+          time: DateTime.utc(2026).add(Duration(hours: i * 20)),
+          p50: v[i],
+          p95: v[v.length - 1 - i],
+          p99: v[i].abs() * 3,
+        ),
+    ],
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)

@@ -140,3 +140,5 @@ export './ml/scaling_law_chart.dart';
 export './ml/sweep_chart.dart';
 export './ml/training_timeline_chart.dart';
 export './ml/benchmark_matrix_chart.dart';
+export './ml/model_pareto_chart.dart';
+export './ml/latency_band_chart.dart';
