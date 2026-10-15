@@ -124,7 +124,7 @@ Screenshots and a reference page for every chart are in the
   [efficient frontier](doc/efficient-frontier-chart.md),
   [activity clock](doc/activity-clock-chart.md)
 
-### Models, tokens and AI — new
+### Models, tokens and AI
 
 - **Training** — [training curves](doc/training-curve-chart.md),
   [scaling laws](doc/scaling-law-chart.md),
