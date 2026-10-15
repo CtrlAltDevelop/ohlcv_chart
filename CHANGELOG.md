@@ -14,6 +14,9 @@
 
 ### Added
 
+- **`BenchmarkMatrixChart`** compares models across benchmarks in one grid coloured by each score's standing within its benchmark, the leader of each starred and an average column to rank by. `benchmarkQuality`, `benchmarkAverages` and `benchmarkLeaders` are the numbers behind it.
+- **`TrainingTimelineChart`** shows training jobs on a timeline — a lane per machine, a bar from start to end coloured by whether it completed, failed, was preempted or cancelled, and a strip counting the jobs running at each moment.
+- **`SweepChart`** lays a two-setting hyperparameter sweep out as a grid of scores coloured good to bad, with the best combination starred and the mean of each setting alongside. `sweepGrid` is the numbers behind it.
 - **`ScalingLawChart`** plots loss against parameters, tokens or compute on log-log axes with the fitted power law, a residual band, an extrapolation and the scale at which the law reaches a target loss. `fitPowerLaw` and `PowerLawFit` are the numbers behind it.
 - **`TrainingCurveChart`** draws the loss and accuracy curves of one or more training runs, with exponential smoothing over faint raw readings, a logarithmic axis, the best checkpoint, the step a run diverged at and the train/validation gap. `smoothValues`, `bestIndex` and `divergenceIndex` are the numbers behind it.
 - The example app's Gallery tab has the six new charts — 40 in all — and the

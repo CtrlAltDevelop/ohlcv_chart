@@ -137,3 +137,6 @@ export './portfolio/efficient_frontier_chart.dart';
 export './futures/futures_curve_chart.dart';
 export './ml/training_curve_chart.dart';
 export './ml/scaling_law_chart.dart';
+export './ml/sweep_chart.dart';
+export './ml/training_timeline_chart.dart';
+export './ml/benchmark_matrix_chart.dart';

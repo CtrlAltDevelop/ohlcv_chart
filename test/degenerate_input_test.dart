@@ -370,6 +370,42 @@ final Map<String, _Build> _charts = {
     ],
     fitFrom: 0.5,
   ),
+  'SweepChart': (v) => SweepChart(
+    trials: [
+      for (var i = 0; i < v.length; i++)
+        SweepTrial(x: (i % 3).toDouble(), y: (i ~/ 3).toDouble(), score: v[i]),
+    ],
+  ),
+  'SweepChart (higher is better)': (v) => SweepChart(
+    lowerIsBetter: false,
+    showMarginals: false,
+    trials: [
+      for (var i = 0; i < v.length; i++)
+        SweepTrial(x: v[i], y: v[v.length - 1 - i], score: v[i]),
+    ],
+  ),
+  'TrainingTimelineChart': (v) => TrainingTimelineChart(
+    jobs: [
+      for (var i = 0; i < v.length; i++)
+        TrainingJob(
+          name: 'j$i',
+          node: 'n${i % 2}',
+          start: DateTime.utc(2026).add(Duration(hours: i * 2)),
+          end: i.isEven
+              ? DateTime.utc(2026).add(Duration(hours: i * 2 + 3))
+              : null,
+          status: JobStatus.values[i % JobStatus.values.length],
+        ),
+    ],
+  ),
+  'BenchmarkMatrixChart': (v) => BenchmarkMatrixChart(
+    models: [for (var i = 0; i < v.length; i++) 'm$i'],
+    benchmarks: const ['a', 'b'],
+    scores: [
+      for (var i = 0; i < v.length; i++) [v[i], v[v.length - 1 - i]],
+    ],
+    lowerIsBetter: const {1},
+  ),
   'WaffleChart': (v) => WaffleChart(
     slices: [
       for (final x in v)

@@ -172,6 +172,9 @@
   histogram, both combined, or a numeric ladder; on a linear, logarithmic or
   percentage axis, zoomable around the mid price, with an optional bid/ask
   ratio bar.
+- **`BenchmarkMatrixChart`** — models against benchmarks coloured by how each score stands in its column, with each leader starred and an average column.
+- **`TrainingTimelineChart`** — training jobs on a timeline, a lane per machine, coloured by how each finished, with the running count underneath.
+- **`SweepChart`** — a hyperparameter sweep as a grid of scores with the best combination starred and the mean of each setting.
 - **`ScalingLawChart`** — loss against parameters, tokens or compute on log-log axes, with the fitted power law, its band, the extrapolation and where it reaches a target.
 - **`TrainingCurveChart`** — loss and accuracy curves of one or more training runs with smoothing, a log axis, the best checkpoint, divergence and the train/validation gap marked.
 

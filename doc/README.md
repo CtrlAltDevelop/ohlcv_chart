@@ -107,6 +107,9 @@ for what the package does at a glance, see [Features](features.md) and the
   API mapping from both packages, with examples.
 - **[Training curves](training-curve-chart.md)** — `TrainingCurveChart`: loss and accuracy of one or more runs, with smoothing, a log axis, the best checkpoint and divergence marked.
 - **[Scaling laws](scaling-law-chart.md)** — `ScalingLawChart`: loss against compute on log-log axes, with the power law fitted and carried past the data.
+- **[Hyperparameter sweep](sweep-chart.md)** — `SweepChart`: a two-setting sweep as a grid of scores, with the best combination starred.
+- **[Training timeline](training-timeline-chart.md)** — `TrainingTimelineChart`: training jobs by machine, coloured by how they finished.
+- **[Benchmark matrix](benchmark-matrix-chart.md)** — `BenchmarkMatrixChart`: models against benchmarks, coloured by standing, with the leaders starred.
 
 ## Indicators and data
 
