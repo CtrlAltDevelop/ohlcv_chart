@@ -2029,18 +2029,34 @@ List<GalleryEntry> _models() => [
     title: 'Token heatmap',
     blurb:
         'A completion with each token shaded by how surprised the model was '
-        'by it, and the perplexity of the whole.',
+        'by it — the doubtful ones ringed and numbered, what it weighed '
+        'instead on touch.',
     group: GalleryGroup.models,
     doc: 'token-heatmap.md',
     variants: [
       GalleryVariant(
         title: 'Surprisal per token',
-        figure: 'nats',
-        height: 300,
+        figure: 'top 3 ringed',
+        height: 330,
         build: () => TokenHeatmap(
           tokens: galleryTokens(),
           showSummary: true,
-          textStyle: const TextStyle(fontSize: 16),
+          showStrip: true,
+          highlightTop: 3,
+          textStyle: const TextStyle(fontSize: 15),
+          legendStyle: _axisStyle,
+        ),
+      ),
+      GalleryVariant(
+        title: 'Only the doubtful',
+        figure: 'above 2 nats',
+        height: 330,
+        build: () => TokenHeatmap(
+          tokens: galleryTokens(),
+          focusAbove: 2,
+          showWhitespace: true,
+          showStrip: true,
+          textStyle: const TextStyle(fontSize: 15),
           legendStyle: _axisStyle,
         ),
       ),

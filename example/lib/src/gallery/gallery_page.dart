@@ -167,22 +167,37 @@ class _GalleryDetailPageState extends State<GalleryDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
+                      // Both give way when the page is narrow, rather than
+                      // pushing one another off its edge.
+                      Flexible(
+                        flex: 3,
                         child: Text(
                           variant.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleSmall
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                       if (variant.figure != null)
-                        Text(
-                          variant.figure!,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: variant.figureColor,
-                              ),
+                        Flexible(
+                          flex: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: Text(
+                              variant.figure!,
+                              maxLines: 2,
+                              textAlign: TextAlign.end,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: variant.figureColor,
+                                  ),
+                            ),
+                          ),
                         ),
                     ],
                   ),

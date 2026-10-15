@@ -1807,23 +1807,37 @@ Widget seriesPanel(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFFB6C0CC),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            flex: 3,
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFFB6C0CC),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          const Spacer(),
           if (figure != null)
-            Text(
-              figure,
-              style: TextStyle(
-                color: figureColor,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
+            Flexible(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  figure,
+                  maxLines: 1,
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: figureColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
         ],

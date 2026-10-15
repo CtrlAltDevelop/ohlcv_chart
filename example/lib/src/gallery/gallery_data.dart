@@ -777,7 +777,7 @@ List<EvalCategory> galleryEval() => const [
 ];
 
 /// A completion with the surprisal of each token: mostly sure, doubtful where
-/// it had to pick a fact.
+/// it had to pick a fact — and, there, what it was weighing instead.
 List<TokenScore> galleryTokens() {
   const words = [
     ('The', 0.3),
@@ -809,5 +809,31 @@ List<TokenScore> galleryTokens() {
     (' cities', 0.3),
     ('.', 0.2),
   ];
-  return [for (final (token, s) in words) TokenScore(token, s)];
+  const instead = {
+    ' Canberra': [
+      TokenAlternative(' Sydney', 0.62),
+      TokenAlternative(' Melbourne', 0.21),
+      TokenAlternative(' Brisbane', 0.04),
+    ],
+    ' 1908': [
+      TokenAlternative(' 1913', 0.31),
+      TokenAlternative(' 1901', 0.22),
+      TokenAlternative(' 1927', 0.14),
+    ],
+    ' not': [TokenAlternative(' and', 0.38), TokenAlternative(' which', 0.21)],
+    ' chosen': [
+      TokenAlternative(' founded', 0.27),
+      TokenAlternative(' built', 0.19),
+      TokenAlternative(' selected', 0.12),
+    ],
+  };
+  return [
+    for (final (token, s) in words)
+      TokenScore(
+        token,
+        s,
+        probability: exp(-s),
+        alternatives: instead[token] ?? const [],
+      ),
+  ];
 }
