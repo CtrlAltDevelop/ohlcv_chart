@@ -61,6 +61,14 @@ class ChartReplayController extends ChangeNotifier {
   /// How many candles there are in total, as the chart last reported it.
   int get length => _length;
 
+  /// How far the playback has got, from 0 to 1 — for a scrub bar or a progress
+  /// indicator. 1 while the whole series is showing, since nothing is held back.
+  double get progress {
+    final position = _position;
+    if (position == null || _length == 0) return 1;
+    return (position / _length).clamp(0.0, 1.0);
+  }
+
   /// Whether the playback has reached the newest candle.
   bool get isAtEnd => _position != null && _position! >= _length;
 
