@@ -27,20 +27,14 @@ Free for any use, with no paid tier.
   language models.
 - **Fully themeable** — `ChartStyle`, `ChartColors` and `ChartTranslations`.
 
-See the [full feature list](doc/features.md) and the [gallery](doc/gallery.md).
-
-> [!NOTE]
-> This package has grown large. To keep it fast and focused, the next update
-> will split it into separate packages. `ohlcv_chart` will keep only the
-> candlestick (OHLCV) chart, its indicators and its drawing tools; the other
-> chart widgets will move to their own packages.
+See the [full feature list](doc/features.md), the [gallery](doc/gallery.md) and the [live demo](https://ctrlaltdevelop.github.io/ohlcv_chart/).
 
 ## Installation
 
 ```yaml
 dependencies:
   material_ui: ">=1.0.0 <2.0.0"
-  ohlcv_chart: ">=3.2.0 <4.0.0"
+  ohlcv_chart: ">=3.2.1 <4.0.0"
 ```
 
 Requires Dart 3.12 and Flutter 3.44 or later. Widgets are built on the
