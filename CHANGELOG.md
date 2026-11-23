@@ -1,3 +1,15 @@
+## 3.2.1 - 2026-11-23
+
+### Fixed
+
+- The example's course cards no longer overflow the gallery panel at narrow
+  widths.
+
+### Added
+
+- A live web demo of the example app, published to
+  <https://ctrlaltdevelop.github.io/ohlcv_chart/> on every release.
+
 ## 3.2.0 - 2026-10-15
 
 ### Changed
