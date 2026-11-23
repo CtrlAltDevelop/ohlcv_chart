@@ -61,7 +61,7 @@ KChartWidget(
 );
 ```
 
-The [example app](example/) demonstrates every option in the package.
+The [example app](example/) demonstrates every option in the package. Try it live at [ctrlaltdevelop.github.io/ohlcv_chart](https://ctrlaltdevelop.github.io/ohlcv_chart/).
 
 ## Charts
 
